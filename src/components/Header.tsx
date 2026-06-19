@@ -319,12 +319,12 @@ export function Header({ nav, settings }: { nav: NavNode[]; settings: Record<str
 				</div>
 			</div>
 
-			{/* Header */}
+			{/* Header + mega panel share a hover region so moving into the panel doesn't close it. */}
+			<div onMouseLeave={() => setOpenId(null)}>
 			<header
 				ref={headerRef}
 				className="sticky top-0 z-40 backdrop-blur-md bg-background/85 border-b border-border/60"
 				style={{ viewTransitionName: "site-header" }}
-				onMouseLeave={() => setOpenId(null)}
 			>
 				<div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between gap-6">
 					<NavLink href={withLang("/", lang)} className="flex items-center gap-3" onClick={closeAll}>
@@ -412,13 +412,15 @@ export function Header({ nav, settings }: { nav: NavNode[]; settings: Record<str
 					</div>
 				</div>
 
-				{/* Full-bleed mega panel — pinned under the header, fills to viewport bottom (100dvh total).
-				    Positioned absolute (not fixed) because the header's backdrop-blur makes it the
-				    containing block; height is the viewport minus the header's bottom edge. */}
+				</header>
+
+				{/* Mega panel — rendered OUTSIDE the header so its backdrop-filter frosts the PAGE
+				    behind it (not the header's stacking context). Fixed under the header's bottom edge,
+				    filling to the viewport bottom. */}
 				{openNode && (
 					<div
-						className="hidden lg:block absolute inset-x-0 top-full overflow-y-auto bg-card/80 backdrop-blur-3xl border-b border-border/60 shadow-[var(--shadow-soft)] thin-scroll animate-[mega-in_0.2s_ease-out] motion-reduce:animate-none"
-						style={{ height: `calc(100dvh - ${panelTop}px)` }}
+						className="hidden lg:block fixed inset-x-0 z-40 overflow-y-auto bg-card/80 backdrop-blur-3xl border-b border-border/60 shadow-[var(--shadow-soft)] thin-scroll animate-[mega-in_0.2s_ease-out] motion-reduce:animate-none"
+						style={{ top: panelTop, height: `calc(100dvh - ${panelTop}px)` }}
 					>
 						<div key={openId} className="mx-auto flex h-full max-w-7xl flex-col px-6 py-8 animate-[mega-content-in_0.28s_ease-out] motion-reduce:animate-none">
 							{(() => {
@@ -446,7 +448,7 @@ export function Header({ nav, settings }: { nav: NavNode[]; settings: Record<str
 						</div>
 					</div>
 				)}
-			</header>
+			</div>
 
 			{/* Mobile drawer */}
 			{mobileOpen && (
