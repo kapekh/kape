@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLang, LanguageSwitcher } from "@/lib/i18n";
 import { localizedHref } from "@/lib/i18n-config";
 
+import { NavLink } from "./NavLink";
 import type { NavNode } from "#/server/repo/nav";
 
 /** Prefix internal hrefs with the active language (path-based i18n). */
@@ -68,9 +69,9 @@ function MegaBentoCard({
 		</>
 	);
 	return href ? (
-		<a href={href} onClick={onNavigate} className={cls}>
+		<NavLink href={href} onClick={onNavigate} className={cls}>
 			{inner}
-		</a>
+		</NavLink>
 	) : (
 		<div className={cls}>{inner}</div>
 	);
@@ -125,9 +126,9 @@ function MegaSection({ item, lang, onNavigate }: { item: NavNode; lang: string; 
 				<div className="min-w-0">
 					<h2 className="font-display text-lg font-semibold text-primary">
 						{href ? (
-							<a href={href} onClick={onNavigate} className="hover:text-[var(--accent)] transition">
+							<NavLink href={href} onClick={onNavigate} className="hover:text-[var(--accent)] transition">
 								{item.label}
-							</a>
+							</NavLink>
 						) : (
 							item.label
 						)}
@@ -186,7 +187,7 @@ function MobileNode({ node, lang, onNavigate }: { node: NavNode; lang: string; o
 
 	if (!hasChildren) {
 		return (
-			<a
+			<NavLink
 				href={href || withLang("/", lang)}
 				onClick={onNavigate}
 				className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted transition"
@@ -202,7 +203,7 @@ function MobileNode({ node, lang, onNavigate }: { node: NavNode; lang: string; o
 						<span className="block truncate text-xs text-muted-foreground">{node.description}</span>
 					)}
 				</span>
-			</a>
+			</NavLink>
 		);
 	}
 
@@ -228,13 +229,13 @@ function MobileNode({ node, lang, onNavigate }: { node: NavNode; lang: string; o
 			{open && (
 				<div className="ml-3 mt-0.5 border-l border-border pl-2">
 					{href && (
-						<a
+						<NavLink
 							href={href}
 							onClick={onNavigate}
 							className="block rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-[var(--accent)] transition"
 						>
 							Overview
-						</a>
+						</NavLink>
 					)}
 					{node.children.map((c) => (
 						<MobileNode key={c.id} node={c} lang={lang} onNavigate={onNavigate} />
@@ -326,7 +327,7 @@ export function Header({ nav, settings }: { nav: NavNode[]; settings: Record<str
 				onMouseLeave={() => setOpenId(null)}
 			>
 				<div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between gap-6">
-					<a href={withLang("/", lang)} className="flex items-center gap-3" onClick={closeAll}>
+					<NavLink href={withLang("/", lang)} className="flex items-center gap-3" onClick={closeAll}>
 						<div className="relative h-12 w-12 rounded-full bg-gradient-to-br from-[var(--secondary)] to-[var(--accent)] grid place-items-center text-primary-foreground font-display font-bold text-xl shadow-[var(--shadow-lift)]">
 							K
 							<span className="absolute inset-0 rounded-full ring-2 ring-[var(--gold)]/40" />
@@ -335,7 +336,7 @@ export function Header({ nav, settings }: { nav: NavNode[]; settings: Record<str
 							<div className="font-khmer text-[13px] text-primary">អង្គការសកម្មភាពសម្រាប់ការអប់រំនៅកម្ពុជា</div>
 							<div className="font-display font-semibold text-primary text-[15px]">Kampuchea Action to Promote Education</div>
 						</div>
-					</a>
+					</NavLink>
 
 					{/* Desktop nav */}
 					<nav className="hidden lg:flex items-center gap-8 text-sm font-medium text-foreground/80">
@@ -353,14 +354,14 @@ export function Header({ nav, settings }: { nav: NavNode[]; settings: Record<str
 							if (!hasChildren) {
 								return (
 									<div key={n.id} className="relative py-2">
-										<a
+										<NavLink
 											href={href || withLang("/", lang)}
 											onMouseEnter={() => setOpenId(null)}
 											className="group relative flex items-center gap-1 hover:text-primary transition"
 										>
 											{n.label}
 											<span className="absolute -bottom-0.5 left-0 h-0.5 w-0 bg-[var(--accent)] transition-all group-hover:w-full" />
-										</a>
+										</NavLink>
 									</div>
 								);
 							}

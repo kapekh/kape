@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import students from "@/assets/students.jpg.asset.json";
 import { useLang } from "@/lib/i18n";
 import { localizedHref } from "@/lib/i18n-config";
+import { NavLink } from "@/components/NavLink";
 
 type Crumb = { label: string; href?: string };
 
@@ -36,14 +37,14 @@ export function SubPage({
         </div>
         <div className="mx-auto max-w-7xl text-primary-foreground">
           <nav className="flex flex-wrap items-center gap-2 text-xs opacity-85">
-            <a href={localizedHref("/", lang)} className="hover:underline">Home</a>
+            <NavLink href={localizedHref("/", lang)} className="hover:underline">Home</NavLink>
             <span aria-hidden>/</span>
             <span>{section}</span>
             {crumbs?.map((c, i) => (
               <span key={i} className="flex items-center gap-2">
                 <span aria-hidden>/</span>
                 {c.href ? (
-                  <a href={localizedHref(c.href, lang)} className="hover:underline">{c.label}</a>
+                  <NavLink href={localizedHref(c.href, lang)} className="hover:underline">{c.label}</NavLink>
                 ) : (
                   <span>{c.label}</span>
                 )}

@@ -6,6 +6,7 @@ import { localizedHref } from "@/lib/i18n-config";
 
 import { ContactForm } from "../ContactForm";
 import { MapView, type MapMarker } from "../MapView";
+import { NavLink } from "../NavLink";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type P = Record<string, any> & { layout?: string };
@@ -127,8 +128,8 @@ function Hero(p: P) {
 
 	const ctas = (
 		<div className="mt-8 flex flex-wrap gap-3">
-			{p.ctaHref && <a href={L(p.ctaHref)} className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-6 py-3 text-sm font-semibold shadow-[var(--shadow-lift)] hover:-translate-y-0.5 transition">{p.ctaLabel || "Learn more"}</a>}
-			{p.cta2Href && <a href={L(p.cta2Href)} className="inline-flex items-center gap-2 rounded-full border border-primary/30 px-6 py-3 text-sm font-semibold text-primary hover:bg-primary hover:text-primary-foreground transition">{p.cta2Label || "Learn more"}</a>}
+			{p.ctaHref && <NavLink href={L(p.ctaHref)} className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-6 py-3 text-sm font-semibold shadow-[var(--shadow-lift)] hover:-translate-y-0.5 transition">{p.ctaLabel || "Learn more"}</NavLink>}
+			{p.cta2Href && <NavLink href={L(p.cta2Href)} className="inline-flex items-center gap-2 rounded-full border border-primary/30 px-6 py-3 text-sm font-semibold text-primary hover:bg-primary hover:text-primary-foreground transition">{p.cta2Label || "Learn more"}</NavLink>}
 		</div>
 	);
 
@@ -228,7 +229,7 @@ function Cards(p: P) {
 							</>
 						);
 						return it.href ? (
-							<a key={n} href={it.href} className="block rounded-3xl border border-border bg-card p-6 shadow-sm transition hover:-translate-y-1 hover:border-[var(--accent)] hover:shadow-[var(--shadow-soft)]">{inner}</a>
+							<NavLink key={n} href={it.href} className="block rounded-3xl border border-border bg-card p-6 shadow-sm transition hover:-translate-y-1 hover:border-[var(--accent)] hover:shadow-[var(--shadow-soft)]">{inner}</NavLink>
 						) : (
 							<div key={n} className="rounded-3xl border border-border bg-card p-6 shadow-sm">{inner}</div>
 						);
@@ -298,8 +299,8 @@ function Cta(p: P) {
 				<h2 className="mt-4 font-display text-5xl md:text-7xl font-semibold leading-[1.02] text-primary">{renderTitle(p.title || "", "italic")}</h2>
 				{p.body && <p className="mx-auto mt-6 max-w-2xl text-lg text-primary/85">{p.body}</p>}
 				<div className="mt-10 flex flex-wrap justify-center gap-4">
-					{p.ctaHref && <a href={L(p.ctaHref)} className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-8 py-4 text-base font-semibold shadow-[var(--shadow-lift)] hover:-translate-y-1 transition">{p.ctaLabel || "Donate now"}</a>}
-					{p.cta2Href && <a href={L(p.cta2Href)} className="inline-flex items-center gap-2 rounded-full border-2 border-primary/40 text-primary px-8 py-4 text-base font-semibold hover:bg-primary hover:text-primary-foreground transition">{p.cta2Label || "Learn more"}</a>}
+					{p.ctaHref && <NavLink href={L(p.ctaHref)} className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-8 py-4 text-base font-semibold shadow-[var(--shadow-lift)] hover:-translate-y-1 transition">{p.ctaLabel || "Donate now"}</NavLink>}
+					{p.cta2Href && <NavLink href={L(p.cta2Href)} className="inline-flex items-center gap-2 rounded-full border-2 border-primary/40 text-primary px-8 py-4 text-base font-semibold hover:bg-primary hover:text-primary-foreground transition">{p.cta2Label || "Learn more"}</NavLink>}
 				</div>
 			</div>
 		</section>
@@ -316,7 +317,7 @@ function Resources(p: P) {
 				{items.length === 0 ? <Empty>No resources published yet.</Empty> : (
 					<div className={`grid grid-cols-1 ${cols} gap-4`}>
 						{items.map((it, n) => (
-							<a key={n} href={it.href || "#"} className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-[var(--shadow-soft)]">
+							<NavLink key={n} href={it.href || "#"} className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-[var(--shadow-soft)]">
 								<div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">{Icon.doc("h-6 w-6")}</div>
 								<div className="min-w-0 flex-1">
 									<div className="text-[10px] uppercase tracking-[0.18em] text-[var(--accent)] font-semibold">{it.kind || "file"}</div>
@@ -324,7 +325,7 @@ function Resources(p: P) {
 									{it.meta && <div className="text-xs text-muted-foreground mt-0.5">{it.meta}</div>}
 								</div>
 								<span className="shrink-0 text-muted-foreground/50 group-hover:text-[var(--accent)] transition">{Icon.download("h-5 w-5")}</span>
-							</a>
+							</NavLink>
 						))}
 					</div>
 				)}
@@ -378,7 +379,7 @@ function Pills(p: P) {
 							{g.heading && <h3 className="mb-3 font-display text-lg font-semibold text-primary">{g.heading}</h3>}
 							<div className="flex flex-wrap gap-2.5">
 								{parse(g.links).map((l, m) => (
-									<a key={m} href={l.href} className="rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-foreground/80 shadow-sm hover:border-[var(--accent)] hover:text-[var(--accent)] hover:-translate-y-0.5 transition">{l.label}</a>
+									<NavLink key={m} href={l.href} className="rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-foreground/80 shadow-sm hover:border-[var(--accent)] hover:text-[var(--accent)] hover:-translate-y-0.5 transition">{l.label}</NavLink>
 								))}
 							</div>
 						</div>
@@ -433,7 +434,7 @@ function PostCard({ post, base }: { post: any; base: string }) {
 			</div>
 		</>
 	);
-	return href ? <a href={href} className={`${card} group block overflow-hidden`}>{body}</a> : <div className="group overflow-hidden rounded-3xl border border-border bg-card shadow-sm">{body}</div>;
+	return href ? <NavLink href={href} className={`${card} group block overflow-hidden`}>{body}</NavLink> : <div className="group overflow-hidden rounded-3xl border border-border bg-card shadow-sm">{body}</div>;
 }
 
 function PostList(p: P) {
@@ -447,7 +448,7 @@ function PostList(p: P) {
 			<Container>
 				<div className="mb-12 flex items-end justify-between gap-4 flex-wrap">
 					<Heading eyebrow={p.eyebrow} title={p.title} />
-					{p.moreHref && <a href={L(p.moreHref) ?? "#"} className="text-sm font-semibold text-primary underline underline-offset-8 hover:text-[var(--accent)]">See all →</a>}
+					{p.moreHref && <NavLink href={L(p.moreHref) ?? "#"} className="text-sm font-semibold text-primary underline underline-offset-8 hover:text-[var(--accent)]">See all →</NavLink>}
 				</div>
 				{posts.length === 0 ? (
 					<Empty>Nothing published here yet.</Empty>
@@ -455,17 +456,17 @@ function PostList(p: P) {
 					<ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
 						{posts.map((post) => (
 							<li key={post.id}>
-								<a href={link(post.slug)} className="group flex items-center justify-between gap-4 px-5 py-4 hover:bg-[var(--accent)]/5 transition">
+								<NavLink href={link(post.slug)} className="group flex items-center justify-between gap-4 px-5 py-4 hover:bg-[var(--accent)]/5 transition">
 									<span className="font-medium text-foreground/85 group-hover:text-[var(--accent)] transition">{post.title}</span>
 									<span className="shrink-0 text-xs text-muted-foreground">{post.publishedAt}</span>
-								</a>
+								</NavLink>
 							</li>
 						))}
 					</ul>
 				) : layout === "featured" && posts.length > 1 ? (
 					<div className="grid gap-8 lg:grid-cols-12">
 						<article className="group lg:col-span-7">
-							<a href={link(posts[0].slug)} className="relative block h-[420px] overflow-hidden rounded-3xl ring-1 ring-border">
+							<NavLink href={link(posts[0].slug)} className="relative block h-[420px] overflow-hidden rounded-3xl ring-1 ring-border">
 								<img src={imgFor(posts[0])} alt="" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
 								<div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/30 to-transparent" />
 								<div className="absolute bottom-0 p-8 text-primary-foreground">
@@ -474,11 +475,11 @@ function PostList(p: P) {
 									{posts[0].excerpt && <p className="mt-3 max-w-lg text-sm opacity-90 line-clamp-2">{posts[0].excerpt}</p>}
 									<span className="mt-5 inline-block text-sm font-semibold text-[var(--gold)]">Read more →</span>
 								</div>
-							</a>
+							</NavLink>
 						</article>
 						<div className="space-y-6 lg:col-span-5">
 							{posts.slice(1, 4).map((post) => (
-								<a key={post.id} href={link(post.slug)} className="group flex gap-5">
+								<NavLink key={post.id} href={link(post.slug)} className="group flex gap-5">
 									<div className="relative h-32 w-40 shrink-0 overflow-hidden rounded-2xl ring-1 ring-border">
 										<img src={imgFor(post)} alt="" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
 									</div>
@@ -486,7 +487,7 @@ function PostList(p: P) {
 										{post.publishedAt && <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">{post.publishedAt}</div>}
 										<h4 className="mt-1.5 font-display text-lg font-semibold leading-tight text-primary group-hover:text-[var(--accent)] transition line-clamp-3">{post.title}</h4>
 									</div>
-								</a>
+								</NavLink>
 							))}
 						</div>
 					</div>
@@ -513,7 +514,7 @@ function VideoGrid(p: P) {
 			<Container>
 				<div className="mb-12 flex items-end justify-between gap-4 flex-wrap">
 					<Heading eyebrow={p.eyebrow} title={p.title} />
-					{p.moreHref && <a href={L(p.moreHref) ?? "#"} className="text-sm font-semibold text-primary underline underline-offset-8 hover:text-[var(--accent)]">All videos →</a>}
+					{p.moreHref && <NavLink href={L(p.moreHref) ?? "#"} className="text-sm font-semibold text-primary underline underline-offset-8 hover:text-[var(--accent)]">All videos →</NavLink>}
 				</div>
 				{videos.length === 0 ? <Empty>No videos yet.</Empty> : (
 					<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -521,7 +522,7 @@ function VideoGrid(p: P) {
 							const id = youtubeId(v.youtubeUrl);
 							const thumb = id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : imgFor(v);
 							return (
-								<a key={v.id} href={v.youtubeUrl || "#"} target="_blank" rel="noreferrer" className="group cursor-pointer">
+								<NavLink key={v.id} href={v.youtubeUrl || "#"} target="_blank" rel="noreferrer" className="group cursor-pointer">
 									<div className="relative aspect-video overflow-hidden rounded-2xl ring-1 ring-border">
 										<img src={thumb} alt="" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
 										<div className="absolute inset-0 bg-primary/20 transition group-hover:bg-primary/10" />
@@ -530,7 +531,7 @@ function VideoGrid(p: P) {
 										</div>
 									</div>
 									<h3 className="mt-4 font-display text-lg font-semibold text-primary group-hover:text-[var(--accent)] transition">{v.title}</h3>
-								</a>
+								</NavLink>
 							);
 						})}
 					</div>
@@ -550,13 +551,13 @@ function AlbumGrid(p: P) {
 				{albums.length === 0 ? <Empty>No photo albums yet.</Empty> : (
 					<div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
 						{albums.map((a) => (
-							<a key={a.id} href={L(`/galleries/${a.slug}`)} className="group relative block overflow-hidden rounded-3xl ring-1 ring-border shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-[var(--shadow-soft)]">
+							<NavLink key={a.id} href={L(`/galleries/${a.slug}`)} className="group relative block overflow-hidden rounded-3xl ring-1 ring-border shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-[var(--shadow-soft)]">
 								<div className="aspect-[4/3] bg-muted"><img src={imgFor(a)} alt="" className="h-full w-full object-cover transition duration-700 group-hover:scale-110" /></div>
 								<div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-primary/90 via-primary/20 to-transparent p-5 text-primary-foreground">
 									<div className="font-display font-semibold leading-snug">{a.title}</div>
 									<div className="mt-0.5 text-xs opacity-85">{a.count} photos</div>
 								</div>
-							</a>
+							</NavLink>
 						))}
 					</div>
 				)}
@@ -574,14 +575,14 @@ function PublicationList(p: P) {
 				{items.length === 0 ? <Empty>No publications in this category yet.</Empty> : (
 					<div className={`grid gap-4 ${p.layout === "list" ? "" : "md:grid-cols-2"}`}>
 						{items.map((it) => (
-							<a key={it.id} href={it.fileUrl || "#"} className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-[var(--shadow-soft)]">
+							<NavLink key={it.id} href={it.fileUrl || "#"} className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-[var(--shadow-soft)]">
 								<div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">{Icon.doc("h-6 w-6")}</div>
 								<div className="min-w-0 flex-1">
 									<div className="font-medium text-foreground group-hover:text-[var(--accent)] transition">{it.title}</div>
 									{it.year && <div className="text-xs text-muted-foreground">{it.year}</div>}
 								</div>
 								<span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-[var(--accent)]">{Icon.download("h-4 w-4")} PDF</span>
-							</a>
+							</NavLink>
 						))}
 					</div>
 				)}
@@ -601,11 +602,11 @@ function People(p: P) {
 				{people.length === 0 ? <Empty>No team members listed yet.</Empty> : (
 					<div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-6">
 						{people.map((person) => (
-							<a key={person.id} href={L(`/team/${person.slug}`)} className="group text-center">
+							<NavLink key={person.id} href={L(`/team/${person.slug}`)} className="group text-center">
 								<div className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] text-primary-foreground font-display text-2xl font-bold shadow-md ring-4 ring-card transition group-hover:scale-105">{initials(person.name)}</div>
 								<div className="mt-3 text-sm font-semibold text-primary group-hover:text-[var(--accent)] transition">{person.name}</div>
 								{person.position && <div className="text-xs text-muted-foreground">{person.position}</div>}
-							</a>
+							</NavLink>
 						))}
 					</div>
 				)}
@@ -665,7 +666,7 @@ function Partners(p: P) {
 								<h3 className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">{cat.replace(/-/g, " ")}</h3>
 								<div className="mb-4 h-px w-full bg-border" />
 								<div className="flex flex-wrap gap-2">
-									{list.map((r) => <a key={r.id} href={r.url || "#"} className="rounded-full border border-border bg-background/60 px-3.5 py-1.5 text-sm font-medium text-foreground/80 hover:border-[var(--accent)] hover:text-[var(--accent)] transition">{r.name}</a>)}
+									{list.map((r) => <NavLink key={r.id} href={r.url || "#"} className="rounded-full border border-border bg-background/60 px-3.5 py-1.5 text-sm font-medium text-foreground/80 hover:border-[var(--accent)] hover:text-[var(--accent)] transition">{r.name}</NavLink>)}
 								</div>
 							</div>
 						))}
