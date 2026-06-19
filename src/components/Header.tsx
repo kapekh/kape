@@ -417,7 +417,7 @@ export function Header({ nav, settings }: { nav: NavNode[]; settings: Record<str
 				    containing block; height is the viewport minus the header's bottom edge. */}
 				{openNode && (
 					<div
-						className="hidden lg:block absolute inset-x-0 top-full overflow-y-auto bg-card shadow-[var(--shadow-soft)] thin-scroll animate-[mega-in_0.2s_ease-out] motion-reduce:animate-none"
+						className="hidden lg:block absolute inset-x-0 top-full overflow-y-auto bg-card/80 backdrop-blur-xl border-b border-border/60 shadow-[var(--shadow-soft)] thin-scroll animate-[mega-in_0.2s_ease-out] motion-reduce:animate-none"
 						style={{ height: `calc(100dvh - ${panelTop}px)` }}
 					>
 						<div key={openId} className="mx-auto flex h-full max-w-7xl flex-col px-6 py-8 animate-[mega-content-in_0.28s_ease-out] motion-reduce:animate-none">
