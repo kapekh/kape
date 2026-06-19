@@ -104,7 +104,7 @@ function AdminLayout() {
 	return (
 		<div className="min-h-screen flex bg-card text-foreground">
 			{/* Sidebar rail */}
-			<aside className="w-64 shrink-0 sticky top-0 h-screen bg-card border-r border-border flex flex-col">
+			<aside className="w-64 shrink-0 sticky top-0 h-screen bg-card border-r border-border flex flex-col" style={{ viewTransitionName: "admin-sidebar" }}>
 				<div className="flex items-center gap-2.5 px-5 h-16 border-b border-border shrink-0">
 					<span className="h-9 w-9 rounded-xl bg-[var(--gold)] text-primary grid place-items-center font-display font-bold text-lg">K</span>
 					<div className="leading-tight">
@@ -138,7 +138,7 @@ function AdminLayout() {
 
 			{/* Content column */}
 			<div className="flex-1 min-w-0 flex flex-col">
-				<header className="sticky top-0 z-20 h-16 shrink-0 border-b border-border bg-card/85 backdrop-blur flex items-center justify-between gap-4 px-4 lg:px-5">
+				<header className="sticky top-0 z-20 h-16 shrink-0 border-b border-border bg-card/85 backdrop-blur flex items-center justify-between gap-4 px-4 lg:px-5" style={{ viewTransitionName: "admin-topbar" }}>
 					<div ref={setHeaderSlot} className="flex min-w-0 flex-1 items-center gap-3" />
 					<div className="flex items-center gap-4">
 						<a href="/" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary hover:text-[var(--accent)] transition-colors">View site ↗</a>

@@ -41,7 +41,13 @@
 ::view-transition-old(site-header),
 ::view-transition-new(site-header),
 ::view-transition-old(site-footer),
-::view-transition-new(site-footer) {
+::view-transition-new(site-footer),
+::view-transition-group(admin-sidebar),
+::view-transition-group(admin-topbar),
+::view-transition-old(admin-sidebar),
+::view-transition-new(admin-sidebar),
+::view-transition-old(admin-topbar),
+::view-transition-new(admin-topbar) {
   animation: none;
 }
 
