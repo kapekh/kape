@@ -269,7 +269,7 @@ function NavBuilder() {
 	const tree = buildTree(items);
 
 	return (
-		<div className="max-w-3xl">
+		<div className="w-full">
 			<div className="flex items-center justify-between mb-6">
 				<h1 className="font-display text-2xl font-semibold text-primary">Navigation</h1>
 				<button type="button" onClick={() => setAddingParent(null)} className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold hover:opacity-90">
