@@ -32,7 +32,7 @@ export function Footer({ settings }: { settings: Record<string, string> }) {
 	}
 
 	return (
-		<footer className="bg-primary text-primary-foreground pt-20 pb-8">
+		<footer className="bg-primary text-primary-foreground pt-20 pb-8" style={{ viewTransitionName: "site-footer" }}>
 			<div className="mx-auto max-w-7xl px-6 grid md:grid-cols-4 gap-10">
 				<div className="md:col-span-2">
 					<div className="flex items-center gap-3">

@@ -307,7 +307,7 @@ export function Header({ nav, settings }: { nav: NavNode[]; settings: Record<str
 	return (
 		<>
 			{/* Top utility bar */}
-			<div className="border-b border-border/60 bg-primary text-primary-foreground text-xs">
+			<div className="border-b border-border/60 bg-primary text-primary-foreground text-xs" style={{ viewTransitionName: "site-topbar" }}>
 				<div className="mx-auto max-w-7xl px-6 py-2 flex items-center justify-between">
 					<span className="opacity-80">{contact || t("top.contact")}</span>
 					<div className="flex items-center gap-4 opacity-80">
@@ -322,6 +322,7 @@ export function Header({ nav, settings }: { nav: NavNode[]; settings: Record<str
 			<header
 				ref={headerRef}
 				className="sticky top-0 z-40 backdrop-blur-md bg-background/85 border-b border-border/60"
+				style={{ viewTransitionName: "site-header" }}
 				onMouseLeave={() => setOpenId(null)}
 			>
 				<div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between gap-6">

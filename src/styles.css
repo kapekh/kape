@@ -31,6 +31,19 @@
     animation: none;
   }
 }
+/* Keep persistent site chrome static — only the page content animates. The named
+   elements (header/top-bar/footer) form their own groups, removed from `root`. */
+::view-transition-group(site-topbar),
+::view-transition-group(site-header),
+::view-transition-group(site-footer),
+::view-transition-old(site-topbar),
+::view-transition-new(site-topbar),
+::view-transition-old(site-header),
+::view-transition-new(site-header),
+::view-transition-old(site-footer),
+::view-transition-new(site-footer) {
+  animation: none;
+}
 
 /*
  * Design system definition.
