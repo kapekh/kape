@@ -17,36 +17,10 @@ import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as InternalsourcesIndexRouteImport } from './routes/internalsources.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as WhoWeArePartnersRouteImport } from './routes/who-we-are.partners'
-import { Route as WhoWeAreNewsRouteImport } from './routes/who-we-are.news'
-import { Route as WhoWeAreAboutRouteImport } from './routes/who-we-are.about'
-import { Route as WhatWeDoLearningApplicationsRouteImport } from './routes/what-we-do.learning-applications'
-import { Route as WhatWeDoImpactStoriesRouteImport } from './routes/what-we-do.impact-stories'
-import { Route as WhatWeDoIctInnovationRouteImport } from './routes/what-we-do.ict-innovation'
 import { Route as UploadsSplatRouteImport } from './routes/uploads.$'
-import { Route as PastProjectsSlugRouteImport } from './routes/past-projects.$slug'
-import { Route as OpportunitiesVolunteerRouteImport } from './routes/opportunities.volunteer'
-import { Route as OpportunitiesScholarshipRouteImport } from './routes/opportunities.scholarship'
-import { Route as OpportunitiesPartnerRouteImport } from './routes/opportunities.partner'
-import { Route as OpportunitiesCareersRouteImport } from './routes/opportunities.careers'
-import { Route as OpportunitiesAlumniRouteImport } from './routes/opportunities.alumni'
-import { Route as MediaVideoGalleryRouteImport } from './routes/media.video-gallery'
-import { Route as MediaProgramReportRouteImport } from './routes/media.program-report'
-import { Route as MediaProgramBrochureRouteImport } from './routes/media.program-brochure'
-import { Route as MediaPoliciesRouteImport } from './routes/media.policies'
-import { Route as MediaPhotoGalleryRouteImport } from './routes/media.photo-gallery'
-import { Route as MediaPaperResearchRouteImport } from './routes/media.paper-research'
-import { Route as MediaOtherPublicationsRouteImport } from './routes/media.other-publications'
-import { Route as MediaLifeSkillsRouteImport } from './routes/media.life-skills'
-import { Route as MediaEscupSourcesRouteImport } from './routes/media.escup-sources'
-import { Route as MediaENewsletterRouteImport } from './routes/media.e-newsletter'
-import { Route as MediaAnnualReportRouteImport } from './routes/media.annual-report'
-import { Route as MediaAiDigitalRouteImport } from './routes/media.ai-digital'
 import { Route as InternalsourcesDocumentsRouteImport } from './routes/internalsources.documents'
 import { Route as InternalsourcesDirectoryRouteImport } from './routes/internalsources.directory'
 import { Route as InternalsourcesCalendarRouteImport } from './routes/internalsources.calendar'
-import { Route as CurrentProjectsSlugRouteImport } from './routes/current-projects.$slug'
-import { Route as AdminStatsRouteImport } from './routes/admin.stats'
 import { Route as AdminStaffRouteImport } from './routes/admin.staff'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminPublicationCategoriesRouteImport } from './routes/admin.publication-categories'
@@ -57,18 +31,12 @@ import { Route as AdminNavRouteImport } from './routes/admin.nav'
 import { Route as AdminMediaRouteImport } from './routes/admin.media'
 import { Route as AdminLocationsRouteImport } from './routes/admin.locations'
 import { Route as AdminLanguagesRouteImport } from './routes/admin.languages'
-import { Route as AdminHeroRouteImport } from './routes/admin.hero'
 import { Route as AdminDonorsRouteImport } from './routes/admin.donors'
 import { Route as AdminDocCategoriesRouteImport } from './routes/admin.doc-categories'
-import { Route as WhoWeAreLeadershipIndexRouteImport } from './routes/who-we-are.leadership.index'
 import { Route as AdminSchoolsIndexRouteImport } from './routes/admin.schools.index'
 import { Route as AdminProjectsIndexRouteImport } from './routes/admin.projects.index'
 import { Route as AdminPostsIndexRouteImport } from './routes/admin.posts.index'
 import { Route as AdminPagesIndexRouteImport } from './routes/admin.pages.index'
-import { Route as WhoWeAreNewsSlugRouteImport } from './routes/who-we-are.news.$slug'
-import { Route as WhoWeAreLeadershipSlugRouteImport } from './routes/who-we-are.leadership.$slug'
-import { Route as WhatWeDoImpactStoriesSlugRouteImport } from './routes/what-we-do.impact-stories.$slug'
-import { Route as MediaPhotoGallerySlugRouteImport } from './routes/media.photo-gallery.$slug'
 import { Route as ApiTrpcSplatRouteImport } from './routes/api.trpc.$'
 import { Route as ApiMediaSplatRouteImport } from './routes/api.media.$'
 import { Route as ApiFormsSplatRouteImport } from './routes/api.forms.$'
@@ -122,131 +90,9 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
-const WhoWeArePartnersRoute = WhoWeArePartnersRouteImport.update({
-  id: '/who-we-are/partners',
-  path: '/who-we-are/partners',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const WhoWeAreNewsRoute = WhoWeAreNewsRouteImport.update({
-  id: '/who-we-are/news',
-  path: '/who-we-are/news',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const WhoWeAreAboutRoute = WhoWeAreAboutRouteImport.update({
-  id: '/who-we-are/about',
-  path: '/who-we-are/about',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const WhatWeDoLearningApplicationsRoute =
-  WhatWeDoLearningApplicationsRouteImport.update({
-    id: '/what-we-do/learning-applications',
-    path: '/what-we-do/learning-applications',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const WhatWeDoImpactStoriesRoute = WhatWeDoImpactStoriesRouteImport.update({
-  id: '/what-we-do/impact-stories',
-  path: '/what-we-do/impact-stories',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const WhatWeDoIctInnovationRoute = WhatWeDoIctInnovationRouteImport.update({
-  id: '/what-we-do/ict-innovation',
-  path: '/what-we-do/ict-innovation',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const UploadsSplatRoute = UploadsSplatRouteImport.update({
   id: '/uploads/$',
   path: '/uploads/$',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PastProjectsSlugRoute = PastProjectsSlugRouteImport.update({
-  id: '/past-projects/$slug',
-  path: '/past-projects/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OpportunitiesVolunteerRoute = OpportunitiesVolunteerRouteImport.update({
-  id: '/opportunities/volunteer',
-  path: '/opportunities/volunteer',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OpportunitiesScholarshipRoute =
-  OpportunitiesScholarshipRouteImport.update({
-    id: '/opportunities/scholarship',
-    path: '/opportunities/scholarship',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const OpportunitiesPartnerRoute = OpportunitiesPartnerRouteImport.update({
-  id: '/opportunities/partner',
-  path: '/opportunities/partner',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OpportunitiesCareersRoute = OpportunitiesCareersRouteImport.update({
-  id: '/opportunities/careers',
-  path: '/opportunities/careers',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OpportunitiesAlumniRoute = OpportunitiesAlumniRouteImport.update({
-  id: '/opportunities/alumni',
-  path: '/opportunities/alumni',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MediaVideoGalleryRoute = MediaVideoGalleryRouteImport.update({
-  id: '/media/video-gallery',
-  path: '/media/video-gallery',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MediaProgramReportRoute = MediaProgramReportRouteImport.update({
-  id: '/media/program-report',
-  path: '/media/program-report',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MediaProgramBrochureRoute = MediaProgramBrochureRouteImport.update({
-  id: '/media/program-brochure',
-  path: '/media/program-brochure',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MediaPoliciesRoute = MediaPoliciesRouteImport.update({
-  id: '/media/policies',
-  path: '/media/policies',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MediaPhotoGalleryRoute = MediaPhotoGalleryRouteImport.update({
-  id: '/media/photo-gallery',
-  path: '/media/photo-gallery',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MediaPaperResearchRoute = MediaPaperResearchRouteImport.update({
-  id: '/media/paper-research',
-  path: '/media/paper-research',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MediaOtherPublicationsRoute = MediaOtherPublicationsRouteImport.update({
-  id: '/media/other-publications',
-  path: '/media/other-publications',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MediaLifeSkillsRoute = MediaLifeSkillsRouteImport.update({
-  id: '/media/life-skills',
-  path: '/media/life-skills',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MediaEscupSourcesRoute = MediaEscupSourcesRouteImport.update({
-  id: '/media/escup-sources',
-  path: '/media/escup-sources',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MediaENewsletterRoute = MediaENewsletterRouteImport.update({
-  id: '/media/e-newsletter',
-  path: '/media/e-newsletter',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MediaAnnualReportRoute = MediaAnnualReportRouteImport.update({
-  id: '/media/annual-report',
-  path: '/media/annual-report',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MediaAiDigitalRoute = MediaAiDigitalRouteImport.update({
-  id: '/media/ai-digital',
-  path: '/media/ai-digital',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InternalsourcesDocumentsRoute =
@@ -265,16 +111,6 @@ const InternalsourcesCalendarRoute = InternalsourcesCalendarRouteImport.update({
   id: '/calendar',
   path: '/calendar',
   getParentRoute: () => InternalsourcesRoute,
-} as any)
-const CurrentProjectsSlugRoute = CurrentProjectsSlugRouteImport.update({
-  id: '/current-projects/$slug',
-  path: '/current-projects/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminStatsRoute = AdminStatsRouteImport.update({
-  id: '/stats',
-  path: '/stats',
-  getParentRoute: () => AdminRoute,
 } as any)
 const AdminStaffRoute = AdminStaffRouteImport.update({
   id: '/staff',
@@ -327,11 +163,6 @@ const AdminLanguagesRoute = AdminLanguagesRouteImport.update({
   path: '/languages',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminHeroRoute = AdminHeroRouteImport.update({
-  id: '/hero',
-  path: '/hero',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminDonorsRoute = AdminDonorsRouteImport.update({
   id: '/donors',
   path: '/donors',
@@ -341,11 +172,6 @@ const AdminDocCategoriesRoute = AdminDocCategoriesRouteImport.update({
   id: '/doc-categories',
   path: '/doc-categories',
   getParentRoute: () => AdminRoute,
-} as any)
-const WhoWeAreLeadershipIndexRoute = WhoWeAreLeadershipIndexRouteImport.update({
-  id: '/who-we-are/leadership/',
-  path: '/who-we-are/leadership/',
-  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminSchoolsIndexRoute = AdminSchoolsIndexRouteImport.update({
   id: '/schools/',
@@ -366,27 +192,6 @@ const AdminPagesIndexRoute = AdminPagesIndexRouteImport.update({
   id: '/pages/',
   path: '/pages/',
   getParentRoute: () => AdminRoute,
-} as any)
-const WhoWeAreNewsSlugRoute = WhoWeAreNewsSlugRouteImport.update({
-  id: '/$slug',
-  path: '/$slug',
-  getParentRoute: () => WhoWeAreNewsRoute,
-} as any)
-const WhoWeAreLeadershipSlugRoute = WhoWeAreLeadershipSlugRouteImport.update({
-  id: '/who-we-are/leadership/$slug',
-  path: '/who-we-are/leadership/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const WhatWeDoImpactStoriesSlugRoute =
-  WhatWeDoImpactStoriesSlugRouteImport.update({
-    id: '/$slug',
-    path: '/$slug',
-    getParentRoute: () => WhatWeDoImpactStoriesRoute,
-  } as any)
-const MediaPhotoGallerySlugRoute = MediaPhotoGallerySlugRouteImport.update({
-  id: '/$slug',
-  path: '/$slug',
-  getParentRoute: () => MediaPhotoGalleryRoute,
 } as any)
 const ApiTrpcSplatRoute = ApiTrpcSplatRouteImport.update({
   id: '/api/trpc/$',
@@ -458,7 +263,6 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/admin/doc-categories': typeof AdminDocCategoriesRoute
   '/admin/donors': typeof AdminDonorsRoute
-  '/admin/hero': typeof AdminHeroRoute
   '/admin/languages': typeof AdminLanguagesRoute
   '/admin/locations': typeof AdminLocationsRoute
   '/admin/media': typeof AdminMediaRoute
@@ -469,36 +273,10 @@ export interface FileRoutesByFullPath {
   '/admin/publication-categories': typeof AdminPublicationCategoriesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/staff': typeof AdminStaffRoute
-  '/admin/stats': typeof AdminStatsRoute
-  '/current-projects/$slug': typeof CurrentProjectsSlugRoute
   '/internalsources/calendar': typeof InternalsourcesCalendarRoute
   '/internalsources/directory': typeof InternalsourcesDirectoryRoute
   '/internalsources/documents': typeof InternalsourcesDocumentsRoute
-  '/media/ai-digital': typeof MediaAiDigitalRoute
-  '/media/annual-report': typeof MediaAnnualReportRoute
-  '/media/e-newsletter': typeof MediaENewsletterRoute
-  '/media/escup-sources': typeof MediaEscupSourcesRoute
-  '/media/life-skills': typeof MediaLifeSkillsRoute
-  '/media/other-publications': typeof MediaOtherPublicationsRoute
-  '/media/paper-research': typeof MediaPaperResearchRoute
-  '/media/photo-gallery': typeof MediaPhotoGalleryRouteWithChildren
-  '/media/policies': typeof MediaPoliciesRoute
-  '/media/program-brochure': typeof MediaProgramBrochureRoute
-  '/media/program-report': typeof MediaProgramReportRoute
-  '/media/video-gallery': typeof MediaVideoGalleryRoute
-  '/opportunities/alumni': typeof OpportunitiesAlumniRoute
-  '/opportunities/careers': typeof OpportunitiesCareersRoute
-  '/opportunities/partner': typeof OpportunitiesPartnerRoute
-  '/opportunities/scholarship': typeof OpportunitiesScholarshipRoute
-  '/opportunities/volunteer': typeof OpportunitiesVolunteerRoute
-  '/past-projects/$slug': typeof PastProjectsSlugRoute
   '/uploads/$': typeof UploadsSplatRoute
-  '/what-we-do/ict-innovation': typeof WhatWeDoIctInnovationRoute
-  '/what-we-do/impact-stories': typeof WhatWeDoImpactStoriesRouteWithChildren
-  '/what-we-do/learning-applications': typeof WhatWeDoLearningApplicationsRoute
-  '/who-we-are/about': typeof WhoWeAreAboutRoute
-  '/who-we-are/news': typeof WhoWeAreNewsRouteWithChildren
-  '/who-we-are/partners': typeof WhoWeArePartnersRoute
   '/admin/': typeof AdminIndexRoute
   '/internalsources/': typeof InternalsourcesIndexRoute
   '/admin/pages/$id': typeof AdminPagesIdRoute
@@ -513,15 +291,10 @@ export interface FileRoutesByFullPath {
   '/api/forms/$': typeof ApiFormsSplatRoute
   '/api/media/$': typeof ApiMediaSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
-  '/media/photo-gallery/$slug': typeof MediaPhotoGallerySlugRoute
-  '/what-we-do/impact-stories/$slug': typeof WhatWeDoImpactStoriesSlugRoute
-  '/who-we-are/leadership/$slug': typeof WhoWeAreLeadershipSlugRoute
-  '/who-we-are/news/$slug': typeof WhoWeAreNewsSlugRoute
   '/admin/pages/': typeof AdminPagesIndexRoute
   '/admin/posts/': typeof AdminPostsIndexRoute
   '/admin/projects/': typeof AdminProjectsIndexRoute
   '/admin/schools/': typeof AdminSchoolsIndexRoute
-  '/who-we-are/leadership/': typeof WhoWeAreLeadershipIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -530,7 +303,6 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/admin/doc-categories': typeof AdminDocCategoriesRoute
   '/admin/donors': typeof AdminDonorsRoute
-  '/admin/hero': typeof AdminHeroRoute
   '/admin/languages': typeof AdminLanguagesRoute
   '/admin/locations': typeof AdminLocationsRoute
   '/admin/media': typeof AdminMediaRoute
@@ -541,36 +313,10 @@ export interface FileRoutesByTo {
   '/admin/publication-categories': typeof AdminPublicationCategoriesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/staff': typeof AdminStaffRoute
-  '/admin/stats': typeof AdminStatsRoute
-  '/current-projects/$slug': typeof CurrentProjectsSlugRoute
   '/internalsources/calendar': typeof InternalsourcesCalendarRoute
   '/internalsources/directory': typeof InternalsourcesDirectoryRoute
   '/internalsources/documents': typeof InternalsourcesDocumentsRoute
-  '/media/ai-digital': typeof MediaAiDigitalRoute
-  '/media/annual-report': typeof MediaAnnualReportRoute
-  '/media/e-newsletter': typeof MediaENewsletterRoute
-  '/media/escup-sources': typeof MediaEscupSourcesRoute
-  '/media/life-skills': typeof MediaLifeSkillsRoute
-  '/media/other-publications': typeof MediaOtherPublicationsRoute
-  '/media/paper-research': typeof MediaPaperResearchRoute
-  '/media/photo-gallery': typeof MediaPhotoGalleryRouteWithChildren
-  '/media/policies': typeof MediaPoliciesRoute
-  '/media/program-brochure': typeof MediaProgramBrochureRoute
-  '/media/program-report': typeof MediaProgramReportRoute
-  '/media/video-gallery': typeof MediaVideoGalleryRoute
-  '/opportunities/alumni': typeof OpportunitiesAlumniRoute
-  '/opportunities/careers': typeof OpportunitiesCareersRoute
-  '/opportunities/partner': typeof OpportunitiesPartnerRoute
-  '/opportunities/scholarship': typeof OpportunitiesScholarshipRoute
-  '/opportunities/volunteer': typeof OpportunitiesVolunteerRoute
-  '/past-projects/$slug': typeof PastProjectsSlugRoute
   '/uploads/$': typeof UploadsSplatRoute
-  '/what-we-do/ict-innovation': typeof WhatWeDoIctInnovationRoute
-  '/what-we-do/impact-stories': typeof WhatWeDoImpactStoriesRouteWithChildren
-  '/what-we-do/learning-applications': typeof WhatWeDoLearningApplicationsRoute
-  '/who-we-are/about': typeof WhoWeAreAboutRoute
-  '/who-we-are/news': typeof WhoWeAreNewsRouteWithChildren
-  '/who-we-are/partners': typeof WhoWeArePartnersRoute
   '/admin': typeof AdminIndexRoute
   '/internalsources': typeof InternalsourcesIndexRoute
   '/admin/pages/$id': typeof AdminPagesIdRoute
@@ -585,15 +331,10 @@ export interface FileRoutesByTo {
   '/api/forms/$': typeof ApiFormsSplatRoute
   '/api/media/$': typeof ApiMediaSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
-  '/media/photo-gallery/$slug': typeof MediaPhotoGallerySlugRoute
-  '/what-we-do/impact-stories/$slug': typeof WhatWeDoImpactStoriesSlugRoute
-  '/who-we-are/leadership/$slug': typeof WhoWeAreLeadershipSlugRoute
-  '/who-we-are/news/$slug': typeof WhoWeAreNewsSlugRoute
   '/admin/pages': typeof AdminPagesIndexRoute
   '/admin/posts': typeof AdminPostsIndexRoute
   '/admin/projects': typeof AdminProjectsIndexRoute
   '/admin/schools': typeof AdminSchoolsIndexRoute
-  '/who-we-are/leadership': typeof WhoWeAreLeadershipIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -605,7 +346,6 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/admin/doc-categories': typeof AdminDocCategoriesRoute
   '/admin/donors': typeof AdminDonorsRoute
-  '/admin/hero': typeof AdminHeroRoute
   '/admin/languages': typeof AdminLanguagesRoute
   '/admin/locations': typeof AdminLocationsRoute
   '/admin/media': typeof AdminMediaRoute
@@ -616,36 +356,10 @@ export interface FileRoutesById {
   '/admin/publication-categories': typeof AdminPublicationCategoriesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/staff': typeof AdminStaffRoute
-  '/admin/stats': typeof AdminStatsRoute
-  '/current-projects/$slug': typeof CurrentProjectsSlugRoute
   '/internalsources/calendar': typeof InternalsourcesCalendarRoute
   '/internalsources/directory': typeof InternalsourcesDirectoryRoute
   '/internalsources/documents': typeof InternalsourcesDocumentsRoute
-  '/media/ai-digital': typeof MediaAiDigitalRoute
-  '/media/annual-report': typeof MediaAnnualReportRoute
-  '/media/e-newsletter': typeof MediaENewsletterRoute
-  '/media/escup-sources': typeof MediaEscupSourcesRoute
-  '/media/life-skills': typeof MediaLifeSkillsRoute
-  '/media/other-publications': typeof MediaOtherPublicationsRoute
-  '/media/paper-research': typeof MediaPaperResearchRoute
-  '/media/photo-gallery': typeof MediaPhotoGalleryRouteWithChildren
-  '/media/policies': typeof MediaPoliciesRoute
-  '/media/program-brochure': typeof MediaProgramBrochureRoute
-  '/media/program-report': typeof MediaProgramReportRoute
-  '/media/video-gallery': typeof MediaVideoGalleryRoute
-  '/opportunities/alumni': typeof OpportunitiesAlumniRoute
-  '/opportunities/careers': typeof OpportunitiesCareersRoute
-  '/opportunities/partner': typeof OpportunitiesPartnerRoute
-  '/opportunities/scholarship': typeof OpportunitiesScholarshipRoute
-  '/opportunities/volunteer': typeof OpportunitiesVolunteerRoute
-  '/past-projects/$slug': typeof PastProjectsSlugRoute
   '/uploads/$': typeof UploadsSplatRoute
-  '/what-we-do/ict-innovation': typeof WhatWeDoIctInnovationRoute
-  '/what-we-do/impact-stories': typeof WhatWeDoImpactStoriesRouteWithChildren
-  '/what-we-do/learning-applications': typeof WhatWeDoLearningApplicationsRoute
-  '/who-we-are/about': typeof WhoWeAreAboutRoute
-  '/who-we-are/news': typeof WhoWeAreNewsRouteWithChildren
-  '/who-we-are/partners': typeof WhoWeArePartnersRoute
   '/admin/': typeof AdminIndexRoute
   '/internalsources/': typeof InternalsourcesIndexRoute
   '/admin/pages/$id': typeof AdminPagesIdRoute
@@ -660,15 +374,10 @@ export interface FileRoutesById {
   '/api/forms/$': typeof ApiFormsSplatRoute
   '/api/media/$': typeof ApiMediaSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
-  '/media/photo-gallery/$slug': typeof MediaPhotoGallerySlugRoute
-  '/what-we-do/impact-stories/$slug': typeof WhatWeDoImpactStoriesSlugRoute
-  '/who-we-are/leadership/$slug': typeof WhoWeAreLeadershipSlugRoute
-  '/who-we-are/news/$slug': typeof WhoWeAreNewsSlugRoute
   '/admin/pages/': typeof AdminPagesIndexRoute
   '/admin/posts/': typeof AdminPostsIndexRoute
   '/admin/projects/': typeof AdminProjectsIndexRoute
   '/admin/schools/': typeof AdminSchoolsIndexRoute
-  '/who-we-are/leadership/': typeof WhoWeAreLeadershipIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -681,7 +390,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin/doc-categories'
     | '/admin/donors'
-    | '/admin/hero'
     | '/admin/languages'
     | '/admin/locations'
     | '/admin/media'
@@ -692,36 +400,10 @@ export interface FileRouteTypes {
     | '/admin/publication-categories'
     | '/admin/settings'
     | '/admin/staff'
-    | '/admin/stats'
-    | '/current-projects/$slug'
     | '/internalsources/calendar'
     | '/internalsources/directory'
     | '/internalsources/documents'
-    | '/media/ai-digital'
-    | '/media/annual-report'
-    | '/media/e-newsletter'
-    | '/media/escup-sources'
-    | '/media/life-skills'
-    | '/media/other-publications'
-    | '/media/paper-research'
-    | '/media/photo-gallery'
-    | '/media/policies'
-    | '/media/program-brochure'
-    | '/media/program-report'
-    | '/media/video-gallery'
-    | '/opportunities/alumni'
-    | '/opportunities/careers'
-    | '/opportunities/partner'
-    | '/opportunities/scholarship'
-    | '/opportunities/volunteer'
-    | '/past-projects/$slug'
     | '/uploads/$'
-    | '/what-we-do/ict-innovation'
-    | '/what-we-do/impact-stories'
-    | '/what-we-do/learning-applications'
-    | '/who-we-are/about'
-    | '/who-we-are/news'
-    | '/who-we-are/partners'
     | '/admin/'
     | '/internalsources/'
     | '/admin/pages/$id'
@@ -736,15 +418,10 @@ export interface FileRouteTypes {
     | '/api/forms/$'
     | '/api/media/$'
     | '/api/trpc/$'
-    | '/media/photo-gallery/$slug'
-    | '/what-we-do/impact-stories/$slug'
-    | '/who-we-are/leadership/$slug'
-    | '/who-we-are/news/$slug'
     | '/admin/pages/'
     | '/admin/posts/'
     | '/admin/projects/'
     | '/admin/schools/'
-    | '/who-we-are/leadership/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -753,7 +430,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin/doc-categories'
     | '/admin/donors'
-    | '/admin/hero'
     | '/admin/languages'
     | '/admin/locations'
     | '/admin/media'
@@ -764,36 +440,10 @@ export interface FileRouteTypes {
     | '/admin/publication-categories'
     | '/admin/settings'
     | '/admin/staff'
-    | '/admin/stats'
-    | '/current-projects/$slug'
     | '/internalsources/calendar'
     | '/internalsources/directory'
     | '/internalsources/documents'
-    | '/media/ai-digital'
-    | '/media/annual-report'
-    | '/media/e-newsletter'
-    | '/media/escup-sources'
-    | '/media/life-skills'
-    | '/media/other-publications'
-    | '/media/paper-research'
-    | '/media/photo-gallery'
-    | '/media/policies'
-    | '/media/program-brochure'
-    | '/media/program-report'
-    | '/media/video-gallery'
-    | '/opportunities/alumni'
-    | '/opportunities/careers'
-    | '/opportunities/partner'
-    | '/opportunities/scholarship'
-    | '/opportunities/volunteer'
-    | '/past-projects/$slug'
     | '/uploads/$'
-    | '/what-we-do/ict-innovation'
-    | '/what-we-do/impact-stories'
-    | '/what-we-do/learning-applications'
-    | '/who-we-are/about'
-    | '/who-we-are/news'
-    | '/who-we-are/partners'
     | '/admin'
     | '/internalsources'
     | '/admin/pages/$id'
@@ -808,15 +458,10 @@ export interface FileRouteTypes {
     | '/api/forms/$'
     | '/api/media/$'
     | '/api/trpc/$'
-    | '/media/photo-gallery/$slug'
-    | '/what-we-do/impact-stories/$slug'
-    | '/who-we-are/leadership/$slug'
-    | '/who-we-are/news/$slug'
     | '/admin/pages'
     | '/admin/posts'
     | '/admin/projects'
     | '/admin/schools'
-    | '/who-we-are/leadership'
   id:
     | '__root__'
     | '/'
@@ -827,7 +472,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin/doc-categories'
     | '/admin/donors'
-    | '/admin/hero'
     | '/admin/languages'
     | '/admin/locations'
     | '/admin/media'
@@ -838,36 +482,10 @@ export interface FileRouteTypes {
     | '/admin/publication-categories'
     | '/admin/settings'
     | '/admin/staff'
-    | '/admin/stats'
-    | '/current-projects/$slug'
     | '/internalsources/calendar'
     | '/internalsources/directory'
     | '/internalsources/documents'
-    | '/media/ai-digital'
-    | '/media/annual-report'
-    | '/media/e-newsletter'
-    | '/media/escup-sources'
-    | '/media/life-skills'
-    | '/media/other-publications'
-    | '/media/paper-research'
-    | '/media/photo-gallery'
-    | '/media/policies'
-    | '/media/program-brochure'
-    | '/media/program-report'
-    | '/media/video-gallery'
-    | '/opportunities/alumni'
-    | '/opportunities/careers'
-    | '/opportunities/partner'
-    | '/opportunities/scholarship'
-    | '/opportunities/volunteer'
-    | '/past-projects/$slug'
     | '/uploads/$'
-    | '/what-we-do/ict-innovation'
-    | '/what-we-do/impact-stories'
-    | '/what-we-do/learning-applications'
-    | '/who-we-are/about'
-    | '/who-we-are/news'
-    | '/who-we-are/partners'
     | '/admin/'
     | '/internalsources/'
     | '/admin/pages/$id'
@@ -882,15 +500,10 @@ export interface FileRouteTypes {
     | '/api/forms/$'
     | '/api/media/$'
     | '/api/trpc/$'
-    | '/media/photo-gallery/$slug'
-    | '/what-we-do/impact-stories/$slug'
-    | '/who-we-are/leadership/$slug'
-    | '/who-we-are/news/$slug'
     | '/admin/pages/'
     | '/admin/posts/'
     | '/admin/projects/'
     | '/admin/schools/'
-    | '/who-we-are/leadership/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -900,38 +513,11 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   InternalsourcesRoute: typeof InternalsourcesRouteWithChildren
   LoginRoute: typeof LoginRoute
-  CurrentProjectsSlugRoute: typeof CurrentProjectsSlugRoute
-  MediaAiDigitalRoute: typeof MediaAiDigitalRoute
-  MediaAnnualReportRoute: typeof MediaAnnualReportRoute
-  MediaENewsletterRoute: typeof MediaENewsletterRoute
-  MediaEscupSourcesRoute: typeof MediaEscupSourcesRoute
-  MediaLifeSkillsRoute: typeof MediaLifeSkillsRoute
-  MediaOtherPublicationsRoute: typeof MediaOtherPublicationsRoute
-  MediaPaperResearchRoute: typeof MediaPaperResearchRoute
-  MediaPhotoGalleryRoute: typeof MediaPhotoGalleryRouteWithChildren
-  MediaPoliciesRoute: typeof MediaPoliciesRoute
-  MediaProgramBrochureRoute: typeof MediaProgramBrochureRoute
-  MediaProgramReportRoute: typeof MediaProgramReportRoute
-  MediaVideoGalleryRoute: typeof MediaVideoGalleryRoute
-  OpportunitiesAlumniRoute: typeof OpportunitiesAlumniRoute
-  OpportunitiesCareersRoute: typeof OpportunitiesCareersRoute
-  OpportunitiesPartnerRoute: typeof OpportunitiesPartnerRoute
-  OpportunitiesScholarshipRoute: typeof OpportunitiesScholarshipRoute
-  OpportunitiesVolunteerRoute: typeof OpportunitiesVolunteerRoute
-  PastProjectsSlugRoute: typeof PastProjectsSlugRoute
   UploadsSplatRoute: typeof UploadsSplatRoute
-  WhatWeDoIctInnovationRoute: typeof WhatWeDoIctInnovationRoute
-  WhatWeDoImpactStoriesRoute: typeof WhatWeDoImpactStoriesRouteWithChildren
-  WhatWeDoLearningApplicationsRoute: typeof WhatWeDoLearningApplicationsRoute
-  WhoWeAreAboutRoute: typeof WhoWeAreAboutRoute
-  WhoWeAreNewsRoute: typeof WhoWeAreNewsRouteWithChildren
-  WhoWeArePartnersRoute: typeof WhoWeArePartnersRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiFormsSplatRoute: typeof ApiFormsSplatRoute
   ApiMediaSplatRoute: typeof ApiMediaSplatRoute
   ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
-  WhoWeAreLeadershipSlugRoute: typeof WhoWeAreLeadershipSlugRoute
-  WhoWeAreLeadershipIndexRoute: typeof WhoWeAreLeadershipIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -992,179 +578,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/who-we-are/partners': {
-      id: '/who-we-are/partners'
-      path: '/who-we-are/partners'
-      fullPath: '/who-we-are/partners'
-      preLoaderRoute: typeof WhoWeArePartnersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/who-we-are/news': {
-      id: '/who-we-are/news'
-      path: '/who-we-are/news'
-      fullPath: '/who-we-are/news'
-      preLoaderRoute: typeof WhoWeAreNewsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/who-we-are/about': {
-      id: '/who-we-are/about'
-      path: '/who-we-are/about'
-      fullPath: '/who-we-are/about'
-      preLoaderRoute: typeof WhoWeAreAboutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/what-we-do/learning-applications': {
-      id: '/what-we-do/learning-applications'
-      path: '/what-we-do/learning-applications'
-      fullPath: '/what-we-do/learning-applications'
-      preLoaderRoute: typeof WhatWeDoLearningApplicationsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/what-we-do/impact-stories': {
-      id: '/what-we-do/impact-stories'
-      path: '/what-we-do/impact-stories'
-      fullPath: '/what-we-do/impact-stories'
-      preLoaderRoute: typeof WhatWeDoImpactStoriesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/what-we-do/ict-innovation': {
-      id: '/what-we-do/ict-innovation'
-      path: '/what-we-do/ict-innovation'
-      fullPath: '/what-we-do/ict-innovation'
-      preLoaderRoute: typeof WhatWeDoIctInnovationRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/uploads/$': {
       id: '/uploads/$'
       path: '/uploads/$'
       fullPath: '/uploads/$'
       preLoaderRoute: typeof UploadsSplatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/past-projects/$slug': {
-      id: '/past-projects/$slug'
-      path: '/past-projects/$slug'
-      fullPath: '/past-projects/$slug'
-      preLoaderRoute: typeof PastProjectsSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/opportunities/volunteer': {
-      id: '/opportunities/volunteer'
-      path: '/opportunities/volunteer'
-      fullPath: '/opportunities/volunteer'
-      preLoaderRoute: typeof OpportunitiesVolunteerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/opportunities/scholarship': {
-      id: '/opportunities/scholarship'
-      path: '/opportunities/scholarship'
-      fullPath: '/opportunities/scholarship'
-      preLoaderRoute: typeof OpportunitiesScholarshipRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/opportunities/partner': {
-      id: '/opportunities/partner'
-      path: '/opportunities/partner'
-      fullPath: '/opportunities/partner'
-      preLoaderRoute: typeof OpportunitiesPartnerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/opportunities/careers': {
-      id: '/opportunities/careers'
-      path: '/opportunities/careers'
-      fullPath: '/opportunities/careers'
-      preLoaderRoute: typeof OpportunitiesCareersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/opportunities/alumni': {
-      id: '/opportunities/alumni'
-      path: '/opportunities/alumni'
-      fullPath: '/opportunities/alumni'
-      preLoaderRoute: typeof OpportunitiesAlumniRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/media/video-gallery': {
-      id: '/media/video-gallery'
-      path: '/media/video-gallery'
-      fullPath: '/media/video-gallery'
-      preLoaderRoute: typeof MediaVideoGalleryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/media/program-report': {
-      id: '/media/program-report'
-      path: '/media/program-report'
-      fullPath: '/media/program-report'
-      preLoaderRoute: typeof MediaProgramReportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/media/program-brochure': {
-      id: '/media/program-brochure'
-      path: '/media/program-brochure'
-      fullPath: '/media/program-brochure'
-      preLoaderRoute: typeof MediaProgramBrochureRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/media/policies': {
-      id: '/media/policies'
-      path: '/media/policies'
-      fullPath: '/media/policies'
-      preLoaderRoute: typeof MediaPoliciesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/media/photo-gallery': {
-      id: '/media/photo-gallery'
-      path: '/media/photo-gallery'
-      fullPath: '/media/photo-gallery'
-      preLoaderRoute: typeof MediaPhotoGalleryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/media/paper-research': {
-      id: '/media/paper-research'
-      path: '/media/paper-research'
-      fullPath: '/media/paper-research'
-      preLoaderRoute: typeof MediaPaperResearchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/media/other-publications': {
-      id: '/media/other-publications'
-      path: '/media/other-publications'
-      fullPath: '/media/other-publications'
-      preLoaderRoute: typeof MediaOtherPublicationsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/media/life-skills': {
-      id: '/media/life-skills'
-      path: '/media/life-skills'
-      fullPath: '/media/life-skills'
-      preLoaderRoute: typeof MediaLifeSkillsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/media/escup-sources': {
-      id: '/media/escup-sources'
-      path: '/media/escup-sources'
-      fullPath: '/media/escup-sources'
-      preLoaderRoute: typeof MediaEscupSourcesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/media/e-newsletter': {
-      id: '/media/e-newsletter'
-      path: '/media/e-newsletter'
-      fullPath: '/media/e-newsletter'
-      preLoaderRoute: typeof MediaENewsletterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/media/annual-report': {
-      id: '/media/annual-report'
-      path: '/media/annual-report'
-      fullPath: '/media/annual-report'
-      preLoaderRoute: typeof MediaAnnualReportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/media/ai-digital': {
-      id: '/media/ai-digital'
-      path: '/media/ai-digital'
-      fullPath: '/media/ai-digital'
-      preLoaderRoute: typeof MediaAiDigitalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/internalsources/documents': {
@@ -1187,20 +605,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/internalsources/calendar'
       preLoaderRoute: typeof InternalsourcesCalendarRouteImport
       parentRoute: typeof InternalsourcesRoute
-    }
-    '/current-projects/$slug': {
-      id: '/current-projects/$slug'
-      path: '/current-projects/$slug'
-      fullPath: '/current-projects/$slug'
-      preLoaderRoute: typeof CurrentProjectsSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/stats': {
-      id: '/admin/stats'
-      path: '/stats'
-      fullPath: '/admin/stats'
-      preLoaderRoute: typeof AdminStatsRouteImport
-      parentRoute: typeof AdminRoute
     }
     '/admin/staff': {
       id: '/admin/staff'
@@ -1272,13 +676,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLanguagesRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/hero': {
-      id: '/admin/hero'
-      path: '/hero'
-      fullPath: '/admin/hero'
-      preLoaderRoute: typeof AdminHeroRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/donors': {
       id: '/admin/donors'
       path: '/donors'
@@ -1292,13 +689,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/doc-categories'
       preLoaderRoute: typeof AdminDocCategoriesRouteImport
       parentRoute: typeof AdminRoute
-    }
-    '/who-we-are/leadership/': {
-      id: '/who-we-are/leadership/'
-      path: '/who-we-are/leadership'
-      fullPath: '/who-we-are/leadership/'
-      preLoaderRoute: typeof WhoWeAreLeadershipIndexRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/admin/schools/': {
       id: '/admin/schools/'
@@ -1327,34 +717,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/pages/'
       preLoaderRoute: typeof AdminPagesIndexRouteImport
       parentRoute: typeof AdminRoute
-    }
-    '/who-we-are/news/$slug': {
-      id: '/who-we-are/news/$slug'
-      path: '/$slug'
-      fullPath: '/who-we-are/news/$slug'
-      preLoaderRoute: typeof WhoWeAreNewsSlugRouteImport
-      parentRoute: typeof WhoWeAreNewsRoute
-    }
-    '/who-we-are/leadership/$slug': {
-      id: '/who-we-are/leadership/$slug'
-      path: '/who-we-are/leadership/$slug'
-      fullPath: '/who-we-are/leadership/$slug'
-      preLoaderRoute: typeof WhoWeAreLeadershipSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/what-we-do/impact-stories/$slug': {
-      id: '/what-we-do/impact-stories/$slug'
-      path: '/$slug'
-      fullPath: '/what-we-do/impact-stories/$slug'
-      preLoaderRoute: typeof WhatWeDoImpactStoriesSlugRouteImport
-      parentRoute: typeof WhatWeDoImpactStoriesRoute
-    }
-    '/media/photo-gallery/$slug': {
-      id: '/media/photo-gallery/$slug'
-      path: '/$slug'
-      fullPath: '/media/photo-gallery/$slug'
-      preLoaderRoute: typeof MediaPhotoGallerySlugRouteImport
-      parentRoute: typeof MediaPhotoGalleryRoute
     }
     '/api/trpc/$': {
       id: '/api/trpc/$'
@@ -1446,7 +808,6 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminDocCategoriesRoute: typeof AdminDocCategoriesRoute
   AdminDonorsRoute: typeof AdminDonorsRoute
-  AdminHeroRoute: typeof AdminHeroRoute
   AdminLanguagesRoute: typeof AdminLanguagesRoute
   AdminLocationsRoute: typeof AdminLocationsRoute
   AdminMediaRoute: typeof AdminMediaRoute
@@ -1457,7 +818,6 @@ interface AdminRouteChildren {
   AdminPublicationCategoriesRoute: typeof AdminPublicationCategoriesRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminStaffRoute: typeof AdminStaffRoute
-  AdminStatsRoute: typeof AdminStatsRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminPagesIdRoute: typeof AdminPagesIdRoute
   AdminPagesNewRoute: typeof AdminPagesNewRoute
@@ -1476,7 +836,6 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminDocCategoriesRoute: AdminDocCategoriesRoute,
   AdminDonorsRoute: AdminDonorsRoute,
-  AdminHeroRoute: AdminHeroRoute,
   AdminLanguagesRoute: AdminLanguagesRoute,
   AdminLocationsRoute: AdminLocationsRoute,
   AdminMediaRoute: AdminMediaRoute,
@@ -1487,7 +846,6 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminPublicationCategoriesRoute: AdminPublicationCategoriesRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminStaffRoute: AdminStaffRoute,
-  AdminStatsRoute: AdminStatsRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminPagesIdRoute: AdminPagesIdRoute,
   AdminPagesNewRoute: AdminPagesNewRoute,
@@ -1523,42 +881,6 @@ const InternalsourcesRouteWithChildren = InternalsourcesRoute._addFileChildren(
   InternalsourcesRouteChildren,
 )
 
-interface MediaPhotoGalleryRouteChildren {
-  MediaPhotoGallerySlugRoute: typeof MediaPhotoGallerySlugRoute
-}
-
-const MediaPhotoGalleryRouteChildren: MediaPhotoGalleryRouteChildren = {
-  MediaPhotoGallerySlugRoute: MediaPhotoGallerySlugRoute,
-}
-
-const MediaPhotoGalleryRouteWithChildren =
-  MediaPhotoGalleryRoute._addFileChildren(MediaPhotoGalleryRouteChildren)
-
-interface WhatWeDoImpactStoriesRouteChildren {
-  WhatWeDoImpactStoriesSlugRoute: typeof WhatWeDoImpactStoriesSlugRoute
-}
-
-const WhatWeDoImpactStoriesRouteChildren: WhatWeDoImpactStoriesRouteChildren = {
-  WhatWeDoImpactStoriesSlugRoute: WhatWeDoImpactStoriesSlugRoute,
-}
-
-const WhatWeDoImpactStoriesRouteWithChildren =
-  WhatWeDoImpactStoriesRoute._addFileChildren(
-    WhatWeDoImpactStoriesRouteChildren,
-  )
-
-interface WhoWeAreNewsRouteChildren {
-  WhoWeAreNewsSlugRoute: typeof WhoWeAreNewsSlugRoute
-}
-
-const WhoWeAreNewsRouteChildren: WhoWeAreNewsRouteChildren = {
-  WhoWeAreNewsSlugRoute: WhoWeAreNewsSlugRoute,
-}
-
-const WhoWeAreNewsRouteWithChildren = WhoWeAreNewsRoute._addFileChildren(
-  WhoWeAreNewsRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
@@ -1566,38 +888,11 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   InternalsourcesRoute: InternalsourcesRouteWithChildren,
   LoginRoute: LoginRoute,
-  CurrentProjectsSlugRoute: CurrentProjectsSlugRoute,
-  MediaAiDigitalRoute: MediaAiDigitalRoute,
-  MediaAnnualReportRoute: MediaAnnualReportRoute,
-  MediaENewsletterRoute: MediaENewsletterRoute,
-  MediaEscupSourcesRoute: MediaEscupSourcesRoute,
-  MediaLifeSkillsRoute: MediaLifeSkillsRoute,
-  MediaOtherPublicationsRoute: MediaOtherPublicationsRoute,
-  MediaPaperResearchRoute: MediaPaperResearchRoute,
-  MediaPhotoGalleryRoute: MediaPhotoGalleryRouteWithChildren,
-  MediaPoliciesRoute: MediaPoliciesRoute,
-  MediaProgramBrochureRoute: MediaProgramBrochureRoute,
-  MediaProgramReportRoute: MediaProgramReportRoute,
-  MediaVideoGalleryRoute: MediaVideoGalleryRoute,
-  OpportunitiesAlumniRoute: OpportunitiesAlumniRoute,
-  OpportunitiesCareersRoute: OpportunitiesCareersRoute,
-  OpportunitiesPartnerRoute: OpportunitiesPartnerRoute,
-  OpportunitiesScholarshipRoute: OpportunitiesScholarshipRoute,
-  OpportunitiesVolunteerRoute: OpportunitiesVolunteerRoute,
-  PastProjectsSlugRoute: PastProjectsSlugRoute,
   UploadsSplatRoute: UploadsSplatRoute,
-  WhatWeDoIctInnovationRoute: WhatWeDoIctInnovationRoute,
-  WhatWeDoImpactStoriesRoute: WhatWeDoImpactStoriesRouteWithChildren,
-  WhatWeDoLearningApplicationsRoute: WhatWeDoLearningApplicationsRoute,
-  WhoWeAreAboutRoute: WhoWeAreAboutRoute,
-  WhoWeAreNewsRoute: WhoWeAreNewsRouteWithChildren,
-  WhoWeArePartnersRoute: WhoWeArePartnersRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiFormsSplatRoute: ApiFormsSplatRoute,
   ApiMediaSplatRoute: ApiMediaSplatRoute,
   ApiTrpcSplatRoute: ApiTrpcSplatRoute,
-  WhoWeAreLeadershipSlugRoute: WhoWeAreLeadershipSlugRoute,
-  WhoWeAreLeadershipIndexRoute: WhoWeAreLeadershipIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

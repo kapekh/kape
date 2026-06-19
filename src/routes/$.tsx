@@ -1,53 +1,137 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
+import students from "@/assets/students.jpg.asset.json";
+import { AnnouncementPopup } from "@/components/AnnouncementPopup";
+import { ProjectView } from "@/components/ProjectView";
+import { SectionRenderer } from "@/components/sections/SectionRenderer";
 import { SubPage } from "@/components/SubPage";
+import { DEFAULT_LANG, stripLang } from "@/lib/i18n-config";
 
 /**
- * Generic page route: renders any DB-backed page by its slug (the full path).
- * Specific routes (index, /contact, /who-we-are/news, project/media pages, …)
- * take precedence; this splat catches the rest and looks them up in `pages`.
- * On a miss it checks `slug_redirects` and 301s to the page's current slug.
+ * The public catch-all + i18n router. Every content URL is language-prefixed
+ * (/en/…, /km/…); an unprefixed path 301s to the default-language prefix. The
+ * remaining path is resolved by `routes.resolve` into a page, a collection record,
+ * a redirect, or not-found. Adding a page or record needs no new route file.
  */
 export const Route = createFileRoute("/$")({
-	loaderDeps: ({ search }) => ({ lang: search.lang ?? "" }),
-	loader: async ({ context, deps, params }) => {
-		const slug = params._splat ?? "";
-		const page = await context.queryClient.ensureQueryData(
-			context.trpc.pages.bySlug.queryOptions({ slug, lang: deps.lang }),
-		);
-		if (!page) {
-			const to = await context.queryClient.ensureQueryData(
-				context.trpc.pages.redirect.queryOptions({ slug }),
-			);
-			if (to) throw redirect({ to: "/$", params: { _splat: to }, statusCode: 301 });
+	loader: async ({ context, params }) => {
+		const raw = params._splat ?? "";
+		const { lang, path, prefixed } = stripLang(`/${raw}`);
+		if (!prefixed) {
+			// No language prefix → canonical default-language URL.
+			throw redirect({ to: "/$", params: { _splat: path === "/" ? DEFAULT_LANG : `${DEFAULT_LANG}${path}` }, statusCode: 301 });
 		}
-		return page;
+		const slug = path === "/" ? "home" : path.replace(/^\//, "");
+		const resolved = await context.queryClient.ensureQueryData(
+			context.trpc.routes.resolve.queryOptions({ path: slug, lang }),
+		);
+		if (resolved.kind === "redirect") {
+			throw redirect({ to: "/$", params: { _splat: `${lang}/${resolved.to}` }, statusCode: 301 });
+		}
+		return resolved;
 	},
-	head: ({ loaderData }) => ({
-		meta: [{ title: loaderData ? `${loaderData.title} — KAPE` : "KAPE" }],
-	}),
-	component: DbPage,
+	head: ({ loaderData }) => {
+		const r = loaderData;
+		let title = "KAPE";
+		let description = "KAPE — access, quality and equity in education across Cambodia.";
+		let image: string | null = null;
+		if (r?.kind === "page" && r.page.slug === "home") {
+			title = "KAPE — Kampuchea Action to Promote Education";
+			description = "For more than three decades, KAPE has championed equitable, transformative education for Cambodian children — across 385+ schools, 15 provinces, and over 160,000 lives.";
+			image = students.url;
+		} else if (r?.kind === "page") {
+			title = `${r.page.title} — KAPE`;
+			description = r.page.excerpt || description;
+			image = r.page.coverUrl;
+		} else if (r?.kind === "article") {
+			title = `${r.post.title} — KAPE`;
+			description = r.post.excerpt || description;
+		} else if (r?.kind === "album") {
+			title = `${r.album.title} — KAPE`;
+		} else if (r?.kind === "project") {
+			title = `${r.project.name} — KAPE`;
+		}
+		const meta: Array<Record<string, string>> = [
+			{ title },
+			{ name: "description", content: description },
+			{ property: "og:title", content: title },
+			{ property: "og:description", content: description },
+		];
+		if (image) meta.push({ property: "og:image", content: image });
+		return { meta };
+	},
+	component: ResolvedRoute,
 });
 
-function DbPage() {
-	const page = Route.useLoaderData();
+function ResolvedRoute() {
+	const r = Route.useLoaderData();
 
-	if (!page) {
+	if (r.kind === "page") {
+		const page = r.page;
+		if (page.sections && page.sections.length > 0) {
+			return (
+				<main className="min-h-screen overflow-x-hidden text-foreground">
+					{page.slug === "home" && <AnnouncementPopup />}
+					<SectionRenderer sections={page.sections} />
+				</main>
+			);
+		}
 		return (
-			<SubPage section="KAPE" title="Page not found">
-				<p className="text-muted-foreground">This page doesn't exist or was moved.</p>
+			<SubPage section="KAPE" title={page.title} lead={page.excerpt || undefined} heroImage={page.coverUrl || undefined}>
+				<div
+					className="prose-kape"
+					// biome-ignore lint/security/noDangerouslySetInnerHtml: trusted, server-rendered
+					dangerouslySetInnerHTML={{ __html: page.bodyHtml }}
+				/>
 			</SubPage>
 		);
 	}
 
+	if (r.kind === "article") {
+		const post = r.post;
+		return (
+			<SubPage section={r.label} title={post.title} lead={post.excerpt || undefined}>
+				{post.publishedAt && (
+					<div className="text-xs text-[var(--accent)] font-semibold uppercase tracking-wider mb-6">
+						{post.publishedAt} · {post.author ?? "KAPE Cambodia"}
+					</div>
+				)}
+				<div
+					className="prose-kape"
+					// biome-ignore lint/security/noDangerouslySetInnerHtml: trusted, server-rendered
+					dangerouslySetInnerHTML={{ __html: post.bodyHtml }}
+				/>
+			</SubPage>
+		);
+	}
+
+	if (r.kind === "album") {
+		const album = r.album;
+		return (
+			<SubPage section={r.label} title={album.title} lead="Click any photo to view it larger.">
+				<div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+					{album.photos.map((p) => (
+						<figure key={p.url} className="group relative overflow-hidden rounded-2xl border border-border">
+							<img src={p.url} alt={p.caption} className="aspect-square w-full object-cover group-hover:scale-105 transition duration-700" />
+							{p.caption && (
+								<figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent text-white text-xs p-3 opacity-0 group-hover:opacity-100 transition">
+									{p.caption}
+								</figcaption>
+							)}
+						</figure>
+					))}
+				</div>
+			</SubPage>
+		);
+	}
+
+	if (r.kind === "project") {
+		return <ProjectView project={r.project} section={r.label} />;
+	}
+
 	return (
-		<SubPage section="KAPE" title={page.title}>
-			{/* Server-rendered from stored Tiptap JSON via our extension allow-list. */}
-			<div
-				className="prose-kape"
-				// biome-ignore lint/security/noDangerouslySetInnerHtml: trusted, server-rendered
-				dangerouslySetInnerHTML={{ __html: page.bodyHtml }}
-			/>
+		<SubPage section="KAPE" title="Page not found">
+			<p className="text-muted-foreground">This page doesn't exist or was moved.</p>
 		</SubPage>
 	);
 }

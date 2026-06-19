@@ -1,6 +1,7 @@
-import { Link, Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Link, Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
+import { AdminHeaderProvider } from "#/components/admin/AdminHeader";
 import { AdminIcon } from "#/components/admin/AdminIcon";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 
@@ -18,13 +19,6 @@ const NAV = [
 			{ to: "/admin/pages", label: "Pages", icon: "pages" },
 			{ to: "/admin/projects", label: "Projects", icon: "projects" },
 			{ to: "/admin/nav", label: "Navigation", icon: "nav" },
-		],
-	},
-	{
-		group: "Homepage",
-		items: [
-			{ to: "/admin/hero", label: "Hero slides", icon: "hero" },
-			{ to: "/admin/stats", label: "Impact stats", icon: "stats" },
 		],
 	},
 	{
@@ -64,6 +58,10 @@ function AdminLayout() {
 	const navigate = useNavigate();
 	const [ready, setReady] = useState(false);
 	const [email, setEmail] = useState("");
+	const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
+	// Full-bleed "studio" chrome (no padding / max-width) for the page builder.
+	const pathname = useRouterState({ select: (s) => s.location.pathname });
+	const studio = /^\/admin\/pages\/(new|\d+)/.test(pathname);
 
 	useEffect(() => {
 		let alive = true;
@@ -140,8 +138,8 @@ function AdminLayout() {
 
 			{/* Content column */}
 			<div className="flex-1 min-w-0 flex flex-col">
-				<header className="sticky top-0 z-20 h-16 shrink-0 border-b border-border bg-card/85 backdrop-blur flex items-center justify-between px-6 lg:px-8">
-					<div className="text-sm text-muted-foreground">Content management</div>
+				<header className="sticky top-0 z-20 h-16 shrink-0 border-b border-border bg-card/85 backdrop-blur flex items-center justify-between gap-4 px-4 lg:px-5">
+					<div ref={setHeaderSlot} className="flex min-w-0 flex-1 items-center gap-3" />
 					<div className="flex items-center gap-4">
 						<a href="/" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary hover:text-[var(--accent)] transition-colors">View site ↗</a>
 						<span className="h-5 w-px bg-border" />
@@ -156,11 +154,19 @@ function AdminLayout() {
 					</div>
 				</header>
 
-				<main className="flex-1 p-6 lg:p-8 overflow-x-hidden">
-					<div className="mx-auto max-w-[1600px]">
-						<Outlet />
-					</div>
-				</main>
+				<AdminHeaderProvider slot={headerSlot}>
+						{studio ? (
+							<main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden xl:overflow-hidden">
+								<Outlet />
+							</main>
+						) : (
+							<main className="flex-1 p-4 lg:p-5 overflow-x-hidden">
+								<div className="mx-auto max-w-[1600px]">
+									<Outlet />
+								</div>
+							</main>
+						)}
+					</AdminHeaderProvider>
 			</div>
 		</div>
 	);

@@ -8,7 +8,8 @@
   "scripts": {
     "dev": "bun --bun vite dev --port 3000",
     "generate-routes": "tsr generate",
-    "build": "bun --bun vite build",
+    "build": "bun scripts/gen-prerender-paths.ts && bun --bun vite build",
+    "prerender": "bun run build && bun scripts/prerender-static.ts",
     "preview": "bun --bun vite preview",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",

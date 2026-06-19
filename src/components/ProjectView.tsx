@@ -18,9 +18,11 @@ export function ProjectView({ project, section }: { project: ResolvedProject | n
 			badge={project.status === "current" ? "Current project" : "Past project"}
 		>
 			{project.donors.length > 0 && (
-				<div className="mb-6 text-sm">
-					<span className="font-semibold text-primary">Donor(s): </span>
-					{project.donors.join(" · ")}
+				<div className="mb-8 flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-muted/40 px-4 py-3 text-sm">
+					<span className="font-semibold text-primary">Supported by</span>
+					{project.donors.map((d) => (
+						<span key={d} className="rounded-full bg-card px-3 py-1 text-xs font-medium text-foreground/80 shadow-sm">{d}</span>
+					))}
 				</div>
 			)}
 			{/* biome-ignore lint/security/noDangerouslySetInnerHtml: trusted, server-rendered */}

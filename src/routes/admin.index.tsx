@@ -182,7 +182,7 @@ function Dashboard() {
 								{ to: "/admin/schools", label: "Schools" },
 								{ to: "/admin/nav", label: "Navigation" },
 								{ to: "/admin/media", label: "Media" },
-								{ to: "/admin/hero", label: "Hero slides" },
+								{ to: "/admin/pages", label: "Pages" },
 								{ to: "/admin/languages", label: "Languages" },
 								{ to: "/admin/settings", label: "Settings" },
 								{ to: "/admin/projects", label: "Projects" },

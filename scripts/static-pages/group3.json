@@ -1,0 +1,129 @@
+[
+  {
+    "slug": "opportunities/alumni",
+    "title": "Alumni Network",
+    "breadcrumb": "Opportunities",
+    "lead": "Reconnect with the KAPE community — former scholarship recipients, NGS graduates and staff.",
+    "badge": "Stay connected",
+    "heroImage": null,
+    "blocks": [
+      {
+        "type": "cards",
+        "title": "Why join",
+        "cols": 3,
+        "items": [
+          { "title": "Mentor a student", "body": "Share your career journey with the next generation." },
+          { "title": "Annual reunion", "body": "Yearly gathering in Kampong Cham — open to all alumni." },
+          { "title": "Job board", "body": "First access to roles at KAPE and partner organizations." }
+        ]
+      },
+      {
+        "type": "form",
+        "title": "Register",
+        "kind": "signup"
+      }
+    ]
+  },
+  {
+    "slug": "opportunities/careers",
+    "title": "Job Vacancies & Careers",
+    "breadcrumb": "Opportunities",
+    "lead": "Open positions and public bidding announcements.",
+    "badge": "Join us",
+    "heroImage": null,
+    "blocks": [
+      {
+        "type": "jobs",
+        "title": "Current openings"
+      }
+    ]
+  },
+  {
+    "slug": "opportunities/partner",
+    "title": "Partner with KAPE",
+    "breadcrumb": "Opportunities",
+    "lead": "Co-create lasting impact for Cambodian children, teachers and communities.",
+    "badge": "Collaborate",
+    "heroImage": null,
+    "blocks": [
+      {
+        "type": "cards",
+        "title": "Ways to partner",
+        "cols": 2,
+        "items": [
+          { "title": "Strategic donors", "body": "Multi-year funding for flagship programs like NGS, HCC and DEP." },
+          { "title": "Technical partners", "body": "Joint research, curriculum development and teacher training." },
+          { "title": "Corporate partners", "body": "CSR partnerships, in-kind support and employee engagement." },
+          { "title": "Implementation partners", "body": "Local NGOs co-delivering interventions on the ground." }
+        ]
+      },
+      {
+        "type": "richtext",
+        "title": "Get in touch",
+        "paragraphs": [
+          "Email our partnership team at kape@kapekh.org to explore how we can create lasting impact together."
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "opportunities/scholarship",
+    "title": "Scholarship Program",
+    "breadcrumb": "Opportunities",
+    "lead": "Empowering the future of Cambodian children through merit and need-based scholarships.",
+    "badge": "Apply now",
+    "heroImage": "https://picsum.photos/seed/kape-students/1600/1000",
+    "blocks": [
+      {
+        "type": "cards",
+        "title": "What's covered",
+        "cols": 3,
+        "items": [
+          { "title": "School fees", "body": "Full tuition for primary, lower-secondary and upper-secondary years." },
+          { "title": "Learning materials", "body": "Books, uniforms, stationery and digital devices where needed." },
+          { "title": "Mentorship", "body": "One-to-one mentor and quarterly check-ins." }
+        ]
+      },
+      {
+        "type": "richtext",
+        "title": "Eligibility",
+        "paragraphs": [
+          "Currently enrolled in a KAPE-partner school.",
+          "From a vulnerable or low-income household.",
+          "Demonstrated commitment to learning."
+        ]
+      },
+      {
+        "type": "form",
+        "title": "Online registration",
+        "kind": "contact"
+      }
+    ]
+  },
+  {
+    "slug": "opportunities/volunteer",
+    "title": "Volunteer with KAPE",
+    "breadcrumb": "Opportunities",
+    "lead": "Give your time and skills to Cambodian education — on the ground or remotely.",
+    "badge": "Make time count",
+    "heroImage": null,
+    "blocks": [
+      {
+        "type": "cards",
+        "title": "Volunteer roles",
+        "cols": 2,
+        "items": [
+          { "title": "Field volunteer", "body": "Spend a season working alongside teachers in NGS or HCC partner schools." },
+          { "title": "Reading coach", "body": "Help us run library and read-aloud sessions in primary schools." },
+          { "title": "Digital mentor", "body": "Coach students and teachers on digital literacy — onsite or online." },
+          { "title": "Translation & content", "body": "Translate stories and reports between Khmer and English from anywhere." }
+        ]
+      },
+      {
+        "type": "form",
+        "title": "Express interest",
+        "kind": "signup"
+      }
+    ]
+  }
+]

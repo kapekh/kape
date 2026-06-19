@@ -7,6 +7,7 @@
 import { defaultUiStrings } from "#/lib/ui-strings.default";
 import { hashPassword } from "./auth";
 import { db } from "./db";
+import { applyTreeMigrations } from "./migrate-tree";
 import {
 	contentTypes,
 	donors,
@@ -69,9 +70,125 @@ type SeedNav = {
 	children?: SeedNav[];
 };
 
+/**
+ * Mega-menu card metadata, keyed by `targetRef` (or the EN label for label-only
+ * containers). `brief` is the card description; `img` is a picsum seed used for
+ * the card background. Single source of truth — also consumed by the nav backfill.
+ */
+export const NAV_META: Record<string, { brief?: string; img: string }> = {
+	// Top-level sections (used by the mega-menu feature panel)
+	"Who We Are": { brief: "Our story, our people and the values behind our work.", img: "kape-who" },
+	"What We Do": { brief: "Programs and innovations improving education across Cambodia.", img: "kape-what" },
+	"Media & Publications": { brief: "Reports, research, galleries and resources.", img: "kape-media" },
+	Opportunities: { brief: "Ways to partner, work, study and give.", img: "kape-opp" },
+	// Who We Are
+	"who-we-are/about": { brief: "The largest local education NGO in Cambodia, across 15 provinces.", img: "kape-about" },
+	"who-we-are/news": { brief: "Latest stories, events and announcements from the field.", img: "kape-news" },
+	"who-we-are/fact-sheet": { brief: "Key facts, figures and milestones at a glance.", img: "kape-facts" },
+	"who-we-are/vision-mission": { brief: "The vision, mission and core values that guide us.", img: "kape-vision" },
+	"who-we-are/director-speech": { brief: "A message from our Executive Director.", img: "kape-director" },
+	"who-we-are/leadership": { brief: "Meet the team and see our organizational structure.", img: "kape-leaders" },
+	"who-we-are/partners": { brief: "The ministries, donors and organizations we work with.", img: "kape-partners" },
+	// What We Do
+	"Current Projects": { brief: "Programs we are running right now across Cambodia.", img: "kape-current" },
+	"Past Projects": { brief: "Completed initiatives and the impact they left behind.", img: "kape-past" },
+	"what-we-do/impact-stories": { brief: "Real stories of students and communities transformed.", img: "kape-impact" },
+	"what-we-do/ict-innovation": { brief: "Bringing technology and digital learning into classrooms.", img: "kape-ict" },
+	"what-we-do/learning-applications": { brief: "Apps and tools that extend learning beyond the classroom.", img: "kape-apps" },
+	// Media & Publications
+	"media/annual-report": { brief: "Our year in review — results, finances and highlights.", img: "kape-annual" },
+	"media/e-newsletter": { brief: "Periodic updates delivered to your inbox.", img: "kape-newsletter" },
+	"media/program-brochure": { brief: "Overviews of each KAPE program.", img: "kape-brochure" },
+	"media/program-report": { brief: "Detailed reporting on program activities and outcomes.", img: "kape-report" },
+	"media/photo-gallery": { brief: "Faces and moments from across our work.", img: "kape-photo" },
+	"media/video-gallery": { brief: "Watch stories from the classroom and the field.", img: "kape-video" },
+	"media/paper-research": { brief: "Studies and academic papers produced by KAPE.", img: "kape-research" },
+	"media/other-publications": { brief: "Guides, toolkits and assorted materials.", img: "kape-pubs" },
+	"media/escup-sources": { brief: "Resources from the ESCUP program.", img: "kape-escup" },
+	"media/life-skills": { brief: "Materials on life-skills education for young people.", img: "kape-lifeskills" },
+	"media/ai-digital": { brief: "Our work on AI literacy and digital education.", img: "kape-ai" },
+	"media/policies": { brief: "Policies, regulations and governance documents.", img: "kape-policies" },
+	// Media & Publications groups
+	"Reports & Updates": { brief: "Annual & program reports, brochures and newsletters.", img: "kape-grp-reports" },
+	Galleries: { brief: "Photos and videos from across our work.", img: "kape-grp-galleries" },
+	"Research & Publications": { brief: "Studies, papers and assorted resources.", img: "kape-grp-research" },
+	"Thematic Resources": { brief: "Materials on key education themes.", img: "kape-grp-thematic" },
+	// Opportunities
+	"opportunities/partner": { brief: "Collaborate with us to expand quality education.", img: "kape-collab" },
+	"opportunities/careers": { brief: "Open positions and how to join our team.", img: "kape-careers" },
+	"opportunities/alumni": { brief: "Reconnect with the KAPE alumni community.", img: "kape-alumni" },
+	"opportunities/scholarship": { brief: "Scholarship programs for Cambodian students.", img: "kape-scholarship" },
+	"opportunities/volunteer": { brief: "Give your time and skills to our mission.", img: "kape-volunteer" },
+	// Current projects (brief = full project name where it differs from the code)
+	"current-projects/ngs": { brief: "New Generation Schools", img: "kape-proj-ngs" },
+	"current-projects/ngprc": { brief: "New Generation Pedagogical Research Center", img: "kape-proj-ngprc" },
+	"current-projects/hcc": { brief: "Happy Cambodian Children", img: "kape-proj-hcc" },
+	"current-projects/class": { img: "kape-proj-class" },
+	"current-projects/iep": { brief: "Inclusive Education Project", img: "kape-proj-iep" },
+	"current-projects/dep": { brief: "Digital Education Project", img: "kape-proj-dep" },
+	"current-projects/mldp": { img: "kape-proj-mldp" },
+	"current-projects/equal-i3l": { img: "kape-proj-equal" },
+	"current-projects/llse": { brief: "Life-Long Skills Education", img: "kape-proj-llse" },
+	// Past projects
+	"past-projects/ibec": { brief: "Improved Basic Education in Cambodia", img: "kape-proj-ibec" },
+	"past-projects/e2l": { brief: "Enabling Education for Learning", img: "kape-proj-e2l" },
+	"past-projects/lslag": { img: "kape-proj-lslag" },
+	"past-projects/seek": { img: "kape-proj-seek" },
+	"past-projects/kyla": { img: "kape-proj-kyla" },
+	"past-projects/sfe": { brief: "Schools for Empowerment", img: "kape-proj-sfe" },
+	"past-projects/bfc": { brief: "Books for Cambodia", img: "kape-proj-bfc" },
+	"past-projects/escup": { brief: "Educational support for underserved communities", img: "kape-proj-escup" },
+	"past-projects/bsi": { brief: "Beacon Schools Initiative", img: "kape-proj-bsi" },
+};
+
+/** Look up a node's card metadata by its ref (or label for containers). */
+export function navMetaFor(n: { ref: string; en: string }) {
+	return NAV_META[n.ref] ?? NAV_META[n.en];
+}
+
+/** Labels for the Media & Publications leaf items, keyed by targetRef. */
+const MEDIA_ITEMS: Record<string, { en: string; km: string }> = {
+	"media/annual-report": { en: "Annual Report", km: "របាយការណ៍ប្រចាំឆ្នាំ" },
+	"media/program-report": { en: "Program Report", km: "របាយការណ៍កម្មវិធី" },
+	"media/program-brochure": { en: "Program Brochure", km: "ប័ណ្ណកម្មវិធី" },
+	"media/e-newsletter": { en: "E-Newsletter", km: "ព្រឹត្តិបត្រអេឡិចត្រូនិក" },
+	"media/photo-gallery": { en: "Photo Gallery", km: "វិចិត្រសាលរូបភាព" },
+	"media/video-gallery": { en: "Video Gallery", km: "វិចិត្រសាលវីដេអូ" },
+	"media/paper-research": { en: "Paper Research", km: "ឯកសារស្រាវជ្រាវ" },
+	"media/other-publications": { en: "Other Publications", km: "ឯកសារផ្សេងៗ" },
+	"media/escup-sources": { en: "ESCUP Sources", km: "ប្រភព ESCUP" },
+	"media/life-skills": { en: "Life Skills Education", km: "ការអប់រំជំនាញជីវិត" },
+	"media/ai-digital": { en: "AI and Digital Education", km: "AI និងការអប់រំឌីជីថល" },
+	"media/policies": { en: "Policies and Regulations", km: "គោលនយោបាយ និងបទបញ្ជា" },
+};
+
+/** Section grouping for the Media & Publications menu (also used by the regroup script). */
+export const MEDIA_GROUPS: { en: string; km: string; refs: string[] }[] = [
+	{ en: "Reports & Updates", km: "របាយការណ៍ និងព័ត៌មាន", refs: ["media/annual-report", "media/program-report", "media/program-brochure", "media/e-newsletter"] },
+	{ en: "Galleries", km: "វិចិត្រសាល", refs: ["media/photo-gallery", "media/video-gallery"] },
+	{ en: "Research & Publications", km: "ការស្រាវជ្រាវ និងការបោះពុម្ព", refs: ["media/paper-research", "media/other-publications", "media/escup-sources"] },
+	{ en: "Thematic Resources", km: "ធនធានតាមប្រធានបទ", refs: ["media/life-skills", "media/ai-digital", "media/policies"] },
+];
+
+/** Create a picsum-backed media row and return its id (used for nav card images). */
+async function createPicsumMedia(seed: string): Promise<number> {
+	const [m] = await db
+		.insert(media)
+		.values({
+			tenantId: TENANT,
+			r2Key: `seed/nav-${seed}.jpg`,
+			url: `https://picsum.photos/seed/${seed}/640/400`,
+			contentType: "image/jpeg",
+		})
+		.returning({ id: media.id });
+	return m.id;
+}
+
 async function addNavTree(nodes: SeedNav[], parentId: number | null) {
 	for (let i = 0; i < nodes.length; i++) {
 		const n = nodes[i];
+		const meta = navMetaFor(n);
+		const imageMediaId = meta ? await createPicsumMedia(meta.img) : null;
 		const [row] = await db
 			.insert(navItems)
 			.values({
@@ -81,9 +198,13 @@ async function addNavTree(nodes: SeedNav[], parentId: number | null) {
 				targetKind: n.kind,
 				targetRef: n.ref,
 				visible: true,
+				imageMediaId,
 			})
 			.returning({ id: navItems.id });
-		await addTranslations("nav_item", row.id, { label: { en: n.en, km: n.km } });
+		await addTranslations("nav_item", row.id, {
+			label: { en: n.en, km: n.km },
+			...(meta?.brief ? { description: { en: meta.brief } } : {}),
+		});
 		if (n.children?.length) await addNavTree(n.children, row.id);
 	}
 }
@@ -179,20 +300,13 @@ async function main() {
 		},
 		{
 			kind: "none", ref: "", en: "Media & Publications", km: "ប្រព័ន្ធផ្សព្វផ្សាយ",
-			children: [
-				p("media/annual-report", "Annual Report", "របាយការណ៍ប្រចាំឆ្នាំ"),
-				p("media/e-newsletter", "E-Newsletter", "ព្រឹត្តិបត្រអេឡិចត្រូនិក"),
-				p("media/program-brochure", "Program Brochure", "ប័ណ្ណកម្មវិធី"),
-				p("media/program-report", "Program Report", "របាយការណ៍កម្មវិធី"),
-				p("media/photo-gallery", "Photo Gallery", "វិចិត្រសាលរូបភាព"),
-				p("media/video-gallery", "Video Gallery", "វិចិត្រសាលវីដេអូ"),
-				p("media/paper-research", "Paper Research", "ឯកសារស្រាវជ្រាវ"),
-				p("media/other-publications", "Other Publications", "ឯកសារផ្សេងៗ"),
-				p("media/escup-sources", "ESCUP Sources", "ប្រភព ESCUP"),
-				p("media/life-skills", "Life Skills Education", "ការអប់រំជំនាញជីវិត"),
-				p("media/ai-digital", "AI and Digital Education", "AI និងការអប់រំឌីជីថល"),
-				p("media/policies", "Policies and Regulations", "គោលនយោបាយ និងបទបញ្ជា"),
-			],
+			children: MEDIA_GROUPS.map((g) => ({
+				kind: "none",
+				ref: "",
+				en: g.en,
+				km: g.km,
+				children: g.refs.map((r) => p(r, MEDIA_ITEMS[r].en, MEDIA_ITEMS[r].km)),
+			})),
 		},
 		{
 			kind: "none", ref: "", en: "Opportunities", km: "ឱកាស",
@@ -681,7 +795,12 @@ async function main() {
 		role: "admin",
 	});
 
-	console.log("Seed complete: 2 languages, UI strings, content types, full nav tree, 5 pages, 3 news, 2 stories.");
+	// Transform the base content into the page-tree + flat-collection model:
+	// landing pages, migrated static section pages, the section-built home page,
+	// the parent/segment tree, and flattened nav targets.
+	await applyTreeMigrations(db);
+
+	console.log("Seed complete: 2 languages, UI strings, content types, full nav tree, page tree + collections, home page, 3 news, 2 stories.");
 	console.log(`Admin login: ${adminEmail} / ${adminPassword}`);
 	console.log("Staff login: staff@kapekh.org / kape-staff-2026");
 }

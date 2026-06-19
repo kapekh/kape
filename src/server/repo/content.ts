@@ -1,9 +1,11 @@
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 
+import type { SectionNode } from "#/lib/sections";
 import type { DB } from "../db";
 import { renderBody } from "../richtext";
 import { media, pages, postMedia, posts, slugRedirects, terms } from "../schema";
 import { resolveOne, resolveTranslations } from "./i18n";
+import { resolveSections } from "./sections";
 
 const TENANT = 1;
 
@@ -30,11 +32,14 @@ export type ResolvedPage = {
 	slug: string;
 	status: string;
 	title: string;
+	excerpt: string; // brief — used for the menu card + SEO meta description
+	coverUrl: string | null; // hero/cover image — used for the card + og:image
 	body: string | null; // ProseMirror JSON (string) or null
 	bodyHtml: string; // server-rendered HTML
+	sections: SectionNode[] | null; // page-builder sections (dynamic ones already resolved)
 };
 
-/** A published page by slug, with title/body resolved for `lang`. */
+/** A published page by slug, with title/excerpt/body resolved for `lang`. */
 export async function getPageBySlug(
 	db: DB,
 	slug: string,
@@ -48,13 +53,24 @@ export async function getPageBySlug(
 	if (!page) return null;
 
 	const fields = await resolveOne(db, "page", page.id, lang);
+	let coverUrl: string | null = null;
+	if (page.heroMediaId != null) {
+		const [m] = await db.select({ url: media.url }).from(media).where(eq(media.id, page.heroMediaId)).limit(1);
+		coverUrl = m?.url ?? null;
+	}
+	const sections = Array.isArray(page.sections) && page.sections.length
+		? await resolveSections(db, page.sections, lang)
+		: null;
 	return {
 		id: page.id,
 		slug: page.slug,
 		status: page.status,
 		title: fields.title ?? "",
+		excerpt: fields.excerpt ?? "",
+		coverUrl,
 		body: fields.body ?? null,
 		bodyHtml: renderBody(fields.body ?? null),
+		sections,
 	};
 }
 
@@ -65,6 +81,7 @@ export type PostListItem = {
 	publishedAt: string | null;
 	title: string;
 	excerpt: string;
+	image: string | null; // cover image URL (null → renderer supplies a fallback)
 };
 
 /** Published posts of a given content type, newest first, with title/excerpt resolved. */
@@ -93,6 +110,11 @@ export async function listPosts(
 		rows.map((r) => r.id),
 		lang,
 	);
+	const coverIds = [...new Set(rows.map((r) => r.coverMediaId).filter((v): v is number => v != null))];
+	const covers = new Map<number, string | null>();
+	if (coverIds.length) {
+		for (const m of await db.select({ id: media.id, url: media.url }).from(media).where(inArray(media.id, coverIds))) covers.set(m.id, m.url);
+	}
 
 	return rows.map((r) => ({
 		id: r.id,
@@ -101,6 +123,7 @@ export async function listPosts(
 		publishedAt: r.publishedAt,
 		title: fields.get(r.id)?.title ?? "",
 		excerpt: fields.get(r.id)?.excerpt ?? "",
+		image: r.coverMediaId != null ? covers.get(r.coverMediaId) ?? null : null,
 	}));
 }
 

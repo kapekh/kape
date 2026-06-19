@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import type { AnySQLiteColumn } from "drizzle-orm/sqlite-core";
 import {
 	foreignKey,
 	index,
@@ -8,6 +9,8 @@ import {
 	text,
 	unique,
 } from "drizzle-orm/sqlite-core";
+
+import type { SectionNode } from "#/lib/sections";
 
 /**
  * KAPE CMS schema — single source of truth (Drizzle / SQLite).
@@ -152,9 +155,15 @@ export const pages = sqliteTable(
 			.notNull()
 			.default(1)
 			.references(() => tenants.id),
-		slug: text("slug").notNull(),
+		slug: text("slug").notNull(), // canonical FULL path (e.g. "who-we-are/about"); unique; the lookup key
+		// Notion-style page tree. `parentId` is the structural parent; `segment` is the
+		// editable last path part (e.g. "about"); `slug` is recomputed = parent.slug + "/" + segment.
+		parentId: integer("parent_id").references((): AnySQLiteColumn => pages.id),
+		segment: text("segment"), // editable last path segment (null only for legacy rows before backfill)
+		sortOrder: integer("sort_order").notNull().default(0), // order among siblings
 		status: text("status").notNull().default("draft"),
 		heroMediaId: integer("hero_media_id").references(() => media.id),
+		sections: text("sections", { mode: "json" }).$type<SectionNode[]>(), // page-builder section tree
 		...timestamps,
 	},
 	(t) => [unique("uq_page_slug").on(t.tenantId, t.slug)],
@@ -174,6 +183,7 @@ export const navItems = sqliteTable(
 		targetKind: text("target_kind").notNull(), // page | post_list | post | url | view
 		targetRef: text("target_ref").notNull(),
 		visible: integer("visible", { mode: "boolean" }).notNull().default(true),
+		imageMediaId: integer("image_media_id").references(() => media.id), // mega-menu card background
 		...timestamps,
 	},
 	(t) => [
@@ -220,6 +230,20 @@ export const slugRedirects = sqliteTable(
 	},
 	(t) => [unique("uq_redirect").on(t.tenantId, t.entityType, t.fromSlug)],
 );
+
+/**
+ * Incremental-SSG render cache: resolved route data keyed by path+lang. Populated
+ * read-through on first request (and by scripts/prerender.ts); invalidated by tag
+ * when content changes. `tags` is a `|`-delimited tag list for LIKE-based busting.
+ */
+export const renderCache = sqliteTable("render_cache", {
+	key: text("key").primaryKey(), // `${lang}::${path}`
+	data: text("data").notNull(), // JSON-serialized resolved route
+	tags: text("tags").notNull().default("||"), // |tag1|tag2|
+	createdAt: text("created_at")
+		.notNull()
+		.default(sql`(datetime('now'))`),
+});
 
 /** Staff directory (genuinely tabular; bilingual via explicit columns per spec). */
 export const staff = sqliteTable("staff", {

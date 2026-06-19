@@ -1,5 +1,7 @@
-import { useNavigate } from "@tanstack/react-router";
+import { useRouterState } from "@tanstack/react-router";
 import { Fragment, createContext, useContext, useEffect, type ReactNode } from "react";
+
+import { isFunctional, stripLang } from "./i18n-config";
 
 export type LangInfo = { code: string; name: string; nativeName: string };
 
@@ -57,11 +59,19 @@ export function useT() {
 /** Renders one button per enabled language; clicking updates the `?lang=` param. */
 export function LanguageSwitcher({ className = "" }: { className?: string }) {
 	const { lang, languages } = useLang();
-	const navigate = useNavigate();
+	const pathname = useRouterState({ select: (s) => s.location.pathname });
 	const list =
 		languages.length > 0
 			? languages
 			: [{ code: "en", name: "English", nativeName: "English" }];
+
+	// Switch language by navigating to the same content path under the new prefix
+	// (full load so the header/footer/strings re-render in the new language).
+	function switchTo(code: string) {
+		const { path } = stripLang(pathname);
+		const target = isFunctional(path) ? path : `/${code}${path === "/" ? "" : path}`;
+		window.location.assign(target || `/${code}`);
+	}
 
 	return (
 		<div className={`inline-flex items-center gap-1 text-xs ${className}`}>
@@ -70,9 +80,7 @@ export function LanguageSwitcher({ className = "" }: { className?: string }) {
 					{i > 0 && <span className="opacity-50">|</span>}
 					<button
 						type="button"
-						onClick={() =>
-							navigate({ to: ".", search: (prev: Record<string, unknown>) => ({ ...prev, lang: l.code }) })
-						}
+						onClick={() => switchTo(l.code)}
 						aria-pressed={lang === l.code}
 						className={`px-2 py-0.5 rounded-full transition ${l.code === "km" ? "font-khmer" : ""} ${
 							lang === l.code

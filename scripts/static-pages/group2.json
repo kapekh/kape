@@ -1,0 +1,189 @@
+[
+  {
+    "slug": "media/ai-digital",
+    "title": "AI and Digital Education",
+    "breadcrumb": "Media & Publications",
+    "lead": "Tools, training and research for responsible AI integration in classrooms.",
+    "badge": "DEP · AIR ASEAN",
+    "heroImage": "https://picsum.photos/seed/kape-computerlab/1600/1000",
+    "blocks": [
+      {
+        "type": "cards",
+        "title": "Focus areas",
+        "cols": 3,
+        "items": [
+          { "title": "AI literacy", "body": "Foundational AI concepts for teachers and students." },
+          { "title": "Digital pedagogy", "body": "Blending classroom and online learning." },
+          { "title": "Responsible use", "body": "Ethics, privacy and safety in the AI era." }
+        ]
+      },
+      {
+        "type": "resources",
+        "title": "Resources",
+        "items": [
+          { "kind": "pdf", "title": "AI for Teachers — Starter Pack" },
+          { "kind": "pdf", "title": "Digital Education Framework 2026" },
+          { "kind": "pdf", "title": "Khmer AI Literacy Curriculum (Grade 7-9)" }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "media/annual-report",
+    "title": "Annual Reports",
+    "breadcrumb": "Media & Publications",
+    "lead": "A year-by-year record of KAPE's reach, results and finances.",
+    "badge": "PDF library",
+    "heroImage": null,
+    "blocks": [
+      { "type": "publications", "title": "", "category": "annual-report" }
+    ]
+  },
+  {
+    "slug": "media/e-newsletter",
+    "title": "E-Newsletter",
+    "breadcrumb": "Media & Publications",
+    "lead": "Quarterly stories, milestones and project updates — delivered to your inbox.",
+    "badge": "Stay in touch",
+    "heroImage": null,
+    "blocks": [
+      { "type": "form", "title": "Subscribe", "kind": "subscribe" },
+      {
+        "type": "resources",
+        "title": "Recent issues",
+        "items": [
+          { "kind": "pdf", "title": "KAPE Newsletter — Q1 2026", "meta": "8 pages · 1.4 MB" },
+          { "kind": "pdf", "title": "KAPE Newsletter — Q4 2025", "meta": "8 pages · 1.4 MB" },
+          { "kind": "pdf", "title": "KAPE Newsletter — Q3 2025", "meta": "8 pages · 1.4 MB" },
+          { "kind": "pdf", "title": "KAPE Newsletter — Q2 2025", "meta": "8 pages · 1.4 MB" }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "media/escup-sources",
+    "title": "ESCUP Sources",
+    "breadcrumb": "Media & Publications",
+    "lead": "Archive of curricula, training materials and reports from the ESCUP project.",
+    "badge": "Archive",
+    "heroImage": null,
+    "blocks": [
+      {
+        "type": "resources",
+        "title": "ESCUP archive",
+        "items": [
+          { "kind": "pdf", "title": "ESCUP Final Evaluation Report", "meta": "Legacy project" },
+          { "kind": "pdf", "title": "ESCUP Teacher Training Modules", "meta": "Legacy project" },
+          { "kind": "pdf", "title": "ESCUP Curriculum Pack", "meta": "Legacy project" },
+          { "kind": "pdf", "title": "ESCUP Lessons Learned", "meta": "Legacy project" }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "media/life-skills",
+    "title": "Life Skills Education",
+    "breadcrumb": "Media & Publications",
+    "lead": "Curricula and toolkits to support adolescents' health, citizenship and livelihoods.",
+    "badge": "LLSE + LSLAG",
+    "heroImage": null,
+    "blocks": [
+      {
+        "type": "cards",
+        "title": "Themes",
+        "cols": 3,
+        "items": [
+          { "title": "Health & well-being", "body": "Hygiene, nutrition, reproductive health." },
+          { "title": "Financial literacy", "body": "Saving, budgeting, livelihood skills." },
+          { "title": "Digital citizenship", "body": "Online safety, AI awareness, media literacy." }
+        ]
+      },
+      {
+        "type": "resources",
+        "title": "Downloads",
+        "items": [
+          { "kind": "pdf", "title": "LLSE Facilitator Guide" },
+          { "kind": "pdf", "title": "LSLAG Adolescent Girls Curriculum" },
+          { "kind": "pdf", "title": "Life Skills Posters Pack" }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "media/other-publications",
+    "title": "Other Publications",
+    "breadcrumb": "Media & Publications",
+    "lead": "Manuals, toolkits, posters and supplementary materials.",
+    "badge": "Library",
+    "heroImage": null,
+    "blocks": [
+      {
+        "type": "resources",
+        "title": "Recently published",
+        "items": [
+          { "kind": "pdf", "title": "Teacher Mentoring Manual" },
+          { "kind": "pdf", "title": "School Director Handbook" },
+          { "kind": "pdf", "title": "Parent Engagement Toolkit" },
+          { "kind": "pdf", "title": "Khmer Reading Posters" },
+          { "kind": "pdf", "title": "Child Protection Guide" },
+          { "kind": "pdf", "title": "STEM Lab Setup Guide" }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "media/paper-research",
+    "title": "Paper Research",
+    "breadcrumb": "Media & Publications",
+    "lead": "Research papers and studies.",
+    "badge": "PDF library",
+    "heroImage": null,
+    "blocks": [
+      { "type": "publications", "title": "", "category": "paper-research" }
+    ]
+  },
+  {
+    "slug": "media/policies",
+    "title": "Policies and Regulations",
+    "breadcrumb": "Media & Publications",
+    "lead": "Our organizational policies, codes and safeguarding standards.",
+    "badge": "Governance",
+    "heroImage": null,
+    "blocks": [
+      {
+        "type": "resources",
+        "title": "Key documents",
+        "items": [
+          { "kind": "pdf", "title": "Child Safeguarding Policy" },
+          { "kind": "pdf", "title": "Code of Conduct" },
+          { "kind": "pdf", "title": "Anti-Fraud Policy" },
+          { "kind": "pdf", "title": "Procurement Manual" },
+          { "kind": "pdf", "title": "Data Protection Policy" },
+          { "kind": "pdf", "title": "Whistleblower Policy" }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "media/program-brochure",
+    "title": "Program Brochures",
+    "breadcrumb": "Media & Publications",
+    "lead": "Programme brochures and one-pagers.",
+    "badge": "PDF library",
+    "heroImage": null,
+    "blocks": [
+      { "type": "publications", "title": "", "category": "program-brochure" }
+    ]
+  },
+  {
+    "slug": "media/program-report",
+    "title": "Program Reports",
+    "breadcrumb": "Media & Publications",
+    "lead": "Project and programme reports.",
+    "badge": "PDF library",
+    "heroImage": null,
+    "blocks": [
+      { "type": "publications", "title": "", "category": "program-report" }
+    ]
+  }
+]

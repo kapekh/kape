@@ -1,0 +1,1 @@
+ALTER TABLE `nav_items` ADD `image_media_id` integer REFERENCES media(id);

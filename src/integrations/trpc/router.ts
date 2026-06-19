@@ -49,6 +49,7 @@ import {
   deleteMedia,
   deleteNavItem,
   deletePage,
+  movePage,
   deletePost,
   deleteTerm,
   getPageForEdit,
@@ -68,6 +69,10 @@ import {
   deleteStaff,
   updateStaff,
 } from '#/server/repo/admin'
+import type { PageInput } from '#/server/repo/admin'
+import { resolveSections } from '#/server/repo/sections'
+import { resolveRouteCached } from '#/server/repo/route'
+import type { SectionNode } from '#/lib/sections'
 import {
   findPageRedirect,
   getAlbum,
@@ -198,6 +203,13 @@ const pagesRouter = {
     .query(({ ctx, input }) => findPageRedirect(ctx.db, input.slug)),
 } satisfies TRPCRouterRecord
 
+// Single resolver for the public catch-all route (page tree + flat collections + redirects).
+const routesRouter = {
+  resolve: publicProcedure
+    .input(langInput.extend({ path: z.string() }))
+    .query(({ ctx, input }) => resolveRouteCached(ctx.db, input.path, input.lang)),
+} satisfies TRPCRouterRecord
+
 // Internal-only content types must never be served by public procedures.
 const PUBLIC_BLOCKED_TYPES = new Set(['internal_news', 'document', 'event', 'announcement'])
 
@@ -239,10 +251,31 @@ const postsRouter = {
     .mutation(({ ctx, input }) => trackDownload(ctx.db, input.id)),
 } satisfies TRPCRouterRecord
 
+const sectionNodeSchema: z.ZodType = z.object({
+  id: z.string(),
+  type: z.string(),
+  layout: z.string().optional(),
+  props: z.record(z.string(), z.unknown()).optional(),
+  query: z
+    .object({
+      source: z.string(),
+      contentType: z.string().optional(),
+      status: z.string().optional(),
+      category: z.string().optional(),
+      limit: z.number().optional(),
+      sort: z.enum(['newest', 'oldest']).optional(),
+    })
+    .optional(),
+})
+
 const pageInput = z.object({
-  slug: z.string().min(1),
+  slug: z.string().default(''), // derived from parentId + segment on the server
+  segment: z.string().min(1),
+  parentId: z.number().nullable().default(null),
   status: z.enum(['draft', 'published']),
-  translations: z.array(z.object({ lang: z.string(), title: z.string(), body: z.string() })),
+  coverMediaId: z.number().nullable(),
+  sections: z.array(sectionNodeSchema).default([]),
+  translations: z.array(z.object({ lang: z.string(), title: z.string(), excerpt: z.string(), body: z.string() })),
 })
 
 const navInput = z.object({
@@ -250,7 +283,9 @@ const navInput = z.object({
   targetKind: z.enum(['page', 'post_list', 'post', 'url', 'view', 'none']),
   targetRef: z.string(),
   visible: z.boolean(),
+  imageMediaId: z.number().nullable(),
   labels: z.record(z.string(), z.string()),
+  descriptions: z.record(z.string(), z.string()),
 })
 
 // Admin-only post management (requires the admin role).
@@ -275,13 +310,19 @@ const adminPagesRouter = {
   get: adminProcedure
     .input(z.object({ id: z.number() }))
     .query(({ ctx, input }) => getPageForEdit(ctx.db, input.id)),
-  create: adminProcedure.input(pageInput).mutation(({ ctx, input }) => createPage(ctx.db, input)),
+  preview: adminProcedure
+    .input(z.object({ sections: z.array(sectionNodeSchema), lang: z.string().optional() }))
+    .query(({ ctx, input }) => resolveSections(ctx.db, input.sections as SectionNode[], input.lang ?? 'en')),
+  create: adminProcedure.input(pageInput).mutation(({ ctx, input }) => createPage(ctx.db, input as PageInput)),
   update: adminProcedure
     .input(pageInput.extend({ id: z.number() }))
-    .mutation(({ ctx, input }) => updatePage(ctx.db, input.id, input)),
+    .mutation(({ ctx, input }) => updatePage(ctx.db, input.id, input as PageInput)),
   delete: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(({ ctx, input }) => deletePage(ctx.db, input.id)),
+  move: adminProcedure
+    .input(z.object({ id: z.number(), parentId: z.number().nullable(), index: z.number() }))
+    .mutation(({ ctx, input }) => movePage(ctx.db, input.id, input.parentId, input.index)),
 } satisfies TRPCRouterRecord
 
 const languageInput = z.object({
@@ -468,6 +509,7 @@ export const trpcRouter = createTRPCRouter({
   i18n: i18nRouter,
   nav: navRouter,
   pages: pagesRouter,
+  routes: routesRouter,
   posts: postsRouter,
   adminPosts: adminPostsRouter,
   adminPages: adminPagesRouter,

@@ -8,6 +8,34 @@
       "when": 1781716281865,
       "tag": "0000_small_ken_ellis",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1781839537442,
+      "tag": "0001_late_marvex",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1781853656234,
+      "tag": "0002_conscious_wind_dancer",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1781865723678,
+      "tag": "0003_brief_dormammu",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1781872675203,
+      "tag": "0004_big_lucky_pierre",
+      "breakpoints": true
     }
   ]
 }

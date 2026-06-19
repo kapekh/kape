@@ -1,5 +1,6 @@
-import { and, asc, count, desc, eq, inArray, ne } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNull, ne } from "drizzle-orm";
 
+import type { SectionNode } from "#/lib/sections";
 import type { DB } from "../db";
 import {
 	alumniRegistrations,
@@ -260,12 +261,53 @@ export function listContentTypes(db: DB) {
 
 /* ---------------- Pages ---------------- */
 
-const PAGE_FIELDS = ["title", "body"] as const;
+const PAGE_FIELDS = ["title", "excerpt", "body"] as const;
 export type PageInput = {
-	slug: string;
+	slug: string; // ignored on write — derived from parentId + segment
+	segment: string; // editable last path part
+	parentId: number | null; // tree parent (null = root)
 	status: string;
-	translations: { lang: string; title: string; body: string }[];
+	coverMediaId: number | null;
+	sections: SectionNode[];
+	translations: { lang: string; title: string; excerpt: string; body: string }[];
 };
+
+/** Full path for a page = parent's slug + "/" + segment (segment alone at root). */
+async function slugFor(db: DB, parentId: number | null, segment: string): Promise<string> {
+	const seg = segment.replace(/^\/+|\/+$/g, "");
+	if (!parentId) return seg;
+	const [p] = await db.select({ slug: pages.slug }).from(pages).where(eq(pages.id, parentId)).limit(1);
+	return p ? `${p.slug}/${seg}` : seg;
+}
+
+/** Next sort order among a parent's children. */
+async function nextSortOrder(db: DB, parentId: number | null): Promise<number> {
+	const rows = await db.select({ s: pages.sortOrder }).from(pages).where(and(eq(pages.tenantId, TENANT), parentId == null ? isNull(pages.parentId) : eq(pages.parentId, parentId)));
+	return rows.reduce((m, r) => Math.max(m, (r.s ?? 0) + 1), 0);
+}
+
+/**
+ * Recompute slugs for a subtree after a node's slug changed (rename or reparent),
+ * recording a 301 redirect for every page whose URL moved. `newSlug` is the node's
+ * freshly-computed path.
+ */
+async function recomputeSubtree(db: DB, rootId: number, newSlug: string): Promise<void> {
+	const all = await db.select({ id: pages.id, parentId: pages.parentId, segment: pages.segment, slug: pages.slug }).from(pages).where(eq(pages.tenantId, TENANT));
+	const childrenOf = new Map<number, typeof all>();
+	for (const p of all) {
+		if (p.parentId == null) continue;
+		(childrenOf.get(p.parentId) ?? childrenOf.set(p.parentId, []).get(p.parentId)!).push(p);
+	}
+	const walk = async (id: number, slug: string, oldSlug: string) => {
+		if (slug !== oldSlug) {
+			await db.update(pages).set({ slug }).where(eq(pages.id, id));
+			await db.insert(slugRedirects).values({ tenantId: TENANT, entityType: "page", fromSlug: oldSlug, toEntityId: id }).onConflictDoNothing();
+		}
+		for (const c of childrenOf.get(id) ?? []) await walk(c.id, `${slug}/${c.segment}`, c.slug);
+	};
+	const root = all.find((p) => p.id === rootId);
+	await walk(rootId, newSlug, root?.slug ?? newSlug);
+}
 
 export async function adminListPages(db: DB) {
 	const rows = await db.select().from(pages).where(eq(pages.tenantId, TENANT)).orderBy(desc(pages.id));
@@ -281,7 +323,7 @@ export async function adminListPages(db: DB) {
 	}
 	return rows.map((r) => {
 		const t = byPage.get(r.id) ?? {};
-		return { id: r.id, slug: r.slug, status: r.status, title: t.en ?? Object.values(t)[0] ?? "(untitled)" };
+		return { id: r.id, slug: r.slug, segment: r.segment ?? r.slug, parentId: r.parentId, sortOrder: r.sortOrder ?? 0, status: r.status, title: t.en ?? Object.values(t)[0] ?? "(untitled)" };
 	});
 }
 
@@ -301,7 +343,16 @@ export async function getPageForEdit(db: DB, id: number) {
 		byLang[r.lang] ??= {};
 		byLang[r.lang][r.field] = r.value;
 	}
-	return { id: page.id, slug: page.slug, status: page.status, translations: byLang };
+	return {
+		id: page.id,
+		slug: page.slug,
+		segment: page.segment ?? page.slug,
+		parentId: page.parentId,
+		status: page.status,
+		coverMediaId: page.heroMediaId,
+		sections: (page.sections ?? []) as SectionNode[],
+		translations: byLang,
+	};
 }
 
 function pageTranslationRows(entityId: number, input: PageInput) {
@@ -316,9 +367,12 @@ function pageTranslationRows(entityId: number, input: PageInput) {
 }
 
 export async function createPage(db: DB, input: PageInput): Promise<number> {
+	const segment = (input.segment || input.slug).replace(/^\/+|\/+$/g, "");
+	const slug = await slugFor(db, input.parentId, segment);
+	const sortOrder = await nextSortOrder(db, input.parentId);
 	const [row] = await db
 		.insert(pages)
-		.values({ tenantId: TENANT, slug: input.slug, status: input.status })
+		.values({ tenantId: TENANT, slug, segment, parentId: input.parentId, sortOrder, status: input.status, heroMediaId: input.coverMediaId, sections: input.sections })
 		.returning({ id: pages.id });
 	const trs = pageTranslationRows(row.id, input);
 	if (trs.length) await db.insert(translations).values(trs);
@@ -326,24 +380,68 @@ export async function createPage(db: DB, input: PageInput): Promise<number> {
 }
 
 export async function updatePage(db: DB, id: number, input: PageInput): Promise<void> {
-	const [prev] = await db.select({ slug: pages.slug }).from(pages).where(and(eq(pages.tenantId, TENANT), eq(pages.id, id))).limit(1);
+	const [prev] = await db.select({ slug: pages.slug, parentId: pages.parentId }).from(pages).where(and(eq(pages.tenantId, TENANT), eq(pages.id, id))).limit(1);
+	const segment = (input.segment || input.slug).replace(/^\/+|\/+$/g, "");
+	// Guard against reparenting under self/descendant (would orphan the subtree).
+	const parentId = (await isDescendant(db, input.parentId, id)) ? (prev?.parentId ?? null) : input.parentId;
+	const newSlug = await slugFor(db, parentId, segment);
+	const reorder = parentId !== (prev?.parentId ?? null) ? await nextSortOrder(db, parentId) : undefined;
 	await db
 		.update(pages)
-		.set({ slug: input.slug, status: input.status, updatedAt: new Date().toISOString() })
+		.set({ segment, parentId, status: input.status, heroMediaId: input.coverMediaId, sections: input.sections, ...(reorder != null ? { sortOrder: reorder } : {}), updatedAt: new Date().toISOString() })
 		.where(and(eq(pages.tenantId, TENANT), eq(pages.id, id)));
-	// Record a redirect so the old URL keeps working (301).
-	if (prev && prev.slug !== input.slug) {
-		await db
-			.insert(slugRedirects)
-			.values({ tenantId: TENANT, entityType: "page", fromSlug: prev.slug, toEntityId: id })
-			.onConflictDoNothing();
-	}
+	// Slug change (rename or reparent) cascades to descendants via recomputeSubtree,
+	// which writes the new slugs and records a 301 for every page whose URL moved.
+	if (prev && prev.slug !== newSlug) await recomputeSubtree(db, id, newSlug);
 	await db.delete(translations).where(and(eq(translations.entityType, "page"), eq(translations.entityId, id)));
 	const trs = pageTranslationRows(id, input);
 	if (trs.length) await db.insert(translations).values(trs);
 }
 
+/** True if `candidateParentId` is `id` itself or one of its descendants. */
+async function isDescendant(db: DB, candidateParentId: number | null, id: number): Promise<boolean> {
+	if (candidateParentId == null) return false;
+	if (candidateParentId === id) return true;
+	const all = await db.select({ id: pages.id, parentId: pages.parentId }).from(pages).where(eq(pages.tenantId, TENANT));
+	const parentOf = new Map(all.map((p) => [p.id, p.parentId]));
+	let cur: number | null | undefined = candidateParentId;
+	while (cur != null) {
+		if (cur === id) return true;
+		cur = parentOf.get(cur);
+	}
+	return false;
+}
+
+/** Drag-and-drop: move a page under a new parent at a given index among siblings. */
+export async function movePage(db: DB, id: number, parentId: number | null, index: number): Promise<void> {
+	if (await isDescendant(db, parentId, id)) return; // never reparent under self/descendant
+	const [self] = await db.select({ segment: pages.segment }).from(pages).where(and(eq(pages.tenantId, TENANT), eq(pages.id, id))).limit(1);
+	if (!self) return;
+	const newSlug = await slugFor(db, parentId, self.segment ?? "");
+	await db.update(pages).set({ parentId }).where(eq(pages.id, id));
+	await recomputeSubtree(db, id, newSlug);
+	// Renumber the destination siblings, inserting `id` at `index`.
+	const siblings = await db
+		.select({ id: pages.id, sortOrder: pages.sortOrder })
+		.from(pages)
+		.where(and(eq(pages.tenantId, TENANT), parentId == null ? isNull(pages.parentId) : eq(pages.parentId, parentId)))
+		.orderBy(asc(pages.sortOrder));
+	const ordered = siblings.filter((s) => s.id !== id).map((s) => s.id);
+	ordered.splice(Math.max(0, Math.min(index, ordered.length)), 0, id);
+	for (let i = 0; i < ordered.length; i++) await db.update(pages).set({ sortOrder: i }).where(eq(pages.id, ordered[i]));
+}
+
 export async function deletePage(db: DB, id: number): Promise<void> {
+	// Reparent children up to the deleted node's parent so the subtree isn't orphaned,
+	// recomputing their slugs (with 301s) under the new parent.
+	const [self] = await db.select({ parentId: pages.parentId, slug: pages.slug }).from(pages).where(and(eq(pages.tenantId, TENANT), eq(pages.id, id))).limit(1);
+	if (self) {
+		const kids = await db.select({ id: pages.id, segment: pages.segment }).from(pages).where(and(eq(pages.tenantId, TENANT), eq(pages.parentId, id)));
+		for (const k of kids) {
+			await db.update(pages).set({ parentId: self.parentId }).where(eq(pages.id, k.id));
+			await recomputeSubtree(db, k.id, await slugFor(db, self.parentId, k.segment ?? ""));
+		}
+	}
 	await db.delete(translations).where(and(eq(translations.entityType, "page"), eq(translations.entityId, id)));
 	await db.delete(pages).where(and(eq(pages.tenantId, TENANT), eq(pages.id, id)));
 }
@@ -355,25 +453,29 @@ export type NavInput = {
 	targetKind: string;
 	targetRef: string;
 	visible: boolean;
+	imageMediaId: number | null;
 	labels: Record<string, string>;
+	descriptions: Record<string, string>;
 };
 
-/** Flat list of all nav items with labels grouped by language (UI builds the tree). */
+/** Flat list of all nav items with labels + briefs grouped by language (UI builds the tree). */
 export async function adminListNav(db: DB) {
 	const items = await db
 		.select()
 		.from(navItems)
 		.where(eq(navItems.tenantId, TENANT))
 		.orderBy(asc(navItems.sort));
-	const labelRows = await db
-		.select({ entityId: translations.entityId, lang: translations.lang, value: translations.value })
+	const trRows = await db
+		.select({ entityId: translations.entityId, field: translations.field, lang: translations.lang, value: translations.value })
 		.from(translations)
-		.where(and(eq(translations.entityType, "nav_item"), eq(translations.field, "label")));
-	const byItem = new Map<number, Record<string, string>>();
-	for (const r of labelRows) {
-		const m = byItem.get(r.entityId) ?? {};
+		.where(and(eq(translations.entityType, "nav_item"), inArray(translations.field, ["label", "description"])));
+	const labelsByItem = new Map<number, Record<string, string>>();
+	const descByItem = new Map<number, Record<string, string>>();
+	for (const r of trRows) {
+		const bucket = r.field === "description" ? descByItem : labelsByItem;
+		const m = bucket.get(r.entityId) ?? {};
 		m[r.lang] = r.value;
-		byItem.set(r.entityId, m);
+		bucket.set(r.entityId, m);
 	}
 	return items.map((i) => ({
 		id: i.id,
@@ -382,17 +484,25 @@ export async function adminListNav(db: DB) {
 		targetKind: i.targetKind,
 		targetRef: i.targetRef,
 		visible: i.visible,
-		labels: byItem.get(i.id) ?? {},
+		imageMediaId: i.imageMediaId,
+		labels: labelsByItem.get(i.id) ?? {},
+		descriptions: descByItem.get(i.id) ?? {},
 	}));
 }
 
-async function setNavLabels(db: DB, id: number, labels: Record<string, string>) {
+/** Replace the translatable text (label + brief) for a nav item. */
+async function setNavText(db: DB, id: number, labels: Record<string, string>, descriptions: Record<string, string>) {
 	await db
 		.delete(translations)
 		.where(and(eq(translations.entityType, "nav_item"), eq(translations.entityId, id)));
-	const rows = Object.entries(labels)
-		.filter(([, v]) => v !== "")
-		.map(([lang, value]) => ({ tenantId: TENANT, entityType: "nav_item", entityId: id, field: "label", lang, value }));
+	const rows = [
+		...Object.entries(labels)
+			.filter(([, v]) => v !== "")
+			.map(([lang, value]) => ({ tenantId: TENANT, entityType: "nav_item", entityId: id, field: "label", lang, value })),
+		...Object.entries(descriptions)
+			.filter(([, v]) => v !== "")
+			.map(([lang, value]) => ({ tenantId: TENANT, entityType: "nav_item", entityId: id, field: "description", lang, value })),
+	];
 	if (rows.length) await db.insert(translations).values(rows);
 }
 
@@ -411,9 +521,10 @@ export async function createNavItem(db: DB, input: NavInput): Promise<number> {
 			targetKind: input.targetKind,
 			targetRef: input.targetRef,
 			visible: input.visible,
+			imageMediaId: input.imageMediaId,
 		})
 		.returning({ id: navItems.id });
-	await setNavLabels(db, row.id, input.labels);
+	await setNavText(db, row.id, input.labels, input.descriptions);
 	return row.id;
 }
 
@@ -424,10 +535,11 @@ export async function updateNavItem(db: DB, id: number, input: Omit<NavInput, "p
 			targetKind: input.targetKind,
 			targetRef: input.targetRef,
 			visible: input.visible,
+			imageMediaId: input.imageMediaId,
 			updatedAt: new Date().toISOString(),
 		})
 		.where(and(eq(navItems.tenantId, TENANT), eq(navItems.id, id)));
-	await setNavLabels(db, id, input.labels);
+	await setNavText(db, id, input.labels, input.descriptions);
 }
 
 /** Delete an item and all its descendants. */

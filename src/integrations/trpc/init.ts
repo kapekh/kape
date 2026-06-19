@@ -3,6 +3,7 @@ import superjson from 'superjson'
 
 import { SESSION_COOKIE, parseCookies, validateToken } from '#/server/auth'
 import { db } from '#/server/db'
+import { clearCache } from '#/server/render-cache'
 
 /**
  * Per-request tRPC context. Exposes the database and the authenticated user
@@ -29,10 +30,16 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
   return next({ ctx: { ...ctx, user: ctx.user } })
 })
 
-/** Requires the admin role. */
-export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
+/**
+ * Requires the admin role. Any admin *mutation* busts the incremental-SSG render
+ * cache afterwards, so edits surface on the public site immediately (reads re-warm
+ * the cache lazily). Reads pass through untouched.
+ */
+export const adminProcedure = protectedProcedure.use(async ({ ctx, next, type }) => {
   if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' })
-  return next()
+  const result = await next()
+  if (type === 'mutation') await clearCache(ctx.db).catch(() => {})
+  return result
 })
 
 /** Requires staff-portal access (staff or admin). */

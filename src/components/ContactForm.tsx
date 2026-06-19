@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const input = "w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm";
+const input = "w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm transition focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30";
 
 export function ContactForm() {
 	const [f, setF] = useState({ name: "", email: "", phone: "", message: "" });
@@ -39,7 +39,7 @@ export function ContactForm() {
 			<input className={input} placeholder="Phone (optional)" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} />
 			<textarea className={input} rows={4} placeholder="Message" value={f.message} onChange={(e) => setF({ ...f, message: e.target.value })} required />
 			{status === "error" && <p className="text-sm text-destructive">Something went wrong. Please try again.</p>}
-			<button type="submit" disabled={status === "sending"} className="rounded-full bg-primary text-primary-foreground px-6 py-2.5 text-sm font-semibold hover:opacity-90 disabled:opacity-50">
+			<button type="submit" disabled={status === "sending"} className="rounded-full bg-primary text-primary-foreground px-7 py-3 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition">
 				{status === "sending" ? "Sending…" : "Send message"}
 			</button>
 		</form>

@@ -1,7 +1,8 @@
-import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
 import students from "@/assets/students.jpg.asset.json";
+import { useLang } from "@/lib/i18n";
+import { localizedHref } from "@/lib/i18n-config";
 
 type Crumb = { label: string; href?: string };
 
@@ -23,24 +24,26 @@ export function SubPage({
   children: ReactNode;
 }) {
   const bg = heroImage ?? students.url;
+  const { lang } = useLang();
   return (
     <main className="min-h-screen text-foreground overflow-x-hidden">
       {/* Hero */}
-      <section className="relative pt-24 pb-16 px-6 overflow-hidden">
+      <section className="relative pt-28 pb-28 px-6 sm:px-8 overflow-hidden">
         <div className="absolute inset-0 -z-10">
           <img src={bg} alt="" className="h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-b from-primary/85 via-primary/70 to-background" />
+          <div className="absolute inset-0 bg-gradient-to-b from-primary/90 via-primary/75 to-background" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,transparent_35%,rgba(0,0,0,0.25))]" />
         </div>
-        <div className="mx-auto max-w-5xl text-primary-foreground">
-          <nav className="flex flex-wrap items-center gap-2 text-xs opacity-90">
-            <Link to="/" className="hover:underline">Home</Link>
-            <span>/</span>
-            <span className="opacity-90">{section}</span>
+        <div className="mx-auto max-w-7xl text-primary-foreground">
+          <nav className="flex flex-wrap items-center gap-2 text-xs opacity-85">
+            <a href={localizedHref("/", lang)} className="hover:underline">Home</a>
+            <span aria-hidden>/</span>
+            <span>{section}</span>
             {crumbs?.map((c, i) => (
               <span key={i} className="flex items-center gap-2">
-                <span>/</span>
+                <span aria-hidden>/</span>
                 {c.href ? (
-                  <Link to={c.href} className="hover:underline">{c.label}</Link>
+                  <a href={localizedHref(c.href, lang)} className="hover:underline">{c.label}</a>
                 ) : (
                   <span>{c.label}</span>
                 )}
@@ -48,21 +51,23 @@ export function SubPage({
             ))}
           </nav>
           {badge && (
-            <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-1.5 text-[11px] font-medium uppercase tracking-[0.18em] backdrop-blur">
+            <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--gold)] backdrop-blur">
               {badge}
             </div>
           )}
-          <h1 className="mt-4 font-display text-4xl md:text-6xl font-semibold tracking-tight">{title}</h1>
+          <h1 className="mt-5 max-w-4xl font-display text-4xl md:text-6xl font-semibold tracking-tight [text-shadow:0_2px_24px_rgba(0,0,0,0.3)]">{title}</h1>
           {lead && (
             <p className="mt-5 max-w-3xl text-lg md:text-xl text-primary-foreground/90 leading-relaxed">{lead}</p>
           )}
         </div>
       </section>
 
-      {/* Body */}
-      <section className="px-6 pb-24">
-        <div className="mx-auto max-w-5xl">
-          <div className="rounded-3xl bg-card border border-border shadow-[var(--shadow-soft)] p-8 md:p-12 prose-kape">
+      {/* Body — pulled up to overlap the hero for a layered, polished feel. */}
+      <section className="px-6 sm:px-8 pb-24 -mt-16">
+        <div className="mx-auto max-w-4xl">
+          {/* Caller supplies its own `prose-kape` wrapper for rich text; we don't
+              force it here so non-prose children (e.g. the album photo grid) stay clean. */}
+          <div className="rounded-3xl bg-card border border-border shadow-[var(--shadow-soft)] p-8 md:p-12">
             {children}
           </div>
         </div>

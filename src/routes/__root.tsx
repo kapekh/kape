@@ -13,6 +13,7 @@ import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 import { Footer } from '../components/Footer'
 import { Header } from '../components/Header'
 import { LanguageProvider } from '../lib/i18n'
+import { detectLang } from '../lib/i18n-config'
 
 import appCss from '../styles.css?url'
 
@@ -28,16 +29,12 @@ interface MyRouterContext {
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-  // Language is a search param: ?lang=km. Validated for every route.
-  validateSearch: (search: Record<string, unknown>): { lang?: string } => ({
-    lang: typeof search.lang === 'string' ? search.lang : undefined,
-  }),
-  loaderDeps: ({ search }) => ({ lang: search.lang ?? '' }),
   // Fetch i18n bootstrap (active language, language list, UI strings) and the
   // navigation tree once, server-side during SSR, so the first byte is correct.
-  loader: async ({ context, deps }) => {
+  // Language is path-based (/en/…, /km/…) — derived from the URL, not a param.
+  loader: async ({ context, location }) => {
     const boot = await context.queryClient.ensureQueryData(
-      context.trpc.i18n.bootstrap.queryOptions({ lang: deps.lang }),
+      context.trpc.i18n.bootstrap.queryOptions({ lang: detectLang(location.pathname) }),
     )
     const nav = await context.queryClient.ensureQueryData(
       context.trpc.nav.tree.queryOptions({ lang: boot.lang }),
@@ -45,10 +42,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
     const settings = await context.queryClient.ensureQueryData(
       context.trpc.site.settings.queryOptions(),
     )
-    const visits = await context.queryClient.ensureQueryData(
-      context.trpc.site.visits.queryOptions(),
-    )
-    return { ...boot, nav, settings, visits }
+    return { ...boot, nav, settings }
   },
   head: () => ({
     meta: [
@@ -75,7 +69,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 })
 
 function RootComponent() {
-  const { lang, languages, strings, nav, settings, visits } = Route.useLoaderData()
+  const { lang, languages, strings, nav, settings } = Route.useLoaderData()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   // Admin + login have their own chrome — hide the public header/footer there.
   const chromeless =
@@ -87,14 +81,15 @@ function RootComponent() {
       {!chromeless && <Header nav={nav} settings={settings} />}
       {/* Child routes render here. */}
       <Outlet />
-      {!chromeless && <Footer settings={settings} visits={visits} />}
+      {!chromeless && <Footer settings={settings} />}
     </LanguageProvider>
   )
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
   return (
-    <html lang="en">
+    <html lang={detectLang(pathname)}>
       <head>
         <HeadContent />
       </head>

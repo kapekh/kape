@@ -1,0 +1,82 @@
+[
+  {
+    "slug": "who-we-are/partners",
+    "title": "Our Partners",
+    "breadcrumb": "Who We Are",
+    "lead": "KAPE collaborates with governments, foundations and grassroots organisations to deliver lasting impact.",
+    "badge": "Together",
+    "heroImage": null,
+    "blocks": [
+      {
+        "type": "partners",
+        "title": ""
+      }
+    ]
+  },
+  {
+    "slug": "what-we-do/ict-innovation",
+    "title": "ICT Innovation",
+    "breadcrumb": "What We Do",
+    "lead": "From the first computer labs to AI literacy — bringing 21st-century skills into every classroom.",
+    "badge": "Digital + AI",
+    "heroImage": "https://picsum.photos/seed/kape-computerlab/1600/1000",
+    "blocks": [
+      {
+        "type": "cards",
+        "title": "Our digital pillars",
+        "cols": 2,
+        "items": [
+          {
+            "title": "ICT labs in every NGS",
+            "body": "Dedicated spaces where students learn coding, digital research and online safety."
+          },
+          {
+            "title": "Teacher digital literacy",
+            "body": "Hands-on training in modern teaching tools, productivity software and online pedagogy."
+          },
+          {
+            "title": "AI literacy",
+            "body": "Workshops introducing teachers and students to responsible AI use in education."
+          },
+          {
+            "title": "Online safety",
+            "body": "Helping students protect their accounts and recognize digital risks."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "what-we-do/learning-applications",
+    "title": "Learning Applications",
+    "breadcrumb": "What We Do",
+    "lead": "Mobile and web learning tools built for Cambodian teachers and students.",
+    "badge": "EdTech",
+    "heroImage": null,
+    "blocks": [
+      {
+        "type": "cards",
+        "title": "Application catalogue",
+        "cols": 2,
+        "items": [
+          {
+            "title": "Early Grade Reading App",
+            "body": "Khmer literacy practice for Grade 1–3 learners with audio and self-quizzes."
+          },
+          {
+            "title": "STEM Practice Hub",
+            "body": "Interactive science and math exercises aligned with the MoEYS curriculum."
+          },
+          {
+            "title": "Teacher Mentor App",
+            "body": "Lesson plans, coaching videos and reflection prompts for novice teachers."
+          },
+          {
+            "title": "Life Skills Toolkit",
+            "body": "Activities covering health, finance and digital citizenship for adolescents."
+          }
+        ]
+      }
+    ]
+  }
+]

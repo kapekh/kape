@@ -1,15 +1,17 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-/** Global site footer — contact/socials/copyright come from `site_settings`. */
-export function Footer({
-	settings,
-	visits,
-}: {
-	settings: Record<string, string>;
-	visits: { today: number; total: number };
-}) {
+import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+
+/** Global site footer — contact/socials/copyright come from `site_settings`.
+ * Visit counts are fetched client-side (not SSR'd) so prerendered HTML never
+ * freezes a stale count. */
+export function Footer({ settings }: { settings: Record<string, string> }) {
 	const [email, setEmail] = useState("");
 	const [subscribed, setSubscribed] = useState(false);
+	const [visits, setVisits] = useState<{ today: number; total: number } | null>(null);
+	useEffect(() => {
+		trpcClient.site.visits.query().then(setVisits).catch(() => {});
+	}, []);
 	const socials: [string, string][] = [
 		["f", settings.social_facebook],
 		["yt", settings.youtube_url],
@@ -52,9 +54,17 @@ export function Footer({
 				<div>
 					<div className="text-xs uppercase tracking-[0.2em] text-[var(--gold)] font-semibold mb-4">Explore</div>
 					<ul className="space-y-2 text-sm opacity-85">
-						{["Annual Report", "Project Impact", "Research", "Program Brochure", "Photo Gallery", "Video Gallery", "Policies"].map((l) => (
-							<li key={l}>
-								<a href="#" className="hover:text-[var(--secondary)] transition">{l}</a>
+						{[
+							{ label: "Annual Report", href: "/media/annual-report" },
+							{ label: "Impact Stories", href: "/stories" },
+							{ label: "Research", href: "/media/paper-research" },
+							{ label: "Program Brochure", href: "/media/program-brochure" },
+							{ label: "Photo Gallery", href: "/galleries" },
+							{ label: "Video Gallery", href: "/videos" },
+							{ label: "Policies", href: "/media/policies" },
+						].map((l) => (
+							<li key={l.label}>
+								<a href={l.href} className="hover:text-[var(--secondary)] transition">{l.label}</a>
 							</li>
 						))}
 					</ul>
@@ -79,7 +89,7 @@ export function Footer({
 			</div>
 			<div className="mx-auto max-w-7xl px-6 mt-16 pt-6 border-t border-primary-foreground/15 flex flex-wrap justify-between gap-4 text-xs opacity-70">
 				<div>{settings.copyright || "© Kampuchea Action to Promote Education"}</div>
-				<div>Today: {visits.today.toLocaleString()} · Total visits: {visits.total.toLocaleString()}</div>
+				{visits && <div>Today: {visits.today.toLocaleString()} · Total visits: {visits.total.toLocaleString()}</div>}
 			</div>
 		</footer>
 	);

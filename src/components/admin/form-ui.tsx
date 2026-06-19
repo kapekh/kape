@@ -3,7 +3,7 @@
 export const fieldInput =
 	"w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/25 transition";
 export const fieldLabel = "block text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5";
-export const cancelButtonClass = "rounded-full border border-border px-5 py-2.5 text-sm font-semibold text-foreground/70 hover:bg-muted transition";
+export const cancelButtonClass = "rounded-full border border-border px-5 py-1.5 text-sm font-semibold text-foreground/70 hover:bg-muted transition";
 
 /**
  * Sticky editor header: page title on the left, actions on the right (pass the
@@ -24,12 +24,12 @@ export function EditorHeader({
 	children?: React.ReactNode;
 }) {
 	return (
-		<div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3">
-			<h1 className="font-display text-xl font-semibold text-primary">{title}</h1>
-			<div className="flex items-center gap-3">
+		<div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-2">
+			<h1 className="font-display text-base font-semibold text-primary">{title}</h1>
+			<div className="flex items-center gap-2">
 				{savedAt && <span className="text-xs text-[var(--palm)]">Saved {savedAt}</span>}
 				{children}
-				<button type="submit" disabled={saving} className="rounded-full bg-primary text-primary-foreground px-6 py-2 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition">
+				<button type="submit" disabled={saving} className="rounded-full bg-primary text-primary-foreground px-5 py-1.5 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition">
 					{saving ? "Saving…" : saveLabel}
 				</button>
 			</div>
