@@ -16,6 +16,8 @@ export function getRouter() {
     scrollRestoration: true,
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 0,
+    // Smooth client-side (<Link>) navigations via the browser View Transitions API.
+    defaultViewTransition: true,
 
     Wrap: (props: { children: ReactNode }) => {
       return (
