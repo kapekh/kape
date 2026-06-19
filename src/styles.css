@@ -253,6 +253,15 @@
     from { width: 0%; }
     to { width: 100%; }
   }
+  /* Mega-menu panel reveal: slide down + fade. */
+  @keyframes mega-in {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes mega-content-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 
   /* Rich-text body styling (articles, richtext sections, project descriptions). */
   .prose-kape {

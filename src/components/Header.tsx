@@ -417,10 +417,10 @@ export function Header({ nav, settings }: { nav: NavNode[]; settings: Record<str
 				    containing block; height is the viewport minus the header's bottom edge. */}
 				{openNode && (
 					<div
-						className="hidden lg:block absolute inset-x-0 top-full overflow-y-auto bg-card shadow-[var(--shadow-soft)] thin-scroll"
+						className="hidden lg:block absolute inset-x-0 top-full overflow-y-auto bg-card shadow-[var(--shadow-soft)] thin-scroll animate-[mega-in_0.2s_ease-out] motion-reduce:animate-none"
 						style={{ height: `calc(100dvh - ${panelTop}px)` }}
 					>
-						<div className="mx-auto flex h-full max-w-7xl flex-col px-6 py-8">
+						<div key={openId} className="mx-auto flex h-full max-w-7xl flex-col px-6 py-8 animate-[mega-content-in_0.28s_ease-out] motion-reduce:animate-none">
 							{(() => {
 								const kids = openNode.children;
 								const grouped = kids.some((c) => c.children.length > 0);
