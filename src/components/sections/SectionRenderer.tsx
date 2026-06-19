@@ -295,12 +295,12 @@ function Cta(p: P) {
 			<Blob className="-left-20 -top-20 h-80 w-80 bg-[var(--gold)]/40" />
 			<Blob className="-bottom-20 -right-20 h-80 w-80 bg-primary/30" />
 			<div className="relative mx-auto max-w-4xl px-6 text-center">
-				{p.eyebrow && <div className="text-xs font-bold uppercase tracking-[0.3em] text-primary/80">{p.eyebrow}</div>}
-				<h2 className="mt-4 font-display text-5xl md:text-7xl font-semibold leading-[1.02] text-primary">{renderTitle(p.title || "", "italic")}</h2>
-				{p.body && <p className="mx-auto mt-6 max-w-2xl text-lg text-primary/85">{p.body}</p>}
+				{p.eyebrow && <div className="text-xs font-bold uppercase tracking-[0.3em] text-[oklch(0.3_0.07_255)]/80">{p.eyebrow}</div>}
+				<h2 className="mt-4 font-display text-5xl md:text-7xl font-semibold leading-[1.02] text-[oklch(0.24_0.09_255)]">{renderTitle(p.title || "", "italic")}</h2>
+				{p.body && <p className="mx-auto mt-6 max-w-2xl text-lg text-[oklch(0.3_0.07_255)]/90">{p.body}</p>}
 				<div className="mt-10 flex flex-wrap justify-center gap-4">
-					{p.ctaHref && <NavLink href={L(p.ctaHref)} className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-8 py-4 text-base font-semibold shadow-[var(--shadow-lift)] hover:-translate-y-1 transition">{p.ctaLabel || "Donate now"}</NavLink>}
-					{p.cta2Href && <NavLink href={L(p.cta2Href)} className="inline-flex items-center gap-2 rounded-full border-2 border-primary/40 text-primary px-8 py-4 text-base font-semibold hover:bg-primary hover:text-primary-foreground transition">{p.cta2Label || "Learn more"}</NavLink>}
+					{p.ctaHref && <NavLink href={L(p.ctaHref)} className="inline-flex items-center gap-2 rounded-full bg-[oklch(0.24_0.09_255)] text-white px-8 py-4 text-base font-semibold shadow-[var(--shadow-lift)] hover:-translate-y-1 transition">{p.ctaLabel || "Donate now"}</NavLink>}
+					{p.cta2Href && <NavLink href={L(p.cta2Href)} className="inline-flex items-center gap-2 rounded-full border-2 border-[oklch(0.24_0.09_255)]/40 text-[oklch(0.24_0.09_255)] px-8 py-4 text-base font-semibold hover:bg-[oklch(0.24_0.09_255)] hover:text-white transition">{p.cta2Label || "Learn more"}</NavLink>}
 				</div>
 			</div>
 		</section>

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { AdminHeaderProvider } from "#/components/admin/AdminHeader";
 import { AdminIcon } from "#/components/admin/AdminIcon";
+import { ThemeToggle } from "#/components/ThemeToggle";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 
 export const Route = createFileRoute("/admin")({
@@ -142,6 +143,7 @@ function AdminLayout() {
 					<div ref={setHeaderSlot} className="flex min-w-0 flex-1 items-center gap-3" />
 					<div className="flex items-center gap-4">
 						<a href="/" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary hover:text-[var(--accent)] transition-colors">View site ↗</a>
+						<ThemeToggle className="h-8 w-8 border border-border text-foreground/70 hover:bg-muted" />
 						<span className="h-5 w-px bg-border" />
 						<div className="flex items-center gap-2.5">
 							<span className="h-8 w-8 rounded-full bg-primary/10 text-primary grid place-items-center text-xs font-semibold uppercase">{email.slice(0, 2)}</span>

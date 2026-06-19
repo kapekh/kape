@@ -4,6 +4,7 @@ import { useLang, LanguageSwitcher } from "@/lib/i18n";
 import { localizedHref } from "@/lib/i18n-config";
 
 import { NavLink } from "./NavLink";
+import { ThemeToggle } from "./ThemeToggle";
 import type { NavNode } from "#/server/repo/nav";
 
 /** Prefix internal hrefs with the active language (path-based i18n). */
@@ -315,6 +316,7 @@ export function Header({ nav, settings }: { nav: NavNode[]; settings: Record<str
 						<a href="#" className="hover:text-[var(--secondary)] transition">{t("top.search")}</a>
 						<a href="#" className="hover:text-[var(--secondary)] transition">{t("top.sitemap")}</a>
 						<LanguageSwitcher />
+						<ThemeToggle className="h-6 w-6 text-primary-foreground/80 hover:bg-white/10" />
 					</div>
 				</div>
 			</div>
