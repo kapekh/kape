@@ -36,7 +36,7 @@ export function Footer({ settings }: { settings: Record<string, string> }) {
 			<div className="mx-auto max-w-7xl px-6 grid md:grid-cols-4 gap-10">
 				<div className="md:col-span-2">
 					<div className="flex items-center gap-3">
-						<div className="h-12 w-12 rounded-full bg-[var(--secondary)] grid place-items-center text-primary font-display font-bold text-xl">K</div>
+						<img src="/logo.png" alt="KAPE" className="h-12 w-12 shrink-0 rounded-full object-cover bg-white ring-1 ring-white/20" />
 						<div>
 							<div className="font-khmer text-sm">អង្គការសកម្មភាពសម្រាប់ការអប់រំនៅកម្ពុជា</div>
 							<div className="font-display font-semibold">Kampuchea Action to Promote Education</div>
