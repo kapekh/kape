@@ -106,7 +106,7 @@ function AdminLayout() {
 			{/* Sidebar rail */}
 			<aside className="w-64 shrink-0 sticky top-0 h-screen bg-card border-r border-border flex flex-col" style={{ viewTransitionName: "admin-sidebar" }}>
 				<div className="flex items-center gap-2.5 px-5 h-16 border-b border-border shrink-0">
-					<span className="h-9 w-9 rounded-xl bg-[var(--gold)] text-primary grid place-items-center font-display font-bold text-lg">K</span>
+					<img src="/logo.png" alt="KAPE" className="h-9 w-9 shrink-0 rounded-lg object-cover ring-1 ring-border" />
 					<div className="leading-tight">
 						<div className="font-display font-semibold text-primary">KAPE</div>
 						<div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Admin</div>

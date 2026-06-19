@@ -328,10 +328,7 @@ export function Header({ nav, settings }: { nav: NavNode[]; settings: Record<str
 			>
 				<div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between gap-6">
 					<NavLink href={withLang("/", lang)} className="flex items-center gap-3" onClick={closeAll}>
-						<div className="relative h-12 w-12 rounded-full bg-gradient-to-br from-[var(--secondary)] to-[var(--accent)] grid place-items-center text-primary-foreground font-display font-bold text-xl shadow-[var(--shadow-lift)]">
-							K
-							<span className="absolute inset-0 rounded-full ring-2 ring-[var(--gold)]/40" />
-						</div>
+						<img src="/logo.png" alt="KAPE" className="h-12 w-12 shrink-0 rounded-full object-cover shadow-[var(--shadow-lift)] ring-1 ring-border" />
 						<div className="leading-tight">
 							<div className="font-khmer text-[13px] text-primary">អង្គការសកម្មភាពសម្រាប់ការអប់រំនៅកម្ពុជា</div>
 							<div className="font-display font-semibold text-primary text-[15px]">Kampuchea Action to Promote Education</div>
