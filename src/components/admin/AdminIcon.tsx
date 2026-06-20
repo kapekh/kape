@@ -16,6 +16,15 @@ const PATHS: Record<string, string> = {
 	languages: "M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0zM3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18",
 	settings: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 13.5a7.5 7.5 0 0 0 0-3l1.9-1.5-2-3.4-2.3.9a7.5 7.5 0 0 0-2.6-1.5L13.9 2h-3.8l-.5 2.5a7.5 7.5 0 0 0-2.6 1.5l-2.3-.9-2 3.4L4.6 10.5a7.5 7.5 0 0 0 0 3l-1.9 1.5 2 3.4 2.3-.9a7.5 7.5 0 0 0 2.6 1.5l.5 2.5h3.8l.5-2.5a7.5 7.5 0 0 0 2.6-1.5l2.3.9 2-3.4z",
 	tag: "M3 12V5a2 2 0 0 1 2-2h7l9 9-9 9zM7.5 7.5h.01",
+	news: "M4 5h13v15H5a1 1 0 0 1-1-1zM17 8h3v10a2 2 0 0 1-2 2M7 9h7M7 13h7M7 17h4",
+	story: "M12 6c-2-1.5-5-2-8-1v13c3-1 6-.5 8 1 2-1.5 5-2 8-1V5c-3-1-6-.5-8 1zM12 6v13",
+	video: "M4 5h16v14H4zM4 9h16M8 5v4M16 5v4M10 12.5l4 2-4 2z",
+	gallery: "M8 3h13v13H8zM3 8v12a1 1 0 0 0 1 1h12M11.5 8.5a1.3 1.3 0 1 1-2.6 0 1.3 1.3 0 0 1 2.6 0zM21 12l-4-3.5-6 5.5",
+	team: "M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 20a6 6 0 0 1 12 0M16.5 11.2a3 3 0 0 0-1-5.9M21 20a6 6 0 0 0-3.5-5.5",
+	publication: "M7 3h7l5 5v13H7zM14 3v5h5M10 13h5M10 17h5",
+	career: "M3 8h18v11H3zM8 8V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18",
+	event: "M4 5h16v15H4zM4 9h16M8 3v4M16 3v4M8.5 13h2v2h-2z",
+	document: "M7 3h7l5 5v13H7zM14 3v5h5M10 12h6M10 16h4",
 };
 
 export function AdminIcon({ name, className }: { name: string; className?: string }) {

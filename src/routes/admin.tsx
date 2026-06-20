@@ -11,37 +11,60 @@ export const Route = createFileRoute("/admin")({
 	component: AdminLayout,
 });
 
-const NAV = [
+type NavItem = { to: string; label: string; icon: string; exact?: boolean; type?: string };
+type NavGroup = { group: string; collapsible?: boolean; items: NavItem[] };
+
+// `type` items deep-link the Posts list to a single content type (/admin/posts?type=…),
+// so the admin mirrors the public collections (News, Stories, Videos, …).
+const NAV: NavGroup[] = [
+	{ group: "", items: [{ to: "/admin", label: "Dashboard", icon: "dashboard", exact: true }] },
 	{
 		group: "Content",
 		items: [
-			{ to: "/admin", label: "Dashboard", icon: "dashboard", exact: true },
-			{ to: "/admin/posts", label: "Posts", icon: "posts" },
 			{ to: "/admin/pages", label: "Pages", icon: "pages" },
+			{ to: "/admin/posts", label: "News", icon: "news", type: "news" },
+			{ to: "/admin/posts", label: "Stories", icon: "story", type: "story" },
+			{ to: "/admin/posts", label: "Videos", icon: "video", type: "video" },
+			{ to: "/admin/posts", label: "Galleries", icon: "gallery", type: "album" },
+			{ to: "/admin/posts", label: "Team", icon: "team", type: "person" },
+			{ to: "/admin/posts", label: "Publications", icon: "publication", type: "publication" },
+			{ to: "/admin/posts", label: "Careers", icon: "career", type: "job" },
 			{ to: "/admin/projects", label: "Projects", icon: "projects" },
-			{ to: "/admin/nav", label: "Navigation", icon: "nav" },
+			{ to: "/admin/media", label: "Media", icon: "media" },
 		],
 	},
 	{
-		group: "Organisation",
+		group: "More",
+		collapsible: true,
+		items: [
+			{ to: "/admin/posts", label: "Events", icon: "event", type: "event" },
+			{ to: "/admin/posts", label: "Documents", icon: "document", type: "document" },
+			{ to: "/admin/posts", label: "Announcements", icon: "announcements", type: "announcement" },
+			{ to: "/admin/posts", label: "Internal news", icon: "posts", type: "internal_news" },
+			{ to: "/admin/posts", label: "All posts", icon: "posts" },
+		],
+	},
+	{
+		group: "Records",
 		items: [
 			{ to: "/admin/schools", label: "Schools", icon: "offices" },
+			{ to: "/admin/staff", label: "Staff", icon: "staff" },
 			{ to: "/admin/partners", label: "Partners", icon: "partners" },
 			{ to: "/admin/donors", label: "Donors", icon: "donors" },
 			{ to: "/admin/offices", label: "Offices", icon: "offices" },
-			{ to: "/admin/staff", label: "Staff", icon: "staff" },
 		],
 	},
 	{
-		group: "System",
+		group: "Site",
 		items: [
-			{ to: "/admin/media", label: "Media", icon: "media" },
+			{ to: "/admin/nav", label: "Navigation", icon: "nav" },
 			{ to: "/admin/languages", label: "Languages", icon: "languages" },
 			{ to: "/admin/settings", label: "Settings", icon: "settings" },
 		],
 	},
 	{
-		group: "Reference lists",
+		group: "Lists",
+		collapsible: true,
 		items: [
 			{ to: "/admin/locations", label: "Locations", icon: "tag" },
 			{ to: "/admin/publication-categories", label: "Publication categories", icon: "tag" },
@@ -49,7 +72,7 @@ const NAV = [
 			{ to: "/admin/partner-categories", label: "Partner categories", icon: "tag" },
 		],
 	},
-] as const;
+];
 
 /**
  * Admin layout + client-side auth guard. The admin is client-rendered: it calls
@@ -62,7 +85,17 @@ function AdminLayout() {
 	const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
 	// Full-bleed "studio" chrome (no padding / max-width) for the page builder.
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
+	const activeType = useRouterState({ select: (s) => (s.location.search as { type?: string }).type });
 	const studio = /^\/admin\/pages\/(new|\d+)/.test(pathname);
+
+	// Whether a sidebar item is the current route (content-type items match on ?type too).
+	const isActive = (it: NavItem) => {
+		if (it.exact) return pathname === it.to;
+		if (it.to === "/admin/posts") return pathname === "/admin/posts" && (it.type ?? undefined) === activeType;
+		return pathname === it.to || pathname.startsWith(`${it.to}/`);
+	};
+	// Collapsible groups start closed, but auto-open when they hold the active item.
+	const [open, setOpen] = useState<Record<string, boolean>>({});
 
 	useEffect(() => {
 		let alive = true;
@@ -115,25 +148,42 @@ function AdminLayout() {
 				</div>
 
 				<nav className="thin-scroll flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-5">
-					{NAV.map((section) => (
-						<div key={section.group}>
-							<div className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/70">{section.group}</div>
+					{NAV.map((section) => {
+						const hasActive = section.items.some(isActive);
+						const expanded = !section.collapsible || (open[section.group] ?? hasActive);
+						const items = (
 							<div className="space-y-0.5">
 								{section.items.map((it) => (
 									<Link
-										key={it.to}
+										key={`${it.to}:${it.type ?? ""}`}
 										to={it.to}
-										activeOptions={"exact" in it && it.exact ? { exact: true } : undefined}
-										className={link}
-										activeProps={{ className: linkActive }}
+										search={it.type ? { type: it.type } : undefined}
+										className={isActive(it) ? linkActive : link}
 									>
 										<AdminIcon name={it.icon} className="h-4 w-4 shrink-0 opacity-80" />
 										<span className="truncate">{it.label}</span>
 									</Link>
 								))}
 							</div>
-						</div>
-					))}
+						);
+						return (
+							<div key={section.group || "_top"}>
+								{section.collapsible ? (
+									<button
+										type="button"
+										onClick={() => setOpen((o) => ({ ...o, [section.group]: !expanded }))}
+										className="flex w-full items-center justify-between px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/70 hover:text-foreground"
+									>
+										{section.group}
+										<span className={`transition-transform ${expanded ? "rotate-90" : ""}`}>▸</span>
+									</button>
+								) : section.group ? (
+									<div className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/70">{section.group}</div>
+								) : null}
+								{expanded && items}
+							</div>
+						);
+					})}
 				</nav>
 			</aside>
 

@@ -10,11 +10,13 @@ import {
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 
 export const Route = createFileRoute("/admin/posts/new")({
+	validateSearch: (s: Record<string, unknown>): { type?: string } => ({ type: typeof s.type === "string" ? s.type : undefined }),
 	component: NewPost,
 });
 
 function NewPost() {
 	const navigate = useNavigate();
+	const { type } = Route.useSearch();
 	const [langs, setLangs] = useState<LangOpt[]>([]);
 	const [types, setTypes] = useState<TypeOpt[]>([]);
 	const [saving, setSaving] = useState(false);
@@ -37,5 +39,5 @@ function NewPost() {
 
 	if (!langs.length) return <p className="text-sm text-muted-foreground">Loading…</p>;
 
-	return <PostForm initial={null} languages={langs} contentTypes={types} onSubmit={onSubmit} saving={saving} title="New post" />;
+	return <PostForm initial={null} languages={langs} contentTypes={types} defaultType={type} onSubmit={onSubmit} saving={saving} title="New post" />;
 }

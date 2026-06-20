@@ -77,6 +77,7 @@ export function PostForm({
 	initial,
 	languages,
 	contentTypes,
+	defaultType,
 	onSubmit,
 	saving,
 	title,
@@ -85,12 +86,13 @@ export function PostForm({
 	initial: Initial;
 	languages: LangOpt[];
 	contentTypes: TypeOpt[];
+	defaultType?: string;
 	onSubmit: (value: PostFormValue) => void;
 	saving?: boolean;
 	title: string;
 	savedAt?: string | null;
 }) {
-	const [contentType, setContentType] = useState(initial?.contentType ?? contentTypes[0]?.key ?? "news");
+	const [contentType, setContentType] = useState(initial?.contentType ?? defaultType ?? contentTypes[0]?.key ?? "news");
 	const [slug, setSlug] = useState(initial?.slug ?? "");
 	const [status, setStatus] = useState<PostStatus>((initial?.status as PostStatus) ?? "draft");
 	const [author, setAuthor] = useState(initial?.author ?? "");
