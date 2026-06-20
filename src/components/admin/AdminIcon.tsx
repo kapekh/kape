@@ -25,6 +25,7 @@ const PATHS: Record<string, string> = {
 	career: "M3 8h18v11H3zM8 8V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18",
 	event: "M4 5h16v15H4zM4 9h16M8 3v4M16 3v4M8.5 13h2v2h-2z",
 	document: "M7 3h7l5 5v13H7zM14 3v5h5M10 12h6M10 16h4",
+	footer: "M4 5h16v14H4zM4 15h16M7 17.5h4",
 };
 
 export function AdminIcon({ name, className }: { name: string; className?: string }) {
