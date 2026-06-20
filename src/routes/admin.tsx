@@ -57,7 +57,7 @@ const NAV: NavGroup[] = [
 	{
 		group: "Site",
 		items: [
-			{ to: "/admin/nav", label: "Navigation", icon: "nav" },
+			{ to: "/admin/nav", label: "Header", icon: "nav" },
 			{ to: "/admin/footer", label: "Footer", icon: "footer" },
 			{ to: "/admin/languages", label: "Languages", icon: "languages" },
 			{ to: "/admin/settings", label: "Settings", icon: "settings" },

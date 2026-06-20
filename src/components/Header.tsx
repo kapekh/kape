@@ -261,7 +261,11 @@ export function Header({ nav, settings }: { nav: NavNode[]; settings: Record<str
 	const [panelTop, setPanelTop] = useState(0);
 
 	const contact = [settings.contact_phone, settings.contact_email].filter(Boolean).join(" · ");
-	const donate = t("nav.donate");
+	// Header chrome bits (editable in the "Header" admin page via site_settings).
+	const donate = settings.header_donate_label || t("nav.donate");
+	const donateHref = withLang(settings.header_donate_link || "#donate", lang);
+	const searchHref = withLang(settings.header_search_link || "#", lang);
+	const sitemapHref = withLang(settings.header_sitemap_link || "#", lang);
 
 	// Close everything on Escape.
 	useEffect(() => {
@@ -313,8 +317,8 @@ export function Header({ nav, settings }: { nav: NavNode[]; settings: Record<str
 				<div className="mx-auto max-w-7xl px-6 py-2 flex items-center justify-between">
 					<span className="opacity-80">{contact || t("top.contact")}</span>
 					<div className="flex items-center gap-4 opacity-80">
-						<a href="#" className="hover:text-[var(--secondary)] transition">{t("top.search")}</a>
-						<a href="#" className="hover:text-[var(--secondary)] transition">{t("top.sitemap")}</a>
+						<a href={searchHref} className="hover:text-[var(--secondary)] transition">{t("top.search")}</a>
+						<a href={sitemapHref} className="hover:text-[var(--secondary)] transition">{t("top.sitemap")}</a>
 						<LanguageSwitcher />
 						<ThemeToggle className="h-6 w-6 text-primary-foreground/80 hover:bg-white/10" />
 					</div>
@@ -394,12 +398,12 @@ export function Header({ nav, settings }: { nav: NavNode[]; settings: Record<str
 					</nav>
 
 					<div className="flex items-center gap-3">
-						<a
-							href="#donate"
+						<NavLink
+							href={donateHref}
 							className="hidden md:inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-accent-foreground px-5 py-2.5 text-sm font-semibold shadow-[var(--shadow-lift)] hover:translate-y-[-2px] transition-transform"
 						>
 							{donate}
-						</a>
+						</NavLink>
 						{/* Mobile menu trigger */}
 						<button
 							type="button"
@@ -477,13 +481,13 @@ export function Header({ nav, settings }: { nav: NavNode[]; settings: Record<str
 						</div>
 						<div className="flex items-center justify-between gap-3 border-t border-border px-4 py-4">
 							<LanguageSwitcher />
-							<a
-								href="#donate"
+							<NavLink
+								href={donateHref}
 								onClick={() => setMobileOpen(false)}
 								className="inline-flex items-center rounded-full bg-[var(--accent)] text-accent-foreground px-5 py-2.5 text-sm font-semibold shadow-[var(--shadow-lift)]"
 							>
 								{donate}
-							</a>
+							</NavLink>
 						</div>
 					</div>
 				</div>

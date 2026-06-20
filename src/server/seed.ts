@@ -5,6 +5,7 @@
  * Run: `bun run db:seed`  (db.ts applies migrations on import first)
  */
 import { FOOTER_DEFAULTS } from "#/lib/footer-defaults";
+import { HEADER_DEFAULTS } from "#/lib/header-defaults";
 import { defaultUiStrings } from "#/lib/ui-strings.default";
 import { hashPassword } from "./auth";
 import { db } from "./db";
@@ -655,6 +656,7 @@ async function main() {
 			youtube_url: "https://www.youtube.com/@KAPECambodia",
 			social_facebook: "https://facebook.com/KAPECambodia",
 			...FOOTER_DEFAULTS, // editable footer text/links (org name, blurb, Explore links, …)
+			...HEADER_DEFAULTS, // editable header bits (donate button + top-bar links)
 		}).map(([key, value]) => ({ tenantId: TENANT, key, value })),
 	);
 

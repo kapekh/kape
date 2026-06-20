@@ -31,6 +31,7 @@ import { Route as AdminNavRouteImport } from './routes/admin.nav'
 import { Route as AdminMediaRouteImport } from './routes/admin.media'
 import { Route as AdminLocationsRouteImport } from './routes/admin.locations'
 import { Route as AdminLanguagesRouteImport } from './routes/admin.languages'
+import { Route as AdminFooterRouteImport } from './routes/admin.footer'
 import { Route as AdminDonorsRouteImport } from './routes/admin.donors'
 import { Route as AdminDocCategoriesRouteImport } from './routes/admin.doc-categories'
 import { Route as AdminSchoolsIndexRouteImport } from './routes/admin.schools.index'
@@ -163,6 +164,11 @@ const AdminLanguagesRoute = AdminLanguagesRouteImport.update({
   path: '/languages',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminFooterRoute = AdminFooterRouteImport.update({
+  id: '/footer',
+  path: '/footer',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminDonorsRoute = AdminDonorsRouteImport.update({
   id: '/donors',
   path: '/donors',
@@ -263,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/admin/doc-categories': typeof AdminDocCategoriesRoute
   '/admin/donors': typeof AdminDonorsRoute
+  '/admin/footer': typeof AdminFooterRoute
   '/admin/languages': typeof AdminLanguagesRoute
   '/admin/locations': typeof AdminLocationsRoute
   '/admin/media': typeof AdminMediaRoute
@@ -303,6 +310,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/admin/doc-categories': typeof AdminDocCategoriesRoute
   '/admin/donors': typeof AdminDonorsRoute
+  '/admin/footer': typeof AdminFooterRoute
   '/admin/languages': typeof AdminLanguagesRoute
   '/admin/locations': typeof AdminLocationsRoute
   '/admin/media': typeof AdminMediaRoute
@@ -346,6 +354,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/admin/doc-categories': typeof AdminDocCategoriesRoute
   '/admin/donors': typeof AdminDonorsRoute
+  '/admin/footer': typeof AdminFooterRoute
   '/admin/languages': typeof AdminLanguagesRoute
   '/admin/locations': typeof AdminLocationsRoute
   '/admin/media': typeof AdminMediaRoute
@@ -390,6 +399,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin/doc-categories'
     | '/admin/donors'
+    | '/admin/footer'
     | '/admin/languages'
     | '/admin/locations'
     | '/admin/media'
@@ -430,6 +440,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin/doc-categories'
     | '/admin/donors'
+    | '/admin/footer'
     | '/admin/languages'
     | '/admin/locations'
     | '/admin/media'
@@ -472,6 +483,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin/doc-categories'
     | '/admin/donors'
+    | '/admin/footer'
     | '/admin/languages'
     | '/admin/locations'
     | '/admin/media'
@@ -676,6 +688,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLanguagesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/footer': {
+      id: '/admin/footer'
+      path: '/footer'
+      fullPath: '/admin/footer'
+      preLoaderRoute: typeof AdminFooterRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/donors': {
       id: '/admin/donors'
       path: '/donors'
@@ -808,6 +827,7 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminDocCategoriesRoute: typeof AdminDocCategoriesRoute
   AdminDonorsRoute: typeof AdminDonorsRoute
+  AdminFooterRoute: typeof AdminFooterRoute
   AdminLanguagesRoute: typeof AdminLanguagesRoute
   AdminLocationsRoute: typeof AdminLocationsRoute
   AdminMediaRoute: typeof AdminMediaRoute
@@ -836,6 +856,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminDocCategoriesRoute: AdminDocCategoriesRoute,
   AdminDonorsRoute: AdminDonorsRoute,
+  AdminFooterRoute: AdminFooterRoute,
   AdminLanguagesRoute: AdminLanguagesRoute,
   AdminLocationsRoute: AdminLocationsRoute,
   AdminMediaRoute: AdminMediaRoute,

@@ -1,9 +1,65 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
+import { FormSection, fieldInput, fieldLabel } from "#/components/admin/form-ui";
 import type { LangOpt } from "#/components/admin/PostForm";
 import { SearchableSelect } from "#/components/admin/SearchableSelect";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { HEADER_DEFAULTS } from "#/lib/header-defaults";
+
+/** The non-menu header bits (donate button + top-bar links), backed by site_settings. */
+function HeaderSettings() {
+	const FIELDS = [
+		{ key: "header_donate_label", label: "Donate button label" },
+		{ key: "header_donate_link", label: "Donate button link", mono: true },
+		{ key: "header_search_link", label: "Top-bar “Search” link", mono: true },
+		{ key: "header_sitemap_link", label: "Top-bar “Sitemap” link", mono: true },
+	];
+	const [vals, setVals] = useState<Record<string, string>>({});
+	const [loading, setLoading] = useState(true);
+	const [saving, setSaving] = useState(false);
+	const [savedAt, setSavedAt] = useState<string | null>(null);
+
+	useEffect(() => {
+		trpcClient.adminSettings.list.query().then((rows) => {
+			const map = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+			const next: Record<string, string> = {};
+			for (const f of FIELDS) next[f.key] = map[f.key] ?? HEADER_DEFAULTS[f.key] ?? "";
+			setVals(next);
+			setLoading(false);
+		});
+	}, []);
+
+	async function save() {
+		setSaving(true);
+		await Promise.all(Object.entries(vals).map(([key, value]) => trpcClient.adminSettings.set.mutate({ key, value })));
+		setSaving(false);
+		setSavedAt(new Date().toLocaleTimeString());
+	}
+
+	return (
+		<FormSection title="Header settings" description="The donate button and the top-bar utility links. A site path (/…) or full URL; “#donate” jumps to an on-page anchor.">
+			{loading ? (
+				<p className="text-sm text-muted-foreground">Loading…</p>
+			) : (
+				<>
+					<div className="grid sm:grid-cols-2 gap-4">
+						{FIELDS.map((f) => (
+							<div key={f.key}>
+								<label className={fieldLabel}>{f.label}</label>
+								<input className={`${fieldInput} ${f.mono ? "font-mono text-xs" : ""}`} value={vals[f.key] ?? ""} onChange={(e) => setVals((o) => ({ ...o, [f.key]: e.target.value }))} />
+							</div>
+						))}
+					</div>
+					<div className="mt-4 flex items-center gap-3">
+						<button type="button" onClick={save} disabled={saving} className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition">{saving ? "Saving…" : "Save header settings"}</button>
+						{savedAt && <span className="text-xs text-[var(--palm)]">Saved {savedAt}</span>}
+					</div>
+				</>
+			)}
+		</FormSection>
+	);
+}
 
 type RefOpt = { slug: string; title: string; contentType?: string };
 
@@ -270,14 +326,21 @@ function NavBuilder() {
 
 	return (
 		<div className="w-full">
-			<div className="flex items-center justify-between mb-6">
-				<h1 className="font-display text-2xl font-semibold text-primary">Navigation</h1>
+			<div className="mb-6">
+				<h1 className="font-display text-2xl font-semibold text-primary">Header</h1>
+				<p className="mt-1 text-sm text-muted-foreground">The site header — its menu, the donate button and the top-bar links.</p>
+			</div>
+
+			<div className="mb-8 max-w-4xl"><HeaderSettings /></div>
+
+			<div className="flex items-center justify-between mb-2">
+				<h2 className="font-display text-lg font-semibold text-primary">Menu</h2>
 				<button type="button" onClick={() => setAddingParent(null)} className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold hover:opacity-90">
 					+ Top-level item
 				</button>
 			</div>
 			<p className="text-sm text-muted-foreground mb-4">
-				Build the site menu. an item links to a <code>page</code>, <code>post</code> or <code>url</code>; give it child items to make a dropdown; reorder with ↑↓; add nested items with “+ child”.
+				Build the mega-menu. An item links to a <code>page</code>, <code>post</code> or <code>url</code>; give it child items to make a dropdown; reorder with ↑↓; add nested items with “+ child”.
 			</p>
 			{addingParent === null && (
 				<NavItemForm languages={langs} pages={pages} posts={posts} onSave={(v) => create(null, v)} onCancel={() => setAddingParent(undefined)} />
