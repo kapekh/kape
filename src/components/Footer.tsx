@@ -1,17 +1,42 @@
 import { useEffect, useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { FOOTER_DEFAULTS } from "@/lib/footer-defaults";
+import { useLang } from "@/lib/i18n";
+import { localizedHref } from "@/lib/i18n-config";
 
-/** Global site footer — contact/socials/copyright come from `site_settings`.
- * Visit counts are fetched client-side (not SSR'd) so prerendered HTML never
- * freezes a stale count. */
+import { NavLink } from "./NavLink";
+
+/**
+ * Global site footer. Every text/link is driven by `site_settings` (editable in
+ * /admin/settings), with FOOTER_DEFAULTS as fallbacks. Visit counts are fetched
+ * client-side so prerendered HTML never freezes a stale count.
+ */
+
+/** Parse a "Label|/href, Label|/href" string into link objects. */
+function parseLinks(raw: string) {
+	return raw
+		.split(",")
+		.map((p) => p.trim())
+		.filter(Boolean)
+		.map((pair) => {
+			const [label, href] = pair.split("|").map((s) => s.trim());
+			return { label, href: href || "#" };
+		})
+		.filter((l) => l.label);
+}
+
 export function Footer({ settings }: { settings: Record<string, string> }) {
+	const { lang } = useLang();
 	const [email, setEmail] = useState("");
 	const [subscribed, setSubscribed] = useState(false);
 	const [visits, setVisits] = useState<{ today: number; total: number } | null>(null);
 	useEffect(() => {
 		trpcClient.site.visits.query().then(setVisits).catch(() => {});
 	}, []);
+
+	const s = (key: string) => settings[key] ?? FOOTER_DEFAULTS[key] ?? "";
+	const links = parseLinks(s("footer_links"));
 	const socials: [string, string][] = [
 		["f", settings.social_facebook],
 		["yt", settings.youtube_url],
@@ -38,13 +63,11 @@ export function Footer({ settings }: { settings: Record<string, string> }) {
 					<div className="flex items-center gap-3">
 						<img src="/logo.png" alt="KAPE" className="h-12 w-12 shrink-0 rounded-full object-cover bg-white ring-1 ring-white/20" />
 						<div>
-							<div className="font-khmer text-sm">អង្គការសកម្មភាពសម្រាប់ការអប់រំនៅកម្ពុជា</div>
-							<div className="font-display font-semibold">Kampuchea Action to Promote Education</div>
+							{s("site_name_km") && <div className="font-khmer text-sm">{s("site_name_km")}</div>}
+							<div className="font-display font-semibold">{s("site_name_en")}</div>
 						</div>
 					</div>
-					<p className="mt-6 text-sm opacity-80 max-w-md leading-relaxed">
-						KAPE works at every level of formal education across 15 provinces in Cambodia — from preschools to Master's programs in Mentoring.
-					</p>
+					{s("footer_blurb") && <p className="mt-6 text-sm opacity-80 max-w-md leading-relaxed">{s("footer_blurb")}</p>}
 					<div className="mt-6 text-sm opacity-80 space-y-1">
 						{settings.contact_phone && <div>📞 {settings.contact_phone}</div>}
 						{settings.contact_email && <div>✉ {settings.contact_email}</div>}
@@ -52,26 +75,18 @@ export function Footer({ settings }: { settings: Record<string, string> }) {
 					</div>
 				</div>
 				<div>
-					<div className="text-xs uppercase tracking-[0.2em] text-[var(--gold)] font-semibold mb-4">Explore</div>
+					<div className="text-xs uppercase tracking-[0.2em] text-[var(--gold)] font-semibold mb-4">{s("footer_links_title")}</div>
 					<ul className="space-y-2 text-sm opacity-85">
-						{[
-							{ label: "Annual Report", href: "/media/annual-report" },
-							{ label: "Impact Stories", href: "/stories" },
-							{ label: "Research", href: "/media/paper-research" },
-							{ label: "Program Brochure", href: "/media/program-brochure" },
-							{ label: "Photo Gallery", href: "/galleries" },
-							{ label: "Video Gallery", href: "/videos" },
-							{ label: "Policies", href: "/media/policies" },
-						].map((l) => (
+						{links.map((l) => (
 							<li key={l.label}>
-								<a href={l.href} className="hover:text-[var(--secondary)] transition">{l.label}</a>
+								<NavLink href={localizedHref(l.href, lang)} className="hover:text-[var(--secondary)] transition">{l.label}</NavLink>
 							</li>
 						))}
 					</ul>
 				</div>
 				<div>
-					<div className="text-xs uppercase tracking-[0.2em] text-[var(--gold)] font-semibold mb-4">Newsletter</div>
-					<p className="text-sm opacity-80 mb-3">Subscribe to receive our e-newsletter.</p>
+					<div className="text-xs uppercase tracking-[0.2em] text-[var(--gold)] font-semibold mb-4">{s("newsletter_title")}</div>
+					{s("newsletter_text") && <p className="text-sm opacity-80 mb-3">{s("newsletter_text")}</p>}
 					{subscribed ? (
 						<p className="text-sm text-[var(--secondary)] font-semibold">Thanks for subscribing!</p>
 					) : (
