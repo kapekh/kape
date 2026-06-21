@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { EditorGrid, EditorHeader, FormSection, cancelButtonClass, fieldInput, fieldLabel } from "./form-ui";
+import { type MediaItem, MediaLibraryDialog, isImageMedia } from "./MediaLibraryDialog";
 import { MediaPicker } from "./MediaPicker";
 import { RichTextEditor } from "./RichTextEditor";
 import { SearchableSelect } from "./SearchableSelect";
@@ -16,6 +17,8 @@ export type PostFormValue = {
 	status: PostStatus;
 	author: string;
 	publishedAt: string;
+	coverMediaId: number | null;
+	media: number[];
 	meta: Record<string, unknown> | null;
 	translations: { lang: string; title: string; excerpt: string; body: string }[];
 };
@@ -26,6 +29,8 @@ type Initial = {
 	status: string;
 	author: string | null;
 	publishedAt: string | null;
+	coverMediaId?: number | null;
+	media?: number[];
 	meta?: Record<string, unknown> | null;
 	translations: Record<string, Record<string, string>>;
 } | null;
@@ -97,6 +102,8 @@ export function PostForm({
 	const [status, setStatus] = useState<PostStatus>((initial?.status as PostStatus) ?? "draft");
 	const [author, setAuthor] = useState(initial?.author ?? "");
 	const [publishedAt, setPublishedAt] = useState(initial?.publishedAt ?? "");
+	const [coverMediaId, setCoverMediaId] = useState(initial?.coverMediaId != null ? String(initial.coverMediaId) : "");
+	const [gallery, setGallery] = useState<number[]>(initial?.media ?? []);
 	const [metaFields, setMetaFields] = useState<Record<string, string>>(() => {
 		const m = initial?.meta ?? {};
 		const o: Record<string, string> = {};
@@ -146,6 +153,8 @@ export function PostForm({
 			status,
 			author,
 			publishedAt,
+			coverMediaId: coverMediaId ? Number(coverMediaId) : null,
+			media: gallery,
 			meta: Object.keys(meta).length ? meta : null,
 			translations: languages.map((l) => ({ lang: l.code, ...trans[l.code] })),
 		});
@@ -159,7 +168,8 @@ export function PostForm({
 				<Link to="/admin/posts" className={cancelButtonClass}>Cancel</Link>
 			</EditorHeader>
 			<EditorGrid
-				main={languages.map((l) => (
+				main={[
+					...languages.map((l) => (
 					<FormSection key={l.code} title={`Content — ${l.name}`} description={`Title, excerpt and body in ${l.name} (${l.code}).`}>
 						<div className="space-y-4">
 							<div>
@@ -176,9 +186,17 @@ export function PostForm({
 							</div>
 						</div>
 					</FormSection>
-				))}
+					)),
+					<FormSection key="gallery" title="Gallery" description="Extra images for this post. Galleries (type = Gallery) render these as a grid; other posts show them below the article.">
+						<GalleryPicker value={gallery} onChange={setGallery} />
+					</FormSection>,
+				]}
 				aside={
 					<>
+						<FormSection title="Cover image" description="Shown as the hero at the top of the post.">
+							<MediaPicker mode="id" kind="image" value={coverMediaId} label="Choose image" onChange={setCoverMediaId} />
+						</FormSection>
+
 						<FormSection title="Settings" description="Type, status and publishing.">
 							<div className="space-y-4">
 								<div>
@@ -255,5 +273,76 @@ export function PostForm({
 				}
 			/>
 		</form>
+	);
+}
+
+/**
+ * Ordered multi-image picker backed by the media library. Holds an array of media
+ * ids; resolves their URLs for thumbnails, lets you reorder (←/→) and remove, and
+ * opens the library to append more (stays open so you can add several at once).
+ */
+function GalleryPicker({ value, onChange }: { value: number[]; onChange: (ids: number[]) => void }) {
+	const [open, setOpen] = useState(false);
+	const [urls, setUrls] = useState<Record<number, string>>({});
+
+	// Resolve URLs for any ids we don't have a thumbnail for yet (e.g. on edit-load).
+	useEffect(() => {
+		const missing = value.filter((id) => !(id in urls));
+		if (!missing.length) return;
+		let alive = true;
+		trpcClient.adminMedia.list
+			.query()
+			.then((m) => {
+				if (!alive) return;
+				const map: Record<number, string> = {};
+				for (const x of m) if (x.url) map[x.id] = x.url;
+				setUrls((p) => ({ ...map, ...p }));
+			})
+			.catch(() => {});
+		return () => {
+			alive = false;
+		};
+	}, [value, urls]);
+
+	function add(m: MediaItem) {
+		if (!isImageMedia(m) || value.includes(m.id)) return;
+		if (m.url) setUrls((p) => ({ ...p, [m.id]: m.url as string }));
+		onChange([...value, m.id]); // keep the dialog open for multi-add
+	}
+	function remove(id: number) {
+		onChange(value.filter((x) => x !== id));
+	}
+	function move(i: number, dir: -1 | 1) {
+		const j = i + dir;
+		if (j < 0 || j >= value.length) return;
+		const next = value.slice();
+		[next[i], next[j]] = [next[j], next[i]];
+		onChange(next);
+	}
+
+	return (
+		<div className="space-y-3">
+			{value.length > 0 && (
+				<ul className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+					{value.map((id, i) => (
+						<li key={id} className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-muted">
+							{urls[id] ? <img src={urls[id]} alt="" className="h-full w-full object-cover" /> : <span className="grid h-full w-full place-items-center text-2xl">🖼️</span>}
+							<span className="absolute left-1 top-1 rounded bg-foreground/70 px-1.5 py-0.5 text-[10px] font-semibold text-background">{i + 1}</span>
+							<div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-foreground/60 px-1.5 py-1 opacity-0 transition group-hover:opacity-100">
+								<div className="flex gap-1">
+									<button type="button" onClick={() => move(i, -1)} disabled={i === 0} className="rounded bg-background/90 px-1.5 text-xs text-foreground disabled:opacity-30" aria-label="Move left">←</button>
+									<button type="button" onClick={() => move(i, 1)} disabled={i === value.length - 1} className="rounded bg-background/90 px-1.5 text-xs text-foreground disabled:opacity-30" aria-label="Move right">→</button>
+								</div>
+								<button type="button" onClick={() => remove(id)} className="rounded bg-background/90 px-1.5 text-xs text-destructive" aria-label="Remove">×</button>
+							</div>
+						</li>
+					))}
+				</ul>
+			)}
+			<button type="button" onClick={() => setOpen(true)} className="rounded-lg border border-dashed border-border px-4 py-2 text-sm font-medium text-foreground/70 hover:border-[var(--accent)] hover:bg-muted">
+				+ Add images{value.length > 0 ? ` (${value.length})` : ""}
+			</button>
+			<MediaLibraryDialog open={open} onClose={() => setOpen(false)} onSelect={add} kind="image" selectedId={null} />
+		</div>
 	);
 }

@@ -118,9 +118,20 @@ export type PostInput = {
 	status: string;
 	author?: string | null;
 	publishedAt?: string | null;
+	coverMediaId?: number | null;
+	media?: number[]; // ordered gallery (post_media); undefined = leave untouched
 	meta?: Record<string, unknown> | null;
 	translations: PostTranslation[];
 };
+
+/** Replace a post's ordered gallery (post_media) with `ids`, preserving order. */
+async function writePostMedia(db: DB, postId: number, ids: number[] | undefined): Promise<void> {
+	if (ids === undefined) return; // caller didn't manage the gallery — leave it alone
+	await db.delete(postMedia).where(eq(postMedia.postId, postId));
+	if (ids.length) {
+		await db.insert(postMedia).values(ids.map((mediaId, i) => ({ postId, mediaId, sort: i })));
+	}
+}
 
 /** All posts (any status) with the default-language title, for the admin list. */
 export async function adminListPosts(db: DB) {
@@ -174,6 +185,12 @@ export async function getPostForEdit(db: DB, id: number) {
 		byLang[r.lang][r.field] = r.value;
 	}
 
+	const mediaRows = await db
+		.select({ mediaId: postMedia.mediaId })
+		.from(postMedia)
+		.where(eq(postMedia.postId, id))
+		.orderBy(asc(postMedia.sort));
+
 	return {
 		id: post.id,
 		contentType: post.contentType,
@@ -181,6 +198,8 @@ export async function getPostForEdit(db: DB, id: number) {
 		status: post.status,
 		author: post.author,
 		publishedAt: post.publishedAt,
+		coverMediaId: post.coverMediaId,
+		media: mediaRows.map((m) => m.mediaId),
 		meta: post.meta ?? null,
 		translations: byLang,
 	};
@@ -216,11 +235,13 @@ export async function createPost(db: DB, input: PostInput): Promise<number> {
 			status: input.status,
 			author: input.author ?? null,
 			publishedAt: input.publishedAt ?? null,
+			coverMediaId: input.coverMediaId ?? null,
 			meta: input.meta ?? null,
 		})
 		.returning({ id: posts.id });
 	const trs = translationRows(row.id, input);
 	if (trs.length) await db.insert(translations).values(trs);
+	await writePostMedia(db, row.id, input.media);
 	return row.id;
 }
 
@@ -233,6 +254,7 @@ export async function updatePost(db: DB, id: number, input: PostInput): Promise<
 			status: input.status,
 			author: input.author ?? null,
 			publishedAt: input.publishedAt ?? null,
+			coverMediaId: input.coverMediaId ?? null,
 			meta: input.meta ?? null,
 			updatedAt: new Date().toISOString(),
 		})
@@ -244,6 +266,7 @@ export async function updatePost(db: DB, id: number, input: PostInput): Promise<
 		.where(and(eq(translations.entityType, "post"), eq(translations.entityId, id)));
 	const trs = translationRows(id, input);
 	if (trs.length) await db.insert(translations).values(trs);
+	await writePostMedia(db, id, input.media);
 }
 
 export async function deletePost(db: DB, id: number): Promise<void> {

@@ -121,6 +121,8 @@ const postInput = z.object({
   status: z.enum(['draft', 'published', 'archived']),
   author: z.string().nullish(),
   publishedAt: z.string().nullish(),
+  coverMediaId: z.number().nullish(),
+  media: z.array(z.number()).optional(),
   meta: z.record(z.string(), z.unknown()).nullish(),
   translations: z.array(
     z.object({

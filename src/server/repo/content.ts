@@ -276,6 +276,8 @@ export type ResolvedPost = {
 	title: string;
 	excerpt: string;
 	bodyHtml: string;
+	coverUrl: string | null;
+	gallery: AlbumPhoto[];
 };
 
 /** If `slug` was an old page slug, return the page's current slug (for a 301). */
@@ -331,6 +333,21 @@ export async function getPostBySlug(
 	if (!post) return null;
 
 	const f = await resolveOne(db, "post", post.id, lang);
+
+	let coverUrl: string | null = null;
+	if (post.coverMediaId) {
+		const [c] = await db.select({ url: media.url }).from(media).where(eq(media.id, post.coverMediaId)).limit(1);
+		coverUrl = c?.url ?? null;
+	}
+
+	const pm = await db
+		.select({ mediaId: media.id, url: media.url })
+		.from(postMedia)
+		.innerJoin(media, eq(postMedia.mediaId, media.id))
+		.where(eq(postMedia.postId, post.id))
+		.orderBy(asc(postMedia.sort));
+	const caps = await resolveTranslations(db, "media", pm.map((p) => p.mediaId), lang);
+
 	return {
 		id: post.id,
 		slug: post.slug,
@@ -341,5 +358,7 @@ export async function getPostBySlug(
 		title: f.title ?? "",
 		excerpt: f.excerpt ?? "",
 		bodyHtml: renderBody(f.body ?? null),
+		coverUrl,
+		gallery: pm.map((p) => ({ url: p.url ?? "", caption: caps.get(p.mediaId)?.caption ?? "" })),
 	};
 }

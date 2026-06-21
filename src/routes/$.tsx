@@ -90,7 +90,7 @@ function ResolvedRoute() {
 	if (r.kind === "article") {
 		const post = r.post;
 		return (
-			<SubPage section={r.label} title={post.title} lead={post.excerpt || undefined}>
+			<SubPage section={r.label} title={post.title} lead={post.excerpt || undefined} heroImage={post.coverUrl || undefined}>
 				{post.publishedAt && (
 					<div className="text-xs text-[var(--accent)] font-semibold uppercase tracking-wider mb-6">
 						{post.publishedAt} · {post.author ?? "KAPE Cambodia"}
@@ -101,6 +101,20 @@ function ResolvedRoute() {
 					// biome-ignore lint/security/noDangerouslySetInnerHtml: trusted, server-rendered
 					dangerouslySetInnerHTML={{ __html: post.bodyHtml }}
 				/>
+				{post.gallery.length > 0 && (
+					<div className="mt-10 grid grid-cols-2 md:grid-cols-3 gap-3">
+						{post.gallery.map((p) => (
+							<figure key={p.url} className="group relative overflow-hidden rounded-2xl border border-border">
+								<img src={p.url} alt={p.caption} className="aspect-square w-full object-cover group-hover:scale-105 transition duration-700" />
+								{p.caption && (
+									<figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent text-white text-xs p-3 opacity-0 group-hover:opacity-100 transition">
+										{p.caption}
+									</figcaption>
+								)}
+							</figure>
+						))}
+					</div>
+				)}
 			</SubPage>
 		);
 	}
