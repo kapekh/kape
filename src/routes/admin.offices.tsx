@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import { FormSection, fieldInput, fieldLabel } from "#/components/admin/form-ui";
+import { MapField } from "#/components/admin/MapField";
 import { MediaThumb } from "#/components/admin/MediaThumb";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 
@@ -71,13 +72,9 @@ function OfficesAdmin() {
 						<label className={fieldLabel}>Email</label>
 						<input className={fieldInput} value={add.email} onChange={(e) => setAdd({ ...add, email: e.target.value })} />
 					</div>
-					<div className="w-24">
-						<label className={fieldLabel}>Lat</label>
-						<input className={fieldInput} value={add.lat} onChange={(e) => setAdd({ ...add, lat: e.target.value })} />
-					</div>
-					<div className="w-24">
-						<label className={fieldLabel}>Lng</label>
-						<input className={fieldInput} value={add.lng} onChange={(e) => setAdd({ ...add, lng: e.target.value })} />
+					<div>
+						<label className={fieldLabel}>Location</label>
+						<MapField lat={add.lat} lng={add.lng} label="office location" onChange={(la, ln) => setAdd((a) => ({ ...a, lat: la, lng: ln }))} />
 					</div>
 					<label className="flex items-center gap-1.5 text-sm pb-2"><input type="checkbox" checked={add.isHq} onChange={(e) => setAdd({ ...add, isHq: e.target.checked })} /> HQ</label>
 					<div>
@@ -94,13 +91,13 @@ function OfficesAdmin() {
 						<tr>
 							<th className="px-2 py-2.5">Image</th>
 							<th className="px-2 py-2.5">Name</th><th className="px-2 py-2.5">Province</th><th className="px-2 py-2.5">Phone</th>
-							<th className="px-2 py-2.5">Email</th><th className="px-2 py-2.5">Lat</th><th className="px-2 py-2.5">Lng</th>
+							<th className="px-2 py-2.5">Email</th><th className="px-2 py-2.5">Location</th>
 							<th className="px-2 py-2.5">HQ</th><th className="px-3 py-2.5 text-right">Actions</th>
 						</tr>
 					</thead>
 					<tbody className="divide-y divide-border">
 						{loading ? (
-							<tr><td colSpan={9} className="px-3 py-4 text-muted-foreground">Loading…</td></tr>
+							<tr><td colSpan={8} className="px-3 py-4 text-muted-foreground">Loading…</td></tr>
 						) : (
 							rows.map((r) => (
 								<tr key={r.id} className="hover:bg-muted/20">
@@ -109,8 +106,7 @@ function OfficesAdmin() {
 									<td><input className={ci} value={r.province ?? ""} onChange={(e) => patch(r.id, "province", e.target.value)} /></td>
 									<td><input className={ci} value={r.phone ?? ""} onChange={(e) => patch(r.id, "phone", e.target.value)} /></td>
 									<td><input className={ci} value={r.email ?? ""} onChange={(e) => patch(r.id, "email", e.target.value)} /></td>
-									<td><input className={`${ci} w-20`} value={r.lat ?? ""} onChange={(e) => patch(r.id, "lat", e.target.value)} /></td>
-									<td><input className={`${ci} w-20`} value={r.lng ?? ""} onChange={(e) => patch(r.id, "lng", e.target.value)} /></td>
+									<td className="px-2"><MapField lat={r.lat ?? ""} lng={r.lng ?? ""} label="office location" onChange={(la, ln) => { patch(r.id, "lat", la); patch(r.id, "lng", ln); }} /></td>
 									<td className="text-center"><input type="checkbox" checked={r.isHq} onChange={(e) => patch(r.id, "isHq", e.target.checked)} /></td>
 									<td className="px-3 py-2 text-right whitespace-nowrap">
 										<button type="button" onClick={() => save(r)} className="text-xs rounded border border-border px-2.5 py-1 hover:bg-muted">Save</button>

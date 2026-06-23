@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { EditorGrid, EditorHeader, FormSection, cancelButtonClass, fieldInput, fieldLabel } from "./form-ui";
+import { MapField } from "./MapField";
 import type { LangOpt } from "./PostForm";
 import { RichTextEditor } from "./RichTextEditor";
 
@@ -109,8 +110,7 @@ export function ProjectForm({
 								{locations.map((l, i) => (
 									<div key={i} className="flex flex-wrap gap-2 items-center">
 										<input className={`${fieldInput} max-w-[260px]`} placeholder="School / site name" value={l.schoolName} onChange={(e) => setLoc(i, "schoolName", e.target.value)} />
-										<input className={`${fieldInput} max-w-[110px]`} placeholder="Lat" value={l.lat} onChange={(e) => setLoc(i, "lat", e.target.value)} />
-										<input className={`${fieldInput} max-w-[110px]`} placeholder="Lng" value={l.lng} onChange={(e) => setLoc(i, "lng", e.target.value)} />
+										<MapField lat={l.lat} lng={l.lng} label={l.schoolName || "site location"} onChange={(la, ln) => { setLoc(i, "lat", la); setLoc(i, "lng", ln); }} />
 										<button type="button" onClick={() => setLocations((ls) => ls.filter((_, j) => j !== i))} className="text-xs text-destructive hover:underline">Remove</button>
 									</div>
 								))}
