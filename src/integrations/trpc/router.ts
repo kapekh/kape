@@ -90,7 +90,7 @@ import {
 } from '#/server/repo/content'
 import { bootstrapI18n, listLanguages } from '#/server/repo/i18n'
 import { getNavTree } from '#/server/repo/nav'
-import { adminListOrg, createOrgNode, deleteOrgNode, getOrgTree, moveOrgNode, updateOrgNode } from '#/server/repo/org'
+import { adminListOrg, createOrgNode, deleteOrgNode, getOrgTree, moveOrgNode, reparentOrgNode, setOrgPosition, updateOrgNode } from '#/server/repo/org'
 import { getProjectBySlug, listProjectLocations, listProjectOptions } from '#/server/repo/projects'
 import {
   getActiveAnnouncement,
@@ -222,6 +222,12 @@ const adminOrgRouter = {
   move: adminProcedure
     .input(z.object({ id: z.number(), dir: z.enum(['up', 'down']) }))
     .mutation(({ ctx, input }) => moveOrgNode(ctx.db, input.id, input.dir)),
+  setPosition: adminProcedure
+    .input(z.object({ id: z.number(), x: z.number(), y: z.number() }))
+    .mutation(({ ctx, input }) => setOrgPosition(ctx.db, input.id, input.x, input.y)),
+  reparent: adminProcedure
+    .input(z.object({ id: z.number(), parentId: z.number().nullable() }))
+    .mutation(({ ctx, input }) => reparentOrgNode(ctx.db, input.id, input.parentId)),
 } satisfies TRPCRouterRecord
 
 const pagesRouter = {

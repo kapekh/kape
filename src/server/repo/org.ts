@@ -65,10 +65,31 @@ export type OrgInput = { parentId: number | null; name: string; title: string | 
 
 export function adminListOrg(db: DB) {
 	return db
-		.select({ id: orgNodes.id, parentId: orgNodes.parentId, name: orgNodes.name, title: orgNodes.title, personId: orgNodes.personId, sort: orgNodes.sort })
+		.select({ id: orgNodes.id, parentId: orgNodes.parentId, name: orgNodes.name, title: orgNodes.title, personId: orgNodes.personId, sort: orgNodes.sort, posX: orgNodes.posX, posY: orgNodes.posY })
 		.from(orgNodes)
 		.where(eq(orgNodes.tenantId, TENANT))
 		.orderBy(asc(orgNodes.sort));
+}
+
+/** Persist a node's canvas position (n8n-style free drag). */
+export async function setOrgPosition(db: DB, id: number, x: number, y: number): Promise<void> {
+	await db.update(orgNodes).set({ posX: Math.round(x), posY: Math.round(y) }).where(and(eq(orgNodes.tenantId, TENANT), eq(orgNodes.id, id)));
+}
+
+/** Re-parent a node by dragging a connection. Rejects cycles (parent can't be a descendant). */
+export async function reparentOrgNode(db: DB, id: number, parentId: number | null): Promise<void> {
+	if (parentId === id) return;
+	if (parentId != null) {
+		const all = await db.select({ id: orgNodes.id, parentId: orgNodes.parentId }).from(orgNodes).where(eq(orgNodes.tenantId, TENANT));
+		// Walk up from the proposed parent; if we reach `id`, this would form a cycle.
+		let cur: number | null = parentId;
+		const byId = new Map(all.map((n) => [n.id, n.parentId]));
+		while (cur != null) {
+			if (cur === id) return; // cycle — ignore
+			cur = byId.get(cur) ?? null;
+		}
+	}
+	await db.update(orgNodes).set({ parentId, updatedAt: new Date().toISOString() }).where(and(eq(orgNodes.tenantId, TENANT), eq(orgNodes.id, id)));
 }
 
 export async function createOrgNode(db: DB, input: OrgInput): Promise<number> {

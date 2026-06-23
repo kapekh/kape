@@ -451,6 +451,8 @@ export const orgNodes = sqliteTable(
 		title: text("title"), // role / position
 		personId: integer("person_id").references(() => posts.id), // optional link to a person post
 		sort: integer("sort").notNull().default(0),
+		posX: integer("pos_x"), // saved canvas position (null = auto-layout)
+		posY: integer("pos_y"),
 		...timestamps,
 	},
 	(t) => [
