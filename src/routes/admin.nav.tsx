@@ -53,7 +53,7 @@ function HeaderSettings() {
 					</div>
 					<div className="mt-4 flex items-center gap-3">
 						<button type="button" onClick={save} disabled={saving} className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition">{saving ? "Saving…" : "Save header settings"}</button>
-						{savedAt && <span className="text-xs text-[var(--palm)]">Saved {savedAt}</span>}
+						{savedAt && <span className="text-xs text-(--palm)">Saved {savedAt}</span>}
 					</div>
 				</>
 			)}
@@ -155,7 +155,7 @@ function NavItemForm({
 	);
 
 	return (
-		<div className="rounded-xl border border-[var(--accent)]/40 bg-[var(--accent)]/5 p-3 my-2 space-y-3">
+		<div className="rounded-xl border border-(--accent)/40 bg-(--accent)/5 p-3 my-2 space-y-3">
 			{isGroup ? (
 				<>
 					{labelInputs}
@@ -172,7 +172,7 @@ function NavItemForm({
 								<option key={k} value={k}>{k}</option>
 							))}
 						</select>
-						<div className="flex-1 min-w-[220px]">
+						<div className="flex-1 min-w-55">
 							{targetKind === "url" ? (
 								<input className={`${inp} w-full`} placeholder="https://… or /path" value={targetRef} onChange={(e) => setTargetRef(e.target.value)} />
 							) : (
@@ -346,9 +346,9 @@ function NavBuilder() {
 				<NavItemForm languages={langs} pages={pages} posts={posts} onSave={(v) => create(null, v)} onCancel={() => setAddingParent(undefined)} />
 			)}
 			<div className="mb-2 flex items-center gap-3 text-xs text-muted-foreground">
-				<button type="button" className="hover:text-[var(--accent)] transition" onClick={() => setCollapsed(new Set())}>Expand all</button>
+				<button type="button" className="hover:text-accent transition" onClick={() => setCollapsed(new Set())}>Expand all</button>
 				<span className="text-border">·</span>
-				<button type="button" className="hover:text-[var(--accent)] transition" onClick={() => setCollapsed(new Set(items.filter((i) => i.parentId != null).map((i) => i.parentId as number)))}>Collapse all</button>
+				<button type="button" className="hover:text-accent transition" onClick={() => setCollapsed(new Set(items.filter((i) => i.parentId != null).map((i) => i.parentId as number)))}>Collapse all</button>
 			</div>
 			<div className="rounded-xl border border-border bg-card p-2">
 				{tree.length === 0 ? <p className="p-2 text-sm text-muted-foreground">No nav items.</p> : tree.map((n) => renderNode(n, 0))}

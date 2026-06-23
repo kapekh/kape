@@ -10,7 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as InternalsourcesRouteImport } from './routes/internalsources'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -57,9 +59,19 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
+  id: '/robots.txt',
+  path: '/robots.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
+  id: '/llms.txt',
+  path: '/llms.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InternalsourcesRoute = InternalsourcesRouteImport.update({
@@ -272,7 +284,9 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/contact': typeof ContactRoute
   '/internalsources': typeof InternalsourcesRouteWithChildren
+  '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/doc-categories': typeof AdminDocCategoriesRoute
   '/admin/donors': typeof AdminDonorsRoute
@@ -314,7 +328,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/contact': typeof ContactRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/doc-categories': typeof AdminDocCategoriesRoute
   '/admin/donors': typeof AdminDonorsRoute
@@ -359,7 +375,9 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/contact': typeof ContactRoute
   '/internalsources': typeof InternalsourcesRouteWithChildren
+  '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/doc-categories': typeof AdminDocCategoriesRoute
   '/admin/donors': typeof AdminDonorsRoute
@@ -405,7 +423,9 @@ export interface FileRouteTypes {
     | '/admin'
     | '/contact'
     | '/internalsources'
+    | '/llms.txt'
     | '/login'
+    | '/robots.txt'
     | '/sitemap.xml'
     | '/admin/doc-categories'
     | '/admin/donors'
@@ -447,7 +467,9 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/contact'
+    | '/llms.txt'
     | '/login'
+    | '/robots.txt'
     | '/sitemap.xml'
     | '/admin/doc-categories'
     | '/admin/donors'
@@ -491,7 +513,9 @@ export interface FileRouteTypes {
     | '/admin'
     | '/contact'
     | '/internalsources'
+    | '/llms.txt'
     | '/login'
+    | '/robots.txt'
     | '/sitemap.xml'
     | '/admin/doc-categories'
     | '/admin/donors'
@@ -536,7 +560,9 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   ContactRoute: typeof ContactRoute
   InternalsourcesRoute: typeof InternalsourcesRouteWithChildren
+  LlmsDottxtRoute: typeof LlmsDottxtRoute
   LoginRoute: typeof LoginRoute
+  RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   UploadsSplatRoute: typeof UploadsSplatRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -554,11 +580,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/robots.txt': {
+      id: '/robots.txt'
+      path: '/robots.txt'
+      fullPath: '/robots.txt'
+      preLoaderRoute: typeof RobotsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/llms.txt': {
+      id: '/llms.txt'
+      path: '/llms.txt'
+      fullPath: '/llms.txt'
+      preLoaderRoute: typeof LlmsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/internalsources': {
@@ -928,7 +968,9 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   ContactRoute: ContactRoute,
   InternalsourcesRoute: InternalsourcesRouteWithChildren,
+  LlmsDottxtRoute: LlmsDottxtRoute,
   LoginRoute: LoginRoute,
+  RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   UploadsSplatRoute: UploadsSplatRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,

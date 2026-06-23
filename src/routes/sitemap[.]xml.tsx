@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm'
 import { COLLECTIONS } from '#/lib/collections'
 import { LANGS } from '#/lib/i18n-config'
 import { db } from '#/server/db'
+import { siteOrigin } from '#/server/origin'
 import { pages, posts } from '#/server/schema'
 
 // Content types that are intentionally not public (mirrors the route resolver).
@@ -12,15 +13,6 @@ const BLOCKED = new Set(['internal_news', 'document', 'announcement', 'event'])
 // content_type -> URL prefix (e.g. "news" -> "news", "story" -> "stories").
 const PREFIX_BY_TYPE: Record<string, string> = {}
 for (const c of Object.values(COLLECTIONS)) if (c.contentType) PREFIX_BY_TYPE[c.contentType] = c.prefix
-
-// Derive the public origin from proxy headers (falls back to the request host),
-// so the sitemap is correct without a hardcoded domain.
-function origin(request: Request): string {
-  const u = new URL(request.url)
-  const proto = request.headers.get('x-forwarded-proto') ?? u.protocol.replace(':', '')
-  const host = request.headers.get('x-forwarded-host') ?? request.headers.get('host') ?? u.host
-  return `${proto}://${host}`
-}
 
 const xmlEscape = (s: string) => s.replace(/[&<>'"]/g, (c) => `&#${c.charCodeAt(0)};`)
 
@@ -58,7 +50,7 @@ async function handler({ request }: { request: Request }) {
     console.error('[sitemap] posts query failed', e)
   }
 
-  const base = origin(request)
+  const base = siteOrigin(request)
   const urls: string[] = []
   for (const p of paths) {
     for (const lang of LANGS) {

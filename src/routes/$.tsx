@@ -4,8 +4,10 @@ import students from "@/assets/students.jpg.asset.json";
 import { AnnouncementPopup } from "@/components/AnnouncementPopup";
 import { ProjectView } from "@/components/ProjectView";
 import { SectionRenderer } from "@/components/sections/SectionRenderer";
+import { JsonLd } from "@/components/JsonLd";
 import { SubPage } from "@/components/SubPage";
 import { DEFAULT_LANG, LANGS, stripLang } from "@/lib/i18n-config";
+import { articleLd } from "@/lib/structured-data";
 
 /**
  * The public catch-all + i18n router. Every content URL is language-prefixed
@@ -107,6 +109,7 @@ function ResolvedRoute() {
 		const post = r.post;
 		return (
 			<SubPage section={r.label} title={post.title} lead={post.excerpt || undefined} heroImage={post.coverUrl || undefined}>
+				<JsonLd data={articleLd({ title: post.title, description: post.excerpt, image: post.coverUrl, datePublished: post.publishedAt, author: post.author })} />
 				{post.publishedAt && (
 					<div className="text-xs text-[var(--accent)] font-semibold uppercase tracking-wider mb-6">
 						{post.publishedAt} · {post.author ?? "KAPE Cambodia"}

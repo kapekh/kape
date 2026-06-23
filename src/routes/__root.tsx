@@ -12,8 +12,10 @@ import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
 import { Footer } from '../components/Footer'
 import { Header } from '../components/Header'
+import { JsonLd } from '../components/JsonLd'
 import { LanguageProvider } from '../lib/i18n'
 import { detectLang } from '../lib/i18n-config'
+import { organizationLd } from '../lib/structured-data'
 
 import appCss from '../styles.css?url'
 
@@ -146,6 +148,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           }}
         />
         <HeadContent />
+        <JsonLd data={organizationLd()} />
       </head>
       <body>
         {children}
