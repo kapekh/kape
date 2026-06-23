@@ -12,7 +12,7 @@ export const Route = createFileRoute("/admin")({
 });
 
 type NavItem = { to: string; label: string; icon: string; exact?: boolean; type?: string };
-type NavGroup = { group: string; collapsible?: boolean; items: NavItem[] };
+type NavGroup = { group: string; items: NavItem[] };
 
 // `type` items deep-link the Posts list to a single content type (/admin/posts?type=…),
 // so the admin mirrors the public collections (News, Stories, Videos, …).
@@ -22,25 +22,24 @@ const NAV: NavGroup[] = [
 		group: "Content",
 		items: [
 			{ to: "/admin/pages", label: "Pages", icon: "pages" },
+			{ to: "/admin/projects", label: "Projects", icon: "projects" },
+			{ to: "/admin/media", label: "Media", icon: "media" },
+		],
+	},
+	{
+		group: "Posts",
+		items: [
+			{ to: "/admin/posts", label: "All posts", icon: "posts" },
 			{ to: "/admin/posts", label: "News", icon: "news", type: "news" },
 			{ to: "/admin/posts", label: "Stories", icon: "story", type: "story" },
 			{ to: "/admin/posts", label: "Videos", icon: "video", type: "video" },
 			{ to: "/admin/posts", label: "Galleries", icon: "gallery", type: "album" },
 			{ to: "/admin/posts", label: "Publications", icon: "publication", type: "publication" },
 			{ to: "/admin/posts", label: "Careers", icon: "career", type: "job" },
-			{ to: "/admin/projects", label: "Projects", icon: "projects" },
-			{ to: "/admin/media", label: "Media", icon: "media" },
-		],
-	},
-	{
-		group: "More",
-		collapsible: true,
-		items: [
 			{ to: "/admin/posts", label: "Events", icon: "event", type: "event" },
 			{ to: "/admin/posts", label: "Documents", icon: "document", type: "document" },
 			{ to: "/admin/posts", label: "Announcements", icon: "announcements", type: "announcement" },
 			{ to: "/admin/posts", label: "Internal news", icon: "posts", type: "internal_news" },
-			{ to: "/admin/posts", label: "All posts", icon: "posts" },
 		],
 	},
 	{
@@ -65,7 +64,6 @@ const NAV: NavGroup[] = [
 	},
 	{
 		group: "Lists",
-		collapsible: true,
 		items: [
 			{ to: "/admin/locations", label: "Locations", icon: "tag" },
 			{ to: "/admin/publication-categories", label: "Publication categories", icon: "tag" },
@@ -95,8 +93,23 @@ function AdminLayout() {
 		if (it.to === "/admin/posts") return pathname === "/admin/posts" && (it.type ?? undefined) === activeType;
 		return pathname === it.to || pathname.startsWith(`${it.to}/`);
 	};
-	// Collapsible groups start closed, but auto-open when they hold the active item.
-	const [open, setOpen] = useState<Record<string, boolean>>({});
+	// Each group is foldable; the collapsed set is remembered in localStorage.
+	const [folded, setFolded] = useState<Record<string, boolean>>(() => {
+		if (typeof window === "undefined") return {};
+		try {
+			return JSON.parse(localStorage.getItem("kape-nav-folded") || "{}");
+		} catch {
+			return {};
+		}
+	});
+	const toggleGroup = (g: string) =>
+		setFolded((f) => {
+			const next = { ...f, [g]: !f[g] };
+			try {
+				localStorage.setItem("kape-nav-folded", JSON.stringify(next));
+			} catch {}
+			return next;
+		});
 
 	useEffect(() => {
 		let alive = true;
@@ -150,38 +163,34 @@ function AdminLayout() {
 
 				<nav className="thin-scroll flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-5">
 					{NAV.map((section) => {
-						const hasActive = section.items.some(isActive);
-						const expanded = !section.collapsible || (open[section.group] ?? hasActive);
-						const items = (
-							<div className="space-y-0.5">
-								{section.items.map((it) => (
-									<Link
-										key={`${it.to}:${it.type ?? ""}`}
-										to={it.to}
-										search={it.type ? { type: it.type } : undefined}
-										className={isActive(it) ? linkActive : link}
-									>
-										<AdminIcon name={it.icon} className="h-4 w-4 shrink-0 opacity-80" />
-										<span className="truncate">{it.label}</span>
-									</Link>
-								))}
-							</div>
-						);
+						const collapsed = !!folded[section.group];
 						return (
 							<div key={section.group || "_top"}>
-								{section.collapsible ? (
+								{section.group ? (
 									<button
 										type="button"
-										onClick={() => setOpen((o) => ({ ...o, [section.group]: !expanded }))}
+										onClick={() => toggleGroup(section.group)}
 										className="flex w-full items-center justify-between px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/70 hover:text-foreground"
 									>
 										{section.group}
-										<span className={`transition-transform ${expanded ? "rotate-90" : ""}`}>▸</span>
+										<span className={`transition-transform ${collapsed ? "" : "rotate-90"}`}>▸</span>
 									</button>
-								) : section.group ? (
-									<div className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/70">{section.group}</div>
 								) : null}
-								{expanded && items}
+								{(!section.group || !collapsed) && (
+									<div className="space-y-0.5">
+										{section.items.map((it) => (
+											<Link
+												key={`${it.to}:${it.type ?? ""}`}
+												to={it.to}
+												search={it.type ? { type: it.type } : undefined}
+												className={isActive(it) ? linkActive : link}
+											>
+												<AdminIcon name={it.icon} className="h-4 w-4 shrink-0 opacity-80" />
+												<span className="truncate">{it.label}</span>
+											</Link>
+										))}
+									</div>
+								)}
 							</div>
 						);
 					})}
