@@ -1,4 +1,5 @@
 import { Link, Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
+import { ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { AdminHeaderProvider } from "#/components/admin/AdminHeader";
@@ -173,7 +174,7 @@ function AdminLayout() {
 										className="flex w-full items-center justify-between px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/70 hover:text-foreground"
 									>
 										{section.group}
-										<span className={`transition-transform ${collapsed ? "" : "rotate-90"}`}>▸</span>
+										<ChevronDown className={`h-4 w-4 shrink-0 transition-transform duration-200 ${collapsed ? "-rotate-90" : ""}`} />
 									</button>
 								) : null}
 								{(!section.group || !collapsed) && (
