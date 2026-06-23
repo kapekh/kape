@@ -32,8 +32,8 @@ export type PublicOrgNode = {
 type NodeData = { node: PublicOrgNode; lang: string };
 
 const NODE_W = 210;
-const GAP_X = 40;
-const GAP_Y = 140;
+const GAP_X = 64;
+const GAP_Y = 210;
 
 function autoLayout(roots: PublicOrgNode[]): Map<number, { x: number; y: number }> {
 	const pos = new Map<number, { x: number; y: number }>();

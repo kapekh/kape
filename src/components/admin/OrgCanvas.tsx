@@ -33,8 +33,8 @@ type NodeData = {
 };
 
 const NODE_W = 210;
-const GAP_X = 40;
-const GAP_Y = 130;
+const GAP_X = 64;
+const GAP_Y = 210;
 
 /** Tidy top-down tree layout for nodes that don't have a saved position. */
 function autoLayout(rows: OrgRow[]): Map<number, { x: number; y: number }> {
