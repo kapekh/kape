@@ -69,7 +69,7 @@ function PagesList() {
 										<td className="px-4 py-2.5 font-mono text-xs text-foreground/60">/{r.slug}</td>
 										<td className="px-4 py-2.5 text-foreground/60">{r.parentId != null ? (titleById.get(r.parentId) ?? "—") : "—"}</td>
 										<td className="px-4 py-2.5">
-											<span className={`rounded-full px-2 py-0.5 text-xs ${r.status === "published" ? "bg-[var(--palm)]/15 text-[var(--palm)]" : "bg-muted text-muted-foreground"}`}>{r.status}</span>
+											<span className={`rounded-full px-2 py-0.5 text-xs capitalize ${r.status === "published" ? "bg-[var(--palm)]/15 text-[var(--palm)]" : "bg-muted text-muted-foreground"}`}>{r.status}</span>
 										</td>
 										<td className="px-4 py-2.5 text-right whitespace-nowrap">
 											<Link to="/admin/pages/$id" params={{ id: String(r.id) }} className="text-[var(--accent)] font-semibold hover:underline">Edit</Link>

@@ -44,7 +44,7 @@ function ProjectsList() {
 								<tr key={r.id} className="border-t border-border">
 									<td className="px-4 py-2.5 font-mono">{r.code}</td>
 									<td className="px-4 py-2.5 font-medium text-foreground">{r.name}</td>
-									<td className="px-4 py-2.5"><span className={`rounded-full px-2 py-0.5 text-xs ${r.status === "current" ? "bg-[var(--palm)]/15 text-[var(--palm)]" : "bg-muted text-muted-foreground"}`}>{r.status}</span></td>
+									<td className="px-4 py-2.5"><span className={`rounded-full px-2 py-0.5 text-xs capitalize ${r.status === "current" ? "bg-[var(--palm)]/15 text-[var(--palm)]" : "bg-muted text-muted-foreground"}`}>{r.status}</span></td>
 									<td className="px-4 py-2.5 text-foreground/60">{r.slug}</td>
 									<td className="px-4 py-2.5 text-right whitespace-nowrap">
 										<Link to="/admin/projects/$id" params={{ id: String(r.id) }} className="text-[var(--accent)] font-semibold hover:underline">Edit</Link>
