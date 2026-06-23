@@ -156,7 +156,7 @@ function OrgFlow({ roots, eyebrow, title }: { roots: PublicOrgNode[]; eyebrow?: 
 				proOptions={{ hideAttribution: true }}
 			>
 				{(eyebrow || title) && (
-					<Panel position="top-left" className="!m-5 max-w-md">
+					<Panel position="top-center" className="!mt-6 text-center">
 						{eyebrow && <div className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">{eyebrow}</div>}
 						{title && <h2 className="mt-1 font-display text-3xl md:text-4xl font-semibold tracking-tight text-primary">{renderTitle(title)}</h2>}
 					</Panel>
