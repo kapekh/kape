@@ -632,6 +632,10 @@ export async function adminListStaff(db: DB) {
 	const rows = await db.select().from(staff).where(eq(staff.tenantId, TENANT)).orderBy(asc(staff.sort));
 	return attachMediaUrl(db, rows, "photoMediaId", "photoUrl");
 }
+export async function getStaff(db: DB, id: number) {
+	const [r] = await db.select().from(staff).where(and(eq(staff.tenantId, TENANT), eq(staff.id, id))).limit(1);
+	return r ?? null;
+}
 
 export async function createStaff(db: DB, input: StaffInput): Promise<number> {
 	const [row] = await db
@@ -671,6 +675,10 @@ export async function adminListPartners(db: DB) {
 	const rows = await db.select().from(partners).where(eq(partners.tenantId, TENANT)).orderBy(asc(partners.sort));
 	return attachMediaUrl(db, rows, "logoMediaId", "logoUrl");
 }
+export async function getPartner(db: DB, id: number) {
+	const [r] = await db.select().from(partners).where(and(eq(partners.tenantId, TENANT), eq(partners.id, id))).limit(1);
+	return r ?? null;
+}
 export async function createPartner(db: DB, v: PartnerInput): Promise<number> {
 	const [r] = await db.insert(partners).values({ tenantId: TENANT, ...v }).returning({ id: partners.id });
 	return r.id;
@@ -691,6 +699,10 @@ export type OfficeInput = {
 export async function adminListOffices(db: DB) {
 	const rows = await db.select().from(offices).where(eq(offices.tenantId, TENANT)).orderBy(asc(offices.sort));
 	return attachMediaUrl(db, rows, "imageMediaId", "imageUrl");
+}
+export async function getOffice(db: DB, id: number) {
+	const [r] = await db.select().from(offices).where(and(eq(offices.tenantId, TENANT), eq(offices.id, id))).limit(1);
+	return r ?? null;
 }
 export async function createOffice(db: DB, v: OfficeInput): Promise<number> {
 	const [r] = await db.insert(offices).values({ tenantId: TENANT, ...v }).returning({ id: offices.id });
@@ -818,6 +830,10 @@ export type DonorInput = { name: string; url: string; sort: number; logoMediaId?
 export async function adminListDonors(db: DB) {
 	const rows = await db.select().from(donors).where(eq(donors.tenantId, TENANT)).orderBy(asc(donors.sort));
 	return attachMediaUrl(db, rows, "logoMediaId", "logoUrl");
+}
+export async function getDonor(db: DB, id: number) {
+	const [r] = await db.select().from(donors).where(and(eq(donors.tenantId, TENANT), eq(donors.id, id))).limit(1);
+	return r ?? null;
 }
 export async function createDonor(db: DB, v: DonorInput): Promise<number> {
 	const [r] = await db.insert(donors).values({ tenantId: TENANT, ...v }).returning({ id: donors.id });

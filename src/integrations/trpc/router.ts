@@ -29,6 +29,10 @@ import {
   createOffice,
   createPartner,
   createStat,
+  getDonor,
+  getOffice,
+  getPartner,
+  getStaff,
   deleteDonor,
   deleteHero,
   deleteOffice,
@@ -393,6 +397,7 @@ const staffRouter = {
 
 const adminStaffRouter = {
   list: adminProcedure.query(({ ctx }) => adminListStaff(ctx.db)),
+  get: adminProcedure.input(z.object({ id: z.number() })).query(({ ctx, input }) => getStaff(ctx.db, input.id)),
   create: adminProcedure.input(staffInput).mutation(({ ctx, input }) => createStaff(ctx.db, input)),
   update: adminProcedure
     .input(staffInput.extend({ id: z.number() }))
@@ -425,6 +430,7 @@ const adminSettingsRouter = {
 
 const adminPartnersRouter = {
   list: adminProcedure.query(({ ctx }) => adminListPartners(ctx.db)),
+  get: adminProcedure.input(z.object({ id: z.number() })).query(({ ctx, input }) => getPartner(ctx.db, input.id)),
   create: adminProcedure.input(partnerInput).mutation(({ ctx, input }) => createPartner(ctx.db, input)),
   update: adminProcedure.input(partnerInput.extend({ id: z.number() })).mutation(({ ctx, input }) => updatePartner(ctx.db, input.id, input)),
   delete: adminProcedure.input(z.object({ id: z.number() })).mutation(({ ctx, input }) => deletePartner(ctx.db, input.id)),
@@ -432,6 +438,7 @@ const adminPartnersRouter = {
 
 const adminOfficesRouter = {
   list: adminProcedure.query(({ ctx }) => adminListOffices(ctx.db)),
+  get: adminProcedure.input(z.object({ id: z.number() })).query(({ ctx, input }) => getOffice(ctx.db, input.id)),
   create: adminProcedure.input(officeInput).mutation(({ ctx, input }) => createOffice(ctx.db, input)),
   update: adminProcedure.input(officeInput.extend({ id: z.number() })).mutation(({ ctx, input }) => updateOffice(ctx.db, input.id, input)),
   delete: adminProcedure.input(z.object({ id: z.number() })).mutation(({ ctx, input }) => deleteOffice(ctx.db, input.id)),
@@ -482,6 +489,7 @@ const adminHeroRouter = {
 
 const adminDonorsRouter = {
   list: adminProcedure.query(({ ctx }) => adminListDonors(ctx.db)),
+  get: adminProcedure.input(z.object({ id: z.number() })).query(({ ctx, input }) => getDonor(ctx.db, input.id)),
   create: adminProcedure.input(donorInput).mutation(({ ctx, input }) => createDonor(ctx.db, input)),
   update: adminProcedure.input(donorInput.extend({ id: z.number() })).mutation(({ ctx, input }) => updateDonor(ctx.db, input.id, input)),
   delete: adminProcedure.input(z.object({ id: z.number() })).mutation(({ ctx, input }) => deleteDonor(ctx.db, input.id)),

@@ -24,36 +24,44 @@ import { Route as UploadsSplatRouteImport } from './routes/uploads.$'
 import { Route as InternalsourcesDocumentsRouteImport } from './routes/internalsources.documents'
 import { Route as InternalsourcesDirectoryRouteImport } from './routes/internalsources.directory'
 import { Route as InternalsourcesCalendarRouteImport } from './routes/internalsources.calendar'
-import { Route as AdminStaffRouteImport } from './routes/admin.staff'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminPublicationCategoriesRouteImport } from './routes/admin.publication-categories'
-import { Route as AdminPartnersRouteImport } from './routes/admin.partners'
 import { Route as AdminPartnerCategoriesRouteImport } from './routes/admin.partner-categories'
 import { Route as AdminOrgChartRouteImport } from './routes/admin.org-chart'
-import { Route as AdminOfficesRouteImport } from './routes/admin.offices'
 import { Route as AdminNavRouteImport } from './routes/admin.nav'
 import { Route as AdminMediaRouteImport } from './routes/admin.media'
 import { Route as AdminLocationsRouteImport } from './routes/admin.locations'
 import { Route as AdminLanguagesRouteImport } from './routes/admin.languages'
 import { Route as AdminFooterRouteImport } from './routes/admin.footer'
-import { Route as AdminDonorsRouteImport } from './routes/admin.donors'
 import { Route as AdminDocCategoriesRouteImport } from './routes/admin.doc-categories'
+import { Route as AdminStaffIndexRouteImport } from './routes/admin.staff.index'
 import { Route as AdminSchoolsIndexRouteImport } from './routes/admin.schools.index'
 import { Route as AdminProjectsIndexRouteImport } from './routes/admin.projects.index'
 import { Route as AdminPostsIndexRouteImport } from './routes/admin.posts.index'
+import { Route as AdminPartnersIndexRouteImport } from './routes/admin.partners.index'
 import { Route as AdminPagesIndexRouteImport } from './routes/admin.pages.index'
+import { Route as AdminOfficesIndexRouteImport } from './routes/admin.offices.index'
+import { Route as AdminDonorsIndexRouteImport } from './routes/admin.donors.index'
 import { Route as ApiTrpcSplatRouteImport } from './routes/api.trpc.$'
 import { Route as ApiMediaSplatRouteImport } from './routes/api.media.$'
 import { Route as ApiFormsSplatRouteImport } from './routes/api.forms.$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api.auth.$'
+import { Route as AdminStaffNewRouteImport } from './routes/admin.staff.new'
+import { Route as AdminStaffIdRouteImport } from './routes/admin.staff.$id'
 import { Route as AdminSchoolsNewRouteImport } from './routes/admin.schools.new'
 import { Route as AdminSchoolsIdRouteImport } from './routes/admin.schools.$id'
 import { Route as AdminProjectsNewRouteImport } from './routes/admin.projects.new'
 import { Route as AdminProjectsIdRouteImport } from './routes/admin.projects.$id'
 import { Route as AdminPostsNewRouteImport } from './routes/admin.posts.new'
 import { Route as AdminPostsIdRouteImport } from './routes/admin.posts.$id'
+import { Route as AdminPartnersNewRouteImport } from './routes/admin.partners.new'
+import { Route as AdminPartnersIdRouteImport } from './routes/admin.partners.$id'
 import { Route as AdminPagesNewRouteImport } from './routes/admin.pages.new'
 import { Route as AdminPagesIdRouteImport } from './routes/admin.pages.$id'
+import { Route as AdminOfficesNewRouteImport } from './routes/admin.offices.new'
+import { Route as AdminOfficesIdRouteImport } from './routes/admin.offices.$id'
+import { Route as AdminDonorsNewRouteImport } from './routes/admin.donors.new'
+import { Route as AdminDonorsIdRouteImport } from './routes/admin.donors.$id'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -132,11 +140,6 @@ const InternalsourcesCalendarRoute = InternalsourcesCalendarRouteImport.update({
   path: '/calendar',
   getParentRoute: () => InternalsourcesRoute,
 } as any)
-const AdminStaffRoute = AdminStaffRouteImport.update({
-  id: '/staff',
-  path: '/staff',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -148,11 +151,6 @@ const AdminPublicationCategoriesRoute =
     path: '/publication-categories',
     getParentRoute: () => AdminRoute,
   } as any)
-const AdminPartnersRoute = AdminPartnersRouteImport.update({
-  id: '/partners',
-  path: '/partners',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminPartnerCategoriesRoute = AdminPartnerCategoriesRouteImport.update({
   id: '/partner-categories',
   path: '/partner-categories',
@@ -161,11 +159,6 @@ const AdminPartnerCategoriesRoute = AdminPartnerCategoriesRouteImport.update({
 const AdminOrgChartRoute = AdminOrgChartRouteImport.update({
   id: '/org-chart',
   path: '/org-chart',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminOfficesRoute = AdminOfficesRouteImport.update({
-  id: '/offices',
-  path: '/offices',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminNavRoute = AdminNavRouteImport.update({
@@ -193,14 +186,14 @@ const AdminFooterRoute = AdminFooterRouteImport.update({
   path: '/footer',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminDonorsRoute = AdminDonorsRouteImport.update({
-  id: '/donors',
-  path: '/donors',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminDocCategoriesRoute = AdminDocCategoriesRouteImport.update({
   id: '/doc-categories',
   path: '/doc-categories',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminStaffIndexRoute = AdminStaffIndexRouteImport.update({
+  id: '/staff/',
+  path: '/staff/',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminSchoolsIndexRoute = AdminSchoolsIndexRouteImport.update({
@@ -218,9 +211,24 @@ const AdminPostsIndexRoute = AdminPostsIndexRouteImport.update({
   path: '/posts/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPartnersIndexRoute = AdminPartnersIndexRouteImport.update({
+  id: '/partners/',
+  path: '/partners/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminPagesIndexRoute = AdminPagesIndexRouteImport.update({
   id: '/pages/',
   path: '/pages/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminOfficesIndexRoute = AdminOfficesIndexRouteImport.update({
+  id: '/offices/',
+  path: '/offices/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDonorsIndexRoute = AdminDonorsIndexRouteImport.update({
+  id: '/donors/',
+  path: '/donors/',
   getParentRoute: () => AdminRoute,
 } as any)
 const ApiTrpcSplatRoute = ApiTrpcSplatRouteImport.update({
@@ -242,6 +250,16 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminStaffNewRoute = AdminStaffNewRouteImport.update({
+  id: '/staff/new',
+  path: '/staff/new',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminStaffIdRoute = AdminStaffIdRouteImport.update({
+  id: '/staff/$id',
+  path: '/staff/$id',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminSchoolsNewRoute = AdminSchoolsNewRouteImport.update({
   id: '/schools/new',
@@ -273,6 +291,16 @@ const AdminPostsIdRoute = AdminPostsIdRouteImport.update({
   path: '/posts/$id',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPartnersNewRoute = AdminPartnersNewRouteImport.update({
+  id: '/partners/new',
+  path: '/partners/new',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPartnersIdRoute = AdminPartnersIdRouteImport.update({
+  id: '/partners/$id',
+  path: '/partners/$id',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminPagesNewRoute = AdminPagesNewRouteImport.update({
   id: '/pages/new',
   path: '/pages/new',
@@ -281,6 +309,26 @@ const AdminPagesNewRoute = AdminPagesNewRouteImport.update({
 const AdminPagesIdRoute = AdminPagesIdRouteImport.update({
   id: '/pages/$id',
   path: '/pages/$id',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminOfficesNewRoute = AdminOfficesNewRouteImport.update({
+  id: '/offices/new',
+  path: '/offices/new',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminOfficesIdRoute = AdminOfficesIdRouteImport.update({
+  id: '/offices/$id',
+  path: '/offices/$id',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDonorsNewRoute = AdminDonorsNewRouteImport.update({
+  id: '/donors/new',
+  path: '/donors/new',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDonorsIdRoute = AdminDonorsIdRouteImport.update({
+  id: '/donors/$id',
+  path: '/donors/$id',
   getParentRoute: () => AdminRoute,
 } as any)
 
@@ -295,41 +343,49 @@ export interface FileRoutesByFullPath {
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/doc-categories': typeof AdminDocCategoriesRoute
-  '/admin/donors': typeof AdminDonorsRoute
   '/admin/footer': typeof AdminFooterRoute
   '/admin/languages': typeof AdminLanguagesRoute
   '/admin/locations': typeof AdminLocationsRoute
   '/admin/media': typeof AdminMediaRoute
   '/admin/nav': typeof AdminNavRoute
-  '/admin/offices': typeof AdminOfficesRoute
   '/admin/org-chart': typeof AdminOrgChartRoute
   '/admin/partner-categories': typeof AdminPartnerCategoriesRoute
-  '/admin/partners': typeof AdminPartnersRoute
   '/admin/publication-categories': typeof AdminPublicationCategoriesRoute
   '/admin/settings': typeof AdminSettingsRoute
-  '/admin/staff': typeof AdminStaffRoute
   '/internalsources/calendar': typeof InternalsourcesCalendarRoute
   '/internalsources/directory': typeof InternalsourcesDirectoryRoute
   '/internalsources/documents': typeof InternalsourcesDocumentsRoute
   '/uploads/$': typeof UploadsSplatRoute
   '/admin/': typeof AdminIndexRoute
   '/internalsources/': typeof InternalsourcesIndexRoute
+  '/admin/donors/$id': typeof AdminDonorsIdRoute
+  '/admin/donors/new': typeof AdminDonorsNewRoute
+  '/admin/offices/$id': typeof AdminOfficesIdRoute
+  '/admin/offices/new': typeof AdminOfficesNewRoute
   '/admin/pages/$id': typeof AdminPagesIdRoute
   '/admin/pages/new': typeof AdminPagesNewRoute
+  '/admin/partners/$id': typeof AdminPartnersIdRoute
+  '/admin/partners/new': typeof AdminPartnersNewRoute
   '/admin/posts/$id': typeof AdminPostsIdRoute
   '/admin/posts/new': typeof AdminPostsNewRoute
   '/admin/projects/$id': typeof AdminProjectsIdRoute
   '/admin/projects/new': typeof AdminProjectsNewRoute
   '/admin/schools/$id': typeof AdminSchoolsIdRoute
   '/admin/schools/new': typeof AdminSchoolsNewRoute
+  '/admin/staff/$id': typeof AdminStaffIdRoute
+  '/admin/staff/new': typeof AdminStaffNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/forms/$': typeof ApiFormsSplatRoute
   '/api/media/$': typeof ApiMediaSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
+  '/admin/donors/': typeof AdminDonorsIndexRoute
+  '/admin/offices/': typeof AdminOfficesIndexRoute
   '/admin/pages/': typeof AdminPagesIndexRoute
+  '/admin/partners/': typeof AdminPartnersIndexRoute
   '/admin/posts/': typeof AdminPostsIndexRoute
   '/admin/projects/': typeof AdminProjectsIndexRoute
   '/admin/schools/': typeof AdminSchoolsIndexRoute
+  '/admin/staff/': typeof AdminStaffIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -340,41 +396,49 @@ export interface FileRoutesByTo {
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/doc-categories': typeof AdminDocCategoriesRoute
-  '/admin/donors': typeof AdminDonorsRoute
   '/admin/footer': typeof AdminFooterRoute
   '/admin/languages': typeof AdminLanguagesRoute
   '/admin/locations': typeof AdminLocationsRoute
   '/admin/media': typeof AdminMediaRoute
   '/admin/nav': typeof AdminNavRoute
-  '/admin/offices': typeof AdminOfficesRoute
   '/admin/org-chart': typeof AdminOrgChartRoute
   '/admin/partner-categories': typeof AdminPartnerCategoriesRoute
-  '/admin/partners': typeof AdminPartnersRoute
   '/admin/publication-categories': typeof AdminPublicationCategoriesRoute
   '/admin/settings': typeof AdminSettingsRoute
-  '/admin/staff': typeof AdminStaffRoute
   '/internalsources/calendar': typeof InternalsourcesCalendarRoute
   '/internalsources/directory': typeof InternalsourcesDirectoryRoute
   '/internalsources/documents': typeof InternalsourcesDocumentsRoute
   '/uploads/$': typeof UploadsSplatRoute
   '/admin': typeof AdminIndexRoute
   '/internalsources': typeof InternalsourcesIndexRoute
+  '/admin/donors/$id': typeof AdminDonorsIdRoute
+  '/admin/donors/new': typeof AdminDonorsNewRoute
+  '/admin/offices/$id': typeof AdminOfficesIdRoute
+  '/admin/offices/new': typeof AdminOfficesNewRoute
   '/admin/pages/$id': typeof AdminPagesIdRoute
   '/admin/pages/new': typeof AdminPagesNewRoute
+  '/admin/partners/$id': typeof AdminPartnersIdRoute
+  '/admin/partners/new': typeof AdminPartnersNewRoute
   '/admin/posts/$id': typeof AdminPostsIdRoute
   '/admin/posts/new': typeof AdminPostsNewRoute
   '/admin/projects/$id': typeof AdminProjectsIdRoute
   '/admin/projects/new': typeof AdminProjectsNewRoute
   '/admin/schools/$id': typeof AdminSchoolsIdRoute
   '/admin/schools/new': typeof AdminSchoolsNewRoute
+  '/admin/staff/$id': typeof AdminStaffIdRoute
+  '/admin/staff/new': typeof AdminStaffNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/forms/$': typeof ApiFormsSplatRoute
   '/api/media/$': typeof ApiMediaSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
+  '/admin/donors': typeof AdminDonorsIndexRoute
+  '/admin/offices': typeof AdminOfficesIndexRoute
   '/admin/pages': typeof AdminPagesIndexRoute
+  '/admin/partners': typeof AdminPartnersIndexRoute
   '/admin/posts': typeof AdminPostsIndexRoute
   '/admin/projects': typeof AdminProjectsIndexRoute
   '/admin/schools': typeof AdminSchoolsIndexRoute
+  '/admin/staff': typeof AdminStaffIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -388,41 +452,49 @@ export interface FileRoutesById {
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/doc-categories': typeof AdminDocCategoriesRoute
-  '/admin/donors': typeof AdminDonorsRoute
   '/admin/footer': typeof AdminFooterRoute
   '/admin/languages': typeof AdminLanguagesRoute
   '/admin/locations': typeof AdminLocationsRoute
   '/admin/media': typeof AdminMediaRoute
   '/admin/nav': typeof AdminNavRoute
-  '/admin/offices': typeof AdminOfficesRoute
   '/admin/org-chart': typeof AdminOrgChartRoute
   '/admin/partner-categories': typeof AdminPartnerCategoriesRoute
-  '/admin/partners': typeof AdminPartnersRoute
   '/admin/publication-categories': typeof AdminPublicationCategoriesRoute
   '/admin/settings': typeof AdminSettingsRoute
-  '/admin/staff': typeof AdminStaffRoute
   '/internalsources/calendar': typeof InternalsourcesCalendarRoute
   '/internalsources/directory': typeof InternalsourcesDirectoryRoute
   '/internalsources/documents': typeof InternalsourcesDocumentsRoute
   '/uploads/$': typeof UploadsSplatRoute
   '/admin/': typeof AdminIndexRoute
   '/internalsources/': typeof InternalsourcesIndexRoute
+  '/admin/donors/$id': typeof AdminDonorsIdRoute
+  '/admin/donors/new': typeof AdminDonorsNewRoute
+  '/admin/offices/$id': typeof AdminOfficesIdRoute
+  '/admin/offices/new': typeof AdminOfficesNewRoute
   '/admin/pages/$id': typeof AdminPagesIdRoute
   '/admin/pages/new': typeof AdminPagesNewRoute
+  '/admin/partners/$id': typeof AdminPartnersIdRoute
+  '/admin/partners/new': typeof AdminPartnersNewRoute
   '/admin/posts/$id': typeof AdminPostsIdRoute
   '/admin/posts/new': typeof AdminPostsNewRoute
   '/admin/projects/$id': typeof AdminProjectsIdRoute
   '/admin/projects/new': typeof AdminProjectsNewRoute
   '/admin/schools/$id': typeof AdminSchoolsIdRoute
   '/admin/schools/new': typeof AdminSchoolsNewRoute
+  '/admin/staff/$id': typeof AdminStaffIdRoute
+  '/admin/staff/new': typeof AdminStaffNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/forms/$': typeof ApiFormsSplatRoute
   '/api/media/$': typeof ApiMediaSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
+  '/admin/donors/': typeof AdminDonorsIndexRoute
+  '/admin/offices/': typeof AdminOfficesIndexRoute
   '/admin/pages/': typeof AdminPagesIndexRoute
+  '/admin/partners/': typeof AdminPartnersIndexRoute
   '/admin/posts/': typeof AdminPostsIndexRoute
   '/admin/projects/': typeof AdminProjectsIndexRoute
   '/admin/schools/': typeof AdminSchoolsIndexRoute
+  '/admin/staff/': typeof AdminStaffIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -437,41 +509,49 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/sitemap.xml'
     | '/admin/doc-categories'
-    | '/admin/donors'
     | '/admin/footer'
     | '/admin/languages'
     | '/admin/locations'
     | '/admin/media'
     | '/admin/nav'
-    | '/admin/offices'
     | '/admin/org-chart'
     | '/admin/partner-categories'
-    | '/admin/partners'
     | '/admin/publication-categories'
     | '/admin/settings'
-    | '/admin/staff'
     | '/internalsources/calendar'
     | '/internalsources/directory'
     | '/internalsources/documents'
     | '/uploads/$'
     | '/admin/'
     | '/internalsources/'
+    | '/admin/donors/$id'
+    | '/admin/donors/new'
+    | '/admin/offices/$id'
+    | '/admin/offices/new'
     | '/admin/pages/$id'
     | '/admin/pages/new'
+    | '/admin/partners/$id'
+    | '/admin/partners/new'
     | '/admin/posts/$id'
     | '/admin/posts/new'
     | '/admin/projects/$id'
     | '/admin/projects/new'
     | '/admin/schools/$id'
     | '/admin/schools/new'
+    | '/admin/staff/$id'
+    | '/admin/staff/new'
     | '/api/auth/$'
     | '/api/forms/$'
     | '/api/media/$'
     | '/api/trpc/$'
+    | '/admin/donors/'
+    | '/admin/offices/'
     | '/admin/pages/'
+    | '/admin/partners/'
     | '/admin/posts/'
     | '/admin/projects/'
     | '/admin/schools/'
+    | '/admin/staff/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -482,41 +562,49 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/sitemap.xml'
     | '/admin/doc-categories'
-    | '/admin/donors'
     | '/admin/footer'
     | '/admin/languages'
     | '/admin/locations'
     | '/admin/media'
     | '/admin/nav'
-    | '/admin/offices'
     | '/admin/org-chart'
     | '/admin/partner-categories'
-    | '/admin/partners'
     | '/admin/publication-categories'
     | '/admin/settings'
-    | '/admin/staff'
     | '/internalsources/calendar'
     | '/internalsources/directory'
     | '/internalsources/documents'
     | '/uploads/$'
     | '/admin'
     | '/internalsources'
+    | '/admin/donors/$id'
+    | '/admin/donors/new'
+    | '/admin/offices/$id'
+    | '/admin/offices/new'
     | '/admin/pages/$id'
     | '/admin/pages/new'
+    | '/admin/partners/$id'
+    | '/admin/partners/new'
     | '/admin/posts/$id'
     | '/admin/posts/new'
     | '/admin/projects/$id'
     | '/admin/projects/new'
     | '/admin/schools/$id'
     | '/admin/schools/new'
+    | '/admin/staff/$id'
+    | '/admin/staff/new'
     | '/api/auth/$'
     | '/api/forms/$'
     | '/api/media/$'
     | '/api/trpc/$'
+    | '/admin/donors'
+    | '/admin/offices'
     | '/admin/pages'
+    | '/admin/partners'
     | '/admin/posts'
     | '/admin/projects'
     | '/admin/schools'
+    | '/admin/staff'
   id:
     | '__root__'
     | '/'
@@ -529,41 +617,49 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/sitemap.xml'
     | '/admin/doc-categories'
-    | '/admin/donors'
     | '/admin/footer'
     | '/admin/languages'
     | '/admin/locations'
     | '/admin/media'
     | '/admin/nav'
-    | '/admin/offices'
     | '/admin/org-chart'
     | '/admin/partner-categories'
-    | '/admin/partners'
     | '/admin/publication-categories'
     | '/admin/settings'
-    | '/admin/staff'
     | '/internalsources/calendar'
     | '/internalsources/directory'
     | '/internalsources/documents'
     | '/uploads/$'
     | '/admin/'
     | '/internalsources/'
+    | '/admin/donors/$id'
+    | '/admin/donors/new'
+    | '/admin/offices/$id'
+    | '/admin/offices/new'
     | '/admin/pages/$id'
     | '/admin/pages/new'
+    | '/admin/partners/$id'
+    | '/admin/partners/new'
     | '/admin/posts/$id'
     | '/admin/posts/new'
     | '/admin/projects/$id'
     | '/admin/projects/new'
     | '/admin/schools/$id'
     | '/admin/schools/new'
+    | '/admin/staff/$id'
+    | '/admin/staff/new'
     | '/api/auth/$'
     | '/api/forms/$'
     | '/api/media/$'
     | '/api/trpc/$'
+    | '/admin/donors/'
+    | '/admin/offices/'
     | '/admin/pages/'
+    | '/admin/partners/'
     | '/admin/posts/'
     | '/admin/projects/'
     | '/admin/schools/'
+    | '/admin/staff/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -690,13 +786,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InternalsourcesCalendarRouteImport
       parentRoute: typeof InternalsourcesRoute
     }
-    '/admin/staff': {
-      id: '/admin/staff'
-      path: '/staff'
-      fullPath: '/admin/staff'
-      preLoaderRoute: typeof AdminStaffRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/settings': {
       id: '/admin/settings'
       path: '/settings'
@@ -711,13 +800,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPublicationCategoriesRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/partners': {
-      id: '/admin/partners'
-      path: '/partners'
-      fullPath: '/admin/partners'
-      preLoaderRoute: typeof AdminPartnersRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/partner-categories': {
       id: '/admin/partner-categories'
       path: '/partner-categories'
@@ -730,13 +812,6 @@ declare module '@tanstack/react-router' {
       path: '/org-chart'
       fullPath: '/admin/org-chart'
       preLoaderRoute: typeof AdminOrgChartRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/offices': {
-      id: '/admin/offices'
-      path: '/offices'
-      fullPath: '/admin/offices'
-      preLoaderRoute: typeof AdminOfficesRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/nav': {
@@ -774,18 +849,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFooterRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/donors': {
-      id: '/admin/donors'
-      path: '/donors'
-      fullPath: '/admin/donors'
-      preLoaderRoute: typeof AdminDonorsRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/doc-categories': {
       id: '/admin/doc-categories'
       path: '/doc-categories'
       fullPath: '/admin/doc-categories'
       preLoaderRoute: typeof AdminDocCategoriesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/staff/': {
+      id: '/admin/staff/'
+      path: '/staff'
+      fullPath: '/admin/staff/'
+      preLoaderRoute: typeof AdminStaffIndexRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/schools/': {
@@ -809,11 +884,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPostsIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/partners/': {
+      id: '/admin/partners/'
+      path: '/partners'
+      fullPath: '/admin/partners/'
+      preLoaderRoute: typeof AdminPartnersIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/pages/': {
       id: '/admin/pages/'
       path: '/pages'
       fullPath: '/admin/pages/'
       preLoaderRoute: typeof AdminPagesIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/offices/': {
+      id: '/admin/offices/'
+      path: '/offices'
+      fullPath: '/admin/offices/'
+      preLoaderRoute: typeof AdminOfficesIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/donors/': {
+      id: '/admin/donors/'
+      path: '/donors'
+      fullPath: '/admin/donors/'
+      preLoaderRoute: typeof AdminDonorsIndexRouteImport
       parentRoute: typeof AdminRoute
     }
     '/api/trpc/$': {
@@ -843,6 +939,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/auth/$'
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/staff/new': {
+      id: '/admin/staff/new'
+      path: '/staff/new'
+      fullPath: '/admin/staff/new'
+      preLoaderRoute: typeof AdminStaffNewRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/staff/$id': {
+      id: '/admin/staff/$id'
+      path: '/staff/$id'
+      fullPath: '/admin/staff/$id'
+      preLoaderRoute: typeof AdminStaffIdRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/schools/new': {
       id: '/admin/schools/new'
@@ -886,6 +996,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPostsIdRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/partners/new': {
+      id: '/admin/partners/new'
+      path: '/partners/new'
+      fullPath: '/admin/partners/new'
+      preLoaderRoute: typeof AdminPartnersNewRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/partners/$id': {
+      id: '/admin/partners/$id'
+      path: '/partners/$id'
+      fullPath: '/admin/partners/$id'
+      preLoaderRoute: typeof AdminPartnersIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/pages/new': {
       id: '/admin/pages/new'
       path: '/pages/new'
@@ -900,67 +1024,111 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPagesIdRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/offices/new': {
+      id: '/admin/offices/new'
+      path: '/offices/new'
+      fullPath: '/admin/offices/new'
+      preLoaderRoute: typeof AdminOfficesNewRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/offices/$id': {
+      id: '/admin/offices/$id'
+      path: '/offices/$id'
+      fullPath: '/admin/offices/$id'
+      preLoaderRoute: typeof AdminOfficesIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/donors/new': {
+      id: '/admin/donors/new'
+      path: '/donors/new'
+      fullPath: '/admin/donors/new'
+      preLoaderRoute: typeof AdminDonorsNewRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/donors/$id': {
+      id: '/admin/donors/$id'
+      path: '/donors/$id'
+      fullPath: '/admin/donors/$id'
+      preLoaderRoute: typeof AdminDonorsIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
   AdminDocCategoriesRoute: typeof AdminDocCategoriesRoute
-  AdminDonorsRoute: typeof AdminDonorsRoute
   AdminFooterRoute: typeof AdminFooterRoute
   AdminLanguagesRoute: typeof AdminLanguagesRoute
   AdminLocationsRoute: typeof AdminLocationsRoute
   AdminMediaRoute: typeof AdminMediaRoute
   AdminNavRoute: typeof AdminNavRoute
-  AdminOfficesRoute: typeof AdminOfficesRoute
   AdminOrgChartRoute: typeof AdminOrgChartRoute
   AdminPartnerCategoriesRoute: typeof AdminPartnerCategoriesRoute
-  AdminPartnersRoute: typeof AdminPartnersRoute
   AdminPublicationCategoriesRoute: typeof AdminPublicationCategoriesRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
-  AdminStaffRoute: typeof AdminStaffRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminDonorsIdRoute: typeof AdminDonorsIdRoute
+  AdminDonorsNewRoute: typeof AdminDonorsNewRoute
+  AdminOfficesIdRoute: typeof AdminOfficesIdRoute
+  AdminOfficesNewRoute: typeof AdminOfficesNewRoute
   AdminPagesIdRoute: typeof AdminPagesIdRoute
   AdminPagesNewRoute: typeof AdminPagesNewRoute
+  AdminPartnersIdRoute: typeof AdminPartnersIdRoute
+  AdminPartnersNewRoute: typeof AdminPartnersNewRoute
   AdminPostsIdRoute: typeof AdminPostsIdRoute
   AdminPostsNewRoute: typeof AdminPostsNewRoute
   AdminProjectsIdRoute: typeof AdminProjectsIdRoute
   AdminProjectsNewRoute: typeof AdminProjectsNewRoute
   AdminSchoolsIdRoute: typeof AdminSchoolsIdRoute
   AdminSchoolsNewRoute: typeof AdminSchoolsNewRoute
+  AdminStaffIdRoute: typeof AdminStaffIdRoute
+  AdminStaffNewRoute: typeof AdminStaffNewRoute
+  AdminDonorsIndexRoute: typeof AdminDonorsIndexRoute
+  AdminOfficesIndexRoute: typeof AdminOfficesIndexRoute
   AdminPagesIndexRoute: typeof AdminPagesIndexRoute
+  AdminPartnersIndexRoute: typeof AdminPartnersIndexRoute
   AdminPostsIndexRoute: typeof AdminPostsIndexRoute
   AdminProjectsIndexRoute: typeof AdminProjectsIndexRoute
   AdminSchoolsIndexRoute: typeof AdminSchoolsIndexRoute
+  AdminStaffIndexRoute: typeof AdminStaffIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminDocCategoriesRoute: AdminDocCategoriesRoute,
-  AdminDonorsRoute: AdminDonorsRoute,
   AdminFooterRoute: AdminFooterRoute,
   AdminLanguagesRoute: AdminLanguagesRoute,
   AdminLocationsRoute: AdminLocationsRoute,
   AdminMediaRoute: AdminMediaRoute,
   AdminNavRoute: AdminNavRoute,
-  AdminOfficesRoute: AdminOfficesRoute,
   AdminOrgChartRoute: AdminOrgChartRoute,
   AdminPartnerCategoriesRoute: AdminPartnerCategoriesRoute,
-  AdminPartnersRoute: AdminPartnersRoute,
   AdminPublicationCategoriesRoute: AdminPublicationCategoriesRoute,
   AdminSettingsRoute: AdminSettingsRoute,
-  AdminStaffRoute: AdminStaffRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminDonorsIdRoute: AdminDonorsIdRoute,
+  AdminDonorsNewRoute: AdminDonorsNewRoute,
+  AdminOfficesIdRoute: AdminOfficesIdRoute,
+  AdminOfficesNewRoute: AdminOfficesNewRoute,
   AdminPagesIdRoute: AdminPagesIdRoute,
   AdminPagesNewRoute: AdminPagesNewRoute,
+  AdminPartnersIdRoute: AdminPartnersIdRoute,
+  AdminPartnersNewRoute: AdminPartnersNewRoute,
   AdminPostsIdRoute: AdminPostsIdRoute,
   AdminPostsNewRoute: AdminPostsNewRoute,
   AdminProjectsIdRoute: AdminProjectsIdRoute,
   AdminProjectsNewRoute: AdminProjectsNewRoute,
   AdminSchoolsIdRoute: AdminSchoolsIdRoute,
   AdminSchoolsNewRoute: AdminSchoolsNewRoute,
+  AdminStaffIdRoute: AdminStaffIdRoute,
+  AdminStaffNewRoute: AdminStaffNewRoute,
+  AdminDonorsIndexRoute: AdminDonorsIndexRoute,
+  AdminOfficesIndexRoute: AdminOfficesIndexRoute,
   AdminPagesIndexRoute: AdminPagesIndexRoute,
+  AdminPartnersIndexRoute: AdminPartnersIndexRoute,
   AdminPostsIndexRoute: AdminPostsIndexRoute,
   AdminProjectsIndexRoute: AdminProjectsIndexRoute,
   AdminSchoolsIndexRoute: AdminSchoolsIndexRoute,
+  AdminStaffIndexRoute: AdminStaffIndexRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)

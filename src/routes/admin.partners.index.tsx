@@ -1,0 +1,86 @@
+import { Link, createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+
+import { ActionMenu } from "#/components/admin/ActionMenu";
+import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+
+export const Route = createFileRoute("/admin/partners/")({ component: PartnersList });
+
+type Row = Awaited<ReturnType<typeof trpcClient.adminPartners.list.query>>[number];
+
+function PartnersList() {
+	const [rows, setRows] = useState<Row[]>([]);
+	const [cats, setCats] = useState<Record<string, string>>({});
+	const [loading, setLoading] = useState(true);
+
+	async function refresh() {
+		const [p, c] = await Promise.all([
+			trpcClient.adminPartners.list.query(),
+			trpcClient.terms.list.query({ taxonomy: "partner_category" }),
+		]);
+		setRows(p);
+		setCats(Object.fromEntries(c.map((x) => [x.key, x.label])));
+		setLoading(false);
+	}
+	useEffect(() => {
+		refresh();
+	}, []);
+
+	async function del(id: number) {
+		if (!window.confirm("Delete this partner?")) return;
+		await trpcClient.adminPartners.delete.mutate({ id });
+		setRows((rs) => rs.filter((r) => r.id !== id));
+	}
+
+	return (
+		<div>
+			<div className="flex items-center justify-between mb-6">
+				<div>
+					<h1 className="font-display text-2xl font-semibold text-primary">Partners</h1>
+					<p className="mt-1 text-sm text-muted-foreground">Organisations KAPE collaborates with — {rows.length} total.</p>
+				</div>
+				<Link to="/admin/partners/new" className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold hover:opacity-90 transition">+ New partner</Link>
+			</div>
+
+			<div className="overflow-hidden rounded-xl border border-border bg-card">
+				<table className="w-full text-sm">
+					<thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
+						<tr>
+							<th className="px-4 py-2.5 w-16" />
+							<th className="px-2 py-2.5">Name</th>
+							<th className="px-2 py-2.5">Category</th>
+							<th className="px-2 py-2.5">URL</th>
+							<th className="px-3 py-2.5 text-right">Actions</th>
+						</tr>
+					</thead>
+					<tbody className="divide-y divide-border">
+						{loading ? (
+							<tr><td colSpan={5} className="px-4 py-6 text-muted-foreground">Loading…</td></tr>
+						) : rows.length === 0 ? (
+							<tr><td colSpan={5} className="px-4 py-6 text-muted-foreground">No partners yet. <Link to="/admin/partners/new" className="text-[var(--accent)] hover:underline">Add the first partner →</Link></td></tr>
+						) : (
+							rows.map((r) => (
+								<tr key={r.id} className="hover:bg-muted/20">
+									<td className="px-4 py-2">
+										<div className="h-10 w-14 rounded-md overflow-hidden bg-muted ring-1 ring-border">
+											{r.logoUrl ? <img src={r.logoUrl} alt="" className="h-full w-full object-cover" /> : null}
+										</div>
+									</td>
+									<td className="px-2 py-2">
+										<Link to="/admin/partners/$id" params={{ id: String(r.id) }} className="font-medium text-foreground hover:text-[var(--accent)]">{r.name}</Link>
+									</td>
+									<td className="px-2 py-2 text-foreground/80">{r.category ? (cats[r.category] ?? r.category) : "—"}</td>
+									<td className="px-2 py-2 text-foreground/80">{r.url ? <a href={r.url} target="_blank" rel="noopener noreferrer" className="text-[var(--accent)] hover:underline">{r.url}</a> : "—"}</td>
+									<td className="px-3 py-2 text-right whitespace-nowrap">
+										<Link to="/admin/partners/$id" params={{ id: String(r.id) }} className="text-xs font-semibold text-[var(--accent)] hover:underline">Edit</Link>
+										<span className="ml-2 inline-flex align-middle"><ActionMenu items={[{ label: "Delete partner", danger: true, onClick: () => del(r.id) }]} /></span>
+									</td>
+								</tr>
+							))
+						)}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	);
+}
