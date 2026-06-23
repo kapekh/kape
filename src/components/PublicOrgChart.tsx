@@ -77,13 +77,13 @@ const initials = (name: string) => String(name || "").split(/\s+/).slice(0, 2).m
 function OrgPublicNode({ data }: NodeProps<Node<NodeData>>) {
 	const { node, lang } = data;
 	const card = (
-		<div className="w-[210px] rounded-2xl border border-border bg-card px-3 py-3 text-center shadow-[var(--shadow-soft)] transition group-hover:border-[var(--accent)]">
+		<div className="w-[210px] text-center">
 			{node.photoUrl ? (
-				<img src={node.photoUrl} alt={node.name} className="mx-auto h-14 w-14 rounded-full object-cover ring-2 ring-card" />
+				<img src={node.photoUrl} alt={node.name} className="mx-auto h-24 w-24 rounded-full object-cover shadow-[var(--shadow-lift)] ring-4 ring-card transition group-hover:scale-105" />
 			) : (
-				<div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] text-base font-bold text-primary-foreground">{initials(node.name)}</div>
+				<div className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] text-2xl font-bold text-primary-foreground shadow-[var(--shadow-lift)] ring-4 ring-card transition group-hover:scale-105">{initials(node.name)}</div>
 			)}
-			<div className="mt-2 text-sm font-semibold text-primary">{node.name}</div>
+			<div className="mt-3 text-sm font-semibold text-primary">{node.name}</div>
 			{node.title && <div className="text-xs text-muted-foreground">{node.title}</div>}
 		</div>
 	);
