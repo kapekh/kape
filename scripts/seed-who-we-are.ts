@@ -257,7 +257,6 @@ async function buildDirectorSpeech() {
 
 async function buildLeadership() {
 	await setSections("team", [
-		{ id: "hero", type: "hero", layout: "banner", props: { eyebrow: "Who We Are", title: "Leadership Team & *Organisational Chart*", lead: "Explore KAPE's structure below — click anyone to read their profile and biography.", image: pic("kape-leadership-hero") } },
 		{ id: "orgchart", type: "orgChart", query: { source: "orgchart" }, props: { eyebrow: "Our structure", title: "Organisational *Chart*" } },
 	]);
 }

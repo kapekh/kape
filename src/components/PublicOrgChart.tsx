@@ -6,13 +6,17 @@ import {
 	MiniMap,
 	type Node,
 	type NodeProps,
+	Panel,
 	Position,
 	ReactFlow,
+	ReactFlowProvider,
 	useEdgesState,
+	useNodesInitialized,
 	useNodesState,
+	useReactFlow,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 import { localizedHref } from "@/lib/i18n-config";
 import { useLang } from "@/lib/i18n";
@@ -69,7 +73,11 @@ function toFlow(roots: PublicOrgNode[], lang: string): { nodes: Node<NodeData>[]
 		for (const c of n.children) walk(c, n.id);
 	};
 	for (const r of roots) walk(r, null);
-	return { nodes, edges };
+	// Anchor metadata: horizontal centre of the first root + the tree's x-extent.
+	const xs = nodes.map((n) => n.position.x);
+	const rootNode = nodes.find((n) => n.id === String(roots[0]?.id));
+	const rootX = rootNode ? rootNode.position.x : 0;
+	return { nodes, edges, rootX, minX: Math.min(...xs, rootX), maxX: Math.max(...xs, rootX) };
 }
 
 const initials = (name: string) => String(name || "").split(/\s+/).slice(0, 2).map((w) => w[0]).join("");
@@ -102,20 +110,40 @@ function OrgPublicNode({ data }: NodeProps<Node<NodeData>>) {
 
 const nodeTypes = { orgPublic: OrgPublicNode };
 
-/** Read-only n8n-style canvas of the org chart for the public site. Client-only. */
-export function PublicOrgChart({ roots }: { roots: PublicOrgNode[] }) {
+// Render *asterisk-wrapped* segments of a title as accent-coloured text.
+const renderTitle = (t: string) =>
+	String(t)
+		.split(/(\*[^*]+\*)/g)
+		.map((seg, i) => (seg.startsWith("*") && seg.endsWith("*") ? <em key={i} className="not-italic text-[var(--secondary)]">{seg.slice(1, -1)}</em> : seg));
+
+function OrgFlow({ roots, eyebrow, title }: { roots: PublicOrgNode[]; eyebrow?: string; title?: string }) {
 	const { lang } = useLang();
-	const [nodes, setNodes, onNodesChange] = useNodesState<Node<NodeData>>([]);
-	const [edges, setEdges] = useEdgesState<Edge>([]);
+	const flow = useMemo(() => toFlow(roots, lang), [roots, lang]);
+	const [nodes, setNodes, onNodesChange] = useNodesState<Node<NodeData>>(flow.nodes);
+	const [edges, setEdges] = useEdgesState<Edge>(flow.edges);
+	const rf = useReactFlow();
+	const inited = useNodesInitialized();
 
 	useEffect(() => {
-		const flow = toFlow(roots, lang);
 		setNodes(flow.nodes);
 		setEdges(flow.edges);
-	}, [roots, lang, setNodes, setEdges]);
+	}, [flow, setNodes, setEdges]);
+
+	// Once nodes are measured: fit the tree, then slide the view horizontally so the
+	// ROOT node (not the bounding-box centre) sits at the centre of the screen.
+	useEffect(() => {
+		if (!inited) return;
+		rf.fitView({ padding: 0.25 });
+		const raf = requestAnimationFrame(() => {
+			const vp = rf.getViewport();
+			const shift = ((flow.minX + flow.maxX) / 2 - flow.rootX) * vp.zoom;
+			rf.setViewport({ x: vp.x + shift, y: vp.y, zoom: vp.zoom });
+		});
+		return () => cancelAnimationFrame(raf);
+	}, [inited, flow, rf]);
 
 	return (
-		<div className="h-[70vh] min-h-[520px] w-full overflow-hidden border-y border-border bg-muted/20">
+		<div className="h-[calc(100dvh-7rem)] min-h-[600px] w-full overflow-hidden border-y border-border bg-muted/20">
 			<ReactFlow
 				nodes={nodes}
 				edges={edges}
@@ -124,15 +152,28 @@ export function PublicOrgChart({ roots }: { roots: PublicOrgNode[] }) {
 				nodesDraggable={false}
 				nodesConnectable={false}
 				edgesFocusable={false}
-				fitView
-				fitViewOptions={{ padding: 0.2 }}
 				minZoom={0.2}
 				proOptions={{ hideAttribution: true }}
 			>
+				{(eyebrow || title) && (
+					<Panel position="top-left" className="!m-5 max-w-md">
+						{eyebrow && <div className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">{eyebrow}</div>}
+						{title && <h2 className="mt-1 font-display text-3xl md:text-4xl font-semibold tracking-tight text-primary">{renderTitle(title)}</h2>}
+					</Panel>
+				)}
 				<Background gap={18} color="var(--border)" />
 				<Controls showInteractive={false} />
 				<MiniMap pannable zoomable className="!bg-card" nodeColor="var(--accent)" />
 			</ReactFlow>
 		</div>
+	);
+}
+
+/** Read-only n8n-style canvas of the org chart for the public site. Client-only. */
+export function PublicOrgChart(props: { roots: PublicOrgNode[]; eyebrow?: string; title?: string }) {
+	return (
+		<ReactFlowProvider>
+			<OrgFlow {...props} />
+		</ReactFlowProvider>
 	);
 }

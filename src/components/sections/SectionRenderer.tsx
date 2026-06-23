@@ -719,26 +719,26 @@ function OrgNodeView({ node }: { node: any }) {
 function OrgChart(p: P) {
 	const roots: any[] = Array.isArray(p.data) ? p.data : [];
 	// React Flow is client-only; render the CSS-connector tree on the server / no-JS
-	// (keeps it crawlable & accessible), then upgrade to the interactive canvas.
+	// (keeps it crawlable & accessible), then upgrade to the full-height canvas.
 	const [mounted, setMounted] = useState(false);
 	useEffect(() => setMounted(true), []);
+
+	// Client: a full-height canvas with the heading overlaid inside it.
+	if (mounted && roots.length > 0) return <PublicOrgChart roots={roots} eyebrow={p.eyebrow} title={p.title} />;
+
+	// SSR / no-JS / empty fallback: heading + CSS-connector tree.
 	return (
 		<section className={`${PAD} ${toneBg(p.tone)}`}>
 			<Container>
 				<Heading eyebrow={p.eyebrow} title={p.title} />
-			</Container>
-			{roots.length === 0 ? (
-				<Container><Empty>No organizational chart yet.</Empty></Container>
-			) : mounted ? (
-				// Full-bleed canvas (breaks out of the centered container).
-				<PublicOrgChart roots={roots} />
-			) : (
-				<Container>
+				{roots.length === 0 ? (
+					<Empty>No organizational chart yet.</Empty>
+				) : (
 					<div className="org-tree overflow-x-auto pb-4">
 						<ul>{roots.map((r) => <OrgNodeView key={r.id} node={r} />)}</ul>
 					</div>
-				</Container>
-			)}
+				)}
+			</Container>
 		</section>
 	);
 }
