@@ -263,6 +263,37 @@ export const staff = sqliteTable("staff", {
 	sort: integer("sort").notNull().default(0),
 });
 
+/**
+ * Unified people directory — both the public Team/Leadership and the internal
+ * staff roster live here (no more `person` posts + separate `staff` table).
+ * `isPublic` controls whether someone appears on the public site; `tier` groups
+ * them (board | smt | pm | team | staff). Bio is bilingual rich text in
+ * `translations` (entityType "person", field "bio").
+ */
+export const people = sqliteTable(
+	"people",
+	{
+		id: integer("id").primaryKey({ autoIncrement: true }),
+		tenantId: integer("tenant_id").notNull().default(1).references(() => tenants.id),
+		nameEn: text("name_en").notNull(),
+		nameKm: text("name_km"),
+		position: text("position"), // role / job title
+		tier: text("tier").notNull().default("staff"), // board | smt | pm | team | staff
+		isPublic: integer("is_public", { mode: "boolean" }).notNull().default(false),
+		slug: text("slug"), // public detail URL (/team/<slug>) when isPublic
+		photoMediaId: integer("photo_media_id").references(() => media.id),
+		// Internal-directory fields:
+		staffNo: text("staff_no"),
+		sex: text("sex"),
+		phone: text("phone"),
+		email: text("email"),
+		program: text("program"),
+		sort: integer("sort").notNull().default(0),
+		...timestamps,
+	},
+	(t) => [index("ix_people_tier").on(t.tenantId, t.tier), index("ix_people_public").on(t.tenantId, t.isPublic)],
+);
+
 /* ---- Form capture ---- */
 
 export const contactSubmissions = sqliteTable("contact_submissions", {
@@ -438,7 +469,7 @@ export const partners = sqliteTable("partners", {
 /**
  * Hierarchical management / organizational chart. A self-referencing tree:
  * `parentId` is the node this person reports to (null = top of the chart).
- * `personId` optionally links a `person` post so the node shows that profile's
+ * `personId` optionally links a `people` row so the node shows that profile's
  * photo and links to their page; otherwise `name`/`title` are typed directly.
  */
 export const orgNodes = sqliteTable(
@@ -449,7 +480,7 @@ export const orgNodes = sqliteTable(
 		parentId: integer("parent_id"),
 		name: text("name").notNull(),
 		title: text("title"), // role / position
-		personId: integer("person_id").references(() => posts.id), // optional link to a person post
+		personId: integer("person_id"), // optional link to a people.id (no FK — remapped on migration)
 		sort: integer("sort").notNull().default(0),
 		posX: integer("pos_x"), // saved canvas position (null = auto-layout)
 		posY: integer("pos_y"),

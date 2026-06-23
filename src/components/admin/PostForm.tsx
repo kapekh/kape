@@ -59,10 +59,6 @@ const META_FIELDS: Record<string, MetaField[]> = {
 		{ key: "start", label: "Start date", kind: "date" },
 		{ key: "end", label: "End date", kind: "date" },
 	],
-	person: [
-		{ key: "section", label: "Section", kind: "select", options: ["board", "smt", "pm", "team"] },
-		{ key: "position", label: "Position", placeholder: "Program Manager" },
-	],
 	publication: [
 		{ key: "category", label: "Category", kind: "relation", taxonomy: "publication_category" },
 		{ key: "fileUrl", label: "File (PDF)", kind: "media" },

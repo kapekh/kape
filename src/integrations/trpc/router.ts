@@ -32,7 +32,6 @@ import {
   getDonor,
   getOffice,
   getPartner,
-  getStaff,
   deleteDonor,
   deleteHero,
   deleteOffice,
@@ -67,12 +66,6 @@ import {
   updatePost,
   updateTerm,
 } from '#/server/repo/admin'
-import {
-  adminListStaff,
-  createStaff,
-  deleteStaff,
-  updateStaff,
-} from '#/server/repo/admin'
 import type { PageInput } from '#/server/repo/admin'
 import { resolveSections } from '#/server/repo/sections'
 import { resolveRouteCached } from '#/server/repo/route'
@@ -85,7 +78,6 @@ import {
   listAlbums,
   listAllTerms,
   listJobs,
-  listPeople,
   listPosts,
   listPublications,
   listTerms,
@@ -106,7 +98,16 @@ import {
   recordAndGetVisits,
 } from '#/server/repo/site'
 import {
+  adminListPeople,
+  createPerson,
+  deletePerson,
+  getPerson,
+  listPeople,
+  type PersonInput,
   staffDirectory,
+  updatePerson,
+} from '#/server/repo/people'
+import {
   staffDocuments,
   staffEvents,
   staffNews,
@@ -375,18 +376,6 @@ const languageInput = z.object({
   sort: z.number(),
 })
 
-const staffInput = z.object({
-  staffNo: z.string(),
-  nameKm: z.string(),
-  nameEn: z.string(),
-  sex: z.string(),
-  phone: z.string(),
-  email: z.string(),
-  program: z.string(),
-  sort: z.number(),
-  photoMediaId: z.number().nullish(),
-})
-
 // Staff portal (requires staff/admin role) — internal, never public.
 const staffRouter = {
   news: staffProcedure.input(langInput).query(({ ctx, input }) => staffNews(ctx.db, input.lang)),
@@ -395,16 +384,29 @@ const staffRouter = {
   directory: staffProcedure.query(({ ctx }) => staffDirectory(ctx.db)),
 } satisfies TRPCRouterRecord
 
-const adminStaffRouter = {
-  list: adminProcedure.query(({ ctx }) => adminListStaff(ctx.db)),
-  get: adminProcedure.input(z.object({ id: z.number() })).query(({ ctx, input }) => getStaff(ctx.db, input.id)),
-  create: adminProcedure.input(staffInput).mutation(({ ctx, input }) => createStaff(ctx.db, input)),
-  update: adminProcedure
-    .input(staffInput.extend({ id: z.number() }))
-    .mutation(({ ctx, input }) => updateStaff(ctx.db, input.id, input)),
-  delete: adminProcedure
-    .input(z.object({ id: z.number() }))
-    .mutation(({ ctx, input }) => deleteStaff(ctx.db, input.id)),
+const personInput = z.object({
+  nameEn: z.string().min(1),
+  nameKm: z.string().nullish().transform((v) => v ?? null),
+  position: z.string().nullish().transform((v) => v ?? null),
+  tier: z.string(),
+  isPublic: z.boolean(),
+  slug: z.string().nullish().transform((v) => v ?? null),
+  photoMediaId: z.number().nullish().transform((v) => v ?? null),
+  staffNo: z.string().nullish().transform((v) => v ?? null),
+  sex: z.string().nullish().transform((v) => v ?? null),
+  phone: z.string().nullish().transform((v) => v ?? null),
+  email: z.string().nullish().transform((v) => v ?? null),
+  program: z.string().nullish().transform((v) => v ?? null),
+  sort: z.number(),
+  bio: z.object({ en: z.string(), km: z.string() }),
+}) satisfies z.ZodType<PersonInput>
+
+const adminPeopleRouter = {
+  list: adminProcedure.query(({ ctx }) => adminListPeople(ctx.db)),
+  get: adminProcedure.input(z.object({ id: z.number() })).query(({ ctx, input }) => getPerson(ctx.db, input.id)),
+  create: adminProcedure.input(personInput).mutation(({ ctx, input }) => createPerson(ctx.db, input)),
+  update: adminProcedure.input(personInput.extend({ id: z.number() })).mutation(({ ctx, input }) => updatePerson(ctx.db, input.id, input)),
+  delete: adminProcedure.input(z.object({ id: z.number() })).mutation(({ ctx, input }) => deletePerson(ctx.db, input.id)),
 } satisfies TRPCRouterRecord
 
 const partnerInput = z.object({ name: z.string().min(1), category: z.string(), url: z.string(), sort: z.number(), logoMediaId: z.number().nullish() })
@@ -573,6 +575,6 @@ export const trpcRouter = createTRPCRouter({
   adminProjects: adminProjectsRouter,
   adminSchools: adminSchoolsRouter,
   staff: staffRouter,
-  adminStaff: adminStaffRouter,
+  adminPeople: adminPeopleRouter,
 })
 export type TRPCRouter = typeof trpcRouter

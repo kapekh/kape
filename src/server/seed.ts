@@ -20,6 +20,7 @@ import {
 	offices,
 	pages,
 	partners,
+	people,
 	postMedia,
 	posts,
 	projectDonors,
@@ -27,7 +28,6 @@ import {
 	projects,
 	schools,
 	siteSettings,
-	staff,
 	stats,
 	tenants,
 	terms,
@@ -248,7 +248,6 @@ async function main() {
 			["document", "Document"],
 			["album", "Photo Album"],
 			["video", "Video"],
-			["person", "Leadership Person"],
 			["event", "Calendar Event"],
 			["internal_news", "Internal News"],
 			["publication", "Publication"],
@@ -577,16 +576,23 @@ async function main() {
 		await addTranslations("post", row.id, { title: v.title, excerpt: v.excerpt });
 	}
 
-	// Leadership people (type=person; section/position in meta).
-	const people: { slug: string; section: string; position: string; name: { en: string; km: string }; bio: { en: string; km: string } }[] = [
-		{ slug: "person-heang-koy", section: "board", position: "Chairman of the Board", name: { en: "Mr. Heang Koy", km: "លោក ហេង គយ" }, bio: { en: doc("Chairman of the Board of Directors, providing strategic governance to KAPE for nearly two decades."), km: doc("ប្រធានក្រុមប្រឹក្សាភិបាល ដែលផ្តល់អភិបាលកិច្ចយុទ្ធសាស្ត្រដល់ខេបជិតពីរទសវត្សរ៍។") } },
-		{ slug: "person-exec-director", section: "smt", position: "Executive Director", name: { en: "Executive Director", km: "នាយកប្រតិបត្តិ" }, bio: { en: doc("Leads KAPE's senior management team and overall strategy."), km: doc("ដឹកនាំក្រុមគ្រប់គ្រងជាន់ខ្ពស់ និងយុទ្ធសាស្ត្ររួមរបស់ខេប។") } },
-		{ slug: "person-ngs-pm", section: "pm", position: "NGS Program Manager", name: { en: "NGS Program Manager", km: "អ្នកគ្រប់គ្រងកម្មវិធី NGS" }, bio: { en: doc("Manages the New Generation Schools initiative."), km: doc("គ្រប់គ្រងគំនិតផ្តួចផ្តើមសាលាជំនាន់ថ្មី។") } },
-		{ slug: "person-me-manager", section: "pm", position: "M&E Manager", name: { en: "M&E Manager", km: "អ្នកគ្រប់គ្រង M&E" }, bio: { en: doc("Leads monitoring and evaluation across programs."), km: doc("ដឹកនាំការត្រួតពិនិត្យ និងវាយតម្លៃលើកម្មវិធី។") } },
+	// Leadership people (unified `people` table; public team/leadership).
+	const leadership: { slug: string; tier: string; position: string; name: { en: string; km: string }; bio: { en: string; km: string } }[] = [
+		{ slug: "person-heang-koy", tier: "board", position: "Chairman of the Board", name: { en: "Mr. Heang Koy", km: "លោក ហេង គយ" }, bio: { en: doc("Chairman of the Board of Directors, providing strategic governance to KAPE for nearly two decades."), km: doc("ប្រធានក្រុមប្រឹក្សាភិបាល ដែលផ្តល់អភិបាលកិច្ចយុទ្ធសាស្ត្រដល់ខេបជិតពីរទសវត្សរ៍។") } },
+		{ slug: "person-exec-director", tier: "smt", position: "Executive Director", name: { en: "Executive Director", km: "នាយកប្រតិបត្តិ" }, bio: { en: doc("Leads KAPE's senior management team and overall strategy."), km: doc("ដឹកនាំក្រុមគ្រប់គ្រងជាន់ខ្ពស់ និងយុទ្ធសាស្ត្ររួមរបស់ខេប។") } },
+		{ slug: "person-ngs-pm", tier: "pm", position: "NGS Program Manager", name: { en: "NGS Program Manager", km: "អ្នកគ្រប់គ្រងកម្មវិធី NGS" }, bio: { en: doc("Manages the New Generation Schools initiative."), km: doc("គ្រប់គ្រងគំនិតផ្តួចផ្តើមសាលាជំនាន់ថ្មី។") } },
+		{ slug: "person-me-manager", tier: "pm", position: "M&E Manager", name: { en: "M&E Manager", km: "អ្នកគ្រប់គ្រង M&E" }, bio: { en: doc("Leads monitoring and evaluation across programs."), km: doc("ដឹកនាំការត្រួតពិនិត្យ និងវាយតម្លៃលើកម្មវិធី។") } },
 	];
-	for (const pn of people) {
-		const [row] = await db.insert(posts).values({ tenantId: TENANT, contentType: "person", slug: pn.slug, status: "published", meta: { section: pn.section, position: pn.position } }).returning({ id: posts.id });
-		await addTranslations("post", row.id, { title: pn.name, excerpt: { en: pn.position, km: pn.position }, body: pn.bio });
+	for (let i = 0; i < leadership.length; i++) {
+		const pn = leadership[i];
+		const [row] = await db
+			.insert(people)
+			.values({ tenantId: TENANT, nameEn: pn.name.en, nameKm: pn.name.km, position: pn.position, tier: pn.tier, isPublic: true, slug: pn.slug, sort: i })
+			.returning({ id: people.id });
+		await db.insert(translations).values([
+			{ tenantId: TENANT, entityType: "person", entityId: row.id, field: "bio", lang: "en", value: pn.bio.en },
+			{ tenantId: TENANT, entityType: "person", entityId: row.id, field: "bio", lang: "km", value: pn.bio.km },
+		]);
 	}
 
 	// ---- Internal staff-portal content ----
@@ -628,10 +634,11 @@ async function main() {
 		await addTranslations("post", row.id, { title: d.title });
 	}
 
-	await db.insert(staff).values([
-		{ tenantId: TENANT, staffNo: "K001", nameKm: "ហេង គយ", nameEn: "Heang Koy", sex: "M", phone: "012 000 001", email: "heang.koy@kapekh.org", program: "Board", sort: 0 },
-		{ tenantId: TENANT, staffNo: "K002", nameKm: "ស៊ុម បុប្ផា", nameEn: "Sum Bopha", sex: "F", phone: "012 000 002", email: "sum.bopha@kapekh.org", program: "NGS", sort: 1 },
-		{ tenantId: TENANT, staffNo: "K003", nameKm: "ឈឹម ផល្លក", nameEn: "Chhim Phallak", sex: "F", phone: "012 000 003", email: "chhim.phallak@kapekh.org", program: "Library", sort: 2 },
+	// Internal staff roster (unified `people` table; tier="staff", not public).
+	await db.insert(people).values([
+		{ tenantId: TENANT, nameEn: "Heang Koy", nameKm: "ហេង គយ", tier: "staff", isPublic: false, staffNo: "K001", sex: "M", phone: "012 000 001", email: "heang.koy@kapekh.org", program: "Board", sort: 1000 },
+		{ tenantId: TENANT, nameEn: "Sum Bopha", nameKm: "ស៊ុម បុប្ផា", tier: "staff", isPublic: false, staffNo: "K002", sex: "F", phone: "012 000 002", email: "sum.bopha@kapekh.org", program: "NGS", sort: 1001 },
+		{ tenantId: TENANT, nameEn: "Chhim Phallak", nameKm: "ឈឹម ផល្លក", tier: "staff", isPublic: false, staffNo: "K003", sex: "F", phone: "012 000 003", email: "chhim.phallak@kapekh.org", program: "Library", sort: 1002 },
 	]);
 
 	// Staff-portal user.

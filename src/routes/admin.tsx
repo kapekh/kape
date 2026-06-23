@@ -26,7 +26,6 @@ const NAV: NavGroup[] = [
 			{ to: "/admin/posts", label: "Stories", icon: "story", type: "story" },
 			{ to: "/admin/posts", label: "Videos", icon: "video", type: "video" },
 			{ to: "/admin/posts", label: "Galleries", icon: "gallery", type: "album" },
-			{ to: "/admin/posts", label: "Team", icon: "team", type: "person" },
 			{ to: "/admin/posts", label: "Publications", icon: "publication", type: "publication" },
 			{ to: "/admin/posts", label: "Careers", icon: "career", type: "job" },
 			{ to: "/admin/projects", label: "Projects", icon: "projects" },
@@ -48,7 +47,7 @@ const NAV: NavGroup[] = [
 		group: "Records",
 		items: [
 			{ to: "/admin/schools", label: "Schools", icon: "offices" },
-			{ to: "/admin/staff", label: "Staff", icon: "staff" },
+			{ to: "/admin/people", label: "People", icon: "team" },
 			{ to: "/admin/partners", label: "Partners", icon: "partners" },
 			{ to: "/admin/donors", label: "Donors", icon: "donors" },
 			{ to: "/admin/offices", label: "Offices", icon: "offices" },

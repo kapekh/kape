@@ -34,10 +34,10 @@ import { Route as AdminLocationsRouteImport } from './routes/admin.locations'
 import { Route as AdminLanguagesRouteImport } from './routes/admin.languages'
 import { Route as AdminFooterRouteImport } from './routes/admin.footer'
 import { Route as AdminDocCategoriesRouteImport } from './routes/admin.doc-categories'
-import { Route as AdminStaffIndexRouteImport } from './routes/admin.staff.index'
 import { Route as AdminSchoolsIndexRouteImport } from './routes/admin.schools.index'
 import { Route as AdminProjectsIndexRouteImport } from './routes/admin.projects.index'
 import { Route as AdminPostsIndexRouteImport } from './routes/admin.posts.index'
+import { Route as AdminPeopleIndexRouteImport } from './routes/admin.people.index'
 import { Route as AdminPartnersIndexRouteImport } from './routes/admin.partners.index'
 import { Route as AdminPagesIndexRouteImport } from './routes/admin.pages.index'
 import { Route as AdminOfficesIndexRouteImport } from './routes/admin.offices.index'
@@ -46,14 +46,14 @@ import { Route as ApiTrpcSplatRouteImport } from './routes/api.trpc.$'
 import { Route as ApiMediaSplatRouteImport } from './routes/api.media.$'
 import { Route as ApiFormsSplatRouteImport } from './routes/api.forms.$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api.auth.$'
-import { Route as AdminStaffNewRouteImport } from './routes/admin.staff.new'
-import { Route as AdminStaffIdRouteImport } from './routes/admin.staff.$id'
 import { Route as AdminSchoolsNewRouteImport } from './routes/admin.schools.new'
 import { Route as AdminSchoolsIdRouteImport } from './routes/admin.schools.$id'
 import { Route as AdminProjectsNewRouteImport } from './routes/admin.projects.new'
 import { Route as AdminProjectsIdRouteImport } from './routes/admin.projects.$id'
 import { Route as AdminPostsNewRouteImport } from './routes/admin.posts.new'
 import { Route as AdminPostsIdRouteImport } from './routes/admin.posts.$id'
+import { Route as AdminPeopleNewRouteImport } from './routes/admin.people.new'
+import { Route as AdminPeopleIdRouteImport } from './routes/admin.people.$id'
 import { Route as AdminPartnersNewRouteImport } from './routes/admin.partners.new'
 import { Route as AdminPartnersIdRouteImport } from './routes/admin.partners.$id'
 import { Route as AdminPagesNewRouteImport } from './routes/admin.pages.new'
@@ -191,11 +191,6 @@ const AdminDocCategoriesRoute = AdminDocCategoriesRouteImport.update({
   path: '/doc-categories',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminStaffIndexRoute = AdminStaffIndexRouteImport.update({
-  id: '/staff/',
-  path: '/staff/',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminSchoolsIndexRoute = AdminSchoolsIndexRouteImport.update({
   id: '/schools/',
   path: '/schools/',
@@ -209,6 +204,11 @@ const AdminProjectsIndexRoute = AdminProjectsIndexRouteImport.update({
 const AdminPostsIndexRoute = AdminPostsIndexRouteImport.update({
   id: '/posts/',
   path: '/posts/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPeopleIndexRoute = AdminPeopleIndexRouteImport.update({
+  id: '/people/',
+  path: '/people/',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminPartnersIndexRoute = AdminPartnersIndexRouteImport.update({
@@ -251,16 +251,6 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminStaffNewRoute = AdminStaffNewRouteImport.update({
-  id: '/staff/new',
-  path: '/staff/new',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminStaffIdRoute = AdminStaffIdRouteImport.update({
-  id: '/staff/$id',
-  path: '/staff/$id',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminSchoolsNewRoute = AdminSchoolsNewRouteImport.update({
   id: '/schools/new',
   path: '/schools/new',
@@ -289,6 +279,16 @@ const AdminPostsNewRoute = AdminPostsNewRouteImport.update({
 const AdminPostsIdRoute = AdminPostsIdRouteImport.update({
   id: '/posts/$id',
   path: '/posts/$id',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPeopleNewRoute = AdminPeopleNewRouteImport.update({
+  id: '/people/new',
+  path: '/people/new',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPeopleIdRoute = AdminPeopleIdRouteImport.update({
+  id: '/people/$id',
+  path: '/people/$id',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminPartnersNewRoute = AdminPartnersNewRouteImport.update({
@@ -366,14 +366,14 @@ export interface FileRoutesByFullPath {
   '/admin/pages/new': typeof AdminPagesNewRoute
   '/admin/partners/$id': typeof AdminPartnersIdRoute
   '/admin/partners/new': typeof AdminPartnersNewRoute
+  '/admin/people/$id': typeof AdminPeopleIdRoute
+  '/admin/people/new': typeof AdminPeopleNewRoute
   '/admin/posts/$id': typeof AdminPostsIdRoute
   '/admin/posts/new': typeof AdminPostsNewRoute
   '/admin/projects/$id': typeof AdminProjectsIdRoute
   '/admin/projects/new': typeof AdminProjectsNewRoute
   '/admin/schools/$id': typeof AdminSchoolsIdRoute
   '/admin/schools/new': typeof AdminSchoolsNewRoute
-  '/admin/staff/$id': typeof AdminStaffIdRoute
-  '/admin/staff/new': typeof AdminStaffNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/forms/$': typeof ApiFormsSplatRoute
   '/api/media/$': typeof ApiMediaSplatRoute
@@ -382,10 +382,10 @@ export interface FileRoutesByFullPath {
   '/admin/offices/': typeof AdminOfficesIndexRoute
   '/admin/pages/': typeof AdminPagesIndexRoute
   '/admin/partners/': typeof AdminPartnersIndexRoute
+  '/admin/people/': typeof AdminPeopleIndexRoute
   '/admin/posts/': typeof AdminPostsIndexRoute
   '/admin/projects/': typeof AdminProjectsIndexRoute
   '/admin/schools/': typeof AdminSchoolsIndexRoute
-  '/admin/staff/': typeof AdminStaffIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -419,14 +419,14 @@ export interface FileRoutesByTo {
   '/admin/pages/new': typeof AdminPagesNewRoute
   '/admin/partners/$id': typeof AdminPartnersIdRoute
   '/admin/partners/new': typeof AdminPartnersNewRoute
+  '/admin/people/$id': typeof AdminPeopleIdRoute
+  '/admin/people/new': typeof AdminPeopleNewRoute
   '/admin/posts/$id': typeof AdminPostsIdRoute
   '/admin/posts/new': typeof AdminPostsNewRoute
   '/admin/projects/$id': typeof AdminProjectsIdRoute
   '/admin/projects/new': typeof AdminProjectsNewRoute
   '/admin/schools/$id': typeof AdminSchoolsIdRoute
   '/admin/schools/new': typeof AdminSchoolsNewRoute
-  '/admin/staff/$id': typeof AdminStaffIdRoute
-  '/admin/staff/new': typeof AdminStaffNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/forms/$': typeof ApiFormsSplatRoute
   '/api/media/$': typeof ApiMediaSplatRoute
@@ -435,10 +435,10 @@ export interface FileRoutesByTo {
   '/admin/offices': typeof AdminOfficesIndexRoute
   '/admin/pages': typeof AdminPagesIndexRoute
   '/admin/partners': typeof AdminPartnersIndexRoute
+  '/admin/people': typeof AdminPeopleIndexRoute
   '/admin/posts': typeof AdminPostsIndexRoute
   '/admin/projects': typeof AdminProjectsIndexRoute
   '/admin/schools': typeof AdminSchoolsIndexRoute
-  '/admin/staff': typeof AdminStaffIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -475,14 +475,14 @@ export interface FileRoutesById {
   '/admin/pages/new': typeof AdminPagesNewRoute
   '/admin/partners/$id': typeof AdminPartnersIdRoute
   '/admin/partners/new': typeof AdminPartnersNewRoute
+  '/admin/people/$id': typeof AdminPeopleIdRoute
+  '/admin/people/new': typeof AdminPeopleNewRoute
   '/admin/posts/$id': typeof AdminPostsIdRoute
   '/admin/posts/new': typeof AdminPostsNewRoute
   '/admin/projects/$id': typeof AdminProjectsIdRoute
   '/admin/projects/new': typeof AdminProjectsNewRoute
   '/admin/schools/$id': typeof AdminSchoolsIdRoute
   '/admin/schools/new': typeof AdminSchoolsNewRoute
-  '/admin/staff/$id': typeof AdminStaffIdRoute
-  '/admin/staff/new': typeof AdminStaffNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/forms/$': typeof ApiFormsSplatRoute
   '/api/media/$': typeof ApiMediaSplatRoute
@@ -491,10 +491,10 @@ export interface FileRoutesById {
   '/admin/offices/': typeof AdminOfficesIndexRoute
   '/admin/pages/': typeof AdminPagesIndexRoute
   '/admin/partners/': typeof AdminPartnersIndexRoute
+  '/admin/people/': typeof AdminPeopleIndexRoute
   '/admin/posts/': typeof AdminPostsIndexRoute
   '/admin/projects/': typeof AdminProjectsIndexRoute
   '/admin/schools/': typeof AdminSchoolsIndexRoute
-  '/admin/staff/': typeof AdminStaffIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -532,14 +532,14 @@ export interface FileRouteTypes {
     | '/admin/pages/new'
     | '/admin/partners/$id'
     | '/admin/partners/new'
+    | '/admin/people/$id'
+    | '/admin/people/new'
     | '/admin/posts/$id'
     | '/admin/posts/new'
     | '/admin/projects/$id'
     | '/admin/projects/new'
     | '/admin/schools/$id'
     | '/admin/schools/new'
-    | '/admin/staff/$id'
-    | '/admin/staff/new'
     | '/api/auth/$'
     | '/api/forms/$'
     | '/api/media/$'
@@ -548,10 +548,10 @@ export interface FileRouteTypes {
     | '/admin/offices/'
     | '/admin/pages/'
     | '/admin/partners/'
+    | '/admin/people/'
     | '/admin/posts/'
     | '/admin/projects/'
     | '/admin/schools/'
-    | '/admin/staff/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -585,14 +585,14 @@ export interface FileRouteTypes {
     | '/admin/pages/new'
     | '/admin/partners/$id'
     | '/admin/partners/new'
+    | '/admin/people/$id'
+    | '/admin/people/new'
     | '/admin/posts/$id'
     | '/admin/posts/new'
     | '/admin/projects/$id'
     | '/admin/projects/new'
     | '/admin/schools/$id'
     | '/admin/schools/new'
-    | '/admin/staff/$id'
-    | '/admin/staff/new'
     | '/api/auth/$'
     | '/api/forms/$'
     | '/api/media/$'
@@ -601,10 +601,10 @@ export interface FileRouteTypes {
     | '/admin/offices'
     | '/admin/pages'
     | '/admin/partners'
+    | '/admin/people'
     | '/admin/posts'
     | '/admin/projects'
     | '/admin/schools'
-    | '/admin/staff'
   id:
     | '__root__'
     | '/'
@@ -640,14 +640,14 @@ export interface FileRouteTypes {
     | '/admin/pages/new'
     | '/admin/partners/$id'
     | '/admin/partners/new'
+    | '/admin/people/$id'
+    | '/admin/people/new'
     | '/admin/posts/$id'
     | '/admin/posts/new'
     | '/admin/projects/$id'
     | '/admin/projects/new'
     | '/admin/schools/$id'
     | '/admin/schools/new'
-    | '/admin/staff/$id'
-    | '/admin/staff/new'
     | '/api/auth/$'
     | '/api/forms/$'
     | '/api/media/$'
@@ -656,10 +656,10 @@ export interface FileRouteTypes {
     | '/admin/offices/'
     | '/admin/pages/'
     | '/admin/partners/'
+    | '/admin/people/'
     | '/admin/posts/'
     | '/admin/projects/'
     | '/admin/schools/'
-    | '/admin/staff/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -856,13 +856,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDocCategoriesRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/staff/': {
-      id: '/admin/staff/'
-      path: '/staff'
-      fullPath: '/admin/staff/'
-      preLoaderRoute: typeof AdminStaffIndexRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/schools/': {
       id: '/admin/schools/'
       path: '/schools'
@@ -882,6 +875,13 @@ declare module '@tanstack/react-router' {
       path: '/posts'
       fullPath: '/admin/posts/'
       preLoaderRoute: typeof AdminPostsIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/people/': {
+      id: '/admin/people/'
+      path: '/people'
+      fullPath: '/admin/people/'
+      preLoaderRoute: typeof AdminPeopleIndexRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/partners/': {
@@ -940,20 +940,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/staff/new': {
-      id: '/admin/staff/new'
-      path: '/staff/new'
-      fullPath: '/admin/staff/new'
-      preLoaderRoute: typeof AdminStaffNewRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/staff/$id': {
-      id: '/admin/staff/$id'
-      path: '/staff/$id'
-      fullPath: '/admin/staff/$id'
-      preLoaderRoute: typeof AdminStaffIdRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/schools/new': {
       id: '/admin/schools/new'
       path: '/schools/new'
@@ -994,6 +980,20 @@ declare module '@tanstack/react-router' {
       path: '/posts/$id'
       fullPath: '/admin/posts/$id'
       preLoaderRoute: typeof AdminPostsIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/people/new': {
+      id: '/admin/people/new'
+      path: '/people/new'
+      fullPath: '/admin/people/new'
+      preLoaderRoute: typeof AdminPeopleNewRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/people/$id': {
+      id: '/admin/people/$id'
+      path: '/people/$id'
+      fullPath: '/admin/people/$id'
+      preLoaderRoute: typeof AdminPeopleIdRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/partners/new': {
@@ -1075,22 +1075,22 @@ interface AdminRouteChildren {
   AdminPagesNewRoute: typeof AdminPagesNewRoute
   AdminPartnersIdRoute: typeof AdminPartnersIdRoute
   AdminPartnersNewRoute: typeof AdminPartnersNewRoute
+  AdminPeopleIdRoute: typeof AdminPeopleIdRoute
+  AdminPeopleNewRoute: typeof AdminPeopleNewRoute
   AdminPostsIdRoute: typeof AdminPostsIdRoute
   AdminPostsNewRoute: typeof AdminPostsNewRoute
   AdminProjectsIdRoute: typeof AdminProjectsIdRoute
   AdminProjectsNewRoute: typeof AdminProjectsNewRoute
   AdminSchoolsIdRoute: typeof AdminSchoolsIdRoute
   AdminSchoolsNewRoute: typeof AdminSchoolsNewRoute
-  AdminStaffIdRoute: typeof AdminStaffIdRoute
-  AdminStaffNewRoute: typeof AdminStaffNewRoute
   AdminDonorsIndexRoute: typeof AdminDonorsIndexRoute
   AdminOfficesIndexRoute: typeof AdminOfficesIndexRoute
   AdminPagesIndexRoute: typeof AdminPagesIndexRoute
   AdminPartnersIndexRoute: typeof AdminPartnersIndexRoute
+  AdminPeopleIndexRoute: typeof AdminPeopleIndexRoute
   AdminPostsIndexRoute: typeof AdminPostsIndexRoute
   AdminProjectsIndexRoute: typeof AdminProjectsIndexRoute
   AdminSchoolsIndexRoute: typeof AdminSchoolsIndexRoute
-  AdminStaffIndexRoute: typeof AdminStaffIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
@@ -1113,22 +1113,22 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminPagesNewRoute: AdminPagesNewRoute,
   AdminPartnersIdRoute: AdminPartnersIdRoute,
   AdminPartnersNewRoute: AdminPartnersNewRoute,
+  AdminPeopleIdRoute: AdminPeopleIdRoute,
+  AdminPeopleNewRoute: AdminPeopleNewRoute,
   AdminPostsIdRoute: AdminPostsIdRoute,
   AdminPostsNewRoute: AdminPostsNewRoute,
   AdminProjectsIdRoute: AdminProjectsIdRoute,
   AdminProjectsNewRoute: AdminProjectsNewRoute,
   AdminSchoolsIdRoute: AdminSchoolsIdRoute,
   AdminSchoolsNewRoute: AdminSchoolsNewRoute,
-  AdminStaffIdRoute: AdminStaffIdRoute,
-  AdminStaffNewRoute: AdminStaffNewRoute,
   AdminDonorsIndexRoute: AdminDonorsIndexRoute,
   AdminOfficesIndexRoute: AdminOfficesIndexRoute,
   AdminPagesIndexRoute: AdminPagesIndexRoute,
   AdminPartnersIndexRoute: AdminPartnersIndexRoute,
+  AdminPeopleIndexRoute: AdminPeopleIndexRoute,
   AdminPostsIndexRoute: AdminPostsIndexRoute,
   AdminProjectsIndexRoute: AdminProjectsIndexRoute,
   AdminSchoolsIndexRoute: AdminSchoolsIndexRoute,
-  AdminStaffIndexRoute: AdminStaffIndexRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)

@@ -11,7 +11,7 @@
 import { and, eq } from "drizzle-orm";
 
 import { db } from "../src/server/db";
-import { media, postMedia, posts, renderCache, translations } from "../src/server/schema";
+import { media, people, postMedia, posts, renderCache, translations } from "../src/server/schema";
 
 const TENANT = 1;
 const AUTHOR = "KAPE Cambodia";
@@ -348,8 +348,13 @@ async function seedAlbums() {
 	}
 }
 
+async function personSlugExists(slug: string): Promise<boolean> {
+	const [r] = await db.select({ id: people.id }).from(people).where(and(eq(people.tenantId, TENANT), eq(people.slug, slug))).limit(1);
+	return Boolean(r);
+}
+
 async function seedPeople() {
-	const people = [
+	const roster = [
 		{ slug: "demo-person-chenda-director", section: "board", position: "Executive Director", name: { en: "Chenda Sok", km: "សុខ ច័ន្ទដា" }, bio: "Chenda has led KAPE's strategy for over a decade, with a focus on education quality and systemic partnership with government." },
 		{ slug: "demo-person-rith-programs", section: "smt", position: "Director of Programs", name: { en: "Rith Vannak", km: "វណ្ណៈ រិទ្ធ" }, bio: "Rith oversees KAPE's portfolio of education programmes across 15 provinces, from early childhood to teacher training." },
 		{ slug: "demo-person-maly-finance", section: "smt", position: "Director of Finance & Operations", name: { en: "Maly Chhorn", km: "ឆ្នោ ម៉ាលី" }, bio: "Maly ensures KAPE's resources reach the field efficiently and transparently, leading finance, HR and operations." },
@@ -357,17 +362,20 @@ async function seedPeople() {
 		{ slug: "demo-person-dara-teacher-dev", section: "pm", position: "Teacher Development Manager", name: { en: "Dara Heng", km: "ហេង ដារ៉ា" }, bio: "Dara designs and delivers KAPE's hands-on teacher training, with a passion for active, student-centred methods." },
 		{ slug: "demo-person-srey-inclusive", section: "team", position: "Inclusive Education Specialist", name: { en: "Srey Leak", km: "លក្ខ ស្រី" }, bio: "Srey Leak supports schools to welcome children with disabilities, championing classrooms where every child belongs." },
 	];
-	for (let i = 0; i < people.length; i++) {
-		const p = people[i];
-		await addPost({
-			contentType: "person",
-			slug: p.slug,
-			coverSeed: `kape-person-${i + 1}`,
-			meta: { section: p.section, position: p.position },
-			title: p.name,
-			excerpt: { en: p.position },
-			body: [para(p.bio), para("Outside their role at KAPE, they remain a committed advocate for equitable, transformative education for every child in Cambodia.")],
-		});
+	for (let i = 0; i < roster.length; i++) {
+		const p = roster[i];
+		if (await personSlugExists(p.slug)) {
+			skipped++;
+			continue;
+		}
+		const photoMediaId = await addMedia(`kape-person-${i + 1}`, 600, 600);
+		const bio = richDoc([para(p.bio), para("Outside their role at KAPE, they remain a committed advocate for equitable, transformative education for every child in Cambodia.")]);
+		const [row] = await db
+			.insert(people)
+			.values({ tenantId: TENANT, nameEn: p.name.en, nameKm: p.name.km, position: p.position, tier: p.section, isPublic: true, slug: p.slug, photoMediaId, sort: i })
+			.returning({ id: people.id });
+		await db.insert(translations).values({ tenantId: TENANT, entityType: "person", entityId: row.id, field: "bio", lang: "en", value: bio });
+		created++;
 	}
 }
 

@@ -57,6 +57,13 @@
       "when": 1782193181813,
       "tag": "0007_new_luke_cage",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1782197811897,
+      "tag": "0008_bizarre_robin_chapel",
+      "breakpoints": true
     }
   ]
 }

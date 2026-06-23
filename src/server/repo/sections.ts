@@ -6,8 +6,9 @@
 import type { SectionNode, SectionQuery } from "#/lib/sections";
 import type { DB } from "../db";
 import { renderBody } from "../richtext";
-import { listAlbums, listJobs, listPeople, listPosts, listPublications, listVideos } from "./content";
+import { listAlbums, listJobs, listPosts, listPublications, listVideos } from "./content";
 import { getOrgTree } from "./org";
+import { listPeople } from "./people";
 import { listProjectLocations, listProjectOptions } from "./projects";
 import { listOffices, listPartners } from "./site";
 import { staffDirectory, staffDocuments, staffEvents } from "./staff";

@@ -52,6 +52,10 @@ export const Route = createFileRoute("/$")({
 			title = `${r.album.title} — KAPE`;
 		} else if (r?.kind === "project") {
 			title = `${r.project.name} — KAPE`;
+		} else if (r?.kind === "person") {
+			title = `${r.person.name} — KAPE`;
+			description = r.person.position || description;
+			image = r.person.photoUrl;
 		}
 		const meta: Array<Record<string, string>> = [
 			{ title },
@@ -154,6 +158,23 @@ function ResolvedRoute() {
 						</figure>
 					))}
 				</div>
+			</SubPage>
+		);
+	}
+
+	if (r.kind === "person") {
+		const p = r.person;
+		return (
+			<SubPage section={r.label} title={p.name} lead={p.position || undefined} heroImage={p.photoUrl || undefined}>
+				{p.photoUrl && (
+					<img src={p.photoUrl} alt={p.name} className="mb-8 h-40 w-40 rounded-full object-cover shadow-[var(--shadow-soft)] ring-4 ring-card" />
+				)}
+				{p.bodyHtml ? (
+					// biome-ignore lint/security/noDangerouslySetInnerHtml: trusted, server-rendered
+					<div className="prose-kape" dangerouslySetInnerHTML={{ __html: p.bodyHtml }} />
+				) : (
+					<p className="text-muted-foreground">{p.position}</p>
+				)}
 			</SubPage>
 		);
 	}

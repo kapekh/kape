@@ -6,7 +6,7 @@
 import { and, eq, isNull } from "drizzle-orm";
 
 import { db } from "../src/server/db";
-import { donors, media, offices, partners, posts, renderCache, staff } from "../src/server/schema";
+import { donors, media, offices, partners, people, renderCache } from "../src/server/schema";
 
 const TENANT = 1;
 const pic = (seed: string, w: number, h: number) => `https://picsum.photos/seed/${seed}/${w}/${h}`;
@@ -34,14 +34,9 @@ async function main() {
 		await db.update(offices).set({ imageMediaId: await addMedia(`office-${o.id}`, 800, 500) }).where(eq(offices.id, o.id));
 		n++;
 	}
-	for (const s of await db.select().from(staff).where(eq(staff.tenantId, TENANT))) {
-		if (s.photoMediaId) continue;
-		await db.update(staff).set({ photoMediaId: await addMedia(`staff-${s.id}`, 400, 400) }).where(eq(staff.id, s.id));
-		n++;
-	}
-	// Team people (person posts) without a cover photo.
-	for (const p of await db.select().from(posts).where(and(eq(posts.tenantId, TENANT), eq(posts.contentType, "person"), isNull(posts.coverMediaId)))) {
-		await db.update(posts).set({ coverMediaId: await addMedia(`person-${p.id}`, 600, 600) }).where(eq(posts.id, p.id));
+	// People (unified directory: public team/leadership + internal staff) without a photo.
+	for (const p of await db.select().from(people).where(and(eq(people.tenantId, TENANT), isNull(people.photoMediaId)))) {
+		await db.update(people).set({ photoMediaId: await addMedia(`person-${p.id}`, 600, 600) }).where(eq(people.id, p.id));
 		n++;
 	}
 

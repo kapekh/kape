@@ -12,7 +12,7 @@ import { and, eq } from "drizzle-orm";
 
 import type { SectionNode } from "../src/lib/sections";
 import { db } from "../src/server/db";
-import { orgNodes, pages, partners, posts, projectLocations, renderCache } from "../src/server/schema";
+import { orgNodes, pages, partners, people, projectLocations, renderCache } from "../src/server/schema";
 
 const TENANT = 1;
 const pic = (seed: string, w = 1600, h = 900) => `https://picsum.photos/seed/${seed}/${w}/${h}`;
@@ -101,7 +101,7 @@ async function seedOrgChart() {
 		return;
 	}
 	const personId = async (slug: string): Promise<number | null> => {
-		const [p] = await db.select({ id: posts.id }).from(posts).where(and(eq(posts.tenantId, TENANT), eq(posts.slug, slug), eq(posts.contentType, "person"))).limit(1);
+		const [p] = await db.select({ id: people.id }).from(people).where(and(eq(people.tenantId, TENANT), eq(people.slug, slug))).limit(1);
 		return p?.id ?? null;
 	};
 	const add = async (parentId: number | null, name: string, title: string, slug: string | null, sort: number): Promise<number> => {

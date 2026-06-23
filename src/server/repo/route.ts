@@ -16,6 +16,7 @@ import {
 	type ResolvedPage,
 	type ResolvedPost,
 } from "./content";
+import { getPersonBySlug, type ResolvedPerson } from "./people";
 import { getProjectBySlug, type ResolvedProject } from "./projects";
 
 // Internal-only content types are never served on the public site.
@@ -26,6 +27,7 @@ export type ResolvedRoute =
 	| { kind: "article"; label: string; post: ResolvedPost }
 	| { kind: "album"; label: string; album: ResolvedAlbum }
 	| { kind: "project"; label: string; project: ResolvedProject }
+	| { kind: "person"; label: string; person: ResolvedPerson }
 	| { kind: "redirect"; to: string }
 	| { kind: "notfound" };
 
@@ -52,6 +54,9 @@ export async function resolveRoute(db: DB, rawPath: string, lang: string): Promi
 			} else if (col.kind === "album") {
 				const album = await getAlbum(db, rest, lang);
 				if (album) return { kind: "album", label: col.label, album };
+			} else if (col.kind === "people") {
+				const person = await getPersonBySlug(db, rest, lang);
+				if (person) return { kind: "person", label: col.label, person };
 			} else {
 				const post = await getPostBySlug(db, rest, lang);
 				if (post && post.contentType === col.contentType && !BLOCKED_TYPES.has(post.contentType)) {
@@ -82,6 +87,7 @@ function tagsFor(r: ResolvedRoute): string[] {
 	if (r.kind === "article") return [tagRecord(r.post.contentType, r.post.slug)];
 	if (r.kind === "album") return [tagRecord("album", r.album.slug)];
 	if (r.kind === "project") return [tagRecord("project", r.project.slug)];
+	if (r.kind === "person") return [tagRecord("person", r.person.slug)];
 	return [];
 }
 

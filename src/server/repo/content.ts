@@ -292,32 +292,7 @@ export async function findPageRedirect(db: DB, slug: string): Promise<string | n
 	return p?.slug ?? null;
 }
 
-export type PersonItem = {
-	id: number;
-	slug: string;
-	name: string;
-	position: string;
-	section: string;
-};
-
-/** Leadership people (type=person), with name (title) + position/section from meta. */
-export async function listPeople(db: DB, lang: string): Promise<PersonItem[]> {
-	const rows = await db
-		.select()
-		.from(posts)
-		.where(and(eq(posts.tenantId, TENANT), eq(posts.contentType, "person"), eq(posts.status, "published")));
-	const f = await resolveTranslations(db, "post", rows.map((r) => r.id), lang);
-	return rows.map((r) => {
-		const meta = (r.meta ?? {}) as Record<string, unknown>;
-		return {
-			id: r.id,
-			slug: r.slug,
-			name: f.get(r.id)?.title ?? "",
-			position: String(meta.position ?? ""),
-			section: String(meta.section ?? "team"),
-		};
-	});
-}
+// (People moved out of `posts` into the dedicated `people` table — see repo/people.ts.)
 
 /** A single post by slug, with title/excerpt resolved and body rendered to HTML. */
 export async function getPostBySlug(

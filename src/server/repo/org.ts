@@ -1,8 +1,7 @@
 import { and, asc, eq, inArray } from "drizzle-orm";
 
 import type { DB } from "../db";
-import { media, orgNodes, posts } from "../schema";
-import { resolveTranslations } from "./i18n";
+import { media, orgNodes, people } from "../schema";
 
 const TENANT = 1;
 
@@ -26,16 +25,15 @@ export async function getOrgTree(db: DB, lang: string): Promise<OrgNode[]> {
 	const rows = await db.select().from(orgNodes).where(eq(orgNodes.tenantId, TENANT)).orderBy(asc(orgNodes.sort));
 	if (rows.length === 0) return [];
 
-	// Resolve linked person posts → translated name, cover photo and slug.
+	// Resolve linked people → name (per language), photo and public slug.
 	const personIds = [...new Set(rows.map((r) => r.personId).filter((x): x is number => x != null))];
-	const persons = new Map<number, { name: string; slug: string; photoUrl: string | null }>();
+	const persons = new Map<number, { name: string; slug: string | null; photoUrl: string | null }>();
 	if (personIds.length) {
-		const pRows = await db.select({ id: posts.id, slug: posts.slug, coverMediaId: posts.coverMediaId }).from(posts).where(inArray(posts.id, personIds));
-		const names = await resolveTranslations(db, "post", personIds, lang);
-		const coverIds = [...new Set(pRows.map((p) => p.coverMediaId).filter((x): x is number => x != null))];
+		const pRows = await db.select({ id: people.id, slug: people.slug, nameEn: people.nameEn, nameKm: people.nameKm, isPublic: people.isPublic, photoMediaId: people.photoMediaId }).from(people).where(inArray(people.id, personIds));
+		const coverIds = [...new Set(pRows.map((p) => p.photoMediaId).filter((x): x is number => x != null))];
 		const covers = new Map<number, string | null>();
 		if (coverIds.length) for (const m of await db.select({ id: media.id, url: media.url }).from(media).where(inArray(media.id, coverIds))) covers.set(m.id, m.url);
-		for (const p of pRows) persons.set(p.id, { name: names.get(p.id)?.title ?? "", slug: p.slug, photoUrl: p.coverMediaId != null ? covers.get(p.coverMediaId) ?? null : null });
+		for (const p of pRows) persons.set(p.id, { name: lang === "km" && p.nameKm ? p.nameKm : p.nameEn, slug: p.isPublic ? p.slug : null, photoUrl: p.photoMediaId != null ? covers.get(p.photoMediaId) ?? null : null });
 	}
 
 	const byId = new Map<number, OrgNode>();

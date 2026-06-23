@@ -5,7 +5,7 @@
  * both read this single map. Old nested paths 301-redirect here (LEGACY_REDIRECTS).
  */
 
-export type CollectionKind = "post" | "album" | "project";
+export type CollectionKind = "post" | "album" | "project" | "people";
 
 export type CollectionDef = {
 	prefix: string; // top-level URL segment, e.g. "news"
@@ -19,7 +19,7 @@ export const COLLECTIONS: Record<string, CollectionDef> = {
 	stories: { prefix: "stories", kind: "post", contentType: "story", label: "Impact Stories" },
 	videos: { prefix: "videos", kind: "post", contentType: "video", label: "Videos" },
 	galleries: { prefix: "galleries", kind: "album", contentType: "album", label: "Photo Galleries" },
-	team: { prefix: "team", kind: "post", contentType: "person", label: "Our Team" },
+	team: { prefix: "team", kind: "people", label: "Our Team" },
 	publications: { prefix: "publications", kind: "post", contentType: "publication", label: "Publications" },
 	careers: { prefix: "careers", kind: "post", contentType: "job", label: "Careers" },
 	events: { prefix: "events", kind: "post", contentType: "event", label: "Events" },

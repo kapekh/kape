@@ -75,9 +75,9 @@ function OrgChartAdmin() {
 	const [adding, setAdding] = useState<number | null | undefined>(undefined); // parentId for new node; undefined = closed
 
 	const refresh = useCallback(async () => {
-		const [n, posts] = await Promise.all([trpcClient.adminOrg.list.query(), trpcClient.adminPosts.list.query()]);
+		const [n, ppl] = await Promise.all([trpcClient.adminOrg.list.query(), trpcClient.adminPeople.list.query()]);
 		setRows(n as OrgRow[]);
-		setPeople(posts.filter((p) => p.contentType === "person").map((p) => ({ value: String(p.id), label: p.title })));
+		setPeople(ppl.map((p) => ({ value: String(p.id), label: p.nameEn })));
 		setLoading(false);
 	}, []);
 
