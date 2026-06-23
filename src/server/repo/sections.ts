@@ -7,6 +7,7 @@ import type { SectionNode, SectionQuery } from "#/lib/sections";
 import type { DB } from "../db";
 import { renderBody } from "../richtext";
 import { listAlbums, listJobs, listPeople, listPosts, listPublications, listVideos } from "./content";
+import { getOrgTree } from "./org";
 import { listProjectLocations, listProjectOptions } from "./projects";
 import { listOffices, listPartners } from "./site";
 import { staffDirectory, staffDocuments, staffEvents } from "./staff";
@@ -38,6 +39,8 @@ async function resolveQuery(db: DB, q: SectionQuery, lang: string): Promise<unkn
 		}
 		case "locations":
 			return listProjectLocations(db, lang);
+		case "orgchart":
+			return getOrgTree(db, lang);
 		case "offices":
 			return listOffices(db);
 		case "partners":

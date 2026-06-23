@@ -435,6 +435,30 @@ export const partners = sqliteTable("partners", {
 	sort: integer("sort").notNull().default(0),
 });
 
+/**
+ * Hierarchical management / organizational chart. A self-referencing tree:
+ * `parentId` is the node this person reports to (null = top of the chart).
+ * `personId` optionally links a `person` post so the node shows that profile's
+ * photo and links to their page; otherwise `name`/`title` are typed directly.
+ */
+export const orgNodes = sqliteTable(
+	"org_nodes",
+	{
+		id: integer("id").primaryKey({ autoIncrement: true }),
+		tenantId: integer("tenant_id").notNull().default(1).references(() => tenants.id),
+		parentId: integer("parent_id"),
+		name: text("name").notNull(),
+		title: text("title"), // role / position
+		personId: integer("person_id").references(() => posts.id), // optional link to a person post
+		sort: integer("sort").notNull().default(0),
+		...timestamps,
+	},
+	(t) => [
+		foreignKey({ columns: [t.parentId], foreignColumns: [t.id], name: "fk_org_parent" }),
+		index("ix_org_parent").on(t.tenantId, t.parentId),
+	],
+);
+
 /** Funders. Many-to-many with projects via project_donors. */
 export const donors = sqliteTable("donors", {
 	id: integer("id").primaryKey({ autoIncrement: true }),

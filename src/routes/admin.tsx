@@ -59,6 +59,7 @@ const NAV: NavGroup[] = [
 		items: [
 			{ to: "/admin/nav", label: "Header", icon: "nav" },
 			{ to: "/admin/footer", label: "Footer", icon: "footer" },
+			{ to: "/admin/org-chart", label: "Org Chart", icon: "team" },
 			{ to: "/admin/languages", label: "Languages", icon: "languages" },
 			{ to: "/admin/settings", label: "Settings", icon: "settings" },
 		],

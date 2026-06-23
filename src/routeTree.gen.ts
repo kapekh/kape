@@ -29,6 +29,7 @@ import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminPublicationCategoriesRouteImport } from './routes/admin.publication-categories'
 import { Route as AdminPartnersRouteImport } from './routes/admin.partners'
 import { Route as AdminPartnerCategoriesRouteImport } from './routes/admin.partner-categories'
+import { Route as AdminOrgChartRouteImport } from './routes/admin.org-chart'
 import { Route as AdminOfficesRouteImport } from './routes/admin.offices'
 import { Route as AdminNavRouteImport } from './routes/admin.nav'
 import { Route as AdminMediaRouteImport } from './routes/admin.media'
@@ -155,6 +156,11 @@ const AdminPartnersRoute = AdminPartnersRouteImport.update({
 const AdminPartnerCategoriesRoute = AdminPartnerCategoriesRouteImport.update({
   id: '/partner-categories',
   path: '/partner-categories',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminOrgChartRoute = AdminOrgChartRouteImport.update({
+  id: '/org-chart',
+  path: '/org-chart',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminOfficesRoute = AdminOfficesRouteImport.update({
@@ -296,6 +302,7 @@ export interface FileRoutesByFullPath {
   '/admin/media': typeof AdminMediaRoute
   '/admin/nav': typeof AdminNavRoute
   '/admin/offices': typeof AdminOfficesRoute
+  '/admin/org-chart': typeof AdminOrgChartRoute
   '/admin/partner-categories': typeof AdminPartnerCategoriesRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/publication-categories': typeof AdminPublicationCategoriesRoute
@@ -340,6 +347,7 @@ export interface FileRoutesByTo {
   '/admin/media': typeof AdminMediaRoute
   '/admin/nav': typeof AdminNavRoute
   '/admin/offices': typeof AdminOfficesRoute
+  '/admin/org-chart': typeof AdminOrgChartRoute
   '/admin/partner-categories': typeof AdminPartnerCategoriesRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/publication-categories': typeof AdminPublicationCategoriesRoute
@@ -387,6 +395,7 @@ export interface FileRoutesById {
   '/admin/media': typeof AdminMediaRoute
   '/admin/nav': typeof AdminNavRoute
   '/admin/offices': typeof AdminOfficesRoute
+  '/admin/org-chart': typeof AdminOrgChartRoute
   '/admin/partner-categories': typeof AdminPartnerCategoriesRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/publication-categories': typeof AdminPublicationCategoriesRoute
@@ -435,6 +444,7 @@ export interface FileRouteTypes {
     | '/admin/media'
     | '/admin/nav'
     | '/admin/offices'
+    | '/admin/org-chart'
     | '/admin/partner-categories'
     | '/admin/partners'
     | '/admin/publication-categories'
@@ -479,6 +489,7 @@ export interface FileRouteTypes {
     | '/admin/media'
     | '/admin/nav'
     | '/admin/offices'
+    | '/admin/org-chart'
     | '/admin/partner-categories'
     | '/admin/partners'
     | '/admin/publication-categories'
@@ -525,6 +536,7 @@ export interface FileRouteTypes {
     | '/admin/media'
     | '/admin/nav'
     | '/admin/offices'
+    | '/admin/org-chart'
     | '/admin/partner-categories'
     | '/admin/partners'
     | '/admin/publication-categories'
@@ -713,6 +725,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPartnerCategoriesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/org-chart': {
+      id: '/admin/org-chart'
+      path: '/org-chart'
+      fullPath: '/admin/org-chart'
+      preLoaderRoute: typeof AdminOrgChartRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/offices': {
       id: '/admin/offices'
       path: '/offices'
@@ -893,6 +912,7 @@ interface AdminRouteChildren {
   AdminMediaRoute: typeof AdminMediaRoute
   AdminNavRoute: typeof AdminNavRoute
   AdminOfficesRoute: typeof AdminOfficesRoute
+  AdminOrgChartRoute: typeof AdminOrgChartRoute
   AdminPartnerCategoriesRoute: typeof AdminPartnerCategoriesRoute
   AdminPartnersRoute: typeof AdminPartnersRoute
   AdminPublicationCategoriesRoute: typeof AdminPublicationCategoriesRoute
@@ -922,6 +942,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminMediaRoute: AdminMediaRoute,
   AdminNavRoute: AdminNavRoute,
   AdminOfficesRoute: AdminOfficesRoute,
+  AdminOrgChartRoute: AdminOrgChartRoute,
   AdminPartnerCategoriesRoute: AdminPartnerCategoriesRoute,
   AdminPartnersRoute: AdminPartnersRoute,
   AdminPublicationCategoriesRoute: AdminPublicationCategoriesRoute,

@@ -677,6 +677,52 @@ function Partners(p: P) {
 	);
 }
 
+function orgInitials(name: string) {
+	return String(name || "").split(/\s+/).slice(0, 2).map((w) => w[0]).join("");
+}
+
+function OrgNodeView({ node }: { node: any }) {
+	const L = useL();
+	const card = (
+		<div className="org-card">
+			{node.photoUrl ? (
+				<img src={node.photoUrl} alt={node.name} className="org-photo" />
+			) : (
+				<div className="org-avatar">{orgInitials(node.name)}</div>
+			)}
+			<div className="org-name">{node.name}</div>
+			{node.title && <div className="org-title">{node.title}</div>}
+		</div>
+	);
+	return (
+		<li>
+			{node.personSlug ? <NavLink href={L(`/team/${node.personSlug}`)} className="org-link">{card}</NavLink> : card}
+			{Array.isArray(node.children) && node.children.length > 0 && (
+				<ul>{node.children.map((c: any) => <OrgNodeView key={c.id} node={c} />)}</ul>
+			)}
+		</li>
+	);
+}
+
+/** Hierarchical management tree (CSS-connector org chart). Data = nested nodes. */
+function OrgChart(p: P) {
+	const roots: any[] = Array.isArray(p.data) ? p.data : [];
+	return (
+		<section className={`${PAD} ${toneBg(p.tone)}`}>
+			<Container>
+				<Heading eyebrow={p.eyebrow} title={p.title} />
+				{roots.length === 0 ? (
+					<Empty>No organizational chart yet.</Empty>
+				) : (
+					<div className="org-tree overflow-x-auto pb-4">
+						<ul>{roots.map((r) => <OrgNodeView key={r.id} node={r} />)}</ul>
+					</div>
+				)}
+			</Container>
+		</section>
+	);
+}
+
 /* ------------------------------------------------------------------ */
 /* Registry + renderer                                                 */
 /* ------------------------------------------------------------------ */
@@ -699,6 +745,7 @@ export const sectionRegistry: Record<string, (p: P) => React.ReactNode> = {
 	map: MapSection,
 	directory: Directory,
 	partners: Partners,
+	orgChart: OrgChart,
 };
 
 function UnknownSection({ type }: { type: string }) {

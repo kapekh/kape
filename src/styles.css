@@ -318,3 +318,48 @@
     border-radius: 0.35rem;
   }
 }
+
+/* ---- Organizational chart: CSS-connector hierarchy tree ---- */
+.org-tree { text-align: center; }
+.org-tree ul { display: flex; justify-content: center; padding-top: 22px; position: relative; margin: 0; }
+.org-tree li { list-style: none; position: relative; padding: 22px 10px 0; }
+/* down + side connectors */
+.org-tree li::before,
+.org-tree li::after {
+  content: ""; position: absolute; top: 0; right: 50%;
+  border-top: 2px solid var(--border); width: 50%; height: 22px;
+}
+.org-tree li::after { right: auto; left: 50%; border-left: 2px solid var(--border); }
+.org-tree li:only-child::before,
+.org-tree li:only-child::after { display: none; }
+.org-tree li:only-child { padding-top: 0; }
+.org-tree li:first-child::before,
+.org-tree li:last-child::after { border: 0 none; }
+.org-tree li:last-child::before { border-right: 2px solid var(--border); border-radius: 0 6px 0 0; }
+.org-tree li:first-child::after { border-radius: 6px 0 0 0; }
+.org-tree ul ul::before {
+  content: ""; position: absolute; top: 0; left: 50%;
+  border-left: 2px solid var(--border); width: 0; height: 22px;
+}
+/* the outermost level (roots) draws no connectors */
+.org-tree > ul { padding-top: 0; }
+.org-tree > ul > li { padding-top: 0; }
+.org-tree > ul > li::before,
+.org-tree > ul > li::after { display: none; }
+
+.org-tree .org-link { display: inline-block; text-decoration: none; }
+.org-tree .org-card {
+  position: relative; display: inline-flex; flex-direction: column; align-items: center; gap: 6px;
+  min-width: 150px; max-width: 210px; padding: 14px 16px;
+  border: 1px solid var(--border); border-radius: 16px; background: var(--card);
+  box-shadow: var(--shadow-soft); transition: transform 0.2s, border-color 0.2s;
+}
+.org-tree .org-link:hover .org-card { transform: translateY(-2px); border-color: var(--accent); }
+.org-tree .org-photo { width: 56px; height: 56px; border-radius: 9999px; object-fit: cover; box-shadow: 0 0 0 4px var(--card); }
+.org-tree .org-avatar {
+  width: 56px; height: 56px; border-radius: 9999px; display: grid; place-items: center;
+  background: linear-gradient(135deg, var(--primary), var(--accent)); color: var(--primary-foreground);
+  font-weight: 700; font-size: 1.1rem;
+}
+.org-tree .org-name { font-weight: 600; font-size: 0.875rem; color: var(--primary); line-height: 1.2; }
+.org-tree .org-title { font-size: 0.72rem; color: var(--muted-foreground); line-height: 1.2; }

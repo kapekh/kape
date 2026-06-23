@@ -90,6 +90,7 @@ import {
 } from '#/server/repo/content'
 import { bootstrapI18n, listLanguages } from '#/server/repo/i18n'
 import { getNavTree } from '#/server/repo/nav'
+import { adminListOrg, createOrgNode, deleteOrgNode, getOrgTree, moveOrgNode, updateOrgNode } from '#/server/repo/org'
 import { getProjectBySlug, listProjectLocations, listProjectOptions } from '#/server/repo/projects'
 import {
   getActiveAnnouncement,
@@ -194,6 +195,33 @@ const navRouter = {
   tree: publicProcedure
     .input(langInput)
     .query(({ ctx, input }) => getNavTree(ctx.db, input.lang)),
+} satisfies TRPCRouterRecord
+
+const orgRouter = {
+  tree: publicProcedure
+    .input(langInput)
+    .query(({ ctx, input }) => getOrgTree(ctx.db, input.lang)),
+} satisfies TRPCRouterRecord
+
+const orgInput = z.object({
+  parentId: z.number().nullable(),
+  name: z.string().min(1),
+  title: z.string().nullish().transform((v) => v ?? null),
+  personId: z.number().nullish().transform((v) => v ?? null),
+})
+
+const adminOrgRouter = {
+  list: adminProcedure.query(({ ctx }) => adminListOrg(ctx.db)),
+  create: adminProcedure.input(orgInput).mutation(({ ctx, input }) => createOrgNode(ctx.db, input)),
+  update: adminProcedure
+    .input(orgInput.extend({ id: z.number() }))
+    .mutation(({ ctx, input }) => updateOrgNode(ctx.db, input.id, input)),
+  delete: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(({ ctx, input }) => deleteOrgNode(ctx.db, input.id)),
+  move: adminProcedure
+    .input(z.object({ id: z.number(), dir: z.enum(['up', 'down']) }))
+    .mutation(({ ctx, input }) => moveOrgNode(ctx.db, input.id, input.dir)),
 } satisfies TRPCRouterRecord
 
 const pagesRouter = {
@@ -510,12 +538,14 @@ export const trpcRouter = createTRPCRouter({
   adminTerms: adminTermsRouter,
   i18n: i18nRouter,
   nav: navRouter,
+  org: orgRouter,
   pages: pagesRouter,
   routes: routesRouter,
   posts: postsRouter,
   adminPosts: adminPostsRouter,
   adminPages: adminPagesRouter,
   adminNav: adminNavRouter,
+  adminOrg: adminOrgRouter,
   adminMedia: adminMediaRouter,
   adminLanguages: adminLanguagesRouter,
   admin: adminRouter,

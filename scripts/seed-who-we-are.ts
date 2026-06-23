@@ -12,7 +12,7 @@ import { and, eq } from "drizzle-orm";
 
 import type { SectionNode } from "../src/lib/sections";
 import { db } from "../src/server/db";
-import { pages, partners, projectLocations, renderCache } from "../src/server/schema";
+import { orgNodes, pages, partners, posts, projectLocations, renderCache } from "../src/server/schema";
 
 const TENANT = 1;
 const pic = (seed: string, w = 1600, h = 900) => `https://picsum.photos/seed/${seed}/${w}/${h}`;
@@ -92,6 +92,31 @@ async function seedLocations() {
 		added++;
 	}
 	console.log(`  project locations: ${added} added`);
+}
+
+async function seedOrgChart() {
+	const [exists] = await db.select({ id: orgNodes.id }).from(orgNodes).where(eq(orgNodes.tenantId, TENANT)).limit(1);
+	if (exists) {
+		console.log("  org chart: already populated, skipping");
+		return;
+	}
+	const personId = async (slug: string): Promise<number | null> => {
+		const [p] = await db.select({ id: posts.id }).from(posts).where(and(eq(posts.tenantId, TENANT), eq(posts.slug, slug), eq(posts.contentType, "person"))).limit(1);
+		return p?.id ?? null;
+	};
+	const add = async (parentId: number | null, name: string, title: string, slug: string | null, sort: number): Promise<number> => {
+		const pid = slug ? await personId(slug) : null;
+		const [row] = await db.insert(orgNodes).values({ tenantId: TENANT, parentId, name, title, personId: pid, sort }).returning({ id: orgNodes.id });
+		return row.id;
+	};
+	const chair = await add(null, "Mr. Heang Koy", "Chairman of the Board of Directors", "person-heang-koy", 0);
+	const ed = await add(chair, "Executive Director", "Executive Director", "demo-person-chenda-director", 0);
+	const programs = await add(ed, "Director of Programs", "Director of Programs", "demo-person-rith-programs", 0);
+	await add(ed, "Director of Finance & Operations", "Director of Finance & Operations", "demo-person-maly-finance", 1);
+	await add(programs, "ICT Innovation Manager", "ICT Innovation Manager", "demo-person-sovann-ict", 0);
+	await add(programs, "Teacher Development Manager", "Teacher Development Manager", "demo-person-dara-teacher-dev", 1);
+	await add(programs, "Inclusive Education Specialist", "Inclusive Education Specialist", "demo-person-srey-inclusive", 2);
+	console.log("  org chart: seeded default hierarchy (7 nodes)");
 }
 
 /* --------------------------------- pages ---------------------------------- */
@@ -236,7 +261,8 @@ async function buildLeadership() {
 		{ id: "bod", type: "people", layout: "grid", query: { source: "people", category: "board" }, props: { eyebrow: "Governance", title: "Board of *Directors*" } },
 		{ id: "smt", type: "people", layout: "grid", query: { source: "people", category: "smt" }, props: { eyebrow: "Leadership", title: "Senior Management *Team*", tone: "muted" } },
 		{ id: "pm", type: "people", layout: "grid", query: { source: "people", category: "pm" }, props: { eyebrow: "Delivery", title: "Program Managers, Team Leaders & *Supervisors*" } },
-		{ id: "orgchart", type: "split", layout: "media-right", props: { eyebrow: "Structure", title: "Organisational *Chart*", image: pic("kape-orgchart", 1200, 900), body: richDoc([para("KAPE's structure connects a governing Board of Directors, a Senior Management Team, and programme units that deliver our work across 15 provinces. Click any team member above to read their full profile and biography.")]) } },
+		{ id: "orgchart-intro", type: "richtext", layout: "narrow", props: { body: richDoc([para("KAPE's structure connects a governing Board of Directors, a Senior Management Team, and programme units that deliver our work across 15 provinces. Click any person to read their full profile and biography.")]) } },
+		{ id: "orgchart", type: "orgChart", query: { source: "orgchart" }, props: { eyebrow: "Structure", title: "Organisational *Chart*" } },
 	]);
 }
 
@@ -263,6 +289,7 @@ async function main() {
 	console.log("Enriching supporting data…");
 	await seedPartners();
 	await seedLocations();
+	await seedOrgChart();
 	console.log("Building Who We Are pages…");
 	await buildAbout();
 	await buildFactSheet();

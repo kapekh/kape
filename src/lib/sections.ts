@@ -17,7 +17,8 @@ export type QuerySource =
 	| "staff"
 	| "events"
 	| "documents"
-	| "partners";
+	| "partners"
+	| "orgchart";
 
 export type SectionQuery = {
 	source: QuerySource;
