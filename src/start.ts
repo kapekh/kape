@@ -27,7 +27,8 @@ const securityHeaders = createMiddleware({ type: 'request' }).server(async ({ ne
         "img-src 'self' data: https:",
         "media-src 'self' https:",
         "font-src 'self' https://fonts.gstatic.com data:",
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        // unpkg serves the Leaflet stylesheet used by the project-location map.
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com",
         "script-src 'self' 'unsafe-inline'",
         "connect-src 'self'",
       ].join('; '),

@@ -30,8 +30,12 @@ async function resolveQuery(db: DB, q: SectionQuery, lang: string): Promise<unkn
 			return listAlbums(db, lang);
 		case "publications":
 			return q.category ? listPublications(db, lang, q.category) : listPosts(db, "publication", lang, q.limit ?? 24);
-		case "people":
-			return listPeople(db, lang);
+		case "people": {
+			const all = await listPeople(db, lang);
+			// Optional section filter (board | smt | pm | team) so a page can show
+			// leadership tiers as separate groups.
+			return q.category ? all.filter((p) => p.section === q.category) : all;
+		}
 		case "locations":
 			return listProjectLocations(db, lang);
 		case "offices":
