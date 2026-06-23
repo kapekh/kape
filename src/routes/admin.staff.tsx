@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import { FormSection, fieldInput, fieldLabel } from "#/components/admin/form-ui";
+import { MediaThumb } from "#/components/admin/MediaThumb";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 
 export const Route = createFileRoute("/admin/staff")({
@@ -10,7 +11,7 @@ export const Route = createFileRoute("/admin/staff")({
 });
 
 type Row = Awaited<ReturnType<typeof trpcClient.adminStaff.list.query>>[number];
-const empty = { staffNo: "", nameKm: "", nameEn: "", sex: "", phone: "", email: "", program: "" };
+const empty: { staffNo: string; nameKm: string; nameEn: string; sex: string; phone: string; email: string; program: string; photoMediaId: number | null; photoUrl: string | null } = { staffNo: "", nameKm: "", nameEn: "", sex: "", phone: "", email: "", program: "", photoMediaId: null, photoUrl: null };
 const ci = "w-full bg-transparent px-2 py-2 text-sm focus:outline-none focus:bg-[var(--accent)]/5 rounded";
 
 function StaffAdmin() {
@@ -29,10 +30,13 @@ function StaffAdmin() {
 	function patch(id: number, field: keyof Row, value: string) {
 		setRows((rs) => rs.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
 	}
+	function setPhoto(id: number, mediaId: number | null, url: string | null) {
+		setRows((rs) => rs.map((r) => (r.id === id ? { ...r, photoMediaId: mediaId, photoUrl: url } : r)));
+	}
 	async function save(r: Row) {
 		await trpcClient.adminStaff.update.mutate({
 			id: r.id, staffNo: r.staffNo ?? "", nameKm: r.nameKm ?? "", nameEn: r.nameEn ?? "",
-			sex: r.sex ?? "", phone: r.phone ?? "", email: r.email ?? "", program: r.program ?? "", sort: r.sort,
+			sex: r.sex ?? "", phone: r.phone ?? "", email: r.email ?? "", program: r.program ?? "", sort: r.sort, photoMediaId: r.photoMediaId ?? null,
 		});
 	}
 	async function create() {
@@ -81,6 +85,10 @@ function StaffAdmin() {
 						<label className={fieldLabel}>Program</label>
 						<input className={fieldInput} value={add.program} onChange={(e) => setAdd({ ...add, program: e.target.value })} />
 					</div>
+					<div>
+						<label className={fieldLabel}>Photo</label>
+						<MediaThumb value={add.photoMediaId} url={add.photoUrl} shape="circle" onChange={(id, url) => setAdd({ ...add, photoMediaId: id, photoUrl: url })} />
+					</div>
 					<button type="button" onClick={create} className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:opacity-90 transition">Add</button>
 				</div>
 			</FormSection>
@@ -89,6 +97,7 @@ function StaffAdmin() {
 				<table className="w-full text-sm">
 					<thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
 						<tr>
+							<th className="px-2 py-2.5">Photo</th>
 							<th className="px-2 py-2.5">ID</th>
 							<th className="px-2 py-2.5">Name (KH)</th>
 							<th className="px-2 py-2.5">Name (EN)</th>
@@ -101,10 +110,11 @@ function StaffAdmin() {
 					</thead>
 					<tbody className="divide-y divide-border">
 						{loading ? (
-							<tr><td colSpan={8} className="px-3 py-4 text-muted-foreground">Loading…</td></tr>
+							<tr><td colSpan={9} className="px-3 py-4 text-muted-foreground">Loading…</td></tr>
 						) : (
 							rows.map((r) => (
 								<tr key={r.id} className="hover:bg-muted/20">
+									<td className="px-2"><MediaThumb value={r.photoMediaId} url={r.photoUrl} shape="circle" onChange={(id, url) => setPhoto(r.id, id, url)} /></td>
 									<td><input className={`${ci} w-20`} value={r.staffNo ?? ""} onChange={(e) => patch(r.id, "staffNo", e.target.value)} /></td>
 									<td><input className={`${ci} font-khmer`} value={r.nameKm ?? ""} onChange={(e) => patch(r.id, "nameKm", e.target.value)} /></td>
 									<td><input className={ci} value={r.nameEn ?? ""} onChange={(e) => patch(r.id, "nameEn", e.target.value)} /></td>

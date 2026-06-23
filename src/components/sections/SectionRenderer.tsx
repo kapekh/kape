@@ -665,8 +665,18 @@ function Partners(p: P) {
 							<div key={cat} className="rounded-3xl border border-border bg-card p-6 shadow-sm">
 								<h3 className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">{cat.replace(/-/g, " ")}</h3>
 								<div className="mb-4 h-px w-full bg-border" />
-								<div className="flex flex-wrap gap-2">
-									{list.map((r) => <NavLink key={r.id} href={r.url || "#"} className="rounded-full border border-border bg-background/60 px-3.5 py-1.5 text-sm font-medium text-foreground/80 hover:border-[var(--accent)] hover:text-[var(--accent)] transition">{r.name}</NavLink>)}
+								<div className="flex flex-wrap items-center gap-2.5">
+									{list.map((r) => (
+										<NavLink key={r.id} href={r.url || "#"} title={r.name} className="group inline-flex">
+											{r.logoUrl ? (
+												<span className="grid h-14 w-28 place-items-center rounded-xl border border-border bg-white p-2 shadow-sm transition group-hover:border-[var(--accent)]">
+													<img src={r.logoUrl} alt={r.name} className="max-h-full max-w-full object-contain" />
+												</span>
+											) : (
+												<span className="rounded-full border border-border bg-background/60 px-3.5 py-1.5 text-sm font-medium text-foreground/80 transition group-hover:border-[var(--accent)] group-hover:text-[var(--accent)]">{r.name}</span>
+											)}
+										</NavLink>
+									))}
 								</div>
 							</div>
 						))}

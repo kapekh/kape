@@ -2,6 +2,7 @@ import { and, asc, count, desc, eq, inArray, isNull, ne } from "drizzle-orm";
 
 import type { SectionNode } from "#/lib/sections";
 import type { DB } from "../db";
+import { attachMediaUrl } from "./media-util";
 import {
 	alumniRegistrations,
 	contactSubmissions,
@@ -624,10 +625,12 @@ export type StaffInput = {
 	email: string;
 	program: string;
 	sort: number;
+	photoMediaId?: number | null;
 };
 
-export function adminListStaff(db: DB) {
-	return db.select().from(staff).where(eq(staff.tenantId, TENANT)).orderBy(asc(staff.sort));
+export async function adminListStaff(db: DB) {
+	const rows = await db.select().from(staff).where(eq(staff.tenantId, TENANT)).orderBy(asc(staff.sort));
+	return attachMediaUrl(db, rows, "photoMediaId", "photoUrl");
 }
 
 export async function createStaff(db: DB, input: StaffInput): Promise<number> {
@@ -663,9 +666,10 @@ export async function deleteSetting(db: DB, key: string): Promise<void> {
 
 /* ---------------- Partners ---------------- */
 
-export type PartnerInput = { name: string; category: string; url: string; sort: number };
-export function adminListPartners(db: DB) {
-	return db.select().from(partners).where(eq(partners.tenantId, TENANT)).orderBy(asc(partners.sort));
+export type PartnerInput = { name: string; category: string; url: string; sort: number; logoMediaId?: number | null };
+export async function adminListPartners(db: DB) {
+	const rows = await db.select().from(partners).where(eq(partners.tenantId, TENANT)).orderBy(asc(partners.sort));
+	return attachMediaUrl(db, rows, "logoMediaId", "logoUrl");
 }
 export async function createPartner(db: DB, v: PartnerInput): Promise<number> {
 	const [r] = await db.insert(partners).values({ tenantId: TENANT, ...v }).returning({ id: partners.id });
@@ -682,10 +686,11 @@ export async function deletePartner(db: DB, id: number): Promise<void> {
 
 export type OfficeInput = {
 	name: string; province: string; address: string; phone: string; email: string;
-	lat: string; lng: string; isHq: boolean; sort: number;
+	lat: string; lng: string; isHq: boolean; sort: number; imageMediaId?: number | null;
 };
-export function adminListOffices(db: DB) {
-	return db.select().from(offices).where(eq(offices.tenantId, TENANT)).orderBy(asc(offices.sort));
+export async function adminListOffices(db: DB) {
+	const rows = await db.select().from(offices).where(eq(offices.tenantId, TENANT)).orderBy(asc(offices.sort));
+	return attachMediaUrl(db, rows, "imageMediaId", "imageUrl");
 }
 export async function createOffice(db: DB, v: OfficeInput): Promise<number> {
 	const [r] = await db.insert(offices).values({ tenantId: TENANT, ...v }).returning({ id: offices.id });
@@ -809,9 +814,10 @@ export async function deleteSchool(db: DB, id: number): Promise<void> {
 
 /* ---------------- Donors ---------------- */
 
-export type DonorInput = { name: string; url: string; sort: number };
-export function adminListDonors(db: DB) {
-	return db.select().from(donors).where(eq(donors.tenantId, TENANT)).orderBy(asc(donors.sort));
+export type DonorInput = { name: string; url: string; sort: number; logoMediaId?: number | null };
+export async function adminListDonors(db: DB) {
+	const rows = await db.select().from(donors).where(eq(donors.tenantId, TENANT)).orderBy(asc(donors.sort));
+	return attachMediaUrl(db, rows, "logoMediaId", "logoUrl");
 }
 export async function createDonor(db: DB, v: DonorInput): Promise<number> {
 	const [r] = await db.insert(donors).values({ tenantId: TENANT, ...v }).returning({ id: donors.id });

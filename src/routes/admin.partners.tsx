@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import { FormSection, fieldInput, fieldLabel } from "#/components/admin/form-ui";
+import { MediaThumb } from "#/components/admin/MediaThumb";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 
 export const Route = createFileRoute("/admin/partners")({ component: PartnersAdmin });
@@ -15,7 +16,7 @@ function PartnersAdmin() {
 	const [rows, setRows] = useState<Row[]>([]);
 	const [cats, setCats] = useState<Cat[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [add, setAdd] = useState({ name: "", category: "government", url: "" });
+	const [add, setAdd] = useState<{ name: string; category: string; url: string; logoMediaId: number | null; logoUrl: string | null }>({ name: "", category: "government", url: "", logoMediaId: null, logoUrl: null });
 
 	async function refresh() {
 		const [p, c] = await Promise.all([trpcClient.adminPartners.list.query(), trpcClient.terms.list.query({ taxonomy: "partner_category" })]);
@@ -30,13 +31,16 @@ function PartnersAdmin() {
 	function patch(id: number, field: "name" | "category" | "url", value: string) {
 		setRows((rs) => rs.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
 	}
+	function setLogo(id: number, mediaId: number | null, url: string | null) {
+		setRows((rs) => rs.map((r) => (r.id === id ? { ...r, logoMediaId: mediaId, logoUrl: url } : r)));
+	}
 	async function save(r: Row) {
-		await trpcClient.adminPartners.update.mutate({ id: r.id, name: r.name, category: r.category, url: r.url ?? "", sort: r.sort });
+		await trpcClient.adminPartners.update.mutate({ id: r.id, name: r.name, category: r.category, url: r.url ?? "", sort: r.sort, logoMediaId: r.logoMediaId ?? null });
 	}
 	async function create() {
 		if (!add.name.trim()) return;
-		await trpcClient.adminPartners.create.mutate({ ...add, sort: rows.length });
-		setAdd({ name: "", category: add.category, url: "" });
+		await trpcClient.adminPartners.create.mutate({ name: add.name, category: add.category, url: add.url, logoMediaId: add.logoMediaId, sort: rows.length });
+		setAdd({ name: "", category: add.category, url: "", logoMediaId: null, logoUrl: null });
 		refresh();
 	}
 	async function del(id: number) {
@@ -63,6 +67,10 @@ function PartnersAdmin() {
 						<label className={fieldLabel}>Website (optional)</label>
 						<input className={fieldInput} placeholder="https://…" value={add.url} onChange={(e) => setAdd({ ...add, url: e.target.value })} />
 					</div>
+					<div>
+						<label className={fieldLabel}>Logo</label>
+						<MediaThumb value={add.logoMediaId} url={add.logoUrl} onChange={(id, url) => setAdd({ ...add, logoMediaId: id, logoUrl: url })} />
+					</div>
 					<button type="button" onClick={create} className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:opacity-90 transition">Add</button>
 				</div>
 			</FormSection>
@@ -70,14 +78,15 @@ function PartnersAdmin() {
 			<div className="overflow-hidden rounded-xl border border-border bg-card">
 				<table className="w-full text-sm">
 					<thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
-						<tr><th className="px-2 py-2.5">Name</th><th className="px-2 py-2.5">Category</th><th className="px-2 py-2.5">URL</th><th className="px-3 py-2.5 text-right">Actions</th></tr>
+						<tr><th className="px-2 py-2.5">Logo</th><th className="px-2 py-2.5">Name</th><th className="px-2 py-2.5">Category</th><th className="px-2 py-2.5">URL</th><th className="px-3 py-2.5 text-right">Actions</th></tr>
 					</thead>
 					<tbody className="divide-y divide-border">
 						{loading ? (
-							<tr><td colSpan={4} className="px-3 py-4 text-muted-foreground">Loading…</td></tr>
+							<tr><td colSpan={5} className="px-3 py-4 text-muted-foreground">Loading…</td></tr>
 						) : (
 							rows.map((r) => (
 								<tr key={r.id} className="hover:bg-muted/20">
+									<td className="px-2"><MediaThumb value={r.logoMediaId} url={r.logoUrl} onChange={(id, url) => setLogo(r.id, id, url)} /></td>
 									<td><input className={ci} value={r.name} onChange={(e) => patch(r.id, "name", e.target.value)} /></td>
 									<td><select className={ci} value={r.category} onChange={(e) => patch(r.id, "category", e.target.value)}>{cats.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}</select></td>
 									<td><input className={ci} value={r.url ?? ""} onChange={(e) => patch(r.id, "url", e.target.value)} /></td>

@@ -4,6 +4,7 @@ import type { DB } from "../db";
 import { renderBody } from "../richtext";
 import { donors, projectDonors, projectLocations, projects } from "../schema";
 import { resolveOne, resolveTranslations } from "./i18n";
+import { attachMediaUrl } from "./media-util";
 
 const TENANT = 1;
 
@@ -15,7 +16,7 @@ export type ResolvedProject = {
 	name: string;
 	summary: string;
 	bodyHtml: string;
-	donors: string[];
+	donors: { name: string; logoUrl: string | null }[];
 };
 
 export async function getProjectBySlug(db: DB, slug: string, lang: string): Promise<ResolvedProject | null> {
@@ -27,10 +28,11 @@ export async function getProjectBySlug(db: DB, slug: string, lang: string): Prom
 	if (!p) return null;
 	const f = await resolveOne(db, "project", p.id, lang);
 	const ds = await db
-		.select({ name: donors.name })
+		.select({ name: donors.name, logoMediaId: donors.logoMediaId })
 		.from(projectDonors)
 		.innerJoin(donors, eq(projectDonors.donorId, donors.id))
 		.where(eq(projectDonors.projectId, p.id));
+	const dsWithLogo = await attachMediaUrl(db, ds, "logoMediaId", "logoUrl");
 	return {
 		id: p.id,
 		code: p.code,
@@ -39,7 +41,7 @@ export async function getProjectBySlug(db: DB, slug: string, lang: string): Prom
 		name: f.name ?? "",
 		summary: f.summary ?? "",
 		bodyHtml: renderBody(f.body ?? null),
-		donors: ds.map((d) => d.name),
+		donors: dsWithLogo.map((d) => ({ name: d.name, logoUrl: d.logoUrl })),
 	};
 }
 

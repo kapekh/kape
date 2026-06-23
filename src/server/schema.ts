@@ -517,6 +517,7 @@ export const offices = sqliteTable("offices", {
 	email: text("email"),
 	lat: text("lat"),
 	lng: text("lng"),
+	imageMediaId: integer("image_media_id").references(() => media.id),
 	isHq: integer("is_hq", { mode: "boolean" }).notNull().default(false),
 	sort: integer("sort").notNull().default(0),
 });

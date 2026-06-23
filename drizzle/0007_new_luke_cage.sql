@@ -1,0 +1,1 @@
+ALTER TABLE `offices` ADD `image_media_id` integer REFERENCES media(id);

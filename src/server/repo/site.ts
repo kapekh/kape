@@ -1,6 +1,7 @@
 import { and, asc, eq, sql } from "drizzle-orm";
 
 import type { DB } from "../db";
+import { attachMediaUrl } from "./media-util";
 import {
 	heroSlides,
 	media,
@@ -78,12 +79,14 @@ export async function getActiveAnnouncement(db: DB, lang: string) {
 	};
 }
 
-export function listOffices(db: DB) {
-	return db.select().from(offices).where(eq(offices.tenantId, TENANT)).orderBy(asc(offices.sort));
+export async function listOffices(db: DB) {
+	const rows = await db.select().from(offices).where(eq(offices.tenantId, TENANT)).orderBy(asc(offices.sort));
+	return attachMediaUrl(db, rows, "imageMediaId", "imageUrl");
 }
 
-export function listPartners(db: DB) {
-	return db.select().from(partners).where(eq(partners.tenantId, TENANT)).orderBy(asc(partners.sort));
+export async function listPartners(db: DB) {
+	const rows = await db.select().from(partners).where(eq(partners.tenantId, TENANT)).orderBy(asc(partners.sort));
+	return attachMediaUrl(db, rows, "logoMediaId", "logoUrl");
 }
 
 /** Record one visit for today and return {today, total}. (Write-on-read counter.) */

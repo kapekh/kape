@@ -34,6 +34,7 @@ function ContactPage() {
 			{hq && (
 				<Section title="Head office">
 					<Card accent>
+						{hq.imageUrl && <img src={hq.imageUrl} alt={hq.name} className="mb-4 aspect-video w-full rounded-xl object-cover" />}
 						<div className="space-y-1">
 							{hq.address && <div><strong>Address:</strong> {hq.address}</div>}
 							{hq.phone && <div><strong>Telephone:</strong> {hq.phone}</div>}
@@ -52,6 +53,7 @@ function ContactPage() {
 				<Grid cols={3}>
 					{offices.filter((o) => !o.isHq).map((o) => (
 						<Card key={o.id} title={o.name}>
+							{o.imageUrl && <img src={o.imageUrl} alt={o.name} className="mb-3 aspect-video w-full rounded-lg object-cover" />}
 							{o.phone && <>Phone: {o.phone}<br /></>}
 							{o.email && <>Email: {o.email}</>}
 						</Card>

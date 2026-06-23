@@ -380,6 +380,7 @@ const staffInput = z.object({
   email: z.string(),
   program: z.string(),
   sort: z.number(),
+  photoMediaId: z.number().nullish(),
 })
 
 // Staff portal (requires staff/admin role) — internal, never public.
@@ -401,10 +402,10 @@ const adminStaffRouter = {
     .mutation(({ ctx, input }) => deleteStaff(ctx.db, input.id)),
 } satisfies TRPCRouterRecord
 
-const partnerInput = z.object({ name: z.string().min(1), category: z.string(), url: z.string(), sort: z.number() })
+const partnerInput = z.object({ name: z.string().min(1), category: z.string(), url: z.string(), sort: z.number(), logoMediaId: z.number().nullish() })
 const officeInput = z.object({
   name: z.string().min(1), province: z.string(), address: z.string(), phone: z.string(),
-  email: z.string(), lat: z.string(), lng: z.string(), isHq: z.boolean(), sort: z.number(),
+  email: z.string(), lat: z.string(), lng: z.string(), isHq: z.boolean(), sort: z.number(), imageMediaId: z.number().nullish(),
 })
 const statInput = z.object({ value: z.number(), sort: z.number(), labels: z.record(z.string(), z.string()) })
 
@@ -450,7 +451,7 @@ const heroInput = z.object({
   sort: z.number(),
   translations: z.array(z.object({ lang: z.string(), kicker: z.string(), title: z.string(), caption: z.string() })),
 })
-const donorInput = z.object({ name: z.string().min(1), url: z.string(), sort: z.number() })
+const donorInput = z.object({ name: z.string().min(1), url: z.string(), sort: z.number(), logoMediaId: z.number().nullish() })
 const schoolInput = z.object({
   name: z.string().min(1),
   code: z.string(),

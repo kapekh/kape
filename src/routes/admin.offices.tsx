@@ -3,12 +3,13 @@ import { useEffect, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import { FormSection, fieldInput, fieldLabel } from "#/components/admin/form-ui";
+import { MediaThumb } from "#/components/admin/MediaThumb";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 
 export const Route = createFileRoute("/admin/offices")({ component: OfficesAdmin });
 
 type Row = Awaited<ReturnType<typeof trpcClient.adminOffices.list.query>>[number];
-const empty = { name: "", province: "", address: "", phone: "", email: "", lat: "", lng: "", isHq: false };
+const empty: { name: string; province: string; address: string; phone: string; email: string; lat: string; lng: string; isHq: boolean; imageMediaId: number | null; imageUrl: string | null } = { name: "", province: "", address: "", phone: "", email: "", lat: "", lng: "", isHq: false, imageMediaId: null, imageUrl: null };
 const ci = "w-full bg-transparent px-2 py-2 text-sm focus:outline-none focus:bg-[var(--accent)]/5 rounded";
 
 function OfficesAdmin() {
@@ -25,12 +26,15 @@ function OfficesAdmin() {
 	}, []);
 
 	function patch(id: number, field: keyof Row, value: string | boolean) {
-		setRows((rs) => rs.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
+		setRows((rs) => rs.map((r) => (r.id === id ? ({ ...r, [field]: value } as unknown as Row) : r)));
+	}
+	function setImage(id: number, mediaId: number | null, url: string | null) {
+		setRows((rs) => rs.map((r) => (r.id === id ? { ...r, imageMediaId: mediaId, imageUrl: url } : r)));
 	}
 	async function save(r: Row) {
 		await trpcClient.adminOffices.update.mutate({
 			id: r.id, name: r.name, province: r.province ?? "", address: r.address ?? "", phone: r.phone ?? "",
-			email: r.email ?? "", lat: r.lat ?? "", lng: r.lng ?? "", isHq: r.isHq, sort: r.sort,
+			email: r.email ?? "", lat: r.lat ?? "", lng: r.lng ?? "", isHq: r.isHq, sort: r.sort, imageMediaId: r.imageMediaId ?? null,
 		});
 	}
 	async function create() {
@@ -76,6 +80,10 @@ function OfficesAdmin() {
 						<input className={fieldInput} value={add.lng} onChange={(e) => setAdd({ ...add, lng: e.target.value })} />
 					</div>
 					<label className="flex items-center gap-1.5 text-sm pb-2"><input type="checkbox" checked={add.isHq} onChange={(e) => setAdd({ ...add, isHq: e.target.checked })} /> HQ</label>
+					<div>
+						<label className={fieldLabel}>Image</label>
+						<MediaThumb value={add.imageMediaId} url={add.imageUrl} onChange={(id, url) => setAdd({ ...add, imageMediaId: id, imageUrl: url })} />
+					</div>
 					<button type="button" onClick={create} className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:opacity-90 transition">Add</button>
 				</div>
 			</FormSection>
@@ -84,6 +92,7 @@ function OfficesAdmin() {
 				<table className="w-full text-sm">
 					<thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
 						<tr>
+							<th className="px-2 py-2.5">Image</th>
 							<th className="px-2 py-2.5">Name</th><th className="px-2 py-2.5">Province</th><th className="px-2 py-2.5">Phone</th>
 							<th className="px-2 py-2.5">Email</th><th className="px-2 py-2.5">Lat</th><th className="px-2 py-2.5">Lng</th>
 							<th className="px-2 py-2.5">HQ</th><th className="px-3 py-2.5 text-right">Actions</th>
@@ -91,10 +100,11 @@ function OfficesAdmin() {
 					</thead>
 					<tbody className="divide-y divide-border">
 						{loading ? (
-							<tr><td colSpan={8} className="px-3 py-4 text-muted-foreground">Loading…</td></tr>
+							<tr><td colSpan={9} className="px-3 py-4 text-muted-foreground">Loading…</td></tr>
 						) : (
 							rows.map((r) => (
 								<tr key={r.id} className="hover:bg-muted/20">
+									<td className="px-2"><MediaThumb value={r.imageMediaId} url={r.imageUrl} onChange={(id, url) => setImage(r.id, id, url)} /></td>
 									<td><input className={ci} value={r.name} onChange={(e) => patch(r.id, "name", e.target.value)} /></td>
 									<td><input className={ci} value={r.province ?? ""} onChange={(e) => patch(r.id, "province", e.target.value)} /></td>
 									<td><input className={ci} value={r.phone ?? ""} onChange={(e) => patch(r.id, "phone", e.target.value)} /></td>

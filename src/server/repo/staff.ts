@@ -4,6 +4,7 @@ import type { DB } from "../db";
 import { renderBody } from "../richtext";
 import { posts, staff } from "../schema";
 import { resolveTranslations } from "./i18n";
+import { attachMediaUrl } from "./media-util";
 
 const TENANT = 1;
 
@@ -64,7 +65,8 @@ export async function staffDocuments(db: DB, lang: string) {
 	});
 }
 
-/** Staff directory rows. */
-export function staffDirectory(db: DB) {
-	return db.select().from(staff).where(eq(staff.tenantId, TENANT)).orderBy(asc(staff.sort));
+/** Staff directory rows (with resolved photo URLs). */
+export async function staffDirectory(db: DB) {
+	const rows = await db.select().from(staff).where(eq(staff.tenantId, TENANT)).orderBy(asc(staff.sort));
+	return attachMediaUrl(db, rows, "photoMediaId", "photoUrl");
 }
