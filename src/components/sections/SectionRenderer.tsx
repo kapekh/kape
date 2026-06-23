@@ -7,6 +7,7 @@ import { localizedHref } from "@/lib/i18n-config";
 import { ContactForm } from "../ContactForm";
 import { MapView, type MapMarker } from "../MapView";
 import { NavLink } from "../NavLink";
+import { PublicOrgChart } from "../PublicOrgChart";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type P = Record<string, any> & { layout?: string };
@@ -717,12 +718,18 @@ function OrgNodeView({ node }: { node: any }) {
 /** Hierarchical management tree (CSS-connector org chart). Data = nested nodes. */
 function OrgChart(p: P) {
 	const roots: any[] = Array.isArray(p.data) ? p.data : [];
+	// React Flow is client-only; render the CSS-connector tree on the server / no-JS
+	// (keeps it crawlable & accessible), then upgrade to the interactive canvas.
+	const [mounted, setMounted] = useState(false);
+	useEffect(() => setMounted(true), []);
 	return (
 		<section className={`${PAD} ${toneBg(p.tone)}`}>
 			<Container>
 				<Heading eyebrow={p.eyebrow} title={p.title} />
 				{roots.length === 0 ? (
 					<Empty>No organizational chart yet.</Empty>
+				) : mounted ? (
+					<PublicOrgChart roots={roots} />
 				) : (
 					<div className="org-tree overflow-x-auto pb-4">
 						<ul>{roots.map((r) => <OrgNodeView key={r.id} node={r} />)}</ul>

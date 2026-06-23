@@ -13,6 +13,8 @@ export type OrgNode = {
 	title: string;
 	photoUrl: string | null;
 	personSlug: string | null;
+	posX: number | null;
+	posY: number | null;
 	children: OrgNode[];
 };
 
@@ -45,6 +47,8 @@ export async function getOrgTree(db: DB, lang: string): Promise<OrgNode[]> {
 			title: r.title ?? "",
 			photoUrl: linked?.photoUrl ?? null,
 			personSlug: linked?.slug ?? null,
+			posX: r.posX,
+			posY: r.posY,
 			children: [],
 		});
 	}
