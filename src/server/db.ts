@@ -27,6 +27,14 @@ export type DB = typeof db;
  * bun:sqlite, idempotent, and a no-op once everything is applied.
  * Generate new migrations with `bun run db:generate`.
  */
-migrate(db, { migrationsFolder: "./drizzle" });
+try {
+	migrate(db, { migrationsFolder: "./drizzle" });
+} catch (err) {
+	console.error("[db] Migration failed on startup:", err);
+	throw new Error(
+		`Database migrations failed (DATABASE_PATH=${env.DATABASE_PATH}). The app cannot start with a schema mismatch.`,
+		{ cause: err },
+	);
+}
 
 export { schema };

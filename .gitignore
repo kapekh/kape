@@ -27,3 +27,8 @@ lovable.zip
 # Generated artifacts
 graphify-out/
 prerender-paths.json
+# stray screenshots / scratch artifacts
+/image*.png
+*.pptx
+lovable.zip
+/kapecambodia-main/

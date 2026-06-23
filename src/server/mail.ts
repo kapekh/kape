@@ -23,7 +23,11 @@ export async function sendContactEmail(msg: {
 	phone?: string;
 	message: string;
 }): Promise<void> {
-	const subject = `KAPE website contact — ${msg.name}`;
+	// Strip CR/LF from anything that lands in a header (subject, replyTo) so a
+	// crafted name/email can't inject extra SMTP headers (BCC, etc.).
+	const header = (s: string) => s.replace(/[\r\n]+/g, " ").trim();
+	const subject = header(`KAPE website contact — ${msg.name}`);
+	const replyTo = header(msg.email);
 	const text = `Name: ${msg.name}\nEmail: ${msg.email}\nPhone: ${msg.phone ?? "-"}\n\n${msg.message}`;
 
 	if (!transport) {
@@ -33,7 +37,7 @@ export async function sendContactEmail(msg: {
 	await transport.sendMail({
 		from: env.MAIL_FROM ?? env.SMTP_USER,
 		to: env.MAIL_TO,
-		replyTo: msg.email,
+		replyTo,
 		subject,
 		text,
 	});

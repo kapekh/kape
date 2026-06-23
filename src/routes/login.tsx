@@ -17,17 +17,22 @@ function LoginPage() {
 		e.preventDefault();
 		setErr("");
 		setBusy(true);
-		const res = await fetch("/api/auth/login", {
-			method: "POST",
-			headers: { "content-type": "application/json" },
-			body: JSON.stringify({ email, password }),
-		});
-		setBusy(false);
-		if (res.ok) {
-			const { user } = (await res.json()) as { user: { role: string } };
-			navigate({ to: user.role === "admin" ? "/admin" : "/internalsources" });
-		} else {
-			setErr("Invalid email or password.");
+		try {
+			const res = await fetch("/api/auth/login", {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({ email, password }),
+			});
+			if (res.ok) {
+				const { user } = (await res.json()) as { user: { role: string } };
+				navigate({ to: user.role === "admin" ? "/admin" : "/internalsources" });
+			} else {
+				setErr("Invalid email or password.");
+			}
+		} catch {
+			setErr("Network error. Please try again.");
+		} finally {
+			setBusy(false);
 		}
 	}
 

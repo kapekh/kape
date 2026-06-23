@@ -11,6 +11,7 @@
     "build": "bun scripts/gen-prerender-paths.ts && bun --bun vite build",
     "prerender": "bun run build && bun scripts/prerender-static.ts",
     "preview": "bun --bun vite preview",
+    "start": "NODE_ENV=production bun dist/server/server.js",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:seed": "bun src/server/seed.ts",
@@ -22,7 +23,6 @@
     "check": "biome check"
   },
   "dependencies": {
-    "@faker-js/faker": "^10.3.0",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/match-sorter-utils": "latest",
     "@tanstack/react-devtools": "latest",

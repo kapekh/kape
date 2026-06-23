@@ -107,10 +107,12 @@ export function parseCookies(header: string | null): Record<string, string> {
 	return out;
 }
 
-// Note: add `Secure` in production (HTTPS).
+// `Secure` is added automatically in production so the session cookie is only
+// ever sent over HTTPS. (Left off in dev where the server is plain http.)
+const SECURE = process.env.NODE_ENV === "production" ? "; Secure" : "";
 export function sessionCookie(token: string): string {
-	return `${SESSION_COOKIE}=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${MAX_AGE_S}`;
+	return `${SESSION_COOKIE}=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${MAX_AGE_S}${SECURE}`;
 }
 export function clearSessionCookie(): string {
-	return `${SESSION_COOKIE}=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0`;
+	return `${SESSION_COOKIE}=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0${SECURE}`;
 }

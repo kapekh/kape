@@ -37,9 +37,17 @@ const envSchema = z.object({
 
 export const env = envSchema.parse(process.env);
 
-// Loud warning: the built-in default secret means logins only survive restarts
-// by luck. Set AUTH_SECRET in .env (see .env.example) to pin it.
+// The built-in default secret is publicly known (it's in the source), so anyone
+// could forge session tokens. Refuse to boot with it in production; in dev just
+// warn loudly. Set a fixed AUTH_SECRET in .env (see .env.example) to pin it.
 if (env.AUTH_SECRET === INSECURE_DEFAULT_SECRET) {
+	if (process.env.NODE_ENV === "production") {
+		throw new Error(
+			"[auth] AUTH_SECRET is not set. Refusing to start in production with the insecure " +
+				"built-in default (session tokens would be forgeable). Set AUTH_SECRET in the " +
+				"environment — generate one with: bun -e \"console.log(Array.from(crypto.getRandomValues(new Uint8Array(48))).map(b=>b.toString(16).padStart(2,'0')).join(''))\"",
+		);
+	}
 	console.warn(
 		"[auth] AUTH_SECRET is unset — using the insecure built-in default. " +
 			"Set a fixed AUTH_SECRET in .env so logins persist securely across restarts.",

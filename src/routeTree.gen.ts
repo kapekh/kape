@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InternalsourcesRouteImport } from './routes/internalsources'
 import { Route as ContactRouteImport } from './routes/contact'
@@ -51,6 +52,11 @@ import { Route as AdminPostsIdRouteImport } from './routes/admin.posts.$id'
 import { Route as AdminPagesNewRouteImport } from './routes/admin.pages.new'
 import { Route as AdminPagesIdRouteImport } from './routes/admin.pages.$id'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -267,6 +273,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/internalsources': typeof InternalsourcesRouteWithChildren
   '/login': typeof LoginRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/doc-categories': typeof AdminDocCategoriesRoute
   '/admin/donors': typeof AdminDonorsRoute
   '/admin/footer': typeof AdminFooterRoute
@@ -308,6 +315,7 @@ export interface FileRoutesByTo {
   '/$': typeof SplatRoute
   '/contact': typeof ContactRoute
   '/login': typeof LoginRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/doc-categories': typeof AdminDocCategoriesRoute
   '/admin/donors': typeof AdminDonorsRoute
   '/admin/footer': typeof AdminFooterRoute
@@ -352,6 +360,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/internalsources': typeof InternalsourcesRouteWithChildren
   '/login': typeof LoginRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/doc-categories': typeof AdminDocCategoriesRoute
   '/admin/donors': typeof AdminDonorsRoute
   '/admin/footer': typeof AdminFooterRoute
@@ -397,6 +406,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/internalsources'
     | '/login'
+    | '/sitemap.xml'
     | '/admin/doc-categories'
     | '/admin/donors'
     | '/admin/footer'
@@ -438,6 +448,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/contact'
     | '/login'
+    | '/sitemap.xml'
     | '/admin/doc-categories'
     | '/admin/donors'
     | '/admin/footer'
@@ -481,6 +492,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/internalsources'
     | '/login'
+    | '/sitemap.xml'
     | '/admin/doc-categories'
     | '/admin/donors'
     | '/admin/footer'
@@ -525,6 +537,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   InternalsourcesRoute: typeof InternalsourcesRouteWithChildren
   LoginRoute: typeof LoginRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   UploadsSplatRoute: typeof UploadsSplatRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiFormsSplatRoute: typeof ApiFormsSplatRoute
@@ -534,6 +547,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -909,6 +929,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   InternalsourcesRoute: InternalsourcesRouteWithChildren,
   LoginRoute: LoginRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   UploadsSplatRoute: UploadsSplatRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiFormsSplatRoute: ApiFormsSplatRoute,

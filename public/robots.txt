@@ -1,3 +1,10 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+Allow: /
+# Keep private/admin areas and API endpoints out of search indexes.
+Disallow: /admin
+Disallow: /internalsources
+Disallow: /login
+Disallow: /api/
+
+Sitemap: /sitemap.xml
