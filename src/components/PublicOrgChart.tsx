@@ -115,7 +115,7 @@ export function PublicOrgChart({ roots }: { roots: PublicOrgNode[] }) {
 	}, [roots, lang, setNodes, setEdges]);
 
 	return (
-		<div className="h-[560px] w-full overflow-hidden rounded-2xl border border-border bg-muted/20">
+		<div className="h-[70vh] min-h-[520px] w-full overflow-hidden border-y border-border bg-muted/20">
 			<ReactFlow
 				nodes={nodes}
 				edges={edges}

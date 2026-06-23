@@ -257,12 +257,8 @@ async function buildDirectorSpeech() {
 
 async function buildLeadership() {
 	await setSections("team", [
-		{ id: "hero", type: "hero", layout: "banner", props: { eyebrow: "Who We Are", title: "Leadership Team & *Organisational Chart*", lead: "The people who guide KAPE's governance, strategy and programmes.", image: pic("kape-leadership-hero") } },
-		{ id: "bod", type: "people", layout: "grid", query: { source: "people", category: "board" }, props: { eyebrow: "Governance", title: "Board of *Directors*" } },
-		{ id: "smt", type: "people", layout: "grid", query: { source: "people", category: "smt" }, props: { eyebrow: "Leadership", title: "Senior Management *Team*", tone: "muted" } },
-		{ id: "pm", type: "people", layout: "grid", query: { source: "people", category: "pm" }, props: { eyebrow: "Delivery", title: "Program Managers, Team Leaders & *Supervisors*" } },
-		{ id: "orgchart-intro", type: "richtext", layout: "narrow", props: { body: richDoc([para("KAPE's structure connects a governing Board of Directors, a Senior Management Team, and programme units that deliver our work across 15 provinces. Click any person to read their full profile and biography.")]) } },
-		{ id: "orgchart", type: "orgChart", query: { source: "orgchart" }, props: { eyebrow: "Structure", title: "Organisational *Chart*" } },
+		{ id: "hero", type: "hero", layout: "banner", props: { eyebrow: "Who We Are", title: "Leadership Team & *Organisational Chart*", lead: "Explore KAPE's structure below — click anyone to read their profile and biography.", image: pic("kape-leadership-hero") } },
+		{ id: "orgchart", type: "orgChart", query: { source: "orgchart" }, props: { eyebrow: "Our structure", title: "Organisational *Chart*" } },
 	]);
 }
 

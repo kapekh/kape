@@ -726,16 +726,19 @@ function OrgChart(p: P) {
 		<section className={`${PAD} ${toneBg(p.tone)}`}>
 			<Container>
 				<Heading eyebrow={p.eyebrow} title={p.title} />
-				{roots.length === 0 ? (
-					<Empty>No organizational chart yet.</Empty>
-				) : mounted ? (
-					<PublicOrgChart roots={roots} />
-				) : (
+			</Container>
+			{roots.length === 0 ? (
+				<Container><Empty>No organizational chart yet.</Empty></Container>
+			) : mounted ? (
+				// Full-bleed canvas (breaks out of the centered container).
+				<PublicOrgChart roots={roots} />
+			) : (
+				<Container>
 					<div className="org-tree overflow-x-auto pb-4">
 						<ul>{roots.map((r) => <OrgNodeView key={r.id} node={r} />)}</ul>
 					</div>
-				)}
-			</Container>
+				</Container>
+			)}
 		</section>
 	);
 }
