@@ -25,7 +25,7 @@ export function SubPage({
   children: ReactNode;
 }) {
   const bg = heroImage ?? students.url;
-  const { lang } = useLang();
+  const { lang, t } = useLang();
   return (
     <main className="min-h-screen text-foreground overflow-x-hidden">
       {/* Hero */}
@@ -37,7 +37,7 @@ export function SubPage({
         </div>
         <div className="mx-auto max-w-7xl text-primary-foreground">
           <nav className="flex flex-wrap items-center gap-2 text-xs opacity-85">
-            <NavLink href={localizedHref("/", lang)} className="hover:underline">Home</NavLink>
+            <NavLink href={localizedHref("/", lang)} className="hover:underline">{t("nav.home", "Home")}</NavLink>
             <span aria-hidden>/</span>
             <span>{section}</span>
             {crumbs?.map((c, i) => (

@@ -5,7 +5,7 @@ import { AnnouncementPopup } from "@/components/AnnouncementPopup";
 import { ProjectView } from "@/components/ProjectView";
 import { SectionRenderer } from "@/components/sections/SectionRenderer";
 import { SubPage } from "@/components/SubPage";
-import { DEFAULT_LANG, stripLang } from "@/lib/i18n-config";
+import { DEFAULT_LANG, LANGS, stripLang } from "@/lib/i18n-config";
 
 /**
  * The public catch-all + i18n router. Every content URL is language-prefixed
@@ -30,7 +30,7 @@ export const Route = createFileRoute("/$")({
 		}
 		return resolved;
 	},
-	head: ({ loaderData }) => {
+	head: ({ loaderData, params }) => {
 		const r = loaderData;
 		let title = "KAPE";
 		let description = "KAPE — access, quality and equity in education across Cambodia.";
@@ -57,8 +57,24 @@ export const Route = createFileRoute("/$")({
 			{ property: "og:title", content: title },
 			{ property: "og:description", content: description },
 		];
-		if (image) meta.push({ property: "og:image", content: image });
-		return { meta };
+
+		// Canonical + hreflang alternates (only when a site URL is configured —
+		// these need an absolute origin, so we don't guess the domain).
+		const links: Array<Record<string, string>> = [];
+		const siteUrl = (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/$/, "");
+		if (siteUrl) {
+			const { path } = stripLang(`/${params._splat ?? ""}`);
+			const tail = path === "/" ? "" : path;
+			const canonical = `${siteUrl}/${stripLang(`/${params._splat ?? ""}`).lang}${tail}`;
+			meta.push({ property: "og:url", content: canonical });
+			if (image) meta.push({ property: "og:image", content: image.startsWith("http") ? image : `${siteUrl}${image}` });
+			links.push({ rel: "canonical", href: canonical });
+			for (const l of LANGS) links.push({ rel: "alternate", hrefLang: l, href: `${siteUrl}/${l}${tail}` });
+			links.push({ rel: "alternate", hrefLang: "x-default", href: `${siteUrl}/${DEFAULT_LANG}${tail}` });
+		} else if (image) {
+			meta.push({ property: "og:image", content: image });
+		}
+		return { meta, links };
 	},
 	component: ResolvedRoute,
 });

@@ -11,7 +11,7 @@
     "build": "bun scripts/gen-prerender-paths.ts && bun --bun vite build",
     "prerender": "bun run build && bun scripts/prerender-static.ts",
     "preview": "bun --bun vite preview",
-    "start": "NODE_ENV=production bun dist/server/server.js",
+    "start": "NODE_ENV=production bun --bun vite preview --port ${PORT:-3000} --host",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:seed": "bun src/server/seed.ts",

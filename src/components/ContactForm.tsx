@@ -1,8 +1,11 @@
 import { useState } from "react";
 
+import { useLang } from "#/lib/i18n";
+
 const input = "w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm transition focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30";
 
 export function ContactForm() {
+	const { t } = useLang();
 	const [f, setF] = useState({ name: "", email: "", phone: "", message: "", company: "" });
 	const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
 
@@ -55,7 +58,7 @@ export function ContactForm() {
 			<textarea className={input} aria-label="Message" rows={4} placeholder="Message" value={f.message} onChange={(e) => setF({ ...f, message: e.target.value })} required />
 			{status === "error" && <p className="text-sm text-destructive">Something went wrong. Please try again.</p>}
 			<button type="submit" disabled={status === "sending"} className="rounded-full bg-primary text-primary-foreground px-7 py-3 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition">
-				{status === "sending" ? "Sending…" : "Send message"}
+				{status === "sending" ? t("forms.sending", "Sending…") : t("forms.send", "Send message")}
 			</button>
 		</form>
 	);

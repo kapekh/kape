@@ -462,7 +462,7 @@ export function Header({ nav, settings }: { nav: NavNode[]; settings: Record<str
 					<div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
 					<div className="absolute right-0 top-0 flex h-[100dvh] w-[88%] max-w-sm flex-col bg-card shadow-2xl">
 						<div className="flex items-center justify-between border-b border-border px-4 py-4">
-							<span className="font-display font-semibold text-primary">Menu</span>
+							<span className="font-display font-semibold text-primary">{t("nav.menu", "Menu")}</span>
 							<button
 								type="button"
 								onClick={() => setMobileOpen(false)}

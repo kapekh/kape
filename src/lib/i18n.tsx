@@ -8,7 +8,9 @@ export type LangInfo = { code: string; name: string; nativeName: string };
 type Ctx = {
 	lang: string;
 	languages: LangInfo[];
-	t: (key: string) => string;
+	// `fallback` is shown when the key isn't in the dictionary (e.g. a not-yet-seeded
+	// string), so new UI text degrades to readable English instead of the raw key.
+	t: (key: string, fallback?: string) => string;
 };
 
 const LangContext = createContext<Ctx | null>(null);
@@ -37,7 +39,7 @@ export function LanguageProvider({
 		}
 	}, [lang]);
 
-	const t = (key: string) => strings[key] ?? key;
+	const t = (key: string, fallback?: string) => strings[key] ?? fallback ?? key;
 
 	return (
 		<LangContext.Provider value={{ lang, languages, t }}>
@@ -48,7 +50,7 @@ export function LanguageProvider({
 
 export function useLang(): Ctx {
 	const ctx = useContext(LangContext);
-	if (!ctx) return { lang: "en", languages: [], t: (k) => k };
+	if (!ctx) return { lang: "en", languages: [], t: (k, fb) => fb ?? k };
 	return ctx;
 }
 

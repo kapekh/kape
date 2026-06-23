@@ -637,8 +637,8 @@ async function main() {
 	// Staff-portal user.
 	await db.insert(users).values({
 		tenantId: TENANT,
-		email: "staff@kapekh.org",
-		passwordHash: await hashPassword("kape-staff-2026"),
+		email: process.env.STAFF_EMAIL ?? "staff@kapekh.org",
+		passwordHash: await hashPassword(process.env.STAFF_PASSWORD ?? "kape-staff-2026"),
 		name: "KAPE Staff",
 		role: "staff",
 	});
@@ -789,8 +789,8 @@ async function main() {
 	}
 
 	// Admin user.
-	const adminEmail = "admin@kapekh.org";
-	const adminPassword = "kape-admin-2026";
+	const adminEmail = process.env.ADMIN_EMAIL ?? "admin@kapekh.org";
+	const adminPassword = process.env.ADMIN_PASSWORD ?? "kape-admin-2026";
 	await db.insert(users).values({
 		tenantId: TENANT,
 		email: adminEmail,
@@ -805,8 +805,10 @@ async function main() {
 	await applyTreeMigrations(db);
 
 	console.log("Seed complete: 2 languages, UI strings, content types, full nav tree, page tree + collections, home page, 3 news, 2 stories.");
-	console.log(`Admin login: ${adminEmail} / ${adminPassword}`);
-	console.log("Staff login: staff@kapekh.org / kape-staff-2026");
+	// Never print passwords (logs get archived). Show the email only; if a password
+	// wasn't supplied via env, note that the documented dev default was used.
+	console.log(`Admin user: ${adminEmail}${process.env.ADMIN_PASSWORD ? "" : " (default dev password — change it before go-live)"}`);
+	console.log("Staff user: staff@kapekh.org");
 }
 
 await main();

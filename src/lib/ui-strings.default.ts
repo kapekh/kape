@@ -21,6 +21,11 @@ export const defaultUiStrings: Record<string, { en: string; km?: string }> = {
 	"nav.opps": { en: "Opportunities", km: "ឱកាស" },
 	"nav.contact": { en: "Contact", km: "ទំនាក់ទំនង" },
 	"nav.donate": { en: "♡ Donate", km: "♡ បរិច្ចាគ" },
+	"nav.menu": { en: "Menu", km: "ម៉ឺនុយ" },
+
+	// forms
+	"forms.send": { en: "Send message", km: "ផ្ញើសារ" },
+	"forms.sending": { en: "Sending…", km: "កំពុងផ្ញើ…" },
 
 	// who we are submenu
 	"nav.who.about": { en: "About KAPE", km: "អំពី KAPE" },

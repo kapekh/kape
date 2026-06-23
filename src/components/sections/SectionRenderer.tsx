@@ -174,7 +174,7 @@ function Hero(p: P) {
 						{p.lead && <p className="mt-5 text-lg text-foreground/75 leading-relaxed">{p.lead}</p>}
 						{ctas}
 					</div>
-					{p.image && <img src={p.image} alt="" className="rounded-3xl object-cover w-full aspect-[4/3] shadow-[var(--shadow-soft)]" />}
+					{p.image && <img src={p.image} alt={p.title || ""} className="rounded-3xl object-cover w-full aspect-[4/3] shadow-[var(--shadow-soft)]" />}
 				</Container>
 			</section>
 		);
@@ -338,7 +338,7 @@ function Split(p: P) {
 	const mediaLeft = p.layout === "media-left";
 	const media = p.image ? (
 		<div className="relative">
-			<div className="overflow-hidden rounded-3xl ring-1 ring-border shadow-[var(--shadow-soft)]"><img src={p.image} alt="" className="h-[420px] w-full object-cover md:h-[480px]" /></div>
+			<div className="overflow-hidden rounded-3xl ring-1 ring-border shadow-[var(--shadow-soft)]"><img src={p.image} alt={p.title || ""} className="h-[420px] w-full object-cover md:h-[480px]" /></div>
 			{p.statValue && (
 				<div className="absolute -bottom-8 -right-6 max-w-[220px] rounded-2xl bg-card p-6 shadow-[var(--shadow-lift)] ring-1 ring-border">
 					<div className="font-display text-4xl font-semibold text-[var(--accent)]">{p.statValue}</div>
@@ -423,7 +423,7 @@ function PostCard({ post, base }: { post: any; base: string }) {
 	const body = (
 		<>
 			<div className="relative h-56 overflow-hidden">
-				<img src={imgFor(post)} alt="" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
+				<img src={imgFor(post)} alt={post.title || ""} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
 				<div className="absolute inset-0 bg-gradient-to-t from-primary/70 via-transparent to-transparent" />
 				{post.publishedAt && <span className="absolute left-4 top-4 rounded-full bg-[var(--accent)] px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-accent-foreground">{post.publishedAt}</span>}
 			</div>
@@ -467,7 +467,7 @@ function PostList(p: P) {
 					<div className="grid gap-8 lg:grid-cols-12">
 						<article className="group lg:col-span-7">
 							<NavLink href={link(posts[0].slug)} className="relative block h-[420px] overflow-hidden rounded-3xl ring-1 ring-border">
-								<img src={imgFor(posts[0])} alt="" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+								<img src={imgFor(posts[0])} alt={posts[0].title || ""} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
 								<div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/30 to-transparent" />
 								<div className="absolute bottom-0 p-8 text-primary-foreground">
 									{posts[0].publishedAt && <span className="rounded-full bg-[var(--accent)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em]">{posts[0].publishedAt}</span>}
@@ -481,7 +481,7 @@ function PostList(p: P) {
 							{posts.slice(1, 4).map((post) => (
 								<NavLink key={post.id} href={link(post.slug)} className="group flex gap-5">
 									<div className="relative h-32 w-40 shrink-0 overflow-hidden rounded-2xl ring-1 ring-border">
-										<img src={imgFor(post)} alt="" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+										<img src={imgFor(post)} alt={post.title || ""} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
 									</div>
 									<div className="flex-1">
 										{post.publishedAt && <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">{post.publishedAt}</div>}
@@ -524,7 +524,7 @@ function VideoGrid(p: P) {
 							return (
 								<NavLink key={v.id} href={v.youtubeUrl || "#"} target="_blank" rel="noreferrer" className="group cursor-pointer">
 									<div className="relative aspect-video overflow-hidden rounded-2xl ring-1 ring-border">
-										<img src={thumb} alt="" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
+										<img src={thumb} alt={v.title || ""} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
 										<div className="absolute inset-0 bg-primary/20 transition group-hover:bg-primary/10" />
 										<div className="absolute inset-0 grid place-items-center">
 											<span className="grid h-16 w-16 place-items-center rounded-full bg-background/95 text-[var(--accent)] shadow-[var(--shadow-lift)] transition group-hover:scale-110">{Icon.play("h-6 w-6 translate-x-0.5")}</span>
@@ -552,7 +552,7 @@ function AlbumGrid(p: P) {
 					<div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
 						{albums.map((a) => (
 							<NavLink key={a.id} href={L(`/galleries/${a.slug}`)} className="group relative block overflow-hidden rounded-3xl ring-1 ring-border shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-[var(--shadow-soft)]">
-								<div className="aspect-[4/3] bg-muted"><img src={imgFor(a)} alt="" className="h-full w-full object-cover transition duration-700 group-hover:scale-110" /></div>
+								<div className="aspect-[4/3] bg-muted"><img src={imgFor(a)} alt={a.title || ""} className="h-full w-full object-cover transition duration-700 group-hover:scale-110" /></div>
 								<div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-primary/90 via-primary/20 to-transparent p-5 text-primary-foreground">
 									<div className="font-display font-semibold leading-snug">{a.title}</div>
 									<div className="mt-0.5 text-xs opacity-85">{a.count} photos</div>
