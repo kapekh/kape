@@ -1,213 +1,138 @@
-Welcome to your new TanStack Start app! 
+# KAPE Website & CMS
 
-# Getting Started
+A CMS-driven, bilingual (English + ខ្មែរ) website and internal staff portal for
+**KAPE** — Kampuchea Action to Promote Education (អង្គការសកម្មភាពសម្រាប់ការអប់រំនៅកម្ពុជា),
+the largest local education NGO in Cambodia.
 
-To run this application:
+The defining goal: **non-technical admins compose the whole site themselves** —
+menus, nested pages, and each page's content from a catalogue of sections (rich
+text, images, videos, stats, maps, card grids, embedded forms, …). It's a page
+builder, not a fixed-template site.
 
-```bash
-npm install
-npm run dev
-```
+## Stack
 
-# Building For Production
+- **[TanStack Start](https://tanstack.com/start)** — full-stack React 19 with SSR + file-based routing
+- **[tRPC v11](https://trpc.io/)** — end-to-end typed API (`src/integrations/trpc`)
+- **[Drizzle ORM](https://orm.drizzle.team/)** over **SQLite** (Bun's built-in SQL engine)
+- **[Bun](https://bun.sh/)** — runtime, package manager, and test/script runner
+- **[Tailwind CSS v4](https://tailwindcss.com/)** + Radix UI + [Tiptap](https://tiptap.dev/) rich-text
+- **[Biome](https://biomejs.dev/)** — lint + format
+- Runtime **i18n** (en/km) via a `?lang=` param — one content model, translated at render
 
-To build this application for production:
-
-```bash
-npm run build
-```
-
-## Testing
-
-This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
-
-```bash
-npm run test
-```
-
-## Styling
-
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
-
-### Removing Tailwind CSS
-
-If you prefer not to use Tailwind CSS:
-
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Uninstall the packages: `npm install @tailwindcss/vite tailwindcss -D`
-
-## Linting & Formatting
-
-This project uses [Biome](https://biomejs.dev/) for linting and formatting. The following scripts are available:
-
+## Getting started
 
 ```bash
-npm run lint
-npm run format
-npm run check
+bun install
+cp .env.example .env      # then fill in AUTH_SECRET + DATABASE_PATH (see below)
+bun run db:migrate        # apply Drizzle migrations
+bun run db:seed           # seed nav, pages, demo content
+bun run dev               # http://localhost:3000
 ```
 
+The admin portal lives at **`/admin`** (log in via the "For Staff Only" link).
 
-## Shadcn
+### Environment
 
-Add components using the latest version of [Shadcn](https://ui.shadcn.com/).
+See [`.env.example`](.env.example) for the full list. The two that matter most in
+any deploy:
+
+- **`AUTH_SECRET`** — signs session JWTs. Generate **once** and keep it constant;
+  changing it invalidates every existing login. In production the app refuses to
+  boot with the insecure default.
+- **`DATABASE_PATH`** — use an **absolute** path in production so the DB file (and
+  login sessions) survive restarts.
+
+Optional integrations, each degrades gracefully when unset:
+
+| Vars | Enables | Fallback when unset |
+| --- | --- | --- |
+| `R2_*` (Cloudflare R2) | Media/upload storage | Local `public/uploads/` |
+| `SMTP_*` / `MAIL_*` | Contact-form email | Submission stored, body logged |
+| `BARAY_*` ([Baray](https://baray.io)) | Real donation payments | `/donate` shows "not configured" |
+| `VITE_SITE_URL` | Canonical + hreflang + absolute OG URLs | Relative URLs |
+
+## Scripts
 
 ```bash
-pnpm dlx shadcn@latest add button
+bun run dev          # dev server (port 3000)
+bun run build        # generate prerender paths + production build
+bun run prerender    # build, then statically prerender pages (incremental SSG)
+bun run start        # serve the production build
+bun run test         # Vitest
+bun run check        # Biome lint + format check
+bun run db:generate  # generate a migration from schema changes
+bun run db:migrate   # apply migrations
+bun run db:seed      # seed the database
+bun run db:studio    # Drizzle Studio
 ```
 
+## Architecture
 
+### Routing — one page tree, one splat
 
-## Routing
+Rather than a route file per page, the public site is a **Notion-style page tree**
+(rows with `parentId` + `segment`) plus a few flat content collections (news,
+projects, …). A single `resolveRoute` splat route (`src/routes/$.tsx`) resolves
+every public URL against that tree, so admins can create / rename / nest pages with
+no code changes.
 
-This project uses [TanStack Router](https://tanstack.com/router) with file-based routing. Routes are managed as files in `src/routes`.
+### Page builder
 
-### Adding A Route
+A page is an ordered list of **section nodes** (`src/lib/sections.ts`). Each names
+a section template + layout variant and carries authored `props`; dynamic sections
+(post lists, maps, people directories, …) additionally declare a `query` resolved
+server-side so SSR + SEO stay intact. Editors compose pages in `/admin/pages`, and
+`SectionRenderer` renders them.
 
-To add a new route to your application just add a new file in the `./src/routes` directory.
+### Rich text & forms
 
-TanStack will automatically generate the content of the route file for you.
+Content is stored as **Tiptap JSON** and rendered server-side
+(`@tiptap/static-renderer`, fail-closed on unknown nodes). Two extension sets:
+`richTextExtensions` (trusted admin content, incl. images + embedded forms) and
+`basicRichTextExtensions` (untrusted public input — StarterKit only).
 
-Now that you have two routes you can use a `Link` component to navigate between them.
+The **form builder** (`/admin/forms`) defines data-driven forms (JSON fields:
+text, select, file upload, rich-text answer, content blocks). Forms embed on any
+page via a `form` section or inside any rich text, submit to `/api/forms/<slug>`,
+and land in a submissions inbox with CSV export.
 
-### Adding Links
+### Auth & RBAC
 
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
+Session JWTs (`jose`) signed by `AUTH_SECRET`. Access is governed by **DB-backed
+custom roles** with per-area permissions, enforced once in `adminProcedure` (tRPC
+middleware keyed by router area) and mirrored in the admin nav. `admin` is a
+code-level super-role. Managed at `/admin/roles` and `/admin/users`.
 
-```tsx
-import { Link } from "@tanstack/react-router";
+### Incremental SSG / render cache
+
+`resolveRouteCached` is a read-through cache (keyed `lang::path`) in the
+`render_cache` table, busted on any admin mutation via the `adminProcedure`
+middleware. Warm it with `bun scripts/prerender.ts`; disable with `SSG_CACHE=off`.
+
+### Storage & payments
+
+- **Media** — `saveUpload()` writes to Cloudflare R2 when configured, else to
+  local `public/uploads/` served by `uploads.$.tsx`.
+- **Donations** — `/donate` takes real payments through the Baray gateway
+  (redirect + `/api/pay/webhook`).
+
+## Project layout
+
+```
+src/
+  routes/            file-based routes (public + /admin/* + /api/*)
+  server/            db, schema, auth, storage, mail, render-cache, richtext
+    repo/            data-access modules (content, nav, forms, roles, …)
+  integrations/trpc  router + procedures (init.ts, router.ts)
+  components/        UI — admin/ (builders, editors), sections/, public
+  lib/               shared schema/helpers (sections, forms, i18n, richtext)
+drizzle/             SQL migrations + snapshots
+scripts/             seed + one-off migration/prerender scripts
+docs/                REQUIREMENTS, CONTENT-MODEL, BUILD-PLAN, gap analysis
 ```
 
-Then anywhere in your JSX you can use it like so:
+## Docs
 
-```tsx
-<Link to="/about">About</Link>
-```
-
-This will create a link that will navigate to the `/about` route.
-
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
-
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you render `{children}` in the `shellComponent`.
-
-Here is an example layout that includes a header:
-
-```tsx
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
-
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'My App' },
-    ],
-  }),
-  shellComponent: ({ children }) => (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <header>
-          <nav>
-            <Link to="/">Home</Link>
-            <Link to="/about">About</Link>
-          </nav>
-        </header>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  ),
-})
-```
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
-## Server Functions
-
-TanStack Start provides server functions that allow you to write server-side code that seamlessly integrates with your client components.
-
-```tsx
-import { createServerFn } from '@tanstack/react-start'
-
-const getServerTime = createServerFn({
-  method: 'GET',
-}).handler(async () => {
-  return new Date().toISOString()
-})
-
-// Use in a component
-function MyComponent() {
-  const [time, setTime] = useState('')
-  
-  useEffect(() => {
-    getServerTime().then(setTime)
-  }, [])
-  
-  return <div>Server time: {time}</div>
-}
-```
-
-## API Routes
-
-You can create API routes by using the `server` property in your route definitions:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { json } from '@tanstack/react-start'
-
-export const Route = createFileRoute('/api/hello')({
-  server: {
-    handlers: {
-      GET: () => json({ message: 'Hello, World!' }),
-    },
-  },
-})
-```
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/people')({
-  loader: async () => {
-    const response = await fetch('https://swapi.dev/api/people')
-    return response.json()
-  },
-  component: PeopleComponent,
-})
-
-function PeopleComponent() {
-  const data = Route.useLoaderData()
-  return (
-    <ul>
-      {data.results.map((person) => (
-        <li key={person.name}>{person.name}</li>
-      ))}
-    </ul>
-  )
-}
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-# Demo files
-
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
-
-For TanStack Start specific documentation, visit [TanStack Start](https://tanstack.com/start).
+Deeper specs live in [`docs/`](docs/): [REQUIREMENTS](docs/REQUIREMENTS.md) (the
+source spec), [CONTENT-MODEL](docs/CONTENT-MODEL.md), [BUILD-PLAN](docs/BUILD-PLAN.md),
+and [LOVABLE-GAP-ANALYSIS](docs/LOVABLE-GAP-ANALYSIS.md).
