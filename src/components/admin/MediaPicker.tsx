@@ -47,11 +47,10 @@ export function MediaPicker({
 			return;
 		}
 		let alive = true;
-		trpcClient.adminMedia.list
-			.query()
-			.then((m) => {
+		trpcClient.adminMedia.byId
+			.query({ id: Number(value) })
+			.then((f) => {
 				if (!alive) return;
-				const f = m.find((x) => String(x.id) === value);
 				setUrl(f?.url ?? "");
 				setType(f?.contentType ?? null);
 			})
@@ -79,25 +78,29 @@ export function MediaPicker({
 	}
 
 	return (
-		<div className="flex items-start gap-3">
+		<div className="w-full max-w-sm">
 			<button
 				type="button"
 				onClick={() => setOpen(true)}
-				className={`group relative ${aspectCls} w-40 shrink-0 grid place-items-center overflow-hidden rounded-lg border border-dashed border-border bg-muted/40 transition hover:border-[var(--accent)] hover:bg-muted`}
+				className={`group relative ${aspectCls} w-full grid place-items-center overflow-hidden rounded-xl border border-dashed border-border bg-muted/40 transition hover:border-[var(--accent)] hover:bg-muted`}
 			>
 				{previewUrl ? (
 					isImg ? (
-						<img src={previewUrl} alt="" className="h-full w-full object-cover" />
+						<>
+							<img src={previewUrl} alt="" className="h-full w-full object-cover" />
+							{/* Hover affordance over the larger preview. */}
+							<span className="absolute inset-0 grid place-items-center bg-black/0 text-sm font-medium text-transparent transition group-hover:bg-black/40 group-hover:text-white">Change image</span>
+						</>
 					) : (
-						<span className="text-3xl">📄</span>
+						<span className="text-5xl">📄</span>
 					)
 				) : (
-					<span className="px-2 text-center text-xs text-muted-foreground">+ {placeholder}</span>
+					<span className="px-3 text-center text-sm text-muted-foreground">+ {placeholder}</span>
 				)}
 			</button>
 
 			{previewUrl && (
-				<div className="flex flex-col items-start gap-1.5 pt-1">
+				<div className="mt-2 flex flex-wrap items-center gap-2">
 					<button type="button" onClick={() => setOpen(true)} className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted">Change</button>
 					<button type="button" onClick={clear} className="rounded-lg px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10">Remove</button>
 					{!isImg && <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="px-3 text-xs text-[var(--accent)] hover:underline">Open file ↗</a>}

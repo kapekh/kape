@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { EditorGrid, EditorHeader, FormSection, cancelButtonClass, fieldInput, fieldLabel } from "./form-ui";
+import { LangTabs } from "./LangTabs";
 import { MediaPicker } from "./MediaPicker";
 import type { LangOpt } from "./PostForm";
 import { RichTextEditor } from "./RichTextEditor";
@@ -118,11 +119,11 @@ export function PeopleForm({
 							</div>
 						</FormSection>
 
-						{languages.map((l) => (
-							<FormSection key={l.code} title={`Bio — ${l.name}`} description={`Profile biography in ${l.name} (${l.code}).`}>
-								<RichTextEditor value={bio[l.code] ?? ""} onChange={(v) => setBio((p) => ({ ...p, [l.code]: v }))} />
-							</FormSection>
-						))}
+						<FormSection title="Bio" description="Profile biography. Switch languages with the tabs — your text is kept as you switch.">
+							<LangTabs languages={languages}>
+								{(l) => <RichTextEditor value={bio[l.code] ?? ""} onChange={(v) => setBio((p) => ({ ...p, [l.code]: v }))} />}
+							</LangTabs>
+						</FormSection>
 
 						<FormSection title="Directory details" description="Contact info for the internal staff directory.">
 							<div className="grid sm:grid-cols-2 gap-4">

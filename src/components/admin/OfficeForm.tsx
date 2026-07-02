@@ -66,29 +66,36 @@ export function OfficeForm({
 			</EditorHeader>
 			<EditorGrid
 				main={
-					<>
-						<FormSection title="Office details" description="A KAPE office location shown on the Contact page and map.">
+					<div className="space-y-5">
+						<FormSection title="Office details" description="A KAPE office location shown on the public Contact page and map.">
 							<div className="space-y-4">
 								<div>
 									<label className={fieldLabel}>Office name</label>
 									<input className={fieldInput} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Head Office (PTTC)" required />
 								</div>
-								<div className="grid sm:grid-cols-2 gap-4">
-									<div>
-										<label className={fieldLabel}>Province</label>
-										<SearchableSelect value={province} onChange={setProvince} emptyOption="— Select province —" placeholder="Select province" options={provinces.map((p) => ({ value: p.key, label: p.label }))} />
-									</div>
-									<div>
-										<label className={fieldLabel}>Phone</label>
-										<input className={fieldInput} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+855 …" />
-									</div>
-									<div>
-										<label className={fieldLabel}>Email</label>
-										<input className={fieldInput} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="office@kapekh.org" />
-									</div>
-									<label className="flex items-center gap-2 text-sm self-end pb-2">
-										<input type="checkbox" checked={isHq} onChange={(e) => setIsHq(e.target.checked)} /> Headquarters (HQ)
-									</label>
+								<div>
+									<label className={fieldLabel}>Province</label>
+									<SearchableSelect value={province} onChange={setProvince} emptyOption="— Select province —" placeholder="Select province" options={provinces.map((p) => ({ value: p.key, label: p.label }))} />
+								</div>
+								<label className="flex items-start gap-2.5 cursor-pointer rounded-xl border border-border p-3">
+									<input type="checkbox" checked={isHq} onChange={(e) => setIsHq(e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-border accent-[var(--accent)]" />
+									<span>
+										<span className="text-sm font-medium text-foreground">Headquarters (HQ)</span>
+										<span className="block text-xs text-muted-foreground">KAPE's main office. Only one office should be the HQ.</span>
+									</span>
+								</label>
+							</div>
+						</FormSection>
+
+						<FormSection title="Contact" description="How visitors reach this office.">
+							<div className="grid sm:grid-cols-2 gap-4">
+								<div>
+									<label className={fieldLabel}>Phone</label>
+									<input className={fieldInput} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+855 …" />
+								</div>
+								<div>
+									<label className={fieldLabel}>Email</label>
+									<input className={fieldInput} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="office@kapekh.org" />
 								</div>
 							</div>
 						</FormSection>
@@ -116,7 +123,7 @@ export function OfficeForm({
 								</div>
 							</div>
 						</FormSection>
-					</>
+					</div>
 				}
 				aside={
 					<FormSection title="Photo" description="Shown on the public Contact page and map pop-ups.">

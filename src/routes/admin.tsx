@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { AdminHeaderProvider } from "#/components/admin/AdminHeader";
 import { AdminIcon } from "#/components/admin/AdminIcon";
 import { ThemeToggle } from "#/components/ThemeToggle";
+import { NAV_AREA } from "#/lib/permissions";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 
 export const Route = createFileRoute("/admin")({
@@ -18,7 +19,11 @@ type NavGroup = { group: string; items: NavItem[] };
 // `type` items deep-link the Posts list to a single content type (/admin/posts?type=…),
 // so the admin mirrors the public collections (News, Stories, Videos, …).
 const NAV: NavGroup[] = [
-	{ group: "", items: [{ to: "/admin", label: "Dashboard", icon: "dashboard", exact: true }] },
+	{ group: "", items: [
+		{ to: "/admin", label: "Dashboard", icon: "dashboard", exact: true },
+		{ to: "/admin/messages", label: "Messages", icon: "message" },
+		{ to: "/admin/forms", label: "Forms", icon: "forms" },
+	] },
 	{
 		group: "Content",
 		items: [
@@ -44,6 +49,13 @@ const NAV: NavGroup[] = [
 		],
 	},
 	{
+		group: "Fundraising",
+		items: [
+			{ to: "/admin/campaigns", label: "Campaigns", icon: "campaigns" },
+			{ to: "/admin/donations", label: "Donations", icon: "donations" },
+		],
+	},
+	{
 		group: "Records",
 		items: [
 			{ to: "/admin/schools", label: "Schools", icon: "offices" },
@@ -60,6 +72,8 @@ const NAV: NavGroup[] = [
 			{ to: "/admin/footer", label: "Footer", icon: "footer" },
 			{ to: "/admin/org-chart", label: "Org Chart", icon: "team" },
 			{ to: "/admin/languages", label: "Languages", icon: "languages" },
+			{ to: "/admin/users", label: "Users", icon: "staff" },
+			{ to: "/admin/roles", label: "Roles", icon: "staff" },
 			{ to: "/admin/settings", label: "Settings", icon: "settings" },
 		],
 	},
@@ -82,6 +96,9 @@ function AdminLayout() {
 	const navigate = useNavigate();
 	const [ready, setReady] = useState(false);
 	const [email, setEmail] = useState("");
+	const [roleLabel, setRoleLabel] = useState("Administrator");
+	const [isSuper, setIsSuper] = useState(false);
+	const [perms, setPerms] = useState<Set<string>>(new Set());
 	const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
 	// Full-bleed "studio" chrome (no padding / max-width) for the page builder.
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -118,8 +135,12 @@ function AdminLayout() {
 			.query()
 			.then((u) => {
 				if (!alive) return;
-				if (u && u.role === "admin") {
+				// Access requires the super-admin role or at least one granted area.
+				if (u && (u.isSuperAdmin || u.permissions.length > 0)) {
 					setEmail(u.email);
+					setIsSuper(u.isSuperAdmin);
+					setPerms(new Set(u.permissions));
+					setRoleLabel(u.isSuperAdmin ? "Administrator" : u.role.replace(/_/g, " "));
 					setReady(true);
 				} else {
 					navigate({ to: "/login" });
@@ -147,6 +168,13 @@ function AdminLayout() {
 		);
 	}
 
+	// Show an item if it has no area mapping (e.g. Dashboard) or the user holds its area.
+	const canSee = (it: NavItem) => {
+		const area = NAV_AREA[it.to];
+		return !area || isSuper || perms.has(area);
+	};
+	const visibleNav = NAV.map((s) => ({ ...s, items: s.items.filter(canSee) })).filter((s) => s.items.length > 0);
+
 	const link = "group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground/70 transition-colors hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/50";
 	const linkActive = "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-[var(--accent)] bg-[var(--accent)]/10 shadow-[inset_3px_0_0_var(--accent)]";
 
@@ -163,7 +191,7 @@ function AdminLayout() {
 				</div>
 
 				<nav className="thin-scroll flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-5">
-					{NAV.map((section) => {
+					{visibleNav.map((section) => {
 						const collapsed = !!folded[section.group];
 						return (
 							<div key={section.group || "_top"}>
@@ -210,9 +238,10 @@ function AdminLayout() {
 							<span className="h-8 w-8 rounded-full bg-primary/10 text-primary grid place-items-center text-xs font-semibold uppercase">{email.slice(0, 2)}</span>
 							<div className="hidden sm:block leading-tight">
 								<div className="text-xs font-medium text-foreground max-w-[180px] truncate">{email}</div>
-								<div className="text-[10px] uppercase tracking-wide text-[var(--palm)]">Administrator</div>
+								<div className="text-[10px] uppercase tracking-wide text-[var(--palm)] capitalize">{roleLabel}</div>
 							</div>
-							<button type="button" onClick={logout} className="ml-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground/70 hover:bg-muted hover:text-foreground transition-colors">Log out</button>
+							<Link to="/admin/account" className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground/70 hover:bg-muted hover:text-foreground transition-colors">My account</Link>
+								<button type="button" onClick={logout} className="ml-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground/70 hover:bg-muted hover:text-foreground transition-colors">Log out</button>
 						</div>
 					</div>
 				</header>

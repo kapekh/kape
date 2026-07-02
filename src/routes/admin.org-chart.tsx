@@ -5,6 +5,7 @@ import { fieldInput, fieldLabel } from "#/components/admin/form-ui";
 import { OrgCanvas, type OrgRow } from "#/components/admin/OrgCanvas";
 import { SearchableSelect } from "#/components/admin/SearchableSelect";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { confirm } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/org-chart")({ component: OrgChartAdmin });
 
@@ -97,7 +98,7 @@ function OrgChartAdmin() {
 		const node = rows.find((r) => r.id === id);
 		const reports = node ? withDescendants(rows, id).size - 1 : 0;
 		const extra = reports ? ` and its ${reports} report(s)` : "";
-		if (!window.confirm(`Delete “${node?.name ?? "node"}”${extra}? This cannot be undone.`)) return;
+		if (!(await confirm(`Delete “${node?.name ?? "node"}”${extra}? This cannot be undone.`))) return;
 		await trpcClient.adminOrg.delete.mutate({ id });
 		await refresh();
 	}, [rows, refresh]);

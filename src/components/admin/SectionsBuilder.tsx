@@ -1,10 +1,27 @@
-import { useState } from "react";
+import { confirm } from "@/components/Dialogs";
+import { useEffect, useState } from "react";
 
 import { SECTION_DEFS, type SectionField, type SectionNode, sectionDef } from "#/lib/sections";
+import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 
 import { fieldInput, fieldLabel } from "./form-ui";
 import { MediaPicker } from "./MediaPicker";
 import { RichTextEditor } from "./RichTextEditor";
+
+/** Dropdown of admin-built forms (by slug) — lets a Form section embed any form. */
+function FormPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+	const [forms, setForms] = useState<{ slug: string; title: string }[]>([]);
+	useEffect(() => {
+		trpcClient.adminForms.list.query().then((fs) => setForms(fs.map((f) => ({ slug: f.slug, title: f.title })))).catch(() => {});
+	}, []);
+	return (
+		<select className={fieldInput} value={value} onChange={(e) => onChange(e.target.value)}>
+			<option value="">— None (use the layout above) —</option>
+			{forms.map((f) => <option key={f.slug} value={f.slug}>{f.title} (/{f.slug})</option>)}
+			{value && !forms.some((f) => f.slug === value) && <option value={value}>{value} (missing)</option>}
+		</select>
+	);
+}
 
 const uid = () =>
 	(globalThis.crypto?.randomUUID?.() ?? `s_${Date.now().toString(36)}_${Math.floor(Math.random() * 1e6).toString(36)}`);
@@ -83,11 +100,100 @@ function ItemsTable({ fields, rows, onChange }: { fields: SectionField[]; rows: 
 	);
 }
 
+type CardBtn = { label?: string; href?: string };
+type Card = { image?: string; imageAsBg?: boolean; title?: string; body?: string; href?: string; buttons?: CardBtn[] };
+
+/** Normalise a card's footer buttons, folding a legacy single `href` into the list. */
+function cardButtons(c: Card): CardBtn[] {
+	if (Array.isArray(c.buttons)) return c.buttons;
+	if (c.href) return [{ label: "Learn more", href: c.href }];
+	return [];
+}
+
+/** A richer card repeater: per-card image (+ background toggle), title, body, and footer buttons. */
+function CardsEditor({ rows, onChange }: { rows: Record<string, unknown>[]; onChange: (v: Record<string, unknown>[]) => void }) {
+	const cards = (Array.isArray(rows) ? rows : []) as Card[];
+	const patch = (i: number, p: Partial<Card>) => onChange(cards.map((c, n) => (n === i ? { ...c, ...p } : c)));
+	const move = (i: number, dir: -1 | 1) => {
+		const j = i + dir;
+		if (j < 0 || j >= cards.length) return;
+		const a = [...cards];
+		[a[i], a[j]] = [a[j], a[i]];
+		onChange(a);
+	};
+	const setButtons = (i: number, btns: CardBtn[]) => patch(i, { buttons: btns, href: undefined });
+
+	return (
+		<div className="space-y-3">
+			{cards.length === 0 && <p className="rounded-lg border border-dashed border-border px-3 py-4 text-center text-xs text-muted-foreground">No cards yet.</p>}
+			{cards.map((card, i) => {
+				const btns = cardButtons(card);
+				return (
+					<div key={i} className="rounded-xl border border-border bg-card p-3">
+						<div className="mb-2 flex items-center justify-between">
+							<span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Card {i + 1}</span>
+							<div className="flex gap-0.5">
+								<button type="button" className={btn} disabled={i === 0} onClick={() => move(i, -1)}>↑</button>
+								<button type="button" className={btn} disabled={i === cards.length - 1} onClick={() => move(i, 1)}>↓</button>
+								<button type="button" className={`${btn} text-destructive`} onClick={() => onChange(cards.filter((_, n) => n !== i))}>✕</button>
+							</div>
+						</div>
+
+						<div className="space-y-3">
+							<div>
+								<label className={fieldLabel}>Image</label>
+								<MediaPicker value={card.image ?? ""} onChange={(v) => patch(i, { image: v })} mode="url" kind="image" aspect="video" />
+								{card.image && (
+									<label className="mt-2 flex cursor-pointer items-center gap-2 text-sm text-foreground/80">
+										<input type="checkbox" checked={!!card.imageAsBg} onChange={(e) => patch(i, { imageAsBg: e.target.checked })} className="h-4 w-4 accent-[var(--accent)]" />
+										Use image as card background
+									</label>
+								)}
+							</div>
+							<div>
+								<label className={fieldLabel}>Title</label>
+								<input className={fieldInput} value={card.title ?? ""} onChange={(e) => patch(i, { title: e.target.value })} />
+							</div>
+							<div>
+								<label className={fieldLabel}>Text</label>
+								<textarea className={`${fieldInput} resize-y`} rows={2} value={card.body ?? ""} onChange={(e) => patch(i, { body: e.target.value })} />
+							</div>
+							<div>
+								<label className={fieldLabel}>Buttons</label>
+								<div className="space-y-1.5">
+									{btns.map((b, bi) => (
+										<div key={bi} className="flex gap-1.5">
+											<input className={`${fieldInput} flex-1`} placeholder="Label" value={b.label ?? ""} onChange={(e) => setButtons(i, btns.map((x, n) => (n === bi ? { ...x, label: e.target.value } : x)))} />
+											<input className={`${fieldInput} flex-1 font-mono text-xs`} placeholder="/link or https://…" value={b.href ?? ""} onChange={(e) => setButtons(i, btns.map((x, n) => (n === bi ? { ...x, href: e.target.value } : x)))} />
+											<button type="button" className="rounded-lg border border-border px-2.5 text-sm text-muted-foreground hover:bg-muted" onClick={() => setButtons(i, btns.filter((_, n) => n !== bi))}>×</button>
+										</div>
+									))}
+									<button type="button" className="text-sm font-semibold text-[var(--accent)] hover:underline" onClick={() => setButtons(i, [...btns, { label: "", href: "" }])}>+ Add button</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				);
+			})}
+			<button type="button" className={btn} onClick={() => onChange([...cards, {}])}>+ Add card</button>
+		</div>
+	);
+}
+
 /** One authored field (text/textarea/richtext/image/url/select/items repeater). */
 function FieldInput({ field, value, onChange }: { field: SectionField; value: unknown; onChange: (v: unknown) => void }) {
 	if (field.kind === "items") {
 		const rows: Record<string, unknown>[] = Array.isArray(value) ? (value as Record<string, unknown>[]) : [];
 		return <ItemsTable fields={field.itemFields ?? []} rows={rows} onChange={onChange} />;
+	}
+	if (field.kind === "cards") {
+		const rows: Record<string, unknown>[] = Array.isArray(value) ? (value as Record<string, unknown>[]) : [];
+		return (
+			<div>
+				<label className={fieldLabel}>{field.label}</label>
+				<CardsEditor rows={rows} onChange={onChange} />
+			</div>
+		);
 	}
 
 	const str = typeof value === "string" ? value : "";
@@ -100,6 +206,8 @@ function FieldInput({ field, value, onChange }: { field: SectionField; value: un
 				<RichTextEditor value={str} onChange={onChange} />
 			) : field.kind === "image" ? (
 				<MediaPicker value={str} onChange={onChange} mode="url" kind="image" aspect="video" />
+			) : field.kind === "form" ? (
+				<FormPicker value={str} onChange={onChange} />
 			) : field.kind === "select" ? (
 				<select className={fieldInput} value={str} onChange={(e) => onChange(e.target.value)}>
 					<option value="">—</option>
@@ -119,9 +227,13 @@ function SectionEditor({ node, onChange }: { node: SectionNode; onChange: (n: Se
 	const props = node.props ?? {};
 	const setProp = (key: string, v: unknown) => onChange({ ...node, props: { ...props, [key]: v } });
 
+	// When a built form is picked, it supplies its own layout, title, intro and
+	// submit button — so the section's layout selector + those fields are hidden.
+	const formPicked = def.type === "form" && typeof props.formSlug === "string" && props.formSlug.length > 0;
+
 	return (
 		<div className="space-y-3 border-t border-border/60 p-3">
-			{def.layouts.length > 1 && (
+			{def.layouts.length > 1 && !formPicked && (
 				<div>
 					<label className={fieldLabel}>Layout</label>
 					<select className={fieldInput} value={node.layout ?? def.layouts[0].value} onChange={(e) => onChange({ ...node, layout: e.target.value })}>
@@ -158,9 +270,16 @@ function SectionEditor({ node, onChange }: { node: SectionNode; onChange: (n: Se
 				</div>
 			)}
 
-			{def.fields.map((f) => (
-				<FieldInput key={f.key} field={f} value={props[f.key]} onChange={(v) => setProp(f.key, v)} />
-			))}
+			{def.fields.map((f) => {
+				// A picked built form owns its title/intro/submit — hide those fields.
+				if (formPicked && f.key !== "formSlug") return null;
+				return <FieldInput key={f.key} field={f} value={props[f.key]} onChange={(v) => setProp(f.key, v)} />;
+			})}
+			{formPicked && (
+				<p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+					Title, intro and submit button come from the selected form. Edit them in <span className="font-medium text-foreground/80">Forms</span>.
+				</p>
+			)}
 		</div>
 	);
 }
@@ -221,7 +340,7 @@ export function SectionsBuilder({ value, onChange }: { value: SectionNode[]; onC
 									type="button"
 									className={`${btn} text-destructive`}
 									onClick={() => {
-										if (window.confirm(`Delete the “${def?.label ?? s.type}” section? This can't be undone.`)) remove(s.id);
+										void confirm({ message: `Delete the “${def?.label ?? s.type}” section? This can't be undone.`, danger: true, confirmLabel: "Delete" }).then((ok) => ok && remove(s.id));
 									}}
 								>
 									Delete

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import { FormSection, fieldInput, fieldLabel } from "#/components/admin/form-ui";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { confirm } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/settings")({ component: SettingsAdmin });
 
@@ -34,7 +35,7 @@ function SettingsAdmin() {
 		refresh();
 	}
 	async function del(key: string) {
-		if (!window.confirm(`Delete setting "${key}"?`)) return;
+		if (!(await confirm(`Delete setting "${key}"?`))) return;
 		await trpcClient.adminSettings.delete.mutate({ key });
 		setRows((rs) => rs.filter((r) => r.key !== key));
 	}

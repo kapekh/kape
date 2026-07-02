@@ -51,11 +51,11 @@ export function ContactForm() {
 				onChange={(e) => setF({ ...f, company: e.target.value })}
 			/>
 			<div className="grid sm:grid-cols-2 gap-3">
-				<input className={input} aria-label="Full name" placeholder="Full name" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} required />
-				<input className={input} aria-label="Email" type="email" placeholder="Email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} required />
+				<input className={input} name="name" autoComplete="name" aria-label="Full name" placeholder="Full name" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} required />
+				<input className={input} name="email" autoComplete="email" aria-label="Email" type="email" placeholder="Email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} required />
 			</div>
-			<input className={input} aria-label="Phone (optional)" placeholder="Phone (optional)" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} />
-			<textarea className={input} aria-label="Message" rows={4} placeholder="Message" value={f.message} onChange={(e) => setF({ ...f, message: e.target.value })} required />
+			<input className={input} name="phone" autoComplete="tel" aria-label="Phone (optional)" placeholder="Phone (optional)" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} />
+			<textarea className={input} name="message" aria-label="Message" rows={4} placeholder="Message" value={f.message} onChange={(e) => setF({ ...f, message: e.target.value })} required />
 			{status === "error" && <p className="text-sm text-destructive">Something went wrong. Please try again.</p>}
 			<button type="submit" disabled={status === "sending"} className="rounded-full bg-primary text-primary-foreground px-7 py-3 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition">
 				{status === "sending" ? t("forms.sending", "Sending…") : t("forms.send", "Send message")}

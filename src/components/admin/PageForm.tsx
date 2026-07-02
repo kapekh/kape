@@ -6,6 +6,7 @@ import type { SectionNode } from "#/lib/sections";
 
 import { AdminHeader } from "./AdminHeader";
 import { cancelButtonClass, fieldInput, fieldLabel } from "./form-ui";
+import { LangTabs } from "./LangTabs";
 import { MediaPicker } from "./MediaPicker";
 import { PagePreview } from "./PagePreview";
 import { PageSwitcher } from "./PageSwitcher";
@@ -84,8 +85,8 @@ export function PageForm({
 	function setField(lang: string, field: "title" | "excerpt" | "body", value: string) {
 		setTrans((prev) => ({ ...prev, [lang]: { ...prev[lang], [field]: value } }));
 	}
-	function submit(e: React.FormEvent) {
-		e.preventDefault();
+	function submit(e?: React.SyntheticEvent) {
+		e?.preventDefault();
 		onSubmit({ segment: segment.replace(/^\/+|\/+$/g, ""), parentId, status, coverMediaId, sections, translations: languages.map((l) => ({ lang: l.code, ...trans[l.code] })) });
 	}
 
@@ -117,8 +118,11 @@ export function PageForm({
 	const panelHead = "font-display text-sm font-semibold text-primary";
 	const panelSub = "mt-0.5 text-xs text-muted-foreground";
 
+	// Not a <form>: the live preview can contain real <form> sections (Contact / built
+	// forms), and nested <form> elements are invalid HTML — React 19 errors on every
+	// render, flooding the console and hanging the tab. Save is an explicit button below.
 	return (
-		<form onSubmit={submit} className="flex flex-col xl:h-[calc(100dvh-4rem)] xl:flex-row">
+		<div className="flex flex-col xl:h-[calc(100dvh-4rem)] xl:flex-row">
 			{/* Page-owned titlebar content (rendered into the admin topbar slot). */}
 			<AdminHeader>
 				<PageSwitcher />
@@ -139,19 +143,20 @@ export function PageForm({
 					<h2 className={panelHead}>Metadata</h2>
 					<p className={`${panelSub} mb-3`}>Title, brief and cover power SEO and the menu card.</p>
 					<div className="space-y-4">
-						{languages.map((l) => (
-							<div key={l.code} className="space-y-2">
-								<div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{l.name} ({l.code})</div>
-								<input className={`${fieldInput} ${l.code === "km" ? "font-khmer" : ""}`} placeholder="Title" value={trans[l.code]?.title ?? ""} onChange={(e) => setField(l.code, "title", e.target.value)} />
-								<textarea
-									className={`${fieldInput} resize-y ${l.code === "km" ? "font-khmer" : ""}`}
-									rows={2}
-									placeholder="Brief — shown on menu cards and used for SEO."
-									value={trans[l.code]?.excerpt ?? ""}
-									onChange={(e) => setField(l.code, "excerpt", e.target.value)}
-								/>
-							</div>
-						))}
+						<LangTabs languages={languages}>
+							{(l) => (
+								<div className="space-y-2">
+									<input className={`${fieldInput} ${l.code === "km" ? "font-khmer" : ""}`} placeholder="Title" value={trans[l.code]?.title ?? ""} onChange={(e) => setField(l.code, "title", e.target.value)} />
+									<textarea
+										className={`${fieldInput} resize-y ${l.code === "km" ? "font-khmer" : ""}`}
+										rows={2}
+										placeholder="Brief — shown on menu cards and used for SEO."
+										value={trans[l.code]?.excerpt ?? ""}
+										onChange={(e) => setField(l.code, "excerpt", e.target.value)}
+									/>
+								</div>
+							)}
+						</LangTabs>
 					</div>
 				</div>
 
@@ -223,7 +228,7 @@ export function PageForm({
 					<div className="flex items-center gap-2">
 						{savedAt && <span className="text-xs text-[var(--palm)]">Saved {savedAt}</span>}
 						<Link to="/admin/pages" className={cancelButtonClass}>Cancel</Link>
-						<button type="submit" disabled={saving} className="rounded-full bg-primary text-primary-foreground px-5 py-1.5 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition">
+						<button type="button" onClick={() => submit()} disabled={saving} className="rounded-full bg-primary text-primary-foreground px-5 py-1.5 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition">
 							{saving ? "Saving…" : "Save page"}
 						</button>
 					</div>
@@ -234,6 +239,6 @@ export function PageForm({
 					</div>
 				</div>
 			</div>
-		</form>
+		</div>
 	);
 }

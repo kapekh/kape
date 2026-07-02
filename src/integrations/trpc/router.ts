@@ -15,6 +15,11 @@ import {
   getProjectForEdit,
   updateProject,
   adminListMedia,
+  adminListMediaPage,
+  adminMediaById,
+  adminMediaByIds,
+  adminMediaStats,
+  adminMediaUsage,
   adminListNav,
   adminListOffices,
   adminListPages,
@@ -84,6 +89,29 @@ import {
   listVideos,
   trackDownload,
 } from '#/server/repo/content'
+import {
+  adminListCampaigns,
+  createCampaign,
+  deleteCampaign,
+  getCampaignBySlug,
+  getCampaignForEdit,
+  listActiveCampaigns,
+  updateCampaign,
+} from '#/server/repo/campaigns'
+import { adminListDonations, adminListDonationsForCampaign, adminMarkDonationPaid, getDonationByOrderId } from '#/server/repo/donations'
+import {
+  adminListContactSubmissions,
+  adminListForms,
+  adminListSubmissions,
+  createForm,
+  deleteContactSubmission,
+  deleteForm,
+  deleteFormSubmission,
+  getFormBySlug,
+  getFormForEdit,
+  isFormSlugAvailable,
+  updateForm,
+} from '#/server/repo/forms'
 import { bootstrapI18n, listLanguages } from '#/server/repo/i18n'
 import { getNavTree } from '#/server/repo/nav'
 import { adminListOrg, createOrgNode, deleteOrgNode, getOrgTree, moveOrgNode, reparentOrgNode, setOrgPosition, updateOrgNode } from '#/server/repo/org'
@@ -113,12 +141,36 @@ import {
   staffNews,
 } from '#/server/repo/staff'
 import {
+  adminListUsers,
+  changeOwnPassword,
+  createUser,
+  deleteUser,
+  getUserForEdit,
+  setUserPassword,
+  updateUser,
+} from '#/server/repo/users'
+import {
+  adminListRoles,
+  createRole,
+  deleteRole,
+  getRoleForEdit,
+  listRolesForPicker,
+  roleExists,
+  updateRole,
+} from '#/server/repo/roles'
+import { ALL_AREAS, PERMISSION_AREAS, type PermissionArea } from '#/lib/permissions'
+import { renderBody } from '#/server/richtext'
+import {
   adminProcedure,
   createTRPCRouter,
+  protectedProcedure,
   publicProcedure,
   staffProcedure,
 } from './init'
 
+import { TRPCError } from '@trpc/server'
+
+import type { TRPCContext } from './init'
 import type { TRPCRouterRecord } from '@trpc/server'
 
 const postInput = z.object({
@@ -143,7 +195,53 @@ const postInput = z.object({
 const langInput = z.object({ lang: z.string().default('en') })
 
 const authRouter = {
-  me: publicProcedure.query(({ ctx }) => ctx.user),
+  me: publicProcedure.query(({ ctx }) =>
+    ctx.user
+      ? { ...ctx.user, permissions: ctx.permissions, isSuperAdmin: ctx.isSuperAdmin }
+      : null,
+  ),
+  changePassword: protectedProcedure
+    .input(z.object({ currentPassword: z.string().min(1), newPassword: z.string().min(8) }))
+    .mutation(({ ctx, input }) => changeOwnPassword(ctx.db, ctx.user.id, input.currentPassword, input.newPassword)),
+} satisfies TRPCRouterRecord
+
+const userInput = z.object({
+  email: z.string().email(),
+  name: z.string().nullish().transform((v) => v ?? null),
+  role: z.string().min(1),
+})
+async function assertRole(ctx: TRPCContext, role: string) {
+  if (role === 'admin' || role === 'staff') return // built-in
+  if (!(await roleExists(ctx.db, role))) throw new TRPCError({ code: 'BAD_REQUEST', message: 'That role no longer exists.' })
+}
+const adminUsersRouter = {
+  list: adminProcedure.query(({ ctx }) => adminListUsers(ctx.db)),
+  get: adminProcedure.input(z.object({ id: z.number() })).query(({ ctx, input }) => getUserForEdit(ctx.db, input.id)),
+  roles: adminProcedure.query(({ ctx }) => listRolesForPicker(ctx.db)),
+  create: adminProcedure.input(userInput.extend({ password: z.string().min(8) })).mutation(async ({ ctx, input }) => {
+    await assertRole(ctx, input.role)
+    return createUser(ctx.db, input)
+  }),
+  update: adminProcedure.input(userInput.extend({ id: z.number() })).mutation(async ({ ctx, input }) => {
+    await assertRole(ctx, input.role)
+    return updateUser(ctx.db, input.id, input)
+  }),
+  resetPassword: adminProcedure.input(z.object({ id: z.number(), password: z.string().min(8) })).mutation(({ ctx, input }) => setUserPassword(ctx.db, input.id, input.password)),
+  delete: adminProcedure.input(z.object({ id: z.number() })).mutation(({ ctx, input }) => deleteUser(ctx.db, input.id, ctx.user.id)),
+} satisfies TRPCRouterRecord
+
+const AREA_KEYS = ALL_AREAS as [PermissionArea, ...PermissionArea[]]
+const roleInput = z.object({
+  name: z.string().min(1),
+  permissions: z.array(z.enum(AREA_KEYS)).default([]),
+})
+const adminRolesRouter = {
+  list: adminProcedure.query(({ ctx }) => adminListRoles(ctx.db)),
+  areas: adminProcedure.query(() => PERMISSION_AREAS),
+  get: adminProcedure.input(z.object({ id: z.number() })).query(({ ctx, input }) => getRoleForEdit(ctx.db, input.id)),
+  create: adminProcedure.input(roleInput.extend({ key: z.string().default('') })).mutation(({ ctx, input }) => createRole(ctx.db, input)),
+  update: adminProcedure.input(roleInput.extend({ id: z.number() })).mutation(({ ctx, input }) => updateRole(ctx.db, input.id, input)),
+  delete: adminProcedure.input(z.object({ id: z.number() })).mutation(({ ctx, input }) => deleteRole(ctx.db, input.id)),
 } satisfies TRPCRouterRecord
 
 const termsRouter = {
@@ -200,6 +298,72 @@ const navRouter = {
   tree: publicProcedure
     .input(langInput)
     .query(({ ctx, input }) => getNavTree(ctx.db, input.lang)),
+} satisfies TRPCRouterRecord
+
+const formsRouter = {
+  bySlug: publicProcedure.input(z.object({ slug: z.string() })).query(async ({ ctx, input }) => {
+    const form = await getFormBySlug(ctx.db, input.slug)
+    if (!form) return null
+    // Pre-render author `content` blocks to HTML so the client just displays them.
+    const fields = form.fields.map((f) => (f.type === 'content' ? { ...f, contentHtml: renderBody(f.content) } : f))
+    return { ...form, fields }
+  }),
+} satisfies TRPCRouterRecord
+
+const formFieldSchema = z.object({
+  key: z.string().min(1),
+  label: z.string().min(1),
+  labelKm: z.string().optional(),
+  type: z.enum(['text', 'textarea', 'email', 'tel', 'number', 'select', 'checkbox', 'file', 'richtext', 'content']),
+  required: z.boolean().optional(),
+  placeholder: z.string().optional(),
+  options: z.array(z.string()).optional(),
+  content: z.string().optional(),
+})
+const formInput = z.object({
+  slug: z.string().min(1),
+  status: z.enum(['active', 'draft']),
+  title: z.string().min(1),
+  titleKm: z.string().nullish().transform((v) => v ?? null),
+  intro: z.string().nullish().transform((v) => v ?? null),
+  introKm: z.string().nullish().transform((v) => v ?? null),
+  fields: z.array(formFieldSchema),
+  deadline: z.string().nullish().transform((v) => (v && v.trim() ? v.trim() : null)),
+  submitLabel: z.string().nullish().transform((v) => v ?? null),
+  successMessage: z.string().nullish().transform((v) => v ?? null),
+  notifyEmail: z.string().nullish().transform((v) => v ?? null),
+})
+const adminFormsRouter = {
+  list: adminProcedure.query(({ ctx }) => adminListForms(ctx.db)),
+  get: adminProcedure.input(z.object({ id: z.number() })).query(({ ctx, input }) => getFormForEdit(ctx.db, input.id)),
+  slugAvailable: adminProcedure
+    .input(z.object({ slug: z.string(), excludeId: z.number().optional() }))
+    .query(({ ctx, input }) => isFormSlugAvailable(ctx.db, input.slug, input.excludeId)),
+  create: adminProcedure.input(formInput).mutation(({ ctx, input }) => createForm(ctx.db, input)),
+  update: adminProcedure.input(formInput.extend({ id: z.number() })).mutation(({ ctx, input }) => updateForm(ctx.db, input.id, input)),
+  delete: adminProcedure.input(z.object({ id: z.number() })).mutation(({ ctx, input }) => deleteForm(ctx.db, input.id)),
+  submissions: adminProcedure.input(z.object({ formId: z.number() })).query(({ ctx, input }) => adminListSubmissions(ctx.db, input.formId)),
+  deleteSubmission: adminProcedure.input(z.object({ id: z.number() })).mutation(({ ctx, input }) => deleteFormSubmission(ctx.db, input.id)),
+} satisfies TRPCRouterRecord
+
+const campaignsRouter = {
+  listActive: publicProcedure.input(langInput).query(({ ctx, input }) => listActiveCampaigns(ctx.db, input.lang)),
+  bySlug: publicProcedure
+    .input(langInput.extend({ slug: z.string() }))
+    .query(({ ctx, input }) => getCampaignBySlug(ctx.db, input.slug, input.lang)),
+} satisfies TRPCRouterRecord
+
+// Donations: the create-intent + webhook live in the /api/pay route (they need
+// the raw Request for origin/IP/webhook body). This exposes only read-back of a
+// donation's status by its order id, for the post-payment success page.
+const paymentsRouter = {
+  status: publicProcedure
+    .input(z.object({ orderId: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      const row = await getDonationByOrderId(ctx.db, input.orderId)
+      if (!row) return null
+      return { status: row.status, amount: row.amount, currency: row.currency }
+    }),
 } satisfies TRPCRouterRecord
 
 const orgRouter = {
@@ -489,6 +653,49 @@ const adminHeroRouter = {
   delete: adminProcedure.input(z.object({ id: z.number() })).mutation(({ ctx, input }) => deleteHero(ctx.db, input.id)),
 } satisfies TRPCRouterRecord
 
+const campaignInput = z.object({
+  slug: z.string().min(1),
+  status: z.enum(['active', 'draft', 'ended']),
+  title: z.string().min(1),
+  titleKm: z.string().nullish().transform((v) => v ?? null),
+  blurb: z.string().nullish().transform((v) => v ?? null),
+  blurbKm: z.string().nullish().transform((v) => v ?? null),
+  currency: z.enum(['USD', 'KHR']),
+  goalAmount: z.string().nullish().transform((v) => (v && v.trim() ? v.trim() : null)),
+  coverMediaId: z.number().nullable(),
+  presets: z.array(z.number()),
+  allowCustom: z.boolean(),
+  impactTiers: z.array(z.object({ amount: z.number(), label: z.string() })),
+  showSupporters: z.boolean(),
+  featured: z.boolean(),
+  sort: z.number(),
+})
+
+const adminCampaignsRouter = {
+  list: adminProcedure.query(({ ctx }) => adminListCampaigns(ctx.db)),
+  get: adminProcedure.input(z.object({ id: z.number() })).query(({ ctx, input }) => getCampaignForEdit(ctx.db, input.id)),
+  donations: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .query(({ ctx, input }) => adminListDonationsForCampaign(ctx.db, input.id)),
+  create: adminProcedure.input(campaignInput).mutation(({ ctx, input }) => createCampaign(ctx.db, input)),
+  update: adminProcedure.input(campaignInput.extend({ id: z.number() })).mutation(({ ctx, input }) => updateCampaign(ctx.db, input.id, input)),
+  delete: adminProcedure.input(z.object({ id: z.number() })).mutation(({ ctx, input }) => deleteCampaign(ctx.db, input.id)),
+} satisfies TRPCRouterRecord
+
+const adminMessagesRouter = {
+  contact: adminProcedure.query(({ ctx }) => adminListContactSubmissions(ctx.db)),
+  deleteContact: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(({ ctx, input }) => deleteContactSubmission(ctx.db, input.id)),
+} satisfies TRPCRouterRecord
+
+const adminDonationsRouter = {
+  list: adminProcedure.query(({ ctx }) => adminListDonations(ctx.db)),
+  markPaid: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(({ ctx, input }) => adminMarkDonationPaid(ctx.db, input.id)),
+} satisfies TRPCRouterRecord
+
 const adminDonorsRouter = {
   list: adminProcedure.query(({ ctx }) => adminListDonors(ctx.db)),
   get: adminProcedure.input(z.object({ id: z.number() })).query(({ ctx, input }) => getDonor(ctx.db, input.id)),
@@ -517,6 +724,18 @@ const adminProjectsRouter = {
 
 const adminMediaRouter = {
   list: adminProcedure.query(({ ctx }) => adminListMedia(ctx.db)),
+  page: adminProcedure
+    .input(z.object({
+      limit: z.number().min(1).max(100).default(30),
+      offset: z.number().min(0).default(0),
+      query: z.string().optional(),
+      type: z.enum(['all', 'image', 'file']).default('all'),
+    }))
+    .query(({ ctx, input }) => adminListMediaPage(ctx.db, input)),
+  stats: adminProcedure.query(({ ctx }) => adminMediaStats(ctx.db)),
+  byId: adminProcedure.input(z.object({ id: z.number() })).query(({ ctx, input }) => adminMediaById(ctx.db, input.id)),
+  byIds: adminProcedure.input(z.object({ ids: z.array(z.number()) })).query(({ ctx, input }) => adminMediaByIds(ctx.db, input.ids)),
+  usage: adminProcedure.input(z.object({ id: z.number() })).query(({ ctx, input }) => adminMediaUsage(ctx.db, input.id)),
   delete: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(({ ctx, input }) => deleteMedia(ctx.db, input.id)),
@@ -555,6 +774,9 @@ export const trpcRouter = createTRPCRouter({
   adminTerms: adminTermsRouter,
   i18n: i18nRouter,
   nav: navRouter,
+  forms: formsRouter,
+  campaigns: campaignsRouter,
+  payments: paymentsRouter,
   org: orgRouter,
   pages: pagesRouter,
   routes: routesRouter,
@@ -571,6 +793,12 @@ export const trpcRouter = createTRPCRouter({
   adminOffices: adminOfficesRouter,
   adminStats: adminStatsRouter,
   adminHero: adminHeroRouter,
+  adminCampaigns: adminCampaignsRouter,
+  adminUsers: adminUsersRouter,
+  adminRoles: adminRolesRouter,
+  adminForms: adminFormsRouter,
+  adminMessages: adminMessagesRouter,
+  adminDonations: adminDonationsRouter,
   adminDonors: adminDonorsRouter,
   adminProjects: adminProjectsRouter,
   adminSchools: adminSchoolsRouter,

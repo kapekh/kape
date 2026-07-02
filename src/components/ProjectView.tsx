@@ -1,3 +1,4 @@
+import { RichBody } from "@/components/RichBody";
 import { SubPage } from "@/components/SubPage";
 
 import type { ResolvedProject } from "#/server/repo/projects";
@@ -31,8 +32,7 @@ export function ProjectView({ project, section }: { project: ResolvedProject | n
 					)}
 				</div>
 			)}
-			{/* biome-ignore lint/security/noDangerouslySetInnerHtml: trusted, server-rendered */}
-			<div className="prose-kape" dangerouslySetInnerHTML={{ __html: project.bodyHtml }} />
+			<RichBody className="prose-kape" html={project.bodyHtml} />
 		</SubPage>
 	);
 }

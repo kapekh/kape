@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { confirm } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/schools/")({ component: SchoolsList });
 
@@ -17,15 +18,17 @@ function SchoolsList() {
 	const [loading, setLoading] = useState(true);
 
 	async function refresh() {
-		const [s, prov, proj, m] = await Promise.all([
+		const [s, prov, proj] = await Promise.all([
 			trpcClient.adminSchools.list.query(),
 			trpcClient.terms.list.query({ taxonomy: "location" }),
 			trpcClient.adminProjects.list.query(),
-			trpcClient.adminMedia.list.query(),
 		]);
 		setRows(s);
 		setProvinces(Object.fromEntries(prov.map((p) => [p.key, p.label])));
 		setProjects(Object.fromEntries(proj.map((p) => [p.id, p.code])));
+		// Resolve only the cover images actually referenced by the rows.
+		const coverIds = [...new Set(s.map((x) => x.coverMediaId).filter((v): v is number => v != null))];
+		const m = await trpcClient.adminMedia.byIds.query({ ids: coverIds });
 		setMedia(Object.fromEntries(m.map((x) => [x.id, x.url ?? ""])));
 		setLoading(false);
 	}
@@ -34,7 +37,7 @@ function SchoolsList() {
 	}, []);
 
 	async function del(id: number) {
-		if (!window.confirm("Delete this school?")) return;
+		if (!(await confirm("Delete this school?"))) return;
 		await trpcClient.adminSchools.delete.mutate({ id });
 		setRows((rs) => rs.filter((r) => r.id !== id));
 	}

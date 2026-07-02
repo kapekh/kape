@@ -10,6 +10,7 @@ import {
 	unique,
 } from "drizzle-orm/sqlite-core";
 
+import type { FormField } from "#/lib/forms";
 import type { SectionNode } from "#/lib/sections";
 
 /**
@@ -293,6 +294,118 @@ export const people = sqliteTable(
 	},
 	(t) => [index("ix_people_tier").on(t.tenantId, t.tier), index("ix_people_public").on(t.tenantId, t.isPublic)],
 );
+
+/* ---- Fundraising campaigns + donations (Baray payment gateway) ---- */
+
+// A fundraising campaign / project people can donate toward. Every donation
+// belongs to one. Bilingual title/blurb live inline (en/km) like site_settings;
+// `presets` + `impactTiers` are JSON, everything is editable in /admin/campaigns.
+export const campaigns = sqliteTable(
+	"campaigns",
+	{
+		id: integer("id").primaryKey({ autoIncrement: true }),
+		tenantId: integer("tenant_id")
+			.notNull()
+			.default(1)
+			.references(() => tenants.id),
+		slug: text("slug").notNull(),
+		status: text("status").notNull().default("active"), // active | draft | ended
+		title: text("title").notNull(),
+		titleKm: text("title_km"),
+		blurb: text("blurb"),
+		blurbKm: text("blurb_km"),
+		currency: text("currency").notNull().default("USD"), // USD | KHR
+		goalAmount: text("goal_amount"), // numeric string; null = no goal (show total only)
+		coverMediaId: integer("cover_media_id").references(() => media.id),
+		presets: text("presets", { mode: "json" }).$type<number[]>().notNull().default([]),
+		allowCustom: integer("allow_custom", { mode: "boolean" }).notNull().default(true),
+		impactTiers: text("impact_tiers", { mode: "json" }).$type<{ amount: number; label: string }[]>().notNull().default([]),
+		showSupporters: integer("show_supporters", { mode: "boolean" }).notNull().default(true),
+		featured: integer("featured", { mode: "boolean" }).notNull().default(false),
+		sort: integer("sort").notNull().default(0),
+		...timestamps,
+	},
+	(t) => [unique("uq_campaign_slug").on(t.tenantId, t.slug)],
+);
+
+// One row per donation attempt. Created `pending` when the donor is sent to
+// Baray's hosted page; flipped to `paid` by the Baray webhook (matched on the
+// unique order_id). `bank` records which rail completed it (aba/acleda/spn/wing).
+// `visibility` is how the donor is credited on the public supporters wall.
+export const donations = sqliteTable(
+	"donations",
+	{
+		id: integer("id").primaryKey({ autoIncrement: true }),
+		tenantId: integer("tenant_id")
+			.notNull()
+			.default(1)
+			.references(() => tenants.id),
+		campaignId: integer("campaign_id").references(() => campaigns.id),
+		orderId: text("order_id").notNull(),
+		intentId: text("intent_id"),
+		amount: text("amount").notNull(),
+		currency: text("currency").notNull(),
+		status: text("status").notNull().default("pending"), // pending | paid | failed
+		bank: text("bank"),
+		donorName: text("donor_name"),
+		donorEmail: text("donor_email"),
+		message: text("message"),
+		visibility: text("visibility").notNull().default("anonymous"), // anonymous | name | custom
+		displayName: text("display_name"), // shown on the supporters wall when visibility != anonymous
+		paidAt: text("paid_at"),
+		...timestamps,
+	},
+	(t) => [unique("uq_donation_order").on(t.tenantId, t.orderId)],
+);
+
+/* ---- Roles (custom roles + area permissions; `admin` is a code super-role) ---- */
+
+export const roles = sqliteTable(
+	"roles",
+	{
+		id: integer("id").primaryKey({ autoIncrement: true }),
+		tenantId: integer("tenant_id").notNull().default(1).references(() => tenants.id),
+		key: text("key").notNull(), // stored in users.role
+		name: text("name").notNull(),
+		permissions: text("permissions", { mode: "json" }).$type<string[]>().notNull().default([]),
+		isSystem: integer("is_system", { mode: "boolean" }).notNull().default(false), // admin/staff — not deletable
+		...timestamps,
+	},
+	(t) => [unique("uq_role_key").on(t.tenantId, t.key)],
+);
+
+/* ---- Form builder (admin-defined forms + their submissions) ---- */
+
+// A form is data: a list of fields stored as JSON, rendered on the public site
+// and edited in /admin/forms. Submissions land in `form_submissions` as JSON.
+export const forms = sqliteTable(
+	"forms",
+	{
+		id: integer("id").primaryKey({ autoIncrement: true }),
+		tenantId: integer("tenant_id").notNull().default(1).references(() => tenants.id),
+		slug: text("slug").notNull(),
+		status: text("status").notNull().default("active"), // active | draft
+		title: text("title").notNull(),
+		titleKm: text("title_km"),
+		intro: text("intro"),
+		introKm: text("intro_km"),
+		fields: text("fields", { mode: "json" }).$type<FormField[]>().notNull().default([]),
+		deadline: text("deadline"), // ISO date (YYYY-MM-DD); after this the form stops accepting responses
+		submitLabel: text("submit_label"),
+		successMessage: text("success_message"),
+		notifyEmail: text("notify_email"), // optional: email a copy on each submission
+		...timestamps,
+	},
+	(t) => [unique("uq_form_slug").on(t.tenantId, t.slug)],
+);
+
+export const formSubmissions = sqliteTable("form_submissions", {
+	id: integer("id").primaryKey({ autoIncrement: true }),
+	tenantId: integer("tenant_id").notNull().default(1).references(() => tenants.id),
+	formId: integer("form_id").notNull().references(() => forms.id),
+	data: text("data", { mode: "json" }).$type<Record<string, string>>().notNull().default({}),
+	createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+});
 
 /* ---- Form capture ---- */
 

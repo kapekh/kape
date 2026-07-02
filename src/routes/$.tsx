@@ -3,6 +3,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import students from "@/assets/students.jpg.asset.json";
 import { AnnouncementPopup } from "@/components/AnnouncementPopup";
 import { ProjectView } from "@/components/ProjectView";
+import { RichBody } from "@/components/RichBody";
 import { SectionRenderer } from "@/components/sections/SectionRenderer";
 import { JsonLd } from "@/components/JsonLd";
 import { SubPage } from "@/components/SubPage";
@@ -119,11 +120,7 @@ function ResolvedRoute() {
 						{post.publishedAt} · {post.author ?? "KAPE Cambodia"}
 					</div>
 				)}
-				<div
-					className="prose-kape"
-					// biome-ignore lint/security/noDangerouslySetInnerHtml: trusted, server-rendered
-					dangerouslySetInnerHTML={{ __html: post.bodyHtml }}
-				/>
+				<RichBody className="prose-kape" html={post.bodyHtml} />
 				{post.gallery.length > 0 && (
 					<div className="mt-10 grid grid-cols-2 md:grid-cols-3 gap-3">
 						{post.gallery.map((p) => (
@@ -170,8 +167,7 @@ function ResolvedRoute() {
 					<img src={p.photoUrl} alt={p.name} className="mb-8 h-40 w-40 rounded-full object-cover shadow-[var(--shadow-soft)] ring-4 ring-card" />
 				)}
 				{p.bodyHtml ? (
-					// biome-ignore lint/security/noDangerouslySetInnerHtml: trusted, server-rendered
-					<div className="prose-kape" dangerouslySetInnerHTML={{ __html: p.bodyHtml }} />
+					<RichBody className="prose-kape" html={p.bodyHtml} />
 				) : (
 					<p className="text-muted-foreground">{p.position}</p>
 				)}

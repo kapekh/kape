@@ -5,6 +5,8 @@ import { useLang } from "@/lib/i18n";
 import { localizedHref } from "@/lib/i18n-config";
 
 import { ContactForm } from "../ContactForm";
+import { FormRenderer } from "../FormRenderer";
+import { RichBody } from "../RichBody";
 import { MapView, type MapMarker } from "../MapView";
 import { NavLink } from "../NavLink";
 import { PublicOrgChart } from "../PublicOrgChart";
@@ -127,8 +129,8 @@ function Hero(p: P) {
 	const slides: any[] = Array.isArray(p.slides) ? p.slides : [];
 	const stats: any[] = Array.isArray(p.stats) ? p.stats : [];
 
-	const ctas = (
-		<div className="mt-8 flex flex-wrap gap-3">
+	const ctas = (center?: boolean) => (
+		<div className={`mt-8 flex flex-wrap gap-3 ${center ? "justify-center" : ""}`}>
 			{p.ctaHref && <NavLink href={L(p.ctaHref)} className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-6 py-3 text-sm font-semibold shadow-[var(--shadow-lift)] hover:-translate-y-0.5 transition">{p.ctaLabel || "Learn more"}</NavLink>}
 			{p.cta2Href && <NavLink href={L(p.cta2Href)} className="inline-flex items-center gap-2 rounded-full border border-primary/30 px-6 py-3 text-sm font-semibold text-primary hover:bg-primary hover:text-primary-foreground transition">{p.cta2Label || "Learn more"}</NavLink>}
 		</div>
@@ -147,7 +149,7 @@ function Hero(p: P) {
 						)}
 						<h1 className="mt-6 font-display text-5xl md:text-6xl lg:text-7xl font-semibold leading-[0.95] tracking-tight text-primary">{renderTitle(p.title || "", "text-[var(--accent)]")}</h1>
 						{p.lead && <p className="mt-6 max-w-xl text-lg text-muted-foreground leading-relaxed">{p.lead}</p>}
-						{ctas}
+						{ctas()}
 						{stats.length > 0 && (
 							<div className="mt-12 flex items-center gap-6 text-xs text-muted-foreground">
 								{stats.map((s, n) => (
@@ -173,7 +175,7 @@ function Hero(p: P) {
 						{p.eyebrow && <div className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">{p.eyebrow}</div>}
 						<h1 className="mt-3 font-display text-4xl md:text-5xl font-semibold tracking-tight text-primary">{renderTitle(p.title || "")}</h1>
 						{p.lead && <p className="mt-5 text-lg text-foreground/75 leading-relaxed">{p.lead}</p>}
-						{ctas}
+						{ctas()}
 					</div>
 					{p.image && <img src={p.image} alt={p.title || ""} className="rounded-3xl object-cover w-full aspect-[4/3] shadow-[var(--shadow-soft)]" />}
 				</Container>
@@ -193,7 +195,7 @@ function Hero(p: P) {
 				{p.eyebrow && <div className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--gold)] [text-shadow:0_1px_10px_rgba(0,0,0,0.7)]">{p.eyebrow}</div>}
 				<h1 className="mx-auto mt-4 max-w-4xl font-display text-4xl md:text-6xl font-semibold tracking-tight [text-shadow:0_2px_24px_rgba(0,0,0,0.45)]">{renderTitle(p.title || "", "text-[var(--gold)]")}</h1>
 				{p.lead && <p className="mx-auto mt-6 max-w-2xl text-lg text-white/90 leading-relaxed [text-shadow:0_1px_12px_rgba(0,0,0,0.6)]">{p.lead}</p>}
-				{ctas}
+				{ctas(true)}
 			</Container>
 		</section>
 	);
@@ -207,32 +209,70 @@ function RichText(p: P) {
 	return (
 		<section className={`${PAD} ${toneBg(p.tone)}`}>
 			<Container className={p.layout === "narrow" ? "max-w-3xl" : "max-w-4xl"}>
-				<div className="prose-kape" dangerouslySetInnerHTML={{ __html: p.bodyHtml ?? "" }} />
+				<RichBody className="prose-kape" html={p.bodyHtml ?? ""} />
 			</Container>
 		</section>
 	);
 }
 
 function Cards(p: P) {
+	const L = useL();
 	const cols = p.layout === "cols-2" ? "md:grid-cols-2" : p.layout === "cols-4" ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-2 lg:grid-cols-3";
 	const items: any[] = Array.isArray(p.items) ? p.items : [];
+
+	const footer = (it: any, light = false) => {
+		// Buttons: explicit list, or a legacy single `href` folded into one button.
+		const btns: any[] = Array.isArray(it.buttons) ? it.buttons : it.href ? [{ label: "Learn more", href: it.href }] : [];
+		const valid = btns.filter((b) => b && b.href);
+		if (!valid.length) return null;
+		return (
+			<div className="mt-5 flex flex-wrap gap-2">
+				{valid.map((b, i) => (
+					<NavLink
+						key={i}
+						href={L(b.href)}
+						className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition ${light ? "bg-white/15 text-white hover:bg-white/25" : "bg-[var(--accent)]/10 text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white"}`}
+					>
+						{b.label || "Learn more"}
+					</NavLink>
+				))}
+			</div>
+		);
+	};
+
 	return (
 		<section className={`${PAD} ${toneBg(p.tone)}`}>
 			<Container>
 				<Heading eyebrow={p.eyebrow} title={p.title} center={p.center} />
 				<div className={`grid grid-cols-1 ${cols} gap-5`}>
 					{items.map((it, n) => {
-						const inner = (
-							<>
-								<div className="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)] font-display text-lg font-bold">{n + 1}</div>
-								{it.title && <h3 className="font-display text-lg font-semibold text-primary">{it.title}</h3>}
-								{it.body && <p className="mt-2 text-sm text-foreground/75 leading-relaxed">{it.body}</p>}
-							</>
-						);
-						return it.href ? (
-							<NavLink key={n} href={it.href} className="block rounded-3xl border border-border bg-card p-6 shadow-sm transition hover:-translate-y-1 hover:border-[var(--accent)] hover:shadow-[var(--shadow-soft)]">{inner}</NavLink>
-						) : (
-							<div key={n} className="rounded-3xl border border-border bg-card p-6 shadow-sm">{inner}</div>
+						// Background-image card: image fills the card, text overlaid in white.
+						if (it.image && it.imageAsBg) {
+							return (
+								<div key={n} className="relative flex min-h-[260px] flex-col justify-end overflow-hidden rounded-3xl border border-border p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-[var(--shadow-soft)]">
+									<img src={it.image} alt={it.title || ""} className="absolute inset-0 h-full w-full object-cover" />
+									<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/10" />
+									<div className="relative text-white">
+										{it.title && <h3 className="font-display text-lg font-semibold [text-shadow:0_1px_10px_rgba(0,0,0,0.5)]">{it.title}</h3>}
+										{it.body && <p className="mt-2 text-sm text-white/85 leading-relaxed">{it.body}</p>}
+										{footer(it, true)}
+									</div>
+								</div>
+							);
+						}
+						// Standard card: optional image on top, then title/body/buttons.
+						return (
+							<div key={n} className="flex flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-sm transition hover:-translate-y-1 hover:border-[var(--accent)] hover:shadow-[var(--shadow-soft)]">
+								{it.image ? (
+									<img src={it.image} alt={it.title || ""} className="aspect-video w-full object-cover" />
+								) : null}
+								<div className="flex flex-1 flex-col p-6">
+									{!it.image && <div className="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)] font-display text-lg font-bold">{n + 1}</div>}
+									{it.title && <h3 className="font-display text-lg font-semibold text-primary">{it.title}</h3>}
+									{it.body && <p className="mt-2 text-sm text-foreground/75 leading-relaxed">{it.body}</p>}
+									{footer(it)}
+								</div>
+							</div>
 						);
 					})}
 				</div>
@@ -241,31 +281,46 @@ function Cards(p: P) {
 	);
 }
 
-function StatItem({ value, label, run }: { value: string; label: string; run: boolean }) {
+function StatItem({ value, label, run, valueClass = "text-5xl md:text-6xl", labelClass = "text-xs" }: { value: string; label: string; run: boolean; valueClass?: string; labelClass?: string }) {
 	const digits = String(value).replace(/[^0-9]/g, "");
 	const target = digits ? Number(digits) : 0;
 	const n = useCount(target, run);
 	const display = digits ? String(value).replace(digits, n.toLocaleString()) : value;
 	return (
 		<div className="group">
-			<div className="font-display text-5xl md:text-6xl font-semibold tabular-nums tracking-tight text-[var(--secondary)]">{display}</div>
-			<div className="mt-2 text-sm uppercase tracking-[0.18em] text-primary-foreground/70">{label}</div>
+			<div className={`font-display ${valueClass} font-semibold tabular-nums tracking-tight text-[var(--secondary)] whitespace-nowrap`}>{display}</div>
+			<div className={`mt-2 ${labelClass} uppercase tracking-[0.18em] text-primary-foreground/70`}>{label}</div>
 			<div className="mt-4 h-px w-12 bg-[var(--secondary)]/60 transition-all duration-500 group-hover:w-24" />
 		</div>
 	);
 }
 
+const STAT_VALUE_SIZE: Record<string, string> = {
+	sm: "text-3xl md:text-4xl",
+	md: "text-4xl md:text-5xl",
+	lg: "text-5xl md:text-6xl",
+	xl: "text-6xl md:text-7xl",
+};
+const STAT_LABEL_SIZE: Record<string, string> = {
+	xs: "text-xs",
+	sm: "text-sm",
+	md: "text-base",
+};
+
 function Stats(p: P) {
 	const items: any[] = Array.isArray(p.items) ? p.items : [];
 	const band = p.layout !== "plain";
+	// Default the number to large on the band / medium on the plain layout; label defaults small.
+	const valueClass = STAT_VALUE_SIZE[p.valueSize as string] ?? (band ? STAT_VALUE_SIZE.lg : STAT_VALUE_SIZE.md);
+	const labelClass = STAT_LABEL_SIZE[p.labelSize as string] ?? STAT_LABEL_SIZE.xs;
 	if (!band) {
 		return (
 			<section className={PAD}>
 				<Container>
 					<Heading eyebrow={p.eyebrow} title={p.title} />
-					<div className="grid grid-cols-2 gap-8 md:grid-cols-4">
+					<div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-x-8 gap-y-10">
 						{items.map((it, n) => (
-							<div key={n}><div className="font-display text-4xl md:text-5xl font-semibold tabular-nums text-primary">{it.value}</div><div className="mt-2 text-sm text-muted-foreground">{it.label}</div></div>
+							<div key={n}><div className={`font-display ${valueClass} font-semibold tabular-nums tracking-tight text-primary whitespace-nowrap`}>{it.value}</div><div className={`mt-2 ${labelClass} text-muted-foreground`}>{it.label}</div></div>
 						))}
 					</div>
 				</Container>
@@ -281,8 +336,8 @@ function Stats(p: P) {
 					{p.eyebrow && <div className="text-xs font-semibold uppercase tracking-[0.25em] text-[var(--gold)]">{p.eyebrow}</div>}
 					{p.title && <h2 className="mt-3 font-display text-4xl md:text-6xl font-semibold leading-[1.02]">{renderTitle(p.title)}</h2>}
 				</div>
-				<div className="grid grid-cols-2 gap-10 md:grid-cols-4 lg:grid-cols-7">
-					{items.map((it, n) => <StatItem key={n} value={String(it.value)} label={it.label} run />)}
+				<div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-x-10 gap-y-12">
+					{items.map((it, n) => <StatItem key={n} value={String(it.value)} label={it.label} run valueClass={valueClass} labelClass={labelClass} />)}
 				</div>
 			</Container>
 		</section>
@@ -352,7 +407,7 @@ function Split(p: P) {
 		<div>
 			{p.eyebrow && <div className="text-xs font-semibold uppercase tracking-[0.25em] text-[var(--accent)]">{p.eyebrow}</div>}
 			{p.title && <h2 className="mt-3 font-display text-4xl md:text-5xl font-semibold tracking-tight text-primary leading-tight">{renderTitle(p.title, "italic text-primary")}</h2>}
-			<div className="prose-kape mt-6" dangerouslySetInnerHTML={{ __html: p.bodyHtml ?? "" }} />
+			<RichBody className="prose-kape mt-6" html={p.bodyHtml ?? ""} />
 		</div>
 	);
 	return (
@@ -392,13 +447,18 @@ function Pills(p: P) {
 }
 
 function FormSection(p: P) {
+	// A built form carries its own title/intro/submit, so the section's heading
+	// and intro are only used for the quick (contact/subscribe/signup) layouts.
+	const builtForm = !!p.formSlug;
 	return (
 		<section className={`${PAD} ${toneBg(p.tone)}`}>
 			<Container className="max-w-2xl">
-				<Heading eyebrow={p.eyebrow} title={p.title} center />
-				{p.body && <p className="-mt-6 mb-8 text-center text-foreground/75 leading-relaxed">{p.body}</p>}
+				{!builtForm && <Heading eyebrow={p.eyebrow} title={p.title} center />}
+				{!builtForm && p.body && <p className="-mt-6 mb-8 text-center text-foreground/75 leading-relaxed">{p.body}</p>}
 				<div className="rounded-3xl border border-border bg-card p-6 md:p-8 shadow-sm">
-					{p.layout === "contact" ? (
+					{p.formSlug ? (
+						<FormRenderer slug={p.formSlug} />
+					) : p.layout === "contact" ? (
 						<ContactForm />
 					) : (
 						<form className="space-y-3" onSubmit={(e) => e.preventDefault()}>
@@ -688,59 +748,29 @@ function Partners(p: P) {
 	);
 }
 
-function orgInitials(name: string) {
-	return String(name || "").split(/\s+/).slice(0, 2).map((w) => w[0]).join("");
-}
-
-function OrgNodeView({ node }: { node: any }) {
-	const L = useL();
-	const card = (
-		<div className="org-card">
-			{node.photoUrl ? (
-				<img src={node.photoUrl} alt={node.name} className="org-photo" />
-			) : (
-				<div className="org-avatar">{orgInitials(node.name)}</div>
-			)}
-			<div className="org-name">{node.name}</div>
-			{node.title && <div className="org-title">{node.title}</div>}
-		</div>
-	);
-	return (
-		<li>
-			{node.personSlug ? <NavLink href={L(`/team/${node.personSlug}`)} className="org-link">{card}</NavLink> : card}
-			{Array.isArray(node.children) && node.children.length > 0 && (
-				<ul>{node.children.map((c: any) => <OrgNodeView key={c.id} node={c} />)}</ul>
-			)}
-		</li>
-	);
-}
-
-/** Hierarchical management tree (CSS-connector org chart). Data = nested nodes. */
+/** Hierarchical management tree, rendered as an n8n-style React Flow canvas. */
 function OrgChart(p: P) {
 	const roots: any[] = Array.isArray(p.data) ? p.data : [];
-	// React Flow is client-only; render the CSS-connector tree on the server / no-JS
-	// (keeps it crawlable & accessible), then upgrade to the full-height canvas.
+	// React Flow is client-only and we no longer render a CSS-tree fallback (it caused
+	// a visible swap on hydration). Until mounted, show a same-sized empty box so the
+	// canvas simply fades into an already-present container — no reflow, no jump.
 	const [mounted, setMounted] = useState(false);
 	useEffect(() => setMounted(true), []);
 
-	// Client: a full-height canvas with the heading overlaid inside it.
-	if (mounted && roots.length > 0) return <PublicOrgChart roots={roots} eyebrow={p.eyebrow} title={p.title} />;
-
-	// SSR / no-JS / empty fallback: heading + CSS-connector tree.
-	return (
-		<section className={`${PAD} ${toneBg(p.tone)}`}>
-			<Container>
-				<Heading eyebrow={p.eyebrow} title={p.title} />
-				{roots.length === 0 ? (
+	if (roots.length === 0) {
+		return (
+			<section className={`${PAD} ${toneBg(p.tone)}`}>
+				<Container>
+					<Heading eyebrow={p.eyebrow} title={p.title} />
 					<Empty>No organizational chart yet.</Empty>
-				) : (
-					<div className="org-tree overflow-x-auto pb-4">
-						<ul>{roots.map((r) => <OrgNodeView key={r.id} node={r} />)}</ul>
-					</div>
-				)}
-			</Container>
-		</section>
-	);
+				</Container>
+			</section>
+		);
+	}
+
+	if (mounted) return <PublicOrgChart roots={roots} eyebrow={p.eyebrow} title={p.title} />;
+
+	return <div className="min-h-[640px] w-full bg-muted/20" aria-hidden />;
 }
 
 /* ------------------------------------------------------------------ */
@@ -781,8 +811,10 @@ export function SectionRenderer({ sections }: { sections: SectionNode[] }) {
 		<>
 			{sections.map((s) => {
 				const Template = sectionRegistry[s.type];
-				if (!Template) return <UnknownSection key={s.id} type={s.type} />;
-				return <Template key={s.id} layout={s.layout} {...(s.props ?? {})} />;
+				const body = Template ? <Template layout={s.layout} {...(s.props ?? {})} /> : <UnknownSection type={s.type} />;
+				// Expose the section id as a DOM anchor (e.g. `#donate`) and offset the
+				// scroll target so the sticky header never covers it.
+				return <div key={s.id} id={s.id} className="scroll-mt-28">{body}</div>;
 			})}
 		</>
 	);

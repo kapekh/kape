@@ -363,3 +363,16 @@
 }
 .org-tree .org-name { font-weight: 600; font-size: 0.875rem; color: var(--primary); line-height: 1.2; }
 .org-tree .org-title { font-size: 0.72rem; color: var(--muted-foreground); line-height: 1.2; }
+
+/* Rich-text embedded-form placeholder (shown in the editor + before hydration). */
+.kape-form-embed {
+	display: block;
+	margin: 1rem 0;
+	border: 1px dashed var(--border);
+	border-radius: 1rem;
+	padding: 1.25rem;
+	text-align: center;
+	font-size: 0.875rem;
+	color: var(--muted-foreground);
+	background: color-mix(in oklab, var(--muted) 35%, transparent);
+}

@@ -14,6 +14,7 @@ export function SubPage({
   heroImage,
   badge,
   crumbs,
+  wide = false,
   children,
 }: {
   section: string;
@@ -22,6 +23,9 @@ export function SubPage({
   heroImage?: string;
   badge?: string;
   crumbs?: Crumb[];
+  /** Full-width body (max-w-7xl, no single card) for layouts that supply their
+   *  own cards/columns. Default is the narrow article card (max-w-4xl). */
+  wide?: boolean;
   children: ReactNode;
 }) {
   const bg = heroImage ?? students.url;
@@ -29,7 +33,7 @@ export function SubPage({
   return (
     <main className="min-h-screen text-foreground overflow-x-hidden">
       {/* Hero */}
-      <section className="relative pt-28 pb-28 px-6 sm:px-8 overflow-hidden">
+      <section className="relative pt-28 pb-28 px-6 overflow-hidden">
         <div className="absolute inset-0 -z-10">
           <img src={bg} alt="" className="h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-b from-primary/90 via-primary/75 to-background" />
@@ -64,13 +68,18 @@ export function SubPage({
       </section>
 
       {/* Body — pulled up to overlap the hero for a layered, polished feel. */}
-      <section className="px-6 sm:px-8 pb-24 -mt-16">
-        <div className="mx-auto max-w-4xl">
-          {/* Caller supplies its own `prose-kape` wrapper for rich text; we don't
-              force it here so non-prose children (e.g. the album photo grid) stay clean. */}
-          <div className="rounded-3xl bg-card border border-border shadow-[var(--shadow-soft)] p-8 md:p-12">
-            {children}
-          </div>
+      <section className="px-6 pb-24 -mt-16">
+        <div className={`mx-auto ${wide ? "max-w-7xl" : "max-w-4xl"}`}>
+          {wide ? (
+            // Caller supplies its own cards/columns across the full frame.
+            children
+          ) : (
+            // Caller supplies its own `prose-kape` wrapper for rich text; we don't
+            // force it here so non-prose children (e.g. the album photo grid) stay clean.
+            <div className="rounded-3xl bg-card border border-border shadow-[var(--shadow-soft)] p-8 md:p-12">
+              {children}
+            </div>
+          )}
         </div>
       </section>
     </main>

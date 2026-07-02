@@ -279,13 +279,14 @@ export function Header({ nav, settings }: { nav: NavNode[]; settings: Record<str
 		return () => window.removeEventListener("keydown", onKey);
 	}, []);
 
-	// Lock body scroll while the mobile drawer is open.
+	// Lock body scroll while the mobile drawer OR a desktop mega panel is open.
 	useEffect(() => {
-		document.body.style.overflow = mobileOpen ? "hidden" : "";
+		const locked = mobileOpen || openId != null;
+		document.body.style.overflow = locked ? "hidden" : "";
 		return () => {
 			document.body.style.overflow = "";
 		};
-	}, [mobileOpen]);
+	}, [mobileOpen, openId]);
 
 	// While a mega panel is open, track the header's bottom edge so the panel can
 	// pin there and stretch to the viewport bottom (the top utility bar scrolls away).
@@ -325,11 +326,13 @@ export function Header({ nav, settings }: { nav: NavNode[]; settings: Record<str
 				</div>
 			</div>
 
-			{/* Header + mega panel share a hover region so moving into the panel doesn't close it. */}
-			<div onMouseLeave={() => setOpenId(null)}>
+			{/* Header + mega panel share a hover region so moving into the panel doesn't close it.
+			    The sticky lives HERE (not on <header>) because a sticky element only sticks within
+			    its parent's box — this wrapper's parent is <body>, so it stays pinned page-wide. */}
+			<div onMouseLeave={() => setOpenId(null)} className="sticky top-0 z-40">
 			<header
 				ref={headerRef}
-				className="sticky top-0 z-40 backdrop-blur-md bg-background/85 border-b border-border/60"
+				className="relative backdrop-blur-md bg-background/85 border-b border-border/60"
 				style={{ viewTransitionName: "site-header" }}
 			>
 				<div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between gap-6">

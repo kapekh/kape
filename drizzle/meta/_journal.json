@@ -64,6 +64,41 @@
       "when": 1782197811897,
       "tag": "0008_bizarre_robin_chapel",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1782356769813,
+      "tag": "0009_romantic_ultimates",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1782357764730,
+      "tag": "0010_lazy_zaran",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1782459229765,
+      "tag": "0011_flashy_lady_mastermind",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1782459984674,
+      "tag": "0012_whole_loki",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1782533304040,
+      "tag": "0013_flowery_justice",
+      "breakpoints": true
     }
   ]
 }

@@ -24,7 +24,7 @@ export function EditorHeader({
 	children?: React.ReactNode;
 }) {
 	return (
-		<div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-2">
+		<div className="mx-auto mb-4 flex max-w-5xl flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-2">
 			<h1 className="font-display text-base font-semibold text-primary">{title}</h1>
 			<div className="flex items-center gap-2">
 				{savedAt && <span className="text-xs text-[var(--palm)]">Saved {savedAt}</span>}
@@ -37,12 +37,16 @@ export function EditorHeader({
 	);
 }
 
-/** Two-column editor body: wide main content + a sticky settings rail. */
+/** Two-column editor body: main content + a sticky settings rail. Capped and
+ *  centred so fields don't stretch absurdly wide and the rail never strands a
+ *  lone card in a sea of open space on large screens. */
 export function EditorGrid({ main, aside }: { main: React.ReactNode; aside: React.ReactNode }) {
 	return (
-		<div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+		<div className="mx-auto grid max-w-5xl items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
 			<div className="min-w-0 space-y-5">{main}</div>
-			<aside className="space-y-5 lg:sticky lg:top-32">{aside}</aside>
+			{/* `top` MUST be ≤ the aside's resting offset, else sticky clamps the card
+			    DOWN to `top` and opens a gap above it. `self-start` keeps it top-aligned. */}
+			<aside className="space-y-5 self-start lg:sticky lg:top-6">{aside}</aside>
 		</div>
 	);
 }

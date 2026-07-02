@@ -8,7 +8,7 @@
  */
 export const HEADER_DEFAULTS: Record<string, string> = {
 	header_donate_label: "♡ Donate",
-	header_donate_link: "#donate",
-	header_search_link: "#",
-	header_sitemap_link: "#",
+	header_donate_link: "/donate",
+	header_search_link: "/sitemap.xml",
+	header_sitemap_link: "/sitemap.xml",
 };

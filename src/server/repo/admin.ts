@@ -1,15 +1,17 @@
-import { and, asc, count, desc, eq, inArray, isNull, ne } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNull, like, ne, or, sql } from "drizzle-orm";
 
 import type { SectionNode } from "#/lib/sections";
 import type { DB } from "../db";
 import { attachMediaUrl } from "./media-util";
 import {
 	alumniRegistrations,
+	campaigns,
 	contactSubmissions,
 	contentTypes,
 	languages,
 	media,
 	navItems,
+	people,
 	newsletterSubscribers,
 	visitorDaily,
 	donors,
@@ -591,6 +593,107 @@ export async function deleteNavItem(db: DB, id: number): Promise<void> {
 
 export function adminListMedia(db: DB) {
 	return db.select().from(media).where(eq(media.tenantId, TENANT)).orderBy(desc(media.id));
+}
+
+export type MediaType = "all" | "image" | "file";
+
+/** One page of media (newest first), filtered by type + a name/URL search. */
+export function adminListMediaPage(
+	db: DB,
+	opts: { limit: number; offset: number; query?: string; type?: MediaType },
+) {
+	const conds = [eq(media.tenantId, TENANT)];
+	if (opts.type === "image") conds.push(like(media.contentType, "image/%"));
+	else if (opts.type === "file") {
+		const notImage = or(isNull(media.contentType), sql`${media.contentType} not like 'image/%'`);
+		if (notImage) conds.push(notImage);
+	}
+	if (opts.query?.trim()) {
+		const q = `%${opts.query.trim()}%`;
+		const match = or(like(media.url, q), like(media.r2Key, q));
+		if (match) conds.push(match);
+	}
+	return db
+		.select()
+		.from(media)
+		.where(and(...conds))
+		.orderBy(desc(media.id))
+		.limit(opts.limit)
+		.offset(opts.offset);
+}
+
+/** Resolve specific media ids → {id, url, contentType} (e.g. saved cover ids). */
+export async function adminMediaByIds(db: DB, ids: number[]) {
+	if (!ids.length) return [];
+	return db
+		.select({ id: media.id, url: media.url, contentType: media.contentType })
+		.from(media)
+		.where(and(eq(media.tenantId, TENANT), inArray(media.id, ids)));
+}
+
+export async function adminMediaById(db: DB, id: number) {
+	const [r] = await adminMediaByIds(db, [id]);
+	return r ?? null;
+}
+
+export type MediaUsage = { kind: string; label: string; href: string | null };
+
+/** Everywhere a media item is referenced — for the "Used in" panel. */
+export async function adminMediaUsage(db: DB, id: number): Promise<MediaUsage[]> {
+	const out: MediaUsage[] = [];
+	const t = (kind: string, label: string | null, href: string | null) => out.push({ kind, label: label || "(untitled)", href });
+
+	const postCovers = await db.select({ id: posts.id, slug: posts.slug }).from(posts).where(and(eq(posts.tenantId, TENANT), eq(posts.coverMediaId, id)));
+	for (const r of postCovers) t("Post cover", r.slug, `/admin/posts/${r.id}`);
+
+	const galRows = await db.select({ postId: postMedia.postId }).from(postMedia).where(eq(postMedia.mediaId, id));
+	const galIds = [...new Set(galRows.map((r) => r.postId))];
+	if (galIds.length) {
+		for (const r of await db.select({ id: posts.id, slug: posts.slug }).from(posts).where(inArray(posts.id, galIds)))
+			t("Post gallery", r.slug, `/admin/posts/${r.id}`);
+	}
+
+	for (const r of await db.select({ id: people.id, name: people.nameEn }).from(people).where(and(eq(people.tenantId, TENANT), eq(people.photoMediaId, id))))
+		t("Person photo", r.name, `/admin/people/${r.id}`);
+	for (const r of await db.select({ id: campaigns.id, title: campaigns.title }).from(campaigns).where(and(eq(campaigns.tenantId, TENANT), eq(campaigns.coverMediaId, id))))
+		t("Campaign cover", r.title, `/admin/campaigns/${r.id}`);
+	for (const r of await db.select({ id: pages.id, slug: pages.slug }).from(pages).where(and(eq(pages.tenantId, TENANT), eq(pages.heroMediaId, id))))
+		t("Page hero", r.slug, `/admin/pages/${r.id}`);
+	for (const r of await db.select({ id: projects.id, code: projects.code }).from(projects).where(and(eq(projects.tenantId, TENANT), eq(projects.logoMediaId, id))))
+		t("Project logo", r.code, `/admin/projects/${r.id}`);
+	for (const r of await db.select({ id: schools.id, name: schools.name }).from(schools).where(and(eq(schools.tenantId, TENANT), eq(schools.coverMediaId, id))))
+		t("School photo", r.name, `/admin/schools/${r.id}`);
+	for (const r of await db.select({ id: offices.id, name: offices.name }).from(offices).where(and(eq(offices.tenantId, TENANT), eq(offices.imageMediaId, id))))
+		t("Office photo", r.name, `/admin/offices/${r.id}`);
+	for (const r of await db.select({ id: partners.id, name: partners.name }).from(partners).where(and(eq(partners.tenantId, TENANT), eq(partners.logoMediaId, id))))
+		t("Partner logo", r.name, `/admin/partners/${r.id}`);
+	for (const r of await db.select({ id: donors.id, name: donors.name }).from(donors).where(and(eq(donors.tenantId, TENANT), eq(donors.logoMediaId, id))))
+		t("Donor logo", r.name, `/admin/donors/${r.id}`);
+	for (const r of await db.select({ id: navItems.id, ref: navItems.targetRef }).from(navItems).where(and(eq(navItems.tenantId, TENANT), eq(navItems.imageMediaId, id))))
+		t("Navigation card", r.ref || `item #${r.id}`, "/admin/nav");
+
+	// Tables without a per-row edit route — listed for awareness, no link.
+	for (const r of await db.select({ id: staff.id, name: staff.nameEn }).from(staff).where(and(eq(staff.tenantId, TENANT), eq(staff.photoMediaId, id))))
+		t("Staff photo", r.name, null);
+	for (const r of await db.select({ id: heroSlides.id }).from(heroSlides).where(and(eq(heroSlides.tenantId, TENANT), eq(heroSlides.mediaId, id))))
+		t("Homepage hero", `Slide #${r.id}`, null);
+
+	return out;
+}
+
+/** Aggregate counts for the library header (independent of the current page). */
+export async function adminMediaStats(db: DB) {
+	const [r] = await db
+		.select({
+			total: sql<number>`count(*)`,
+			images: sql<number>`sum(case when ${media.contentType} like 'image/%' then 1 else 0 end)`,
+			bytes: sql<number>`coalesce(sum(${media.size}), 0)`,
+		})
+		.from(media)
+		.where(eq(media.tenantId, TENANT));
+	const total = Number(r?.total ?? 0);
+	const images = Number(r?.images ?? 0);
+	return { total, images, files: total - images, bytes: Number(r?.bytes ?? 0) };
 }
 
 export async function createMediaRecord(

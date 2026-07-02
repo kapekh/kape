@@ -6,6 +6,7 @@ import type { LangOpt } from "#/components/admin/PostForm";
 import { SearchableSelect } from "#/components/admin/SearchableSelect";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { HEADER_DEFAULTS } from "#/lib/header-defaults";
+import { confirm } from "@/components/Dialogs";
 
 /** The non-menu header bits (donate button + top-bar links), backed by site_settings. */
 function HeaderSettings() {
@@ -257,7 +258,7 @@ function NavBuilder() {
 		await refresh();
 	}
 	async function del(id: number) {
-		if (!window.confirm("Delete this item and all its children?")) return;
+		if (!(await confirm("Delete this item and all its children?"))) return;
 		await trpcClient.adminNav.delete.mutate({ id });
 		await refresh();
 	}

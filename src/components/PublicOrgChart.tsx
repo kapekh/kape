@@ -1,12 +1,9 @@
 import {
 	Background,
-	Controls,
 	type Edge,
 	Handle,
-	MiniMap,
 	type Node,
 	type NodeProps,
-	Panel,
 	Position,
 	ReactFlow,
 	ReactFlowProvider,
@@ -16,7 +13,7 @@ import {
 	useReactFlow,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { localizedHref } from "@/lib/i18n-config";
 import { useLang } from "@/lib/i18n";
@@ -57,7 +54,9 @@ function autoLayout(roots: PublicOrgNode[]): Map<number, { x: number; y: number 
 	return pos;
 }
 
-function toFlow(roots: PublicOrgNode[], lang: string): { nodes: Node<NodeData>[]; edges: Edge[] } {
+const NODE_H = 150; // approx node height (avatar + name + title) for layout math
+
+function toFlow(roots: PublicOrgNode[], lang: string) {
 	const auto = autoLayout(roots);
 	const nodes: Node<NodeData>[] = [];
 	const edges: Edge[] = [];
@@ -73,11 +72,12 @@ function toFlow(roots: PublicOrgNode[], lang: string): { nodes: Node<NodeData>[]
 		for (const c of n.children) walk(c, n.id);
 	};
 	for (const r of roots) walk(r, null);
-	// Anchor metadata: horizontal centre of the first root + the tree's x-extent.
+	// Anchor metadata: the first root's position + the tree's full extent.
 	const xs = nodes.map((n) => n.position.x);
+	const ys = nodes.map((n) => n.position.y);
 	const rootNode = nodes.find((n) => n.id === String(roots[0]?.id));
 	const rootX = rootNode ? rootNode.position.x : 0;
-	return { nodes, edges, rootX, minX: Math.min(...xs, rootX), maxX: Math.max(...xs, rootX) };
+	return { nodes, edges, rootX, minX: Math.min(rootX, ...xs), maxX: Math.max(rootX, ...xs), minY: Math.min(0, ...ys), maxY: Math.max(0, ...ys) };
 }
 
 const initials = (name: string) => String(name || "").split(/\s+/).slice(0, 2).map((w) => w[0]).join("");
@@ -123,27 +123,45 @@ function OrgFlow({ roots, eyebrow, title }: { roots: PublicOrgNode[]; eyebrow?: 
 	const [edges, setEdges] = useEdgesState<Edge>(flow.edges);
 	const rf = useReactFlow();
 	const inited = useNodesInitialized();
+	const wrapRef = useRef<HTMLDivElement>(null);
+	// Hide the canvas until the viewport is positioned, so the move is never seen.
+	const [ready, setReady] = useState(false);
+	// The canvas grows to hold the whole tree, so the *page* scrolls — not the canvas.
+	const [height, setHeight] = useState(640);
 
 	useEffect(() => {
 		setNodes(flow.nodes);
 		setEdges(flow.edges);
+		setReady(false);
 	}, [flow, setNodes, setEdges]);
 
-	// Once nodes are measured: fit the tree, then slide the view horizontally so the
-	// ROOT node (not the bounding-box centre) sits at the centre of the screen.
+	// Once nodes are measured: scale the tree to fit the available WIDTH (never upscale
+	// past 1:1), grow the container to the tree's full height so everyone is visible on
+	// a normal page scroll, and place the root centred under the heading — one move.
 	useEffect(() => {
-		if (!inited) return;
-		rf.fitView({ padding: 0.25 });
-		const raf = requestAnimationFrame(() => {
-			const vp = rf.getViewport();
-			const shift = ((flow.minX + flow.maxX) / 2 - flow.rootX) * vp.zoom;
-			rf.setViewport({ x: vp.x + shift, y: vp.y, zoom: vp.zoom });
-		});
-		return () => cancelAnimationFrame(raf);
-	}, [inited, flow, rf]);
+		if (!inited || ready || !wrapRef.current) return;
+		const W = wrapRef.current.clientWidth;
+		const TOP = 104; // space reserved for the heading
+		const PAD = 56; // side + bottom breathing room
+		const treeW = flow.maxX - flow.minX + NODE_W;
+		const treeH = flow.maxY - flow.minY + NODE_H;
+		const zoom = Math.max(0.35, Math.min(1, (W - 2 * PAD) / treeW));
+		setHeight(Math.round(TOP + treeH * zoom + PAD));
+		const rootCenterX = flow.rootX + NODE_W / 2;
+		rf.setViewport({ x: W / 2 - rootCenterX * zoom, y: TOP - flow.minY * zoom, zoom });
+		setReady(true);
+	}, [inited, ready, flow, rf]);
 
 	return (
-		<div className="h-[calc(100dvh-7rem)] min-h-[600px] w-full overflow-hidden border-y border-border bg-muted/20">
+		<div ref={wrapRef} style={{ height }} className={`relative min-h-[600px] w-full overflow-hidden bg-muted/20 transition-opacity duration-300 ${ready ? "opacity-100" : "opacity-0"}`}>
+			{/* Heading as a full-width, text-centred overlay — its position never depends
+			    on its own width, so it can't shift sideways when the display font loads. */}
+			{(eyebrow || title) && (
+				<div className="pointer-events-none absolute inset-x-0 top-0 z-10 px-6 pt-6 text-center">
+					{eyebrow && <div className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">{eyebrow}</div>}
+					{title && <h2 className="mt-1 font-display text-3xl md:text-4xl font-semibold tracking-tight text-primary">{renderTitle(title)}</h2>}
+				</div>
+			)}
 			<ReactFlow
 				nodes={nodes}
 				edges={edges}
@@ -152,18 +170,18 @@ function OrgFlow({ roots, eyebrow, title }: { roots: PublicOrgNode[]; eyebrow?: 
 				nodesDraggable={false}
 				nodesConnectable={false}
 				edgesFocusable={false}
+				elementsSelectable={false}
+				// Static diagram: no in-canvas pan/zoom, so the wheel/touch scrolls the PAGE.
+				zoomOnScroll={false}
+				zoomOnPinch={false}
+				zoomOnDoubleClick={false}
+				panOnScroll={false}
+				panOnDrag={false}
+				preventScrolling={false}
 				minZoom={0.2}
 				proOptions={{ hideAttribution: true }}
 			>
-				{(eyebrow || title) && (
-					<Panel position="top-center" className="!mt-6 text-center">
-						{eyebrow && <div className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">{eyebrow}</div>}
-						{title && <h2 className="mt-1 font-display text-3xl md:text-4xl font-semibold tracking-tight text-primary">{renderTitle(title)}</h2>}
-					</Panel>
-				)}
 				<Background gap={18} color="var(--border)" />
-				<Controls showInteractive={false} />
-				<MiniMap pannable zoomable className="!bg-card" nodeColor="var(--accent)" />
 			</ReactFlow>
 		</div>
 	);

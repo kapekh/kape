@@ -33,6 +33,17 @@ const envSchema = z.object({
 	SMTP_PASS: z.string().optional(),
 	MAIL_FROM: z.string().optional(),
 	MAIL_TO: z.string().default("kape@kapekh.org"),
+
+	// Baray payment gateway (https://baray.io) for donations. All three of
+	// API_KEY/SK/IV are required to accept payments; when unset the donate flow
+	// returns a clear "payments not configured" error and stores nothing.
+	// SK (32-byte) and IV (16-byte) are Base64 and used for AES-256-CBC of the
+	// request payload + webhook order id. Generate them in https://dash.baray.io.
+	BARAY_API_KEY: z.string().optional(),
+	BARAY_SK: z.string().optional(),
+	BARAY_IV: z.string().optional(),
+	BARAY_API_URL: z.string().url().default("https://api.baray.io"),
+	BARAY_PAY_URL: z.string().url().default("https://pay.baray.io"),
 });
 
 export const env = envSchema.parse(process.env);

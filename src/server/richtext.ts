@@ -1,6 +1,6 @@
 import { renderToHTMLString } from "@tiptap/static-renderer";
 
-import { richTextExtensions } from "#/lib/richtext/extensions";
+import { basicRichTextExtensions, richTextExtensions } from "#/lib/richtext/extensions";
 
 import type { JSONContent } from "@tiptap/core";
 
@@ -30,6 +30,31 @@ export function renderBody(json: string | JSONContent | null | undefined): strin
 
 	try {
 		return renderToHTMLString({ content: doc, extensions: richTextExtensions });
+	} catch {
+		return "";
+	}
+}
+
+/**
+ * Render UNTRUSTED rich text (public form `richtext` answers) to HTML using the
+ * restricted allow-list — text + links only, no images or form embeds. Accepts
+ * stringified ProseMirror JSON; returns "" for empty/invalid input.
+ */
+export function renderBasicRichText(json: string | JSONContent | null | undefined): string {
+	if (!json) return "";
+	let doc: JSONContent;
+	if (typeof json === "string") {
+		try {
+			doc = JSON.parse(json) as JSONContent;
+		} catch {
+			return "";
+		}
+	} else {
+		doc = json;
+	}
+	if (!doc || typeof doc !== "object") return "";
+	try {
+		return renderToHTMLString({ content: doc, extensions: basicRichTextExtensions });
 	} catch {
 		return "";
 	}

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { confirm } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/posts/")({
 	validateSearch: (s: Record<string, unknown>): { type?: string } => ({ type: typeof s.type === "string" ? s.type : undefined }),
@@ -31,7 +32,7 @@ function PostsList() {
 	}, []);
 
 	async function del(id: number) {
-		if (!window.confirm("Delete this post?")) return;
+		if (!(await confirm("Delete this post?"))) return;
 		await trpcClient.adminPosts.delete.mutate({ id });
 		setRows((rs) => rs.filter((r) => r.id !== id));
 	}

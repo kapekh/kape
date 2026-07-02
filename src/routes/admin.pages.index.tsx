@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { confirm } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/pages/")({
 	component: PagesList,
@@ -25,7 +26,7 @@ function PagesList() {
 	}, []);
 
 	async function del(id: number) {
-		if (!window.confirm("Delete this page? Its child pages move up to its parent.")) return;
+		if (!(await confirm("Delete this page? Its child pages move up to its parent."))) return;
 		await trpcClient.adminPages.delete.mutate({ id });
 		await refresh();
 	}

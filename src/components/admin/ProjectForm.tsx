@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { EditorGrid, EditorHeader, FormSection, cancelButtonClass, fieldInput, fieldLabel } from "./form-ui";
+import { LangTabs } from "./LangTabs";
 import { MapField } from "./MapField";
 import type { LangOpt } from "./PostForm";
 import { RichTextEditor } from "./RichTextEditor";
@@ -86,24 +87,26 @@ export function ProjectForm({
 			<EditorGrid
 				main={
 					<>
-						{languages.map((l) => (
-							<FormSection key={l.code} title={`Content — ${l.name}`} description={`Project name and description in ${l.name} (${l.code}).`}>
-								<div className="space-y-4">
-									<div>
-										<label className={fieldLabel}>Name</label>
-										<input className={`${fieldInput} ${l.code === "km" ? "font-khmer" : ""}`} value={trans[l.code]?.name ?? ""} onChange={(e) => setField(l.code, "name", e.target.value)} />
+						<FormSection title="Content" description="Project name and description. Switch languages with the tabs — your text is kept as you switch.">
+							<LangTabs languages={languages}>
+								{(l) => (
+									<div className="space-y-4">
+										<div>
+											<label className={fieldLabel}>Name</label>
+											<input className={`${fieldInput} ${l.code === "km" ? "font-khmer" : ""}`} value={trans[l.code]?.name ?? ""} onChange={(e) => setField(l.code, "name", e.target.value)} />
+										</div>
+										<div>
+											<label className={fieldLabel}>Summary</label>
+											<textarea className={`${fieldInput} ${l.code === "km" ? "font-khmer" : ""}`} rows={2} value={trans[l.code]?.summary ?? ""} onChange={(e) => setField(l.code, "summary", e.target.value)} />
+										</div>
+										<div>
+											<label className={fieldLabel}>Body</label>
+											<RichTextEditor value={trans[l.code]?.body ?? ""} onChange={(v) => setField(l.code, "body", v)} />
+										</div>
 									</div>
-									<div>
-										<label className={fieldLabel}>Summary</label>
-										<textarea className={`${fieldInput} ${l.code === "km" ? "font-khmer" : ""}`} rows={2} value={trans[l.code]?.summary ?? ""} onChange={(e) => setField(l.code, "summary", e.target.value)} />
-									</div>
-									<div>
-										<label className={fieldLabel}>Body</label>
-										<RichTextEditor value={trans[l.code]?.body ?? ""} onChange={(v) => setField(l.code, "body", v)} />
-									</div>
-								</div>
-							</FormSection>
-						))}
+								)}
+							</LangTabs>
+						</FormSection>
 
 						<FormSection title="Map locations" description="Sites shown for this project on the About-page map.">
 							<div className="space-y-2">

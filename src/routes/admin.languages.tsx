@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import { FormSection, fieldInput, fieldLabel } from "#/components/admin/form-ui";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { confirm } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/languages")({ component: LanguagesAdmin });
 
@@ -36,7 +37,7 @@ function LanguagesAdmin() {
 		refresh();
 	}
 	async function del(code: string) {
-		if (!window.confirm(`Delete language "${code}" and its translations?`)) return;
+		if (!(await confirm(`Delete language "${code}" and its translations?`))) return;
 		await trpcClient.adminLanguages.delete.mutate({ code });
 		refresh();
 	}

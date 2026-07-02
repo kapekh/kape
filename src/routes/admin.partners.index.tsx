@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { confirm } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/partners/")({ component: PartnersList });
 
@@ -27,7 +28,7 @@ function PartnersList() {
 	}, []);
 
 	async function del(id: number) {
-		if (!window.confirm("Delete this partner?")) return;
+		if (!(await confirm("Delete this partner?"))) return;
 		await trpcClient.adminPartners.delete.mutate({ id });
 		setRows((rs) => rs.filter((r) => r.id !== id));
 	}

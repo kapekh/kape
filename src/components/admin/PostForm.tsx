@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { EditorGrid, EditorHeader, FormSection, cancelButtonClass, fieldInput, fieldLabel } from "./form-ui";
+import { LangTabs } from "./LangTabs";
 import { type MediaItem, MediaLibraryDialog, isImageMedia } from "./MediaLibraryDialog";
 import { MediaPicker } from "./MediaPicker";
 import { RichTextEditor } from "./RichTextEditor";
@@ -165,24 +166,26 @@ export function PostForm({
 			</EditorHeader>
 			<EditorGrid
 				main={[
-					...languages.map((l) => (
-					<FormSection key={l.code} title={`Content — ${l.name}`} description={`Title, excerpt and body in ${l.name} (${l.code}).`}>
-						<div className="space-y-4">
-							<div>
-								<label className={label}>Title</label>
-								<input className={`${input} ${l.code === "km" ? "font-khmer" : ""}`} value={trans[l.code]?.title ?? ""} onChange={(e) => setField(l.code, "title", e.target.value)} />
-							</div>
-							<div>
-								<label className={label}>Excerpt</label>
-								<textarea className={`${input} ${l.code === "km" ? "font-khmer" : ""}`} rows={2} value={trans[l.code]?.excerpt ?? ""} onChange={(e) => setField(l.code, "excerpt", e.target.value)} />
-							</div>
-							<div>
-								<label className={label}>Body</label>
-								<RichTextEditor value={trans[l.code]?.body ?? ""} onChange={(v) => setField(l.code, "body", v)} />
-							</div>
-						</div>
-					</FormSection>
-					)),
+					<FormSection key="content" title="Content" description="Title, excerpt and body. Switch languages with the tabs — your text is kept as you switch.">
+						<LangTabs languages={languages}>
+							{(l) => (
+								<div className="space-y-4">
+									<div>
+										<label className={label}>Title</label>
+										<input className={`${input} ${l.code === "km" ? "font-khmer" : ""}`} value={trans[l.code]?.title ?? ""} onChange={(e) => setField(l.code, "title", e.target.value)} />
+									</div>
+									<div>
+										<label className={label}>Excerpt</label>
+										<textarea className={`${input} ${l.code === "km" ? "font-khmer" : ""}`} rows={2} value={trans[l.code]?.excerpt ?? ""} onChange={(e) => setField(l.code, "excerpt", e.target.value)} />
+									</div>
+									<div>
+										<label className={label}>Body</label>
+										<RichTextEditor value={trans[l.code]?.body ?? ""} onChange={(v) => setField(l.code, "body", v)} />
+									</div>
+								</div>
+							)}
+						</LangTabs>
+					</FormSection>,
 					<FormSection key="gallery" title="Gallery" description="Extra images for this post. Galleries (type = Gallery) render these as a grid; other posts show them below the article.">
 						<GalleryPicker value={gallery} onChange={setGallery} />
 					</FormSection>,
@@ -286,12 +289,12 @@ function GalleryPicker({ value, onChange }: { value: number[]; onChange: (ids: n
 		const missing = value.filter((id) => !(id in urls));
 		if (!missing.length) return;
 		let alive = true;
-		trpcClient.adminMedia.list
-			.query()
-			.then((m) => {
+		trpcClient.adminMedia.byIds
+			.query({ ids: missing })
+			.then((rows) => {
 				if (!alive) return;
 				const map: Record<number, string> = {};
-				for (const x of m) if (x.url) map[x.id] = x.url;
+				for (const x of rows) if (x.url) map[x.id] = x.url;
 				setUrls((p) => ({ ...map, ...p }));
 			})
 			.catch(() => {});

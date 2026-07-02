@@ -40,7 +40,7 @@ export type SectionNode = {
 export type PageSections = SectionNode[];
 
 /** Field kinds the admin section-form renders. */
-export type FieldKind = "text" | "textarea" | "richtext" | "image" | "url" | "items" | "select";
+export type FieldKind = "text" | "textarea" | "richtext" | "image" | "url" | "items" | "cards" | "select" | "form";
 
 export type SectionField = {
 	key: string;
@@ -119,16 +119,7 @@ export const SECTION_DEFS: SectionDef[] = [
 		],
 		fields: [
 			{ key: "title", label: "Section title", kind: "text" },
-			{
-				key: "items",
-				label: "Cards",
-				kind: "items",
-				itemFields: [
-					{ key: "title", label: "Title", kind: "text" },
-					{ key: "body", label: "Text", kind: "textarea" },
-					{ key: "href", label: "Link (optional)", kind: "url" },
-				],
-			},
+			{ key: "items", label: "Cards", kind: "cards" },
 		],
 	},
 	{
@@ -142,6 +133,27 @@ export const SECTION_DEFS: SectionDef[] = [
 		],
 		fields: [
 			{ key: "title", label: "Title", kind: "text" },
+			{
+				key: "valueSize",
+				label: "Number size",
+				kind: "select",
+				options: [
+					{ value: "sm", label: "Small" },
+					{ value: "md", label: "Medium" },
+					{ value: "lg", label: "Large" },
+					{ value: "xl", label: "Extra large" },
+				],
+			},
+			{
+				key: "labelSize",
+				label: "Label size",
+				kind: "select",
+				options: [
+					{ value: "xs", label: "Extra small" },
+					{ value: "sm", label: "Small" },
+					{ value: "md", label: "Medium" },
+				],
+			},
 			{
 				key: "items",
 				label: "Stats",
@@ -234,13 +246,14 @@ export const SECTION_DEFS: SectionDef[] = [
 		type: "form",
 		label: "Form",
 		kind: "static",
-		description: "Contact / subscribe / sign-up form.",
+		description: "Embed a built form, or a quick contact / subscribe / sign-up form.",
 		layouts: [
 			{ value: "contact", label: "Contact (name, email, phone, message)" },
 			{ value: "subscribe", label: "Subscribe (email)" },
 			{ value: "signup", label: "Sign-up (name, email, message)" },
 		],
 		fields: [
+			{ key: "formSlug", label: "Built form", kind: "form", help: "Pick a form from /admin/forms — it brings its own title, intro and submit button. Leave empty to use a quick layout below." },
 			{ key: "title", label: "Title", kind: "text" },
 			{ key: "body", label: "Intro", kind: "textarea" },
 			{ key: "submitLabel", label: "Submit button", kind: "text" },

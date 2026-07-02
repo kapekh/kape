@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import { FormSection, fieldInput, fieldLabel } from "#/components/admin/form-ui";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { confirm } from "@/components/Dialogs";
 
 type Term = Awaited<ReturnType<typeof trpcClient.adminTerms.list.query>>[number];
 const cellInput = "w-full bg-transparent px-3 py-2 text-sm focus:outline-none focus:bg-[var(--accent)]/5 rounded";
@@ -43,7 +44,7 @@ export function TermsManager({
 		refresh();
 	}
 	async function del(id: number) {
-		if (!window.confirm("Delete this item?")) return;
+		if (!(await confirm("Delete this item?"))) return;
 		await trpcClient.adminTerms.delete.mutate({ id });
 		setRows((rs) => rs.filter((r) => r.id !== id));
 	}

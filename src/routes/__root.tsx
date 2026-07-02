@@ -10,6 +10,7 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
+import { DialogHost } from '../components/Dialogs'
 import { Footer } from '../components/Footer'
 import { Header } from '../components/Header'
 import { JsonLd } from '../components/JsonLd'
@@ -137,8 +138,10 @@ function RootComponent() {
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
+  // suppressHydrationWarning: the inline theme script adds class="dark" before
+  // hydration; the server can't know the user's theme, so the mismatch is expected.
   return (
-    <html lang={detectLang(pathname)}>
+    <html lang={detectLang(pathname)} suppressHydrationWarning>
       <head>
         {/* Set theme before paint to avoid a flash of the wrong mode. */}
         <script
@@ -152,6 +155,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
+        <DialogHost />
         {/* The @tanstack/devtools-vite plugin strips this block from production builds. */}
         <TanStackDevtools
           config={{

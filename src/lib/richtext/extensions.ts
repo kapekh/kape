@@ -1,6 +1,8 @@
 import { Image } from "@tiptap/extension-image";
 import { StarterKit } from "@tiptap/starter-kit";
 
+import { FormEmbed } from "./form-node";
+
 /**
  * The authoritative rich-text extension list.
  *
@@ -21,4 +23,21 @@ export const richTextExtensions = [
 		},
 	}),
 	Image,
+	FormEmbed,
+];
+
+/**
+ * Restricted extension set for **untrusted** input (public form `richtext`
+ * answers). Text formatting + links only — no Image and no FormEmbed, so a
+ * respondent can't embed images or other forms into a submission. Rendering
+ * unknown nodes through this allow-list simply drops them.
+ */
+export const basicRichTextExtensions = [
+	StarterKit.configure({
+		link: {
+			openOnClick: false,
+			protocols: ["http", "https", "mailto"],
+			HTMLAttributes: { rel: "noopener noreferrer nofollow", target: "_blank" },
+		},
+	}),
 ];
