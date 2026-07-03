@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { SectionNode } from "#/lib/sections";
 import { useLang } from "@/lib/i18n";
@@ -80,6 +80,26 @@ function useCount(target: number, run: boolean, duration = 1800) {
 		return () => cancelAnimationFrame(raf);
 	}, [target, run, duration]);
 	return n;
+}
+
+/** Fires once when the element first scrolls into view — gates on-scroll animations
+ * (e.g. the stats count-up) so they play when the user reaches them, not on page load. */
+function useInView<T extends HTMLElement>() {
+	const ref = useRef<T | null>(null);
+	const [inView, setInView] = useState(false);
+	useEffect(() => {
+		const el = ref.current;
+		if (!el || inView) return;
+		const io = new IntersectionObserver(
+			(entries) => {
+				if (entries.some((e) => e.isIntersecting)) setInView(true);
+			},
+			{ rootMargin: "0px 0px -15% 0px" },
+		);
+		io.observe(el);
+		return () => io.disconnect();
+	}, [inView]);
+	return [ref, inView] as const;
 }
 
 /* ------------------------------------------------------------------ */
@@ -285,7 +305,9 @@ function StatItem({ value, label, run, valueClass = "text-5xl md:text-6xl", labe
 	const digits = String(value).replace(/[^0-9]/g, "");
 	const target = digits ? Number(digits) : 0;
 	const n = useCount(target, run);
-	const display = digits ? String(value).replace(digits, n.toLocaleString()) : value;
+	// Replace the whole numeric run (incl. thousands separators) so values >= 1000 also
+	// animate — matching on the bare digit string fails against a comma-formatted value.
+	const display = digits ? String(value).replace(/[\d,]+/, n.toLocaleString()) : value;
 	return (
 		<div className="group">
 			<div className={`font-display ${valueClass} font-semibold tabular-nums tracking-tight text-[var(--secondary)] whitespace-nowrap`}>{display}</div>
@@ -309,6 +331,7 @@ const STAT_LABEL_SIZE: Record<string, string> = {
 
 function Stats(p: P) {
 	const items: any[] = Array.isArray(p.items) ? p.items : [];
+	const [bandRef, inView] = useInView<HTMLElement>();
 	const band = p.layout !== "plain";
 	// Default the number to large on the band / medium on the plain layout; label defaults small.
 	const valueClass = STAT_VALUE_SIZE[p.valueSize as string] ?? (band ? STAT_VALUE_SIZE.lg : STAT_VALUE_SIZE.md);
@@ -328,7 +351,7 @@ function Stats(p: P) {
 		);
 	}
 	return (
-		<section className="relative overflow-hidden py-24 text-primary-foreground" style={{ background: "var(--gradient-hero)" }}>
+		<section ref={bandRef} className="relative overflow-hidden py-24 text-primary-foreground" style={{ background: "var(--gradient-hero)" }}>
 			{p.image && <div className="absolute inset-0 opacity-30 mix-blend-overlay" style={{ backgroundImage: `url(${p.image})`, backgroundSize: "cover", backgroundPosition: "center" }} />}
 			<div className="absolute inset-0 bg-primary/70" />
 			<Container className="relative">
@@ -337,7 +360,7 @@ function Stats(p: P) {
 					{p.title && <h2 className="mt-3 font-display text-4xl md:text-6xl font-semibold leading-[1.02]">{renderTitle(p.title)}</h2>}
 				</div>
 				<div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-x-10 gap-y-12">
-					{items.map((it, n) => <StatItem key={n} value={String(it.value)} label={it.label} run valueClass={valueClass} labelClass={labelClass} />)}
+					{items.map((it, n) => <StatItem key={n} value={String(it.value)} label={it.label} run={inView} valueClass={valueClass} labelClass={labelClass} />)}
 				</div>
 			</Container>
 		</section>
