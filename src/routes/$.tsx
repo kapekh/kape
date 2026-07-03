@@ -7,7 +7,9 @@ import { RichBody } from "@/components/RichBody";
 import { SectionRenderer } from "@/components/sections/SectionRenderer";
 import { JsonLd } from "@/components/JsonLd";
 import { SubPage } from "@/components/SubPage";
-import { DEFAULT_LANG, LANGS, stripLang } from "@/lib/i18n-config";
+import { NavLink } from "@/components/NavLink";
+import { useLang } from "@/lib/i18n";
+import { DEFAULT_LANG, LANGS, localizedHref, stripLang } from "@/lib/i18n-config";
 import { articleLd } from "@/lib/structured-data";
 
 /**
@@ -88,6 +90,7 @@ export const Route = createFileRoute("/$")({
 
 function ResolvedRoute() {
 	const r = Route.useLoaderData();
+	const { lang } = useLang();
 
 	if (r.kind === "page") {
 		const page = r.page;
@@ -180,8 +183,14 @@ function ResolvedRoute() {
 	}
 
 	return (
-		<SubPage section="KAPE" title="Page not found">
+		<SubPage section="Not found" title="Page not found">
 			<p className="text-muted-foreground">This page doesn't exist or was moved.</p>
+			<NavLink
+				href={localizedHref("/", lang)}
+				className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-lift)] transition hover:-translate-y-0.5"
+			>
+				← Back to home
+			</NavLink>
 		</SubPage>
 	);
 }
