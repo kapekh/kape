@@ -39,8 +39,8 @@ function Heading({ eyebrow, title, center = false, light = false }: { eyebrow?: 
 	if (!title && !eyebrow) return null;
 	return (
 		<div className={`${center ? "mx-auto max-w-2xl text-center" : "max-w-2xl"} mb-12`}>
-			{eyebrow && <div className={`text-xs font-semibold uppercase tracking-[0.25em] ${light ? "text-[var(--gold)]" : "text-[var(--accent)]"}`}>{eyebrow}</div>}
-			{title && <h2 className={`mt-3 font-display text-4xl md:text-5xl font-semibold leading-[1.05] tracking-tight ${light ? "" : "text-primary"}`}>{renderTitle(title)}</h2>}
+			{eyebrow && <div className={`t-eyebrow ${light ? "text-[var(--gold)]" : "text-[var(--accent)]"}`}>{eyebrow}</div>}
+			{title && <h2 className={`mt-3 t-section ${light ? "" : "text-primary"}`}>{renderTitle(title)}</h2>}
 		</div>
 	);
 }
@@ -167,8 +167,8 @@ function Hero(p: P) {
 								<span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)] animate-pulse" />{p.eyebrow}
 							</div>
 						)}
-						<h1 className="mt-6 font-display text-5xl md:text-6xl lg:text-7xl font-semibold leading-[0.95] tracking-tight text-primary">{renderTitle(p.title || "", "text-[var(--accent)]")}</h1>
-						{p.lead && <p className="mt-6 max-w-xl text-lg text-muted-foreground leading-relaxed">{p.lead}</p>}
+						<h1 className="mt-6 t-display text-primary">{renderTitle(p.title || "", "text-[var(--accent)]")}</h1>
+						{p.lead && <p className="mt-6 max-w-xl t-lead text-muted-foreground">{p.lead}</p>}
 						{ctas()}
 						{stats.length > 0 && (
 							<div className="mt-12 flex items-center gap-6 text-xs text-muted-foreground">
@@ -192,9 +192,9 @@ function Hero(p: P) {
 			<section className="py-16 md:py-24">
 				<Container className="grid items-center gap-12 lg:grid-cols-2">
 					<div>
-						{p.eyebrow && <div className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">{p.eyebrow}</div>}
-						<h1 className="mt-3 font-display text-4xl md:text-5xl font-semibold tracking-tight text-primary">{renderTitle(p.title || "")}</h1>
-						{p.lead && <p className="mt-5 text-lg text-foreground/75 leading-relaxed">{p.lead}</p>}
+						{p.eyebrow && <div className="t-eyebrow text-[var(--accent)]">{p.eyebrow}</div>}
+						<h1 className="mt-3 t-page-title text-primary">{renderTitle(p.title || "")}</h1>
+						{p.lead && <p className="mt-5 t-lead text-foreground/75">{p.lead}</p>}
 						{ctas()}
 					</div>
 					{p.image && <img src={p.image} alt={p.title || ""} className="rounded-3xl object-cover w-full aspect-[4/3] shadow-[var(--shadow-soft)]" />}
@@ -212,9 +212,9 @@ function Hero(p: P) {
 				<div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/45" />
 			</div>
 			<Container className="relative py-24 text-center text-primary-foreground">
-				{p.eyebrow && <div className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--gold)] [text-shadow:0_1px_10px_rgba(0,0,0,0.7)]">{p.eyebrow}</div>}
-				<h1 className="mx-auto mt-4 max-w-4xl font-display text-4xl md:text-6xl font-semibold tracking-tight [text-shadow:0_2px_24px_rgba(0,0,0,0.45)]">{renderTitle(p.title || "", "text-[var(--gold)]")}</h1>
-				{p.lead && <p className="mx-auto mt-6 max-w-2xl text-lg text-white/90 leading-relaxed [text-shadow:0_1px_12px_rgba(0,0,0,0.6)]">{p.lead}</p>}
+				{p.eyebrow && <div className="t-eyebrow text-[var(--gold)] [text-shadow:0_1px_10px_rgba(0,0,0,0.7)]">{p.eyebrow}</div>}
+				<h1 className="mx-auto mt-4 max-w-4xl t-page-title [text-shadow:0_2px_24px_rgba(0,0,0,0.45)]">{renderTitle(p.title || "", "text-[var(--gold)]")}</h1>
+				{p.lead && <p className="mx-auto mt-6 max-w-2xl t-lead text-white/90 [text-shadow:0_1px_12px_rgba(0,0,0,0.6)]">{p.lead}</p>}
 				{ctas(true)}
 			</Container>
 		</section>
@@ -273,8 +273,8 @@ function Cards(p: P) {
 									<img src={it.image} alt={it.title || ""} className="absolute inset-0 h-full w-full object-cover" />
 									<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/10" />
 									<div className="relative text-white">
-										{it.title && <h3 className="font-display text-lg font-semibold [text-shadow:0_1px_10px_rgba(0,0,0,0.5)]">{it.title}</h3>}
-										{it.body && <p className="mt-2 text-sm text-white/85 leading-relaxed">{it.body}</p>}
+										{it.title && <h3 className="t-card-title [text-shadow:0_1px_10px_rgba(0,0,0,0.5)]">{it.title}</h3>}
+										{it.body && <p className="mt-2 t-body text-white/85">{it.body}</p>}
 										{footer(it, true)}
 									</div>
 								</div>
@@ -288,8 +288,8 @@ function Cards(p: P) {
 								) : null}
 								<div className="flex flex-1 flex-col p-6">
 									{!it.image && <div className="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)] font-display text-lg font-bold">{n + 1}</div>}
-									{it.title && <h3 className="font-display text-lg font-semibold text-primary">{it.title}</h3>}
-									{it.body && <p className="mt-2 text-sm text-foreground/75 leading-relaxed">{it.body}</p>}
+									{it.title && <h3 className="t-card-title text-primary">{it.title}</h3>}
+									{it.body && <p className="mt-2 t-body text-foreground/75">{it.body}</p>}
 									{footer(it)}
 								</div>
 							</div>
@@ -356,8 +356,8 @@ function Stats(p: P) {
 			<div className="absolute inset-0 bg-primary/70" />
 			<Container className="relative">
 				<div className="mb-16 max-w-3xl">
-					{p.eyebrow && <div className="text-xs font-semibold uppercase tracking-[0.25em] text-[var(--gold)]">{p.eyebrow}</div>}
-					{p.title && <h2 className="mt-3 font-display text-4xl md:text-6xl font-semibold leading-[1.02]">{renderTitle(p.title)}</h2>}
+					{p.eyebrow && <div className="t-eyebrow text-[var(--gold)]">{p.eyebrow}</div>}
+					{p.title && <h2 className="mt-3 t-band">{renderTitle(p.title)}</h2>}
 				</div>
 				<div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-x-10 gap-y-12">
 					{items.map((it, n) => <StatItem key={n} value={String(it.value)} label={it.label} run={inView} valueClass={valueClass} labelClass={labelClass} />)}
@@ -374,9 +374,9 @@ function Cta(p: P) {
 			<Blob className="-left-20 -top-20 h-80 w-80 bg-[var(--gold)]/40" />
 			<Blob className="-bottom-20 -right-20 h-80 w-80 bg-primary/30" />
 			<div className="relative mx-auto max-w-4xl px-6 text-center">
-				{p.eyebrow && <div className="text-xs font-bold uppercase tracking-[0.3em] text-[oklch(0.3_0.07_255)]/80">{p.eyebrow}</div>}
-				<h2 className="mt-4 font-display text-5xl md:text-7xl font-semibold leading-[1.02] text-[oklch(0.24_0.09_255)]">{renderTitle(p.title || "", "italic")}</h2>
-				{p.body && <p className="mx-auto mt-6 max-w-2xl text-lg text-[oklch(0.3_0.07_255)]/90">{p.body}</p>}
+				{p.eyebrow && <div className="t-eyebrow text-[oklch(0.3_0.07_255)]/80">{p.eyebrow}</div>}
+				<h2 className="mt-4 t-band text-[oklch(0.24_0.09_255)]">{renderTitle(p.title || "", "italic")}</h2>
+				{p.body && <p className="mx-auto mt-6 max-w-2xl t-lead text-[oklch(0.3_0.07_255)]/90">{p.body}</p>}
 				<div className="mt-10 flex flex-wrap justify-center gap-4">
 					{p.ctaHref && <NavLink href={L(p.ctaHref)} className="inline-flex items-center gap-2 rounded-full bg-[oklch(0.24_0.09_255)] text-white px-8 py-4 text-base font-semibold shadow-[var(--shadow-lift)] hover:-translate-y-1 transition">{p.ctaLabel || "Donate now"}</NavLink>}
 					{p.cta2Href && <NavLink href={L(p.cta2Href)} className="inline-flex items-center gap-2 rounded-full border-2 border-[oklch(0.24_0.09_255)]/40 text-[oklch(0.24_0.09_255)] px-8 py-4 text-base font-semibold hover:bg-[oklch(0.24_0.09_255)] hover:text-white transition">{p.cta2Label || "Learn more"}</NavLink>}
@@ -428,8 +428,8 @@ function Split(p: P) {
 	) : null;
 	const text = (
 		<div>
-			{p.eyebrow && <div className="text-xs font-semibold uppercase tracking-[0.25em] text-[var(--accent)]">{p.eyebrow}</div>}
-			{p.title && <h2 className="mt-3 font-display text-4xl md:text-5xl font-semibold tracking-tight text-primary leading-tight">{renderTitle(p.title, "italic text-primary")}</h2>}
+			{p.eyebrow && <div className="t-eyebrow text-[var(--accent)]">{p.eyebrow}</div>}
+			{p.title && <h2 className="mt-3 t-section text-primary">{renderTitle(p.title, "italic text-primary")}</h2>}
 			<RichBody className="prose-kape mt-6" html={p.bodyHtml ?? ""} />
 		</div>
 	);
@@ -512,8 +512,8 @@ function PostCard({ post, base }: { post: any; base: string }) {
 				{post.publishedAt && <span className="absolute left-4 top-4 rounded-full bg-[var(--accent)] px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-accent-foreground">{post.publishedAt}</span>}
 			</div>
 			<div className="p-6">
-				<h3 className="font-display text-xl font-semibold text-primary leading-snug group-hover:text-[var(--accent)] transition">{post.title}</h3>
-				{post.excerpt && <p className="mt-2 text-sm text-foreground/70 leading-relaxed line-clamp-3">{post.excerpt}</p>}
+				<h3 className="t-card-title text-primary group-hover:text-[var(--accent)] transition">{post.title}</h3>
+				{post.excerpt && <p className="mt-2 t-meta text-foreground/70 line-clamp-3">{post.excerpt}</p>}
 				{href && <span className="mt-4 inline-block text-sm font-semibold text-[var(--accent)]">Read more →</span>}
 			</div>
 		</>
@@ -555,8 +555,8 @@ function PostList(p: P) {
 								<div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/30 to-transparent" />
 								<div className="absolute bottom-0 p-8 text-primary-foreground">
 									{posts[0].publishedAt && <span className="rounded-full bg-[var(--accent)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em]">{posts[0].publishedAt}</span>}
-									<h3 className="mt-4 max-w-xl font-display text-3xl md:text-4xl font-semibold leading-tight">{posts[0].title}</h3>
-									{posts[0].excerpt && <p className="mt-3 max-w-lg text-sm opacity-90 line-clamp-2">{posts[0].excerpt}</p>}
+									<h3 className="mt-4 max-w-xl t-section">{posts[0].title}</h3>
+									{posts[0].excerpt && <p className="mt-3 max-w-lg t-meta opacity-90 line-clamp-2">{posts[0].excerpt}</p>}
 									<span className="mt-5 inline-block text-sm font-semibold text-[var(--gold)]">Read more →</span>
 								</div>
 							</NavLink>
@@ -569,7 +569,7 @@ function PostList(p: P) {
 									</div>
 									<div className="flex-1">
 										{post.publishedAt && <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">{post.publishedAt}</div>}
-										<h4 className="mt-1.5 font-display text-lg font-semibold leading-tight text-primary group-hover:text-[var(--accent)] transition line-clamp-3">{post.title}</h4>
+										<h4 className="mt-1.5 t-card-title text-primary group-hover:text-[var(--accent)] transition line-clamp-3">{post.title}</h4>
 									</div>
 								</NavLink>
 							))}
@@ -614,7 +614,7 @@ function VideoGrid(p: P) {
 											<span className="grid h-16 w-16 place-items-center rounded-full bg-background/95 text-[var(--accent)] shadow-[var(--shadow-lift)] transition group-hover:scale-110">{Icon.play("h-6 w-6 translate-x-0.5")}</span>
 										</div>
 									</div>
-									<h3 className="mt-4 font-display text-lg font-semibold text-primary group-hover:text-[var(--accent)] transition">{v.title}</h3>
+									<h3 className="mt-4 t-card-title text-primary group-hover:text-[var(--accent)] transition">{v.title}</h3>
 								</NavLink>
 							);
 						})}
@@ -638,8 +638,8 @@ function AlbumGrid(p: P) {
 							<NavLink key={a.id} href={L(`/galleries/${a.slug}`)} className="group relative block overflow-hidden rounded-3xl ring-1 ring-border shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-[var(--shadow-soft)]">
 								<div className="aspect-[4/3] bg-muted"><img src={imgFor(a)} alt={a.title || ""} className="h-full w-full object-cover transition duration-700 group-hover:scale-110" /></div>
 								<div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-primary/90 via-primary/20 to-transparent p-5 text-primary-foreground">
-									<div className="font-display font-semibold leading-snug">{a.title}</div>
-									<div className="mt-0.5 text-xs opacity-85">{a.count} photos</div>
+									<div className="t-card-title">{a.title}</div>
+									<div className="mt-0.5 t-meta opacity-85">{a.count} photos</div>
 								</div>
 							</NavLink>
 						))}
@@ -747,7 +747,7 @@ function Partners(p: P) {
 					<div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
 						{[...byCat.entries()].map(([cat, list]) => (
 							<div key={cat} className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-								<h3 className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">{cat.replace(/-/g, " ")}</h3>
+								<h3 className="mb-1 t-eyebrow text-[var(--accent)]">{cat.replace(/-/g, " ")}</h3>
 								<div className="mb-4 h-px w-full bg-border" />
 								<div className="flex flex-wrap items-center gap-2.5">
 									{list.map((r) => (

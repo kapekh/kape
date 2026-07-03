@@ -60,9 +60,9 @@ export function SubPage({
               {badge}
             </div>
           )}
-          <h1 className="mt-5 max-w-4xl font-display text-4xl md:text-6xl font-semibold tracking-tight [text-shadow:0_2px_24px_rgba(0,0,0,0.3)]">{title}</h1>
+          <h1 className="mt-5 max-w-4xl t-page-title [text-shadow:0_2px_24px_rgba(0,0,0,0.3)]">{title}</h1>
           {lead && (
-            <p className="mt-5 max-w-3xl text-lg md:text-xl text-primary-foreground/90 leading-relaxed">{lead}</p>
+            <p className="mt-5 max-w-3xl t-lead text-primary-foreground/90">{lead}</p>
           )}
         </div>
       </section>
@@ -91,7 +91,7 @@ export function SubPage({
 export function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="mt-10 first:mt-0">
-      <h2 className="font-display text-2xl md:text-3xl font-semibold text-primary">{title}</h2>
+      <h2 className="t-subsection text-primary">{title}</h2>
       <div className="mt-4 space-y-4 text-foreground/85 leading-relaxed">{children}</div>
     </section>
   );

@@ -75,7 +75,7 @@ export function Footer({ settings }: { settings: Record<string, string> }) {
 					</div>
 				</div>
 				<div>
-					<div className="text-xs uppercase tracking-[0.2em] text-[var(--gold)] font-semibold mb-4">{s("footer_links_title")}</div>
+					<div className="t-eyebrow text-[var(--gold)] mb-4">{s("footer_links_title")}</div>
 					<ul className="space-y-2 text-sm opacity-85">
 						{links.map((l) => (
 							<li key={l.label}>
@@ -85,7 +85,7 @@ export function Footer({ settings }: { settings: Record<string, string> }) {
 					</ul>
 				</div>
 				<div>
-					<div className="text-xs uppercase tracking-[0.2em] text-[var(--gold)] font-semibold mb-4">{s("newsletter_title")}</div>
+					<div className="t-eyebrow text-[var(--gold)] mb-4">{s("newsletter_title")}</div>
 					{s("newsletter_text") && <p className="text-sm opacity-80 mb-3">{s("newsletter_text")}</p>}
 					{subscribed ? (
 						<p className="text-sm text-[var(--secondary)] font-semibold">Thanks for subscribing!</p>
