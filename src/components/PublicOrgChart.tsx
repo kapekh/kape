@@ -142,13 +142,23 @@ function OrgFlow({ roots, eyebrow, title }: { roots: PublicOrgNode[]; eyebrow?: 
 		if (!inited || ready || !wrapRef.current) return;
 		const W = wrapRef.current.clientWidth;
 		const TOP = 104; // space reserved for the heading
-		const PAD = 56; // side + bottom breathing room
+		// Tighter side padding on narrow screens so a wide tree has room to fit.
+		const PAD = W < 480 ? 12 : 56; // side + bottom breathing room
 		const treeW = flow.maxX - flow.minX + NODE_W;
 		const treeH = flow.maxY - flow.minY + NODE_H;
-		const zoom = Math.max(0.35, Math.min(1, (W - 2 * PAD) / treeW));
+		// Floor matches ReactFlow's own minZoom: always scale a wide tree DOWN to fit the
+		// container width (never force it larger than fits, which clips edge nodes on mobile).
+		const zoom = Math.max(0.2, Math.min(1, (W - 2 * PAD) / treeW));
 		setHeight(Math.round(TOP + treeH * zoom + PAD));
 		const rootCenterX = flow.rootX + NODE_W / 2;
-		rf.setViewport({ x: W / 2 - rootCenterX * zoom, y: TOP - flow.minY * zoom, zoom });
+		// Prefer the root centred under the heading, but clamp so the whole tree stays within
+		// the container width. A lopsided tree's root isn't its horizontal midpoint, so pure
+		// root-centring pushes the far branch off-screen and clips edge nodes on narrow screens.
+		const minVx = -flow.minX * zoom; // tree's left edge flush to x=0
+		const maxVx = W - (flow.maxX + NODE_W) * zoom; // tree's right edge flush to W
+		const idealVx = W / 2 - rootCenterX * zoom;
+		const vx = maxVx >= minVx ? Math.min(maxVx, Math.max(minVx, idealVx)) : idealVx;
+		rf.setViewport({ x: vx, y: TOP - flow.minY * zoom, zoom });
 		setReady(true);
 	}, [inited, ready, flow, rf]);
 
