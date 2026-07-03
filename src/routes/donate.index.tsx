@@ -43,9 +43,9 @@ function DonatePage() {
 			{/* Global hub hero — NOT tied to any single campaign */}
 			<section className="relative overflow-hidden px-6 pt-24 pb-16" style={{ background: "var(--gradient-warm)" }}>
 				<div className="mx-auto max-w-4xl text-center">
-					<p className="text-xs font-semibold uppercase tracking-[0.2em] text-[oklch(0.3_0.07_255)]/80">{s("donate_eyebrow")}</p>
-					<h1 className="mt-3 font-display text-4xl md:text-6xl font-semibold tracking-tight text-[oklch(0.24_0.09_255)]">{s("donate_title")}</h1>
-					{s("donate_intro") && <p className="mx-auto mt-5 max-w-2xl text-lg text-[oklch(0.3_0.07_255)]/90">{s("donate_intro")}</p>}
+					<p className="t-eyebrow text-[oklch(0.3_0.07_255)]/80">{s("donate_eyebrow")}</p>
+					<h1 className="mt-3 t-page-title text-[oklch(0.24_0.09_255)]">{s("donate_title")}</h1>
+					{s("donate_intro") && <p className="mx-auto mt-5 max-w-2xl t-lead text-[oklch(0.3_0.07_255)]/90">{s("donate_intro")}</p>}
 
 					<div className="mt-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-[oklch(0.24_0.09_255)]">
 						<Stat value={String(campaigns.length)} label={campaigns.length === 1 ? "campaign" : "campaigns"} />
@@ -57,7 +57,7 @@ function DonatePage() {
 
 			{campaigns.length === 0 ? (
 				<div className="mx-auto max-w-2xl px-6 py-24 text-center">
-					<h2 className="font-display text-2xl font-semibold text-primary">No active campaigns right now</h2>
+					<h2 className="t-subsection text-primary">No active campaigns right now</h2>
 					<p className="mt-3 text-muted-foreground">Please check back soon, or <NavLink href={localizedHref("/who-we-are/about", lang)} className="text-[var(--accent)] hover:underline">learn more about our work</NavLink>.</p>
 				</div>
 			) : (
@@ -66,7 +66,7 @@ function DonatePage() {
 						{featured && <FeaturedSpotlight campaign={featured} />}
 						{rest.length > 0 && (
 							<div>
-								<h2 className="mb-6 font-display text-2xl font-semibold text-primary">{featured ? "More campaigns" : "Campaigns"}</h2>
+								<h2 className="mb-6 t-subsection text-primary">{featured ? "More campaigns" : "Campaigns"}</h2>
 								<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 									{rest.map((c) => (
 										<CampaignCard key={c.id} campaign={c} />
@@ -108,7 +108,7 @@ function FeaturedSpotlight({ campaign }: { campaign: CampaignPublic }) {
 				<span className="absolute left-4 top-4 rounded-full bg-[var(--gold)] px-3 py-1 text-xs font-bold uppercase tracking-wide text-[oklch(0.24_0.09_255)]">★ Featured</span>
 			</div>
 			<div className="flex flex-col justify-center p-7 md:p-9">
-				<h2 className="font-display text-2xl md:text-3xl font-semibold text-primary group-hover:text-[var(--accent)] transition">{campaign.title}</h2>
+				<h2 className="t-subsection text-primary group-hover:text-[var(--accent)] transition">{campaign.title}</h2>
 				{campaign.blurb && <p className="mt-2 text-muted-foreground">{campaign.blurb}</p>}
 				<div className="mt-5">
 					{pct != null && (
@@ -143,7 +143,7 @@ function CampaignCard({ campaign }: { campaign: CampaignPublic }) {
 				<CampaignCover coverUrl={campaign.coverUrl} slug={campaign.slug} alt={campaign.title} className="transition-transform duration-500 group-hover:scale-105" iconClass="h-16 w-16" />
 			</div>
 			<div className="flex flex-1 flex-col p-5">
-				<h3 className="font-display text-lg font-semibold text-primary group-hover:text-[var(--accent)] transition">{campaign.title}</h3>
+				<h3 className="t-card-title text-primary group-hover:text-[var(--accent)] transition">{campaign.title}</h3>
 				{campaign.blurb && <p className="mt-1.5 line-clamp-2 text-sm text-muted-foreground">{campaign.blurb}</p>}
 				<div className="mt-auto pt-4">
 					{pct != null && (
