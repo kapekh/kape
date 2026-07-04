@@ -1,14 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { eq } from 'drizzle-orm'
 
-import { COLLECTIONS } from '#/lib/collections'
+import { COLLECTIONS, NON_PUBLIC_CONTENT_TYPES } from '#/lib/collections'
 import { LANGS } from '#/lib/i18n-config'
 import { db } from '#/server/db'
 import { siteOrigin } from '#/server/origin'
 import { pages, posts } from '#/server/schema'
 
-// Content types that are intentionally not public (mirrors the route resolver).
-const BLOCKED = new Set(['internal_news', 'document', 'announcement', 'event'])
+// Internal-only content types are excluded (shared with the route resolver + section queries).
+const BLOCKED = NON_PUBLIC_CONTENT_TYPES
 
 // content_type -> URL prefix (e.g. "news" -> "news", "story" -> "stories").
 const PREFIX_BY_TYPE: Record<string, string> = {}

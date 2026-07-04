@@ -3,6 +3,7 @@
  * `query`; we run it here (in the route loader) and inline the result as
  * `props.data`, so the client renderer is pure and SSR/SEO stay intact.
  */
+import { NON_PUBLIC_CONTENT_TYPES } from "#/lib/collections";
 import type { SectionNode, SectionQuery } from "#/lib/sections";
 import type { DB } from "../db";
 import { renderBody } from "../richtext";
@@ -13,16 +14,11 @@ import { listProjectLocations, listProjectOptions } from "./projects";
 import { listOffices, listPartners } from "./site";
 import { staffDirectory, staffDocuments, staffEvents } from "./staff";
 
-// Content types that must never surface through a public page section, even if
-// an admin points a posts-query at them. (Internal pages load these via their
-// own staff-only procedures, not resolveSections — so blocking here is safe.)
-const PUBLIC_BLOCKED_TYPES = new Set(["internal_news", "document", "announcement", "event"]);
-
 async function resolveQuery(db: DB, q: SectionQuery, lang: string): Promise<unknown> {
 	switch (q.source) {
 		case "posts": {
 			const ct = q.contentType ?? "news";
-			if (PUBLIC_BLOCKED_TYPES.has(ct)) return [];
+			if (NON_PUBLIC_CONTENT_TYPES.has(ct)) return [];
 			if (ct === "job") return listJobs(db, lang);
 			return listPosts(db, ct, lang, q.limit ?? 12);
 		}
