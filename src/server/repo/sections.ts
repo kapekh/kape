@@ -72,6 +72,15 @@ export async function resolveSections(db: DB, sections: SectionNode[], lang: str
 	return Promise.all(
 		sections.map(async (s) => {
 			let props: Record<string, unknown> = { ...(s?.props ?? {}) };
+			// Per-language text overlay: authored translations for this section's text
+			// props (eyebrow/title/lead/body/…) live under props.i18n[lang]. Overlay them
+			// so /km etc. render translated headings/body; structural props (images,
+			// links, query) stay language-agnostic. Falls back to the default text.
+			const i18n = props.i18n as Record<string, Record<string, unknown>> | undefined;
+			delete props.i18n;
+			if (i18n && lang && i18n[lang]) {
+				props = { ...props, ...i18n[lang] };
+			}
 			if (typeof props.body === "string" && props.body) {
 				props.bodyHtml = renderBody(props.body);
 			}

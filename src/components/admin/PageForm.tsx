@@ -136,7 +136,7 @@ export function PageForm({
 				<div className="border-b border-border p-4">
 					<h2 className={panelHead}>Page sections</h2>
 					<p className={`${panelSub} mb-3`}>Compose the page from sections (static + data-driven).</p>
-					<SectionsBuilder value={sections} onChange={setSections} />
+					<SectionsBuilder value={sections} onChange={setSections} languages={languages} />
 				</div>
 
 				<div className="border-b border-border p-4">

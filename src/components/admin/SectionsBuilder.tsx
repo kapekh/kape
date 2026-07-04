@@ -1,11 +1,13 @@
 import { confirm } from "@/components/Dialogs";
 import { useEffect, useState } from "react";
 
+import { DEFAULT_LANG } from "#/lib/i18n-config";
 import { SECTION_DEFS, type SectionField, type SectionNode, sectionDef } from "#/lib/sections";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 
 import { fieldInput, fieldLabel } from "./form-ui";
 import { MediaPicker } from "./MediaPicker";
+import type { LangOpt } from "./PostForm";
 import { RichTextEditor } from "./RichTextEditor";
 
 /** Dropdown of admin-built forms (by slug) — lets a Form section embed any form. */
@@ -220,9 +222,13 @@ function FieldInput({ field, value, onChange }: { field: SectionField; value: un
 	);
 }
 
-/** Editor body for a single section: layout + source/query (dynamic) + fields. */
-function SectionEditor({ node, onChange }: { node: SectionNode; onChange: (n: SectionNode) => void }) {
+const TEXT_KINDS = new Set(["text", "textarea", "richtext"]);
+
+/** Editor body for a single section: layout + source/query (dynamic) + fields,
+ *  plus a per-language tab for translating the section's text props. */
+function SectionEditor({ node, onChange, languages }: { node: SectionNode; onChange: (n: SectionNode) => void; languages: LangOpt[] }) {
 	const def = sectionDef(node.type);
+	const [editLang, setEditLang] = useState("");
 	if (!def) return <p className="text-xs text-destructive">Unknown section type “{node.type}”.</p>;
 	const props = node.props ?? {};
 	const setProp = (key: string, v: unknown) => onChange({ ...node, props: { ...props, [key]: v } });
@@ -231,8 +237,46 @@ function SectionEditor({ node, onChange }: { node: SectionNode; onChange: (n: Se
 	// submit button — so the section's layout selector + those fields are hidden.
 	const formPicked = def.type === "form" && typeof props.formSlug === "string" && props.formSlug.length > 0;
 
+	// Per-language text overlay: only text fields translate; images/links/data stay shared.
+	const extraLangs = languages.filter((l) => l.code !== DEFAULT_LANG);
+	const textFields = def.fields.filter((f) => TEXT_KINDS.has(f.kind) && !(formPicked && f.key !== "formSlug"));
+	const i18n = (props.i18n && typeof props.i18n === "object" ? props.i18n : {}) as Record<string, Record<string, unknown>>;
+	const setI18n = (code: string, key: string, v: unknown) => {
+		const map = { ...(i18n[code] ?? {}) };
+		if (v === "" || v == null) delete map[key];
+		else map[key] = v;
+		const next: Record<string, Record<string, unknown>> = { ...i18n };
+		if (Object.keys(map).length) next[code] = map;
+		else delete next[code];
+		onChange({ ...node, props: { ...props, i18n: Object.keys(next).length ? next : undefined } });
+	};
+	const tab = (on: boolean) => `rounded-full px-3 py-1 text-xs font-semibold transition ${on ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground hover:bg-muted"}`;
+
+	if (editLang) {
+		return (
+			<div className="space-y-3 border-t border-border/60 p-3">
+				{extraLangs.length > 0 && textFields.length > 0 && (
+					<div className="flex flex-wrap gap-1.5">
+						<button type="button" className={tab(false)} onClick={() => setEditLang("")}>Default</button>
+						{extraLangs.map((l) => <button key={l.code} type="button" className={tab(editLang === l.code)} onClick={() => setEditLang(l.code)}>{l.nativeName || l.name}</button>)}
+					</div>
+				)}
+				<p className="text-xs text-muted-foreground">Translations — leave a field blank to fall back to the default text. Images, links and the data source are shared across languages.</p>
+				{textFields.map((f) => (
+					<FieldInput key={f.key} field={f} value={i18n[editLang]?.[f.key] ?? ""} onChange={(v) => setI18n(editLang, f.key, v)} />
+				))}
+			</div>
+		);
+	}
+
 	return (
 		<div className="space-y-3 border-t border-border/60 p-3">
+			{extraLangs.length > 0 && textFields.length > 0 && (
+				<div className="flex flex-wrap gap-1.5">
+					<button type="button" className={tab(true)} onClick={() => setEditLang("")}>Default</button>
+					{extraLangs.map((l) => <button key={l.code} type="button" className={tab(false)} onClick={() => setEditLang(l.code)}>{l.nativeName || l.name}</button>)}
+				</div>
+			)}
 			{def.layouts.length > 1 && !formPicked && (
 				<div>
 					<label className={fieldLabel}>Layout</label>
@@ -285,7 +329,7 @@ function SectionEditor({ node, onChange }: { node: SectionNode; onChange: (n: Se
 }
 
 /** The full page-section builder: ordered list + add/reorder/remove + per-section editor. */
-export function SectionsBuilder({ value, onChange }: { value: SectionNode[]; onChange: (v: SectionNode[]) => void }) {
+export function SectionsBuilder({ value, onChange, languages }: { value: SectionNode[]; onChange: (v: SectionNode[]) => void; languages: LangOpt[] }) {
 	const sections = Array.isArray(value) ? value : [];
 	const [openId, setOpenId] = useState<string | null>(null);
 	const [adding, setAdding] = useState(false);
@@ -347,7 +391,7 @@ export function SectionsBuilder({ value, onChange }: { value: SectionNode[]; onC
 								</button>
 							</div>
 						</div>
-						{open && <SectionEditor node={s} onChange={(n) => update(s.id, n)} />}
+						{open && <SectionEditor node={s} onChange={(n) => update(s.id, n)} languages={languages} />}
 					</div>
 				);
 			})}
