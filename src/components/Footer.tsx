@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { FOOTER_DEFAULTS } from "@/lib/footer-defaults";
 import { useLang } from "@/lib/i18n";
-import { localizedHref } from "@/lib/i18n-config";
+import { DEFAULT_LANG, localizedHref } from "@/lib/i18n-config";
 
 import { NavLink } from "./NavLink";
 
@@ -35,7 +35,9 @@ export function Footer({ settings }: { settings: Record<string, string> }) {
 		trpcClient.site.visits.query().then(setVisits).catch(() => {});
 	}, []);
 
-	const s = (key: string) => settings[key] ?? FOOTER_DEFAULTS[key] ?? "";
+	// Locale-aware setting: prefer a `<key>_<lang>` variant (e.g. footer_blurb_km)
+	// on non-default locales, else fall back to the base key / default.
+	const s = (key: string) => (lang !== DEFAULT_LANG && settings[`${key}_${lang}`]) || settings[key] || FOOTER_DEFAULTS[key] || "";
 	const links = parseLinks(s("footer_links"));
 	// [short label, accessible name, url]
 	const socials: [string, string, string][] = [
@@ -114,7 +116,7 @@ export function Footer({ settings }: { settings: Record<string, string> }) {
 				</div>
 			</div>
 			<div className="mx-auto max-w-7xl px-6 mt-16 pt-6 border-t border-primary-foreground/15 flex flex-wrap justify-between gap-4 text-xs opacity-70">
-				<div>{settings.copyright || "© Kampuchea Action to Promote Education"}</div>
+				<div>{s("copyright") || "© Kampuchea Action to Promote Education"}</div>
 				{visits && <div>Today: {visits.today.toLocaleString()} · Total visits: {visits.total.toLocaleString()}</div>}
 			</div>
 		</footer>

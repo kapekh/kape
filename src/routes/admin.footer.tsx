@@ -9,11 +9,11 @@ export const Route = createFileRoute("/admin/footer")({ component: FooterAdmin }
 
 // Every site_settings key this page owns (others are left untouched).
 const KEYS = [
-	"site_name_en", "site_name_km", "footer_blurb",
+	"site_name_en", "site_name_km", "footer_blurb", "footer_blurb_km",
 	"contact_phone", "contact_email", "address",
-	"footer_links_title",
-	"newsletter_title", "newsletter_text",
-	"social_facebook", "youtube_url", "telegram", "copyright",
+	"footer_links_title", "footer_links_title_km",
+	"newsletter_title", "newsletter_title_km", "newsletter_text", "newsletter_text_km",
+	"social_facebook", "youtube_url", "telegram", "copyright", "copyright_km",
 ] as const;
 
 type Link = { label: string; href: string };
@@ -88,6 +88,7 @@ function FooterAdmin() {
 					<Field k="site_name_en" label="Organisation name (English)" />
 					<Field k="site_name_km" label="Organisation name (Khmer)" km />
 					<Field k="footer_blurb" label="Blurb" area />
+					<Field k="footer_blurb_km" label="Blurb (Khmer)" km area />
 				</div>
 			</FormSection>
 
@@ -100,7 +101,10 @@ function FooterAdmin() {
 			</FormSection>
 
 			<FormSection title="Links column" description="The list of quick links. Use a site path (e.g. /stories) or full URL.">
-				<Field k="footer_links_title" label="Column title" />
+				<div className="grid sm:grid-cols-2 gap-4">
+					<Field k="footer_links_title" label="Column title" />
+					<Field k="footer_links_title_km" label="Column title (Khmer)" km />
+				</div>
 				<div className="mt-4 space-y-2">
 					{links.map((l, i) => (
 						<div key={i} className="flex items-center gap-2">
@@ -115,8 +119,12 @@ function FooterAdmin() {
 
 			<FormSection title="Newsletter" description="The subscribe column heading and intro.">
 				<div className="space-y-4">
-					<Field k="newsletter_title" label="Title" />
+					<div className="grid sm:grid-cols-2 gap-4">
+						<Field k="newsletter_title" label="Title" />
+						<Field k="newsletter_title_km" label="Title (Khmer)" km />
+					</div>
 					<Field k="newsletter_text" label="Intro text" area />
+					<Field k="newsletter_text_km" label="Intro text (Khmer)" km area />
 				</div>
 			</FormSection>
 
@@ -126,6 +134,7 @@ function FooterAdmin() {
 					<Field k="youtube_url" label="YouTube URL" />
 					<Field k="telegram" label="Telegram (t.me/…)" />
 					<Field k="copyright" label="Copyright line" />
+					<Field k="copyright_km" label="Copyright line (Khmer)" km />
 				</div>
 			</FormSection>
 		</form>
