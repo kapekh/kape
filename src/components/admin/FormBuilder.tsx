@@ -6,6 +6,7 @@ import { FIELD_TYPES, type FormField, type FormFieldType, isFormClosed } from "@
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { EditorGrid, EditorHeader, FormSection, cancelButtonClass, fieldInput, fieldLabel } from "./form-ui";
 import { RichTextEditor } from "./RichTextEditor";
+import { useDirty } from "./useDirty";
 
 type SlugStatus = "idle" | "checking" | "available" | "taken";
 
@@ -99,9 +100,13 @@ export function FormBuilder({ initial, onSubmit, saving, title }: { initial: Ini
 		});
 	}
 
+	const dirty = useDirty(
+		JSON.stringify({ slug, status, formTitle, titleKm, intro, submitLabel, successMessage, notifyEmail, deadline, fields }),
+	);
+
 	return (
 		<form onSubmit={submit}>
-			<EditorHeader title={title} saving={saving} saveLabel="Save form">
+			<EditorHeader title={title} saving={saving} saveLabel="Save form" dirty={dirty}>
 				<Link to="/admin/forms" className={cancelButtonClass}>Cancel</Link>
 			</EditorHeader>
 			<EditorGrid

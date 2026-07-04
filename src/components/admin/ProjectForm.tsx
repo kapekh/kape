@@ -6,6 +6,7 @@ import { LangTabs } from "./LangTabs";
 import { MapField } from "./MapField";
 import type { LangOpt } from "./PostForm";
 import { RichTextEditor } from "./RichTextEditor";
+import { useDirty } from "./useDirty";
 
 export type DonorOpt = { id: number; name: string };
 export type ProjectStatus = "current" | "past";
@@ -79,9 +80,11 @@ export function ProjectForm({
 		});
 	}
 
+	const dirty = useDirty(JSON.stringify({ code, slug, status, donorIds, locations, trans }), savedAt);
+
 	return (
 		<form onSubmit={submit}>
-			<EditorHeader title={title} saving={saving} savedAt={savedAt} saveLabel="Save project">
+			<EditorHeader title={title} saving={saving} savedAt={savedAt} saveLabel="Save project" dirty={dirty}>
 				<Link to="/admin/projects" className={cancelButtonClass}>Cancel</Link>
 			</EditorHeader>
 			<EditorGrid

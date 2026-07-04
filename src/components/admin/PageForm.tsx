@@ -12,6 +12,7 @@ import { PagePreview } from "./PagePreview";
 import { PageSwitcher } from "./PageSwitcher";
 import type { LangOpt } from "./PostForm";
 import { SectionsBuilder } from "./SectionsBuilder";
+import { useDirty } from "./useDirty";
 
 export type PageStatus = "draft" | "published";
 export type PageFormValue = {
@@ -89,6 +90,8 @@ export function PageForm({
 		e?.preventDefault();
 		onSubmit({ segment: segment.replace(/^\/+|\/+$/g, ""), parentId, status, coverMediaId, sections, translations: languages.map((l) => ({ lang: l.code, ...trans[l.code] })) });
 	}
+
+	const dirty = useDirty(JSON.stringify({ segment, parentId, status, coverMediaId, sections, trans }), savedAt);
 
 	// Resizable editor/preview split (only when the studio is in side-by-side mode).
 	const [panelW, setPanelW] = useState(420);
@@ -228,7 +231,7 @@ export function PageForm({
 					<div className="flex items-center gap-2">
 						{savedAt && <span className="text-xs text-[var(--palm)]">Saved {savedAt}</span>}
 						<Link to="/admin/pages" className={cancelButtonClass}>Cancel</Link>
-						<button type="button" onClick={() => submit()} disabled={saving} className="rounded-full bg-primary text-primary-foreground px-5 py-1.5 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition">
+						<button type="button" onClick={() => submit()} disabled={saving || !dirty} className="rounded-full bg-primary text-primary-foreground px-5 py-1.5 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition">
 							{saving ? "Saving…" : "Save page"}
 						</button>
 					</div>

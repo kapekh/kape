@@ -15,12 +15,15 @@ export function EditorHeader({
 	saving,
 	savedAt,
 	saveLabel = "Save",
+	dirty,
 	children,
 }: {
 	title: string;
 	saving?: boolean;
 	savedAt?: string | null;
 	saveLabel?: string;
+	/** When explicitly `false`, Save is disabled (no unsaved changes). */
+	dirty?: boolean;
 	children?: React.ReactNode;
 }) {
 	return (
@@ -29,7 +32,7 @@ export function EditorHeader({
 			<div className="flex items-center gap-2">
 				{savedAt && <span className="text-xs text-[var(--palm)]">Saved {savedAt}</span>}
 				{children}
-				<button type="submit" disabled={saving} className="rounded-full bg-primary text-primary-foreground px-5 py-1.5 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition">
+				<button type="submit" disabled={saving || dirty === false} className="rounded-full bg-primary text-primary-foreground px-5 py-1.5 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition">
 					{saving ? "Saving…" : saveLabel}
 				</button>
 			</div>
@@ -77,18 +80,21 @@ export function FormActions({
 	saving,
 	label,
 	savedAt,
+	dirty,
 	children,
 }: {
 	saving?: boolean;
 	label: string;
 	savedAt?: string | null;
+	/** When explicitly `false`, Save is disabled (no unsaved changes). */
+	dirty?: boolean;
 	children?: React.ReactNode;
 }) {
 	return (
 		<div className="flex items-center justify-end gap-3 pt-1">
 			{savedAt && <span className="mr-auto text-xs text-[var(--palm)]">Saved {savedAt}</span>}
 			{children}
-			<button type="submit" disabled={saving} className="rounded-full bg-primary text-primary-foreground px-6 py-2.5 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition">
+			<button type="submit" disabled={saving || dirty === false} className="rounded-full bg-primary text-primary-foreground px-6 py-2.5 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition">
 				{saving ? "Saving…" : label}
 			</button>
 		</div>

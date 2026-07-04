@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 
 import { PERMISSION_AREAS, type PermissionArea } from "#/lib/permissions";
 import { EditorGrid, EditorHeader, FormSection, cancelButtonClass, fieldInput, fieldLabel } from "./form-ui";
+import { useDirty } from "./useDirty";
 
 export type RoleFormValue = { name: string; permissions: PermissionArea[] };
 
@@ -38,9 +39,11 @@ export function RoleForm({ initial, onSubmit, saving, title }: { initial: Initia
 		onSubmit({ name: name.trim(), permissions: [...perms] });
 	}
 
+	const dirty = useDirty(JSON.stringify({ name, perms: [...perms] }));
+
 	return (
 		<form onSubmit={submit}>
-			<EditorHeader title={title} saving={saving} saveLabel="Save role">
+			<EditorHeader title={title} saving={saving} saveLabel="Save role" dirty={dirty}>
 				<Link to="/admin/roles" className={cancelButtonClass}>Cancel</Link>
 			</EditorHeader>
 			<EditorGrid

@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import { FormSection, fieldInput, fieldLabel } from "#/components/admin/form-ui";
+import { useDirty } from "#/components/admin/useDirty";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { FOOTER_DEFAULTS } from "#/lib/footer-defaults";
 
@@ -55,6 +56,8 @@ function FooterAdmin() {
 		setSavedAt(new Date().toLocaleTimeString());
 	}
 
+	const dirty = useDirty(JSON.stringify({ vals, links }), savedAt);
+
 	if (loading) return <p className="text-sm text-muted-foreground">Loading…</p>;
 
 	const Field = ({ k, label, km, area }: { k: string; label: string; km?: boolean; area?: boolean }) => (
@@ -77,7 +80,7 @@ function FooterAdmin() {
 				</div>
 				<div className="flex items-center gap-3">
 					{savedAt && <span className="text-xs text-[var(--palm)]">Saved {savedAt}</span>}
-					<button type="submit" disabled={saving} className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition">
+					<button type="submit" disabled={saving || !dirty} className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition">
 						{saving ? "Saving…" : "Save footer"}
 					</button>
 				</div>
