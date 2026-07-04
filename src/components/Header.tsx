@@ -332,7 +332,7 @@ export function Header({ nav, settings }: { nav: NavNode[]; settings: Record<str
 			<div onMouseLeave={() => setOpenId(null)} className="sticky top-0 z-40">
 			<header
 				ref={headerRef}
-				className="relative backdrop-blur-md bg-background/85 border-b border-border/60"
+				className="relative backdrop-blur-md bg-background/70 border-b border-border/60"
 				style={{ viewTransitionName: "site-header" }}
 			>
 				<div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between gap-6">
