@@ -37,8 +37,8 @@ function ContactPage() {
 			badge="Say hello"
 		>
 			{/* Top: message form ‹› head office + map */}
-			<div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-				<div className={panel}>
+			<div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
+				<div className={`${panel} flex flex-col`}>
 					<h2 className="t-subsection text-primary">Send us a message</h2>
 					<p className="mt-1 mb-5 text-sm text-muted-foreground">We usually reply within a couple of working days.</p>
 					<ContactForm />
