@@ -27,6 +27,8 @@ export function listTerms(db: DB, taxonomy: string) {
 		.orderBy(asc(terms.sort));
 }
 
+export type ChildLink = { slug: string; title: string; excerpt: string; coverUrl: string | null };
+
 export type ResolvedPage = {
 	id: number;
 	slug: string;
@@ -37,7 +39,35 @@ export type ResolvedPage = {
 	body: string | null; // ProseMirror JSON (string) or null
 	bodyHtml: string; // server-rendered HTML
 	sections: SectionNode[] | null; // page-builder sections (dynamic ones already resolved)
+	// Published child pages — only populated when this page has no content of its
+	// own (no sections, empty body), so a parent/hub page renders a child index
+	// instead of a blank card.
+	children?: ChildLink[];
 };
+
+/** Published direct children of a page, for rendering a hub/index. */
+async function getChildPages(db: DB, parentId: number, lang: string): Promise<ChildLink[]> {
+	const rows = await db
+		.select()
+		.from(pages)
+		.where(and(eq(pages.tenantId, TENANT), eq(pages.parentId, parentId), eq(pages.status, "published")))
+		.orderBy(asc(pages.sortOrder));
+	const out: ChildLink[] = [];
+	for (const r of rows) {
+		const f = await resolveOne(db, "page", r.id, lang);
+		let coverUrl: string | null = null;
+		if (r.heroMediaId != null) {
+			const [m] = await db.select({ url: media.url }).from(media).where(eq(media.id, r.heroMediaId)).limit(1);
+			coverUrl = m?.url ?? null;
+		}
+		out.push({ slug: r.slug, title: f.title ?? r.segment ?? r.slug, excerpt: f.excerpt ?? "", coverUrl });
+	}
+	return out;
+}
+
+/** True when a page carries no renderable content of its own. */
+const isEmptyPageBody = (bodyHtml: string, sections: SectionNode[] | null) =>
+	!sections?.length && !bodyHtml.replace(/<[^>]*>/g, "").trim();
 
 /** A published page by slug, with title/excerpt/body resolved for `lang`. */
 export async function getPageBySlug(
@@ -61,6 +91,10 @@ export async function getPageBySlug(
 	const sections = Array.isArray(page.sections) && page.sections.length
 		? await resolveSections(db, page.sections, lang)
 		: null;
+	const bodyHtml = renderBody(fields.body ?? null);
+	// A parent page with no content of its own becomes a hub: surface its
+	// published children so the URL renders a usable index, not a blank card.
+	const children = isEmptyPageBody(bodyHtml, sections) ? await getChildPages(db, page.id, lang) : undefined;
 	return {
 		id: page.id,
 		slug: page.slug,
@@ -69,8 +103,9 @@ export async function getPageBySlug(
 		excerpt: fields.excerpt ?? "",
 		coverUrl,
 		body: fields.body ?? null,
-		bodyHtml: renderBody(fields.body ?? null),
+		bodyHtml,
 		sections,
+		children,
 	};
 }
 

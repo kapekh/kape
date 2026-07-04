@@ -266,6 +266,9 @@ export function Header({ nav, settings }: { nav: NavNode[]; settings: Record<str
 	const donateHref = withLang(settings.header_donate_link || "#donate", lang);
 	const searchHref = withLang(settings.header_search_link || "#", lang);
 	const sitemapHref = withLang(settings.header_sitemap_link || "#", lang);
+	// Only show "Search" when it points at a real, distinct destination — otherwise
+	// it's a labelled control that just opens the sitemap (or nowhere).
+	const showSearch = !!searchHref && searchHref !== "#" && searchHref !== sitemapHref;
 
 	// Close everything on Escape.
 	useEffect(() => {
@@ -318,7 +321,7 @@ export function Header({ nav, settings }: { nav: NavNode[]; settings: Record<str
 				<div className="mx-auto max-w-7xl px-6 py-2 flex items-center justify-between">
 					<span className="opacity-80">{contact || t("top.contact")}</span>
 					<div className="flex items-center gap-4 opacity-80">
-						<a href={searchHref} className="hover:text-[var(--secondary)] transition">{t("top.search")}</a>
+						{showSearch && <a href={searchHref} className="hover:text-[var(--secondary)] transition">{t("top.search")}</a>}
 						<a href={sitemapHref} className="hover:text-[var(--secondary)] transition">{t("top.sitemap")}</a>
 						<LanguageSwitcher />
 						<ThemeToggle className="h-6 w-6 text-primary-foreground/80 hover:bg-white/10" />

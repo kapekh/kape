@@ -9,7 +9,7 @@ import { JsonLd } from "@/components/JsonLd";
 import { SubPage } from "@/components/SubPage";
 import { NavLink } from "@/components/NavLink";
 import { useLang } from "@/lib/i18n";
-import { DEFAULT_LANG, LANGS, localizedHref, stripLang } from "@/lib/i18n-config";
+import { DEFAULT_LANG, LANGS, isFunctional, localizedHref, stripLang } from "@/lib/i18n-config";
 import { articleLd } from "@/lib/structured-data";
 
 /**
@@ -25,6 +25,12 @@ export const Route = createFileRoute("/$")({
 		if (!prefixed) {
 			// No language prefix → canonical default-language URL.
 			throw redirect({ to: "/$", params: { _splat: path === "/" ? DEFAULT_LANG : `${DEFAULT_LANG}${path}` }, statusCode: 301 });
+		}
+		// Functional routes (contact, donate, …) are never language-prefixed — they
+		// live at fixed paths. A localized URL like /en/contact would otherwise fall
+		// through to content resolution and 404, so redirect it to the canonical path.
+		if (isFunctional(path)) {
+			throw redirect({ href: path, statusCode: 301 });
 		}
 		const slug = path === "/" ? "home" : path.replace(/^\//, "");
 		const resolved = await context.queryClient.ensureQueryData(
@@ -102,13 +108,54 @@ function ResolvedRoute() {
 				</main>
 			);
 		}
+		// A parent/hub page with no content of its own renders its children as an
+		// index instead of a blank card (e.g. "Who We Are" → its sub-pages).
+		const hasBody = page.bodyHtml.replace(/<[^>]*>/g, "").trim().length > 0;
+		if (!hasBody && page.children && page.children.length > 0) {
+			return (
+				<SubPage wide section="KAPE" title={page.title} lead={page.excerpt || undefined} heroImage={page.coverUrl || undefined}>
+					<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+						{page.children.map((c) => (
+							<NavLink
+								key={c.slug}
+								href={localizedHref(`/${c.slug}`, lang)}
+								className="group flex flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-[var(--shadow-soft)] transition hover:-translate-y-1 hover:shadow-[var(--shadow-lift)]"
+							>
+								{c.coverUrl && (
+									<div className="aspect-[16/10] overflow-hidden">
+										<img src={c.coverUrl} alt={c.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+									</div>
+								)}
+								<div className="flex flex-1 flex-col p-6">
+									<h3 className="t-card-title text-primary group-hover:text-[var(--accent)] transition">{c.title}</h3>
+									{c.excerpt && <p className="mt-2 text-sm text-muted-foreground line-clamp-3">{c.excerpt}</p>}
+									<span className="mt-4 inline-block text-sm font-semibold text-[var(--accent)]">Explore →</span>
+								</div>
+							</NavLink>
+						))}
+					</div>
+				</SubPage>
+			);
+		}
 		return (
 			<SubPage section="KAPE" title={page.title} lead={page.excerpt || undefined} heroImage={page.coverUrl || undefined}>
-				<div
-					className="prose-kape"
-					// biome-ignore lint/security/noDangerouslySetInnerHtml: trusted, server-rendered
-					dangerouslySetInnerHTML={{ __html: page.bodyHtml }}
-				/>
+				{hasBody ? (
+					<div
+						className="prose-kape"
+						// biome-ignore lint/security/noDangerouslySetInnerHtml: trusted, server-rendered
+						dangerouslySetInnerHTML={{ __html: page.bodyHtml }}
+					/>
+				) : (
+					<div className="text-center py-6">
+						<p className="text-muted-foreground">This section is being updated. Please check back soon.</p>
+						<NavLink
+							href={localizedHref("/", lang)}
+							className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-lift)] transition hover:-translate-y-0.5"
+						>
+							← Back to home
+						</NavLink>
+					</div>
+				)}
 			</SubPage>
 		);
 	}
@@ -144,9 +191,17 @@ function ResolvedRoute() {
 
 	if (r.kind === "album") {
 		const album = r.album;
+		// Cap columns to the photo count so a 1–2 photo album doesn't strand empty
+		// grid cells (a fixed 3-col grid left a conspicuous blank column).
+		const albumCols =
+			album.photos.length <= 1
+				? "grid-cols-1 max-w-md mx-auto"
+				: album.photos.length === 2
+					? "grid-cols-2 max-w-2xl mx-auto"
+					: "grid-cols-2 md:grid-cols-3";
 		return (
 			<SubPage section={r.label} title={album.title} lead="Click any photo to view it larger.">
-				<div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+				<div className={`grid ${albumCols} gap-3`}>
 					{album.photos.map((p) => (
 						<figure key={p.url} className="group relative overflow-hidden rounded-2xl border border-border">
 							<img src={p.url} alt={p.caption} className="aspect-square w-full object-cover group-hover:scale-105 transition duration-700" />

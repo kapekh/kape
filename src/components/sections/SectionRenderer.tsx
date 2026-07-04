@@ -66,11 +66,17 @@ const Icon = {
 };
 
 function useCount(target: number, run: boolean, duration = 1800) {
-	const [n, setN] = useState(0);
+	// Start AT the target so the server-rendered / no-JS / pre-scroll DOM shows the
+	// real number (crawlers and prerendered static pages otherwise captured "0").
+	// The from-0 count-up plays once the band scrolls into view.
+	const [n, setN] = useState(target);
+	const played = useRef(false);
 	useEffect(() => {
-		if (!run) return;
+		if (!run || played.current) return;
+		played.current = true;
 		let raf = 0;
 		const start = performance.now();
+		setN(0);
 		const tick = (now: number) => {
 			const p = Math.min(1, (now - start) / duration);
 			setN(Math.floor(target * (1 - Math.pow(1 - p, 3))));
@@ -310,9 +316,10 @@ function StatItem({ value, label, run, valueClass = "text-5xl md:text-6xl", labe
 	const display = digits ? String(value).replace(/[\d,]+/, n.toLocaleString()) : value;
 	return (
 		<div className="group">
-			<div className={`font-display ${valueClass} font-semibold tabular-nums tracking-tight text-[var(--secondary)] whitespace-nowrap`}>{display}</div>
-			<div className={`mt-2 ${labelClass} uppercase tracking-[0.18em] text-primary-foreground/70`}>{label}</div>
-			<div className="mt-4 h-px w-12 bg-[var(--secondary)]/60 transition-all duration-500 group-hover:w-24" />
+			<div aria-hidden="true" className={`font-display ${valueClass} font-semibold tabular-nums tracking-tight text-[var(--secondary)] whitespace-nowrap`}>{display}</div>
+			<span className="sr-only">{value} {label}</span>
+			<div aria-hidden="true" className={`mt-2 ${labelClass} uppercase tracking-[0.18em] text-primary-foreground/70`}>{label}</div>
+			<div aria-hidden="true" className="mt-4 h-px w-12 bg-[var(--secondary)]/60 transition-all duration-500 group-hover:w-24" />
 		</div>
 	);
 }
@@ -750,17 +757,23 @@ function Partners(p: P) {
 								<h3 className="mb-1 t-eyebrow text-[var(--accent)]">{cat.replace(/-/g, " ")}</h3>
 								<div className="mb-4 h-px w-full bg-border" />
 								<div className="flex flex-wrap items-center gap-2.5">
-									{list.map((r) => (
-										<NavLink key={r.id} href={r.url || "#"} title={r.name} className="group inline-flex">
-											{r.logoUrl ? (
-												<span className="grid h-14 w-28 place-items-center rounded-xl border border-border bg-white p-2 shadow-sm transition group-hover:border-[var(--accent)]">
-													<img src={r.logoUrl} alt={r.name} className="max-h-full max-w-full object-contain" />
-												</span>
-											) : (
-												<span className="rounded-full border border-border bg-background/60 px-3.5 py-1.5 text-sm font-medium text-foreground/80 transition group-hover:border-[var(--accent)] group-hover:text-[var(--accent)]">{r.name}</span>
-											)}
-										</NavLink>
-									))}
+									{list.map((r) => {
+										const badge = r.logoUrl ? (
+											<span className="grid h-14 w-28 place-items-center rounded-xl border border-border bg-white p-2 shadow-sm transition group-hover:border-[var(--accent)]">
+												<img src={r.logoUrl} alt={r.name} className="max-h-full max-w-full object-contain" />
+											</span>
+										) : (
+											<span className="rounded-full border border-border bg-background/60 px-3.5 py-1.5 text-sm font-medium text-foreground/80 transition group-hover:border-[var(--accent)] group-hover:text-[var(--accent)]">{r.name}</span>
+										);
+										// Only link partners that have a real URL — a missing/placeholder
+										// url ("#") used to render a dead anchor that resolved to /en#.
+										const realUrl = r.url && r.url !== "#" ? r.url : null;
+										return realUrl ? (
+											<NavLink key={r.id} href={realUrl} title={r.name} target="_blank" rel="noreferrer" className="group inline-flex">{badge}</NavLink>
+										) : (
+											<span key={r.id} title={r.name} className="group inline-flex">{badge}</span>
+										);
+									})}
 								</div>
 							</div>
 						))}

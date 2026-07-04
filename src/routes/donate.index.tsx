@@ -111,17 +111,27 @@ function FeaturedSpotlight({ campaign }: { campaign: CampaignPublic }) {
 				<h2 className="t-subsection text-primary group-hover:text-[var(--accent)] transition">{campaign.title}</h2>
 				{campaign.blurb && <p className="mt-2 text-muted-foreground">{campaign.blurb}</p>}
 				<div className="mt-5">
-					{pct != null && (
-						<div className="mb-2 h-2.5 w-full overflow-hidden rounded-full bg-muted">
-							<div className="h-full rounded-full bg-gradient-to-r from-[var(--primary)] to-[var(--accent)]" style={{ width: `${pct}%` }} />
+					{campaign.raised > 0 ? (
+						<>
+							{pct != null && (
+								<div className="mb-2 h-2.5 w-full overflow-hidden rounded-full bg-muted">
+									<div className="h-full rounded-full bg-gradient-to-r from-[var(--primary)] to-[var(--accent)]" style={{ width: `${pct}%` }} />
+								</div>
+							)}
+							<div className="flex items-center justify-between text-sm">
+								<span className="font-semibold text-foreground tabular-nums">
+									{money(campaign.raised, campaign.currency)}<span className="font-normal text-muted-foreground">{campaign.goalAmount ? <> of {money(campaign.goalAmount, campaign.currency)}</> : <> raised</>}</span>
+								</span>
+								{campaign.supporters > 0 && <span className="text-muted-foreground">{campaign.supporters} {campaign.supporters === 1 ? "supporter" : "supporters"}</span>}
+							</div>
+						</>
+					) : (
+						// No donations yet — an empty $0 / 0% bar reads as failing, so lead
+						// with the goal and an invitation instead.
+						<div className="text-sm font-semibold text-[var(--accent)]">
+							Be the first to give{campaign.goalAmount ? <span className="font-normal text-muted-foreground"> · {money(campaign.goalAmount, campaign.currency)} goal</span> : null}
 						</div>
 					)}
-					<div className="flex items-center justify-between text-sm">
-						<span className="font-semibold text-foreground tabular-nums">
-							{money(campaign.raised, campaign.currency)}{campaign.goalAmount ? <span className="font-normal text-muted-foreground"> of {money(campaign.goalAmount, campaign.currency)}</span> : <span className="font-normal text-muted-foreground"> raised</span>}
-						</span>
-						{campaign.supporters > 0 && <span className="text-muted-foreground">{campaign.supporters} {campaign.supporters === 1 ? "supporter" : "supporters"}</span>}
-					</div>
 				</div>
 				<span className="mt-6 inline-flex w-fit items-center gap-2 rounded-full bg-[var(--accent)] px-6 py-2.5 text-sm font-semibold text-accent-foreground shadow-[var(--shadow-lift)] transition group-hover:-translate-y-0.5">
 					♡ Donate to this campaign →
@@ -146,15 +156,25 @@ function CampaignCard({ campaign }: { campaign: CampaignPublic }) {
 				<h3 className="t-card-title text-primary group-hover:text-[var(--accent)] transition">{campaign.title}</h3>
 				{campaign.blurb && <p className="mt-1.5 line-clamp-2 text-sm text-muted-foreground">{campaign.blurb}</p>}
 				<div className="mt-auto pt-4">
-					{pct != null && (
-						<div className="mb-2 h-2 w-full overflow-hidden rounded-full bg-muted">
-							<div className="h-full rounded-full bg-gradient-to-r from-[var(--primary)] to-[var(--accent)]" style={{ width: `${pct}%` }} />
+					{campaign.raised > 0 ? (
+						<>
+							{pct != null && (
+								<div className="mb-2 h-2 w-full overflow-hidden rounded-full bg-muted">
+									<div className="h-full rounded-full bg-gradient-to-r from-[var(--primary)] to-[var(--accent)]" style={{ width: `${pct}%` }} />
+								</div>
+							)}
+							<div className="flex items-center justify-between text-sm">
+								<span className="font-semibold text-foreground tabular-nums">{money(campaign.raised, campaign.currency)} <span className="font-normal text-muted-foreground">raised</span></span>
+								<span className="font-semibold text-[var(--accent)]">{campaign.supporters > 0 ? `${campaign.supporters} ${campaign.supporters === 1 ? "donor" : "donors"}` : "Give →"}</span>
+							</div>
+						</>
+					) : (
+						// No donations yet — invite the first gift rather than show an empty bar.
+						<div className="flex items-center justify-between text-sm">
+							<span className="text-muted-foreground">{campaign.goalAmount ? `${money(campaign.goalAmount, campaign.currency)} goal` : "New campaign"}</span>
+							<span className="font-semibold text-[var(--accent)]">Be the first →</span>
 						</div>
 					)}
-					<div className="flex items-center justify-between text-sm">
-						<span className="font-semibold text-foreground tabular-nums">{money(campaign.raised, campaign.currency)} <span className="font-normal text-muted-foreground">raised</span></span>
-						<span className="font-semibold text-[var(--accent)]">{campaign.supporters > 0 ? `${campaign.supporters} ${campaign.supporters === 1 ? "donor" : "donors"}` : "Give →"}</span>
-					</div>
 				</div>
 			</div>
 		</NavLink>

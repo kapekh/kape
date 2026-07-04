@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 
-import students from "@/assets/students.jpg.asset.json";
 import { useLang } from "@/lib/i18n";
 import { localizedHref } from "@/lib/i18n-config";
 import { NavLink } from "@/components/NavLink";
@@ -28,14 +27,15 @@ export function SubPage({
   wide?: boolean;
   children: ReactNode;
 }) {
-  const bg = heroImage ?? students.url;
   const { lang, t } = useLang();
   return (
-    <main className="min-h-screen text-foreground overflow-x-hidden">
+    <main className="text-foreground overflow-x-hidden">
       {/* Hero */}
-      <section className="relative pt-28 pb-28 px-6 overflow-hidden">
+      <section className="relative pt-28 pb-24 px-6 overflow-hidden">
         <div className="absolute inset-0 -z-10">
-          <img src={bg} alt="" className="h-full w-full object-cover" />
+          {/* Cover-less pages skip the photo and use the brand gradient alone, so
+              they don't all wear the same stock hero image. */}
+          {heroImage && <img src={heroImage} alt="" className="h-full w-full object-cover" />}
           <div className="absolute inset-0 bg-gradient-to-b from-primary/90 via-primary/75 to-background" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,transparent_35%,rgba(0,0,0,0.25))]" />
         </div>

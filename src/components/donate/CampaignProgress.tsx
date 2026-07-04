@@ -13,6 +13,19 @@ export function CampaignProgress({ campaign }: { campaign: Pick<CampaignPublic, 
 	const { currency, goalAmount, raised, supporters } = campaign;
 	const pct = goalAmount && goalAmount > 0 ? Math.min(100, Math.round((raised / goalAmount) * 100)) : null;
 
+	// Before the first gift, showing "$0 · 0% funded" reads as a stalled campaign.
+	// Lead with the goal and an invitation instead.
+	if (raised <= 0) {
+		return (
+			<div>
+				<div className="font-display text-2xl font-semibold text-primary">Be the first to give</div>
+				<div className="mt-1 text-sm text-muted-foreground">
+					{goalAmount ? <>Help reach the <span className="font-medium text-foreground">{money(goalAmount, currency)}</span> goal.</> : <>Your gift gets this campaign moving.</>}
+				</div>
+			</div>
+		);
+	}
+
 	return (
 		<div>
 			<div className="flex items-end justify-between gap-4">
