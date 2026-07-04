@@ -26,6 +26,27 @@ function parseLinks(raw: string) {
 		.filter((l) => l.label);
 }
 
+type Social = { name: string; url: string; logoUrl: string };
+/** Parse the `footer_socials` JSON list; tolerant of malformed values. */
+function parseSocials(raw?: string): Social[] {
+	if (!raw) return [];
+	try {
+		const arr = JSON.parse(raw);
+		return Array.isArray(arr)
+			? arr
+					.filter((s) => s?.url)
+					.map((s) => ({ name: String(s.name ?? ""), url: String(s.url ?? ""), logoUrl: String(s.logoUrl ?? "") }))
+			: [];
+	} catch {
+		return [];
+	}
+}
+// Short badge shown when a social has no uploaded logo.
+const SOCIAL_BADGE: Record<string, string> = {
+	facebook: "f", youtube: "yt", telegram: "t", instagram: "ig", linkedin: "in", twitter: "x", x: "x", tiktok: "tk",
+};
+const socialBadge = (name: string) => SOCIAL_BADGE[name.trim().toLowerCase()] ?? (name.trim()[0] || "•").toUpperCase();
+
 export function Footer({ settings }: { settings: Record<string, string> }) {
 	const { lang, t } = useLang();
 	const [email, setEmail] = useState("");
@@ -39,12 +60,17 @@ export function Footer({ settings }: { settings: Record<string, string> }) {
 	// on non-default locales, else fall back to the base key / default.
 	const s = (key: string) => (lang !== DEFAULT_LANG && settings[`${key}_${lang}`]) || settings[key] || FOOTER_DEFAULTS[key] || "";
 	const links = parseLinks(s("footer_links"));
-	// [short label, accessible name, url]
-	const socials: [string, string, string][] = [
-		["f", "Facebook", settings.social_facebook],
-		["yt", "YouTube", settings.youtube_url],
-		["t", "Telegram", settings.telegram ? `https://${settings.telegram}` : ""],
-	].filter(([, , url]) => Boolean(url)) as [string, string, string][];
+	// Prefer the editable `footer_socials` list; fall back to the legacy single-key
+	// fields so older installs keep working until the footer is saved once.
+	const parsedSocials = parseSocials(settings.footer_socials);
+	const socials: Social[] = (parsedSocials.length
+		? parsedSocials
+		: [
+				{ name: "Facebook", url: settings.social_facebook || "", logoUrl: "" },
+				{ name: "YouTube", url: settings.youtube_url || "", logoUrl: "" },
+				{ name: "Telegram", url: settings.telegram ? `https://${settings.telegram.replace(/^https?:\/\//, "")}` : "", logoUrl: "" },
+			]
+	).filter((sc) => sc.url);
 
 	async function subscribe(e: React.FormEvent) {
 		e.preventDefault();
@@ -108,9 +134,29 @@ export function Footer({ settings }: { settings: Record<string, string> }) {
 							{status === "error" && <p className="mt-2 text-sm text-[var(--gold)]">{t("newsletter.error", "Something went wrong. Please try again.")}</p>}
 						</>
 					)}
-					<div className="mt-6 flex gap-3">
-						{socials.map(([label, name, url]) => (
-							<a key={label} href={url} target="_blank" rel="noopener noreferrer" aria-label={name} title={name} className="h-9 w-9 rounded-full border border-primary-foreground/20 grid place-items-center text-xs font-bold hover:bg-[var(--secondary)] hover:text-primary hover:border-[var(--secondary)] transition">{label}</a>
+					<div className="mt-6 flex flex-wrap gap-3">
+						{socials.map((sc, i) => (
+							<a
+								key={`${sc.name}-${i}`}
+								href={sc.url}
+								target="_blank"
+								rel="noopener noreferrer"
+								aria-label={sc.name}
+								title={sc.name}
+								className={`grid h-9 w-9 place-items-center overflow-hidden rounded-full transition ${
+									sc.logoUrl
+										? "bg-white ring-1 ring-primary-foreground/20 hover:ring-2 hover:ring-[var(--secondary)]"
+										: "border border-primary-foreground/20 text-xs font-bold hover:bg-[var(--secondary)] hover:text-primary hover:border-[var(--secondary)]"
+								}`}
+							>
+								{sc.logoUrl ? (
+									// Uploaded image fills the whole circle (cover crops the overflow)
+									// so there are no gaps around it.
+									<img src={sc.logoUrl} alt="" className="h-full w-full object-cover" />
+								) : (
+									socialBadge(sc.name)
+								)}
+							</a>
 						))}
 					</div>
 				</div>
