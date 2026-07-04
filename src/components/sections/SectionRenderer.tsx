@@ -751,16 +751,17 @@ function Partners(p: P) {
 			<Container>
 				<Heading eyebrow={p.eyebrow} title={p.title} />
 				{rows.length === 0 ? <Empty>No partners listed yet.</Empty> : (
-					<div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+					// Category rows: a label column on the left, logos flowing to the right,
+					// hairline-separated. Even, scannable, and no empty cards for small groups.
+					<div className="mt-10 divide-y divide-border border-y border-border">
 						{[...byCat.entries()].map(([cat, list]) => (
-							<div key={cat} className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-								<h3 className="mb-1 t-eyebrow text-[var(--accent)]">{cat.replace(/-/g, " ")}</h3>
-								<div className="mb-4 h-px w-full bg-border" />
-								<div className="flex flex-wrap items-center gap-2.5">
+							<div key={cat} className="grid gap-3 py-6 md:grid-cols-[minmax(0,190px)_1fr] md:gap-8 md:py-7">
+								<h3 className="t-eyebrow text-[var(--accent)] md:pt-2.5">{cat.replace(/-/g, " ")}</h3>
+								<div className="flex flex-wrap items-center gap-3">
 									{list.map((r) => {
 										const badge = r.logoUrl ? (
-											<span className="grid h-14 w-28 place-items-center rounded-xl border border-border bg-white p-2 shadow-sm transition group-hover:border-[var(--accent)]">
-												<img src={r.logoUrl} alt={r.name} className="max-h-full max-w-full object-contain" />
+											<span className="grid h-12 w-28 place-items-center rounded-lg bg-white p-2 ring-1 ring-border transition group-hover:ring-[var(--accent)]">
+												<img src={r.logoUrl} alt={r.name} className="max-h-full max-w-full object-contain grayscale opacity-75 transition duration-300 group-hover:grayscale-0 group-hover:opacity-100" />
 											</span>
 										) : (
 											<span className="rounded-full border border-border bg-background/60 px-3.5 py-1.5 text-sm font-medium text-foreground/80 transition group-hover:border-[var(--accent)] group-hover:text-[var(--accent)]">{r.name}</span>
