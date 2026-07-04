@@ -27,9 +27,9 @@ function parseLinks(raw: string) {
 }
 
 export function Footer({ settings }: { settings: Record<string, string> }) {
-	const { lang } = useLang();
+	const { lang, t } = useLang();
 	const [email, setEmail] = useState("");
-	const [subscribed, setSubscribed] = useState(false);
+	const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
 	const [visits, setVisits] = useState<{ today: number; total: number } | null>(null);
 	useEffect(() => {
 		trpcClient.site.visits.query().then(setVisits).catch(() => {});
@@ -37,29 +37,37 @@ export function Footer({ settings }: { settings: Record<string, string> }) {
 
 	const s = (key: string) => settings[key] ?? FOOTER_DEFAULTS[key] ?? "";
 	const links = parseLinks(s("footer_links"));
-	const socials: [string, string][] = [
-		["f", settings.social_facebook],
-		["yt", settings.youtube_url],
-		["t", settings.telegram ? `https://${settings.telegram}` : ""],
-	].filter(([, url]) => Boolean(url)) as [string, string][];
+	// [short label, accessible name, url]
+	const socials: [string, string, string][] = [
+		["f", "Facebook", settings.social_facebook],
+		["yt", "YouTube", settings.youtube_url],
+		["t", "Telegram", settings.telegram ? `https://${settings.telegram}` : ""],
+	].filter(([, , url]) => Boolean(url)) as [string, string, string][];
 
 	async function subscribe(e: React.FormEvent) {
 		e.preventDefault();
-		const res = await fetch("/api/forms/subscribe", {
-			method: "POST",
-			headers: { "content-type": "application/json" },
-			body: JSON.stringify({ email }),
-		});
-		if (res.ok) {
-			setSubscribed(true);
-			setEmail("");
+		setStatus("sending");
+		try {
+			const res = await fetch("/api/forms/subscribe", {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({ email }),
+			});
+			if (res.ok) {
+				setStatus("sent");
+				setEmail("");
+			} else {
+				setStatus("error");
+			}
+		} catch {
+			setStatus("error");
 		}
 	}
 
 	return (
 		<footer className="bg-primary text-primary-foreground pt-20 pb-8" style={{ viewTransitionName: "site-footer" }}>
-			<div className="mx-auto max-w-7xl px-6 grid md:grid-cols-4 gap-10">
-				<div className="md:col-span-2">
+			<div className="mx-auto max-w-7xl px-6 grid md:grid-cols-12 gap-10">
+				<div className="md:col-span-5">
 					<div className="flex items-center gap-3">
 						<img src="/logo.png" alt="KAPE" className="h-12 w-12 shrink-0 rounded-full object-cover bg-white ring-1 ring-white/20" />
 						<div>
@@ -69,13 +77,13 @@ export function Footer({ settings }: { settings: Record<string, string> }) {
 					</div>
 					{s("footer_blurb") && <p className="mt-6 text-sm opacity-80 max-w-md leading-relaxed">{s("footer_blurb")}</p>}
 					<div className="mt-6 text-sm opacity-80 space-y-1">
-						{settings.contact_phone && <div>📞 {settings.contact_phone}</div>}
-						{settings.contact_email && <div>✉ {settings.contact_email}</div>}
-						{settings.address && <div>📍 {settings.address}</div>}
+						{settings.contact_phone && <div><span aria-hidden="true">📞</span> {settings.contact_phone}</div>}
+						{settings.contact_email && <div><span aria-hidden="true">✉</span> {settings.contact_email}</div>}
+						{settings.address && <div><span aria-hidden="true">📍</span> {settings.address}</div>}
 					</div>
 				</div>
-				<div>
-					<div className="t-eyebrow text-[var(--gold)] mb-4">{s("footer_links_title")}</div>
+				<div className="md:col-span-3">
+					<h2 className="t-eyebrow text-[var(--gold)] mb-4">{s("footer_links_title")}</h2>
 					<ul className="space-y-2 text-sm opacity-85">
 						{links.map((l) => (
 							<li key={l.label}>
@@ -84,20 +92,23 @@ export function Footer({ settings }: { settings: Record<string, string> }) {
 						))}
 					</ul>
 				</div>
-				<div>
-					<div className="t-eyebrow text-[var(--gold)] mb-4">{s("newsletter_title")}</div>
+				<div className="md:col-span-4">
+					<h2 className="t-eyebrow text-[var(--gold)] mb-4">{s("newsletter_title")}</h2>
 					{s("newsletter_text") && <p className="text-sm opacity-80 mb-3">{s("newsletter_text")}</p>}
-					{subscribed ? (
-						<p className="text-sm text-[var(--secondary)] font-semibold">Thanks for subscribing!</p>
+					{status === "sent" ? (
+						<p className="text-sm text-[var(--secondary)] font-semibold">{t("newsletter.thanks", "Thanks for subscribing!")}</p>
 					) : (
-						<form className="flex gap-2" onSubmit={subscribe}>
-							<input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.org" className="flex-1 rounded-full bg-primary-foreground/10 border border-primary-foreground/20 px-4 py-2.5 text-sm placeholder:text-primary-foreground/50 focus:outline-none focus:border-[var(--secondary)]" />
-							<button type="submit" className="rounded-full bg-[var(--secondary)] text-primary px-4 text-sm font-semibold hover:bg-[var(--gold)] transition">→</button>
-						</form>
+						<>
+							<form className="flex gap-2" onSubmit={subscribe}>
+								<input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} aria-label={t("newsletter.email", "Email address")} placeholder="you@email.org" className="flex-1 rounded-full bg-primary-foreground/10 border border-primary-foreground/20 px-4 py-2.5 text-sm placeholder:text-primary-foreground/50 focus:outline-none focus:border-[var(--secondary)]" />
+								<button type="submit" disabled={status === "sending"} aria-label={t("newsletter.subscribe", "Subscribe")} className="rounded-full bg-[var(--secondary)] text-primary px-4 text-sm font-semibold hover:bg-[var(--gold)] disabled:opacity-50 transition">→</button>
+							</form>
+							{status === "error" && <p className="mt-2 text-sm text-[var(--gold)]">{t("newsletter.error", "Something went wrong. Please try again.")}</p>}
+						</>
 					)}
 					<div className="mt-6 flex gap-3">
-						{socials.map(([label, url]) => (
-							<a key={label} href={url} target="_blank" rel="noopener noreferrer" className="h-9 w-9 rounded-full border border-primary-foreground/20 grid place-items-center text-xs font-bold hover:bg-[var(--secondary)] hover:text-primary hover:border-[var(--secondary)] transition">{label}</a>
+						{socials.map(([label, name, url]) => (
+							<a key={label} href={url} target="_blank" rel="noopener noreferrer" aria-label={name} title={name} className="h-9 w-9 rounded-full border border-primary-foreground/20 grid place-items-center text-xs font-bold hover:bg-[var(--secondary)] hover:text-primary hover:border-[var(--secondary)] transition">{label}</a>
 						))}
 					</div>
 				</div>
