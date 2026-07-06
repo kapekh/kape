@@ -13,6 +13,9 @@ const config = defineConfig({
   // Keep it out of bundling/pre-bundling so Bun resolves it at runtime.
   optimizeDeps: { exclude: ['bun:sqlite'] },
   ssr: { external: ['bun:sqlite'] },
+  // `vite preview` (our production server, see package.json `start`) rejects
+  // unknown Host headers by default — allow the deployed domain through.
+  preview: { allowedHosts: ['kape.koompi.cloud'] },
   plugins: [
     devtools(),
     tailwindcss(),
