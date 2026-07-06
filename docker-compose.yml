@@ -1,0 +1,38 @@
+services:
+  app:
+    build: .
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_PATH=/data/kape.db
+      - VITE_SITE_URL=${VITE_SITE_URL:-}
+      - AUTH_SECRET=${AUTH_SECRET:?AUTH_SECRET must be set — see .env.example}
+      - R2_ACCOUNT_ID=${R2_ACCOUNT_ID:-}
+      - R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID:-}
+      - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY:-}
+      - R2_BUCKET=${R2_BUCKET:-}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - MAIL_FROM=${MAIL_FROM:-}
+      - MAIL_TO=${MAIL_TO:-kape@kapekh.org}
+      - BARAY_API_KEY=${BARAY_API_KEY:-}
+      - BARAY_SK=${BARAY_SK:-}
+      - BARAY_IV=${BARAY_IV:-}
+      # These three are validated as URLs (z.string().url()) with code-level
+      # defaults/optionality — bare name (no `=` value) means Compose only sets
+      # them when actually present in .env/shell, instead of forcing "".
+      - R2_PUBLIC_URL
+      - BARAY_API_URL
+      - BARAY_PAY_URL
+    volumes:
+      - kape-data:/data
+      - kape-uploads:/app/public/uploads
+    restart: unless-stopped
+
+volumes:
+  kape-data:
+  kape-uploads:
