@@ -4,6 +4,7 @@ import { useState } from "react";
 import { EditorGrid, EditorHeader, FormSection, cancelButtonClass, fieldInput, fieldLabel } from "./form-ui";
 import { MediaPicker } from "./MediaPicker";
 import { SearchableSelect } from "./SearchableSelect";
+import { useDirty } from "./useDirty";
 
 export type PartnerFormValue = {
 	name: string;
@@ -52,9 +53,11 @@ export function PartnerForm({
 		});
 	}
 
+	const dirty = useDirty(JSON.stringify({ name, category, url, logoMediaId }), savedAt);
+
 	return (
 		<form onSubmit={submit}>
-			<EditorHeader title={title} saving={saving} savedAt={savedAt} saveLabel="Save partner">
+			<EditorHeader title={title} saving={saving} savedAt={savedAt} saveLabel="Save partner" dirty={dirty}>
 				<Link to="/admin/partners" className={cancelButtonClass}>Cancel</Link>
 			</EditorHeader>
 			<EditorGrid

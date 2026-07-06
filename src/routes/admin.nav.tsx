@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { FormSection, fieldInput, fieldLabel } from "#/components/admin/form-ui";
 import type { LangOpt } from "#/components/admin/PostForm";
 import { SearchableSelect } from "#/components/admin/SearchableSelect";
+import { useDirty } from "#/components/admin/useDirty";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { HEADER_DEFAULTS } from "#/lib/header-defaults";
 import { confirm } from "@/components/Dialogs";
@@ -38,6 +39,8 @@ function HeaderSettings() {
 		setSavedAt(new Date().toLocaleTimeString());
 	}
 
+	const dirty = useDirty(JSON.stringify(vals), savedAt);
+
 	return (
 		<FormSection title="Header settings" description="The donate button and the top-bar utility links. A site path (/…) or full URL; “#donate” jumps to an on-page anchor.">
 			{loading ? (
@@ -53,7 +56,7 @@ function HeaderSettings() {
 						))}
 					</div>
 					<div className="mt-4 flex items-center gap-3">
-						<button type="button" onClick={save} disabled={saving} className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition">{saving ? "Saving…" : "Save header settings"}</button>
+						<button type="button" onClick={save} disabled={saving || !dirty} className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition">{saving ? "Saving…" : "Save header settings"}</button>
 						{savedAt && <span className="text-xs text-(--palm)">Saved {savedAt}</span>}
 					</div>
 				</>

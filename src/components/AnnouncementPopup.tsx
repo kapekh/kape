@@ -14,11 +14,22 @@ export function AnnouncementPopup() {
 	const { lang } = useLang();
 	const [open, setOpen] = useState(true);
 	const [a, setA] = useState<Announcement | null>(null);
+	// Only reveal after the visitor scrolls past the hero, so the toast never
+	// covers the hero's headline, CTAs, or feature card on first load.
+	const [scrolled, setScrolled] = useState(false);
 	useEffect(() => {
 		trpcClient.site.announcement.query({ lang: lang || "" }).then(setA).catch(() => {});
 	}, [lang]);
+	useEffect(() => {
+		const onScroll = () => {
+			if (window.scrollY > window.innerHeight * 0.6) setScrolled(true);
+		};
+		onScroll();
+		window.addEventListener("scroll", onScroll, { passive: true });
+		return () => window.removeEventListener("scroll", onScroll);
+	}, []);
 
-	if (!open || !a) return null;
+	if (!open || !a || !scrolled) return null;
 	return (
 		<div className="fixed bottom-6 right-6 z-50 max-w-sm rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-soft)]">
 			<div className="flex items-start justify-between gap-3">

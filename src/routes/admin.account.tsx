@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import { fieldInput, fieldLabel } from "#/components/admin/form-ui";
+import { useDirty } from "#/components/admin/useDirty";
 import { toast } from "@/components/Dialogs";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 
@@ -38,6 +39,8 @@ function Account() {
 		}
 	}
 
+	const dirty = useDirty(JSON.stringify({ current, next, confirmPw }));
+
 	return (
 		<div className="mx-auto max-w-2xl">
 			<h1 className="font-display text-2xl font-semibold text-primary">My account</h1>
@@ -70,7 +73,7 @@ function Account() {
 						<label className={fieldLabel}>Confirm new password</label>
 						<input className={fieldInput} type="password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} minLength={8} autoComplete="new-password" required />
 					</div>
-					<button type="submit" disabled={busy} className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50 transition">
+					<button type="submit" disabled={busy || !dirty} className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50 transition">
 						{busy ? "Saving…" : "Change password"}
 					</button>
 				</div>

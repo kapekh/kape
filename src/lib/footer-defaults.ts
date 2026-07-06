@@ -12,4 +12,11 @@ export const FOOTER_DEFAULTS: Record<string, string> = {
 		"Annual Report|/media/annual-report, Impact Stories|/stories, Research|/media/paper-research, Program Brochure|/media/program-brochure, Photo Gallery|/galleries, Video Gallery|/videos, Policies|/media/policies",
 	newsletter_title: "Newsletter",
 	newsletter_text: "Subscribe to receive our e-newsletter.",
+	// Social links as a JSON list of { name, url, logoUrl }. `logoUrl` is optional —
+	// the footer shows the uploaded logo when set, else a short letter badge.
+	footer_socials: JSON.stringify([
+		{ name: "Facebook", url: "https://facebook.com/KAPECambodia", logoUrl: "" },
+		{ name: "YouTube", url: "https://www.youtube.com/@KAPECambodia", logoUrl: "" },
+		{ name: "Telegram", url: "https://t.me/kapemedia", logoUrl: "" },
+	]),
 };

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { EditorGrid, EditorHeader, FormSection, cancelButtonClass, fieldInput, fieldLabel } from "./form-ui";
+import { useDirty } from "./useDirty";
 import { LangTabs } from "./LangTabs";
 import { type MediaItem, MediaLibraryDialog, isImageMedia } from "./MediaLibraryDialog";
 import { MediaPicker } from "./MediaPicker";
@@ -159,9 +160,14 @@ export function PostForm({
 
 	const metaFieldDefs = META_FIELDS[contentType] ?? [];
 
+	const dirty = useDirty(
+		JSON.stringify({ contentType, slug, status, author, publishedAt, coverMediaId, gallery, metaFields, trans }),
+		savedAt,
+	);
+
 	return (
 		<form onSubmit={submit}>
-			<EditorHeader title={title} saving={saving} savedAt={savedAt} saveLabel="Save post">
+			<EditorHeader title={title} saving={saving} savedAt={savedAt} saveLabel="Save post" dirty={dirty}>
 				<Link to="/admin/posts" className={cancelButtonClass}>Cancel</Link>
 			</EditorHeader>
 			<EditorGrid

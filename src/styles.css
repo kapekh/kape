@@ -319,6 +319,44 @@
   }
 }
 
+/* ============================================================
+   Semantic type scale — single source of truth for public-site
+   typography. Each token bundles font-size + responsive steps +
+   line-height + tracking + family + weight, so every section and
+   page shares one consistent scale. Call sites keep only colour
+   and layout utilities (e.g. `class="t-section text-primary"`).
+   Sizes mirror Tailwind's scale; breakpoints md=48rem, lg=64rem.
+   Kept in @layer components so an intentional inline text-* can
+   still override at a specific call site.
+   ============================================================ */
+@layer components {
+  .t-display    { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; line-height: 1.02; font-size: 3rem; }     /* 5xl → 6xl → 7xl */
+  .t-page-title { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; line-height: 1.05; font-size: 2.25rem; }  /* 4xl → 6xl */
+  .t-band       { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; line-height: 1.05; font-size: 2.25rem; }  /* 4xl → 6xl (CTA + full-bleed band headings) */
+  .t-section    { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; line-height: 1.1;  font-size: 1.875rem; } /* 3xl → 4xl */
+  .t-subsection { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.01em; line-height: 1.2;  font-size: 1.25rem; }  /* xl → 2xl */
+  .t-card-title { font-family: var(--font-display); font-weight: 600; line-height: 1.3; font-size: 1.125rem; }                           /* lg */
+  .t-eyebrow    { font-family: var(--font-sans); font-weight: 600; text-transform: uppercase; letter-spacing: 0.2em; line-height: 1; font-size: 0.75rem; } /* xs — sans even on <h2> */
+  .t-lead       { line-height: 1.6; font-size: 1.125rem; }                                                                               /* lg */
+  .t-body       { line-height: 1.7; font-size: 1rem; }                                                                                   /* base (was text-sm) */
+  .t-meta       { line-height: 1.5; font-size: 0.875rem; }                                                                               /* sm */
+
+  @media (min-width: 48rem) {
+    .t-display    { font-size: 3.75rem; }
+    .t-page-title { font-size: 3.75rem; }
+    .t-band       { font-size: 3.75rem; }
+    .t-section    { font-size: 2.25rem; }
+    .t-subsection { font-size: 1.5rem; }
+  }
+  @media (min-width: 64rem) {
+    .t-display { font-size: 4.5rem; }
+  }
+
+  /* Noto Serif Khmer reads ~1 optical step smaller; nudge running text up on /km. */
+  :lang(km) .t-body { font-size: 1.05rem; }
+  :lang(km) .t-lead { font-size: 1.2rem; }
+}
+
 /* ---- Organizational chart: CSS-connector hierarchy tree ---- */
 .org-tree { text-align: center; }
 .org-tree ul { display: flex; justify-content: center; padding-top: 22px; position: relative; margin: 0; }

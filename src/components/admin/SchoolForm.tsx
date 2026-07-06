@@ -5,6 +5,7 @@ import { EditorGrid, EditorHeader, FormSection, cancelButtonClass, fieldInput, f
 import { MapPicker } from "./MapPicker";
 import { MediaPicker } from "./MediaPicker";
 import { SearchableSelect } from "./SearchableSelect";
+import { useDirty } from "./useDirty";
 
 export type SchoolFormValue = {
 	name: string;
@@ -71,9 +72,14 @@ export function SchoolForm({
 		});
 	}
 
+	const dirty = useDirty(
+		JSON.stringify({ name, code, level, province, projectId, coverMediaId, address, lat, lng }),
+		savedAt,
+	);
+
 	return (
 		<form onSubmit={submit}>
-			<EditorHeader title={title} saving={saving} savedAt={savedAt} saveLabel="Save school">
+			<EditorHeader title={title} saving={saving} savedAt={savedAt} saveLabel="Save school" dirty={dirty}>
 				<Link to="/admin/schools" className={cancelButtonClass}>Cancel</Link>
 			</EditorHeader>
 			<EditorGrid

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { EditorGrid, EditorHeader, FormSection, cancelButtonClass, fieldInput, fieldLabel } from "./form-ui";
+import { useDirty } from "./useDirty";
 
 export type UserFormValue = { email: string; name: string | null; role: string; password?: string };
 
@@ -31,9 +32,11 @@ export function UserForm({ initial, onSubmit, saving, title }: { initial: Initia
 		onSubmit({ email: email.trim(), name: name.trim() || null, role, ...(isNew ? { password } : {}) });
 	}
 
+	const dirty = useDirty(JSON.stringify({ email, name, role, password }));
+
 	return (
 		<form onSubmit={submit}>
-			<EditorHeader title={title} saving={saving} saveLabel="Save user">
+			<EditorHeader title={title} saving={saving} saveLabel="Save user" dirty={dirty}>
 				<Link to="/admin/users" className={cancelButtonClass}>Cancel</Link>
 			</EditorHeader>
 			<EditorGrid

@@ -37,16 +37,16 @@ function ContactPage() {
 			badge="Say hello"
 		>
 			{/* Top: message form ‹› head office + map */}
-			<div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-				<div className={panel}>
-					<h2 className="font-display text-2xl font-semibold text-primary">Send us a message</h2>
+			<div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
+				<div className={`${panel} flex flex-col`}>
+					<h2 className="t-subsection text-primary">Send us a message</h2>
 					<p className="mt-1 mb-5 text-sm text-muted-foreground">We usually reply within a couple of working days.</p>
 					<ContactForm />
 				</div>
 
 				{hq && (
 					<div className={panel}>
-						<h2 className="font-display text-2xl font-semibold text-primary">Head office</h2>
+						<h2 className="t-subsection text-primary">Head office</h2>
 						<div className="mt-4 space-y-1 text-sm text-foreground/85">
 							{hq.address && <div><strong className="text-foreground">Address:</strong> {hq.address}</div>}
 							{hq.phone && <div><strong className="text-foreground">Telephone:</strong> <a href={`tel:${hq.phone}`} className="hover:text-[var(--accent)]">{hq.phone}</a></div>}
@@ -64,12 +64,12 @@ function ContactPage() {
 			{/* Provincial offices */}
 			{provincial.length > 0 && (
 				<section className="mt-12">
-					<h2 className="font-display text-2xl font-semibold text-primary">Provincial offices</h2>
+					<h2 className="t-subsection text-primary">Provincial offices</h2>
 					<Grid cols={3}>
 						{provincial.map((o) => (
 							<Card key={o.id} title={o.name}>
 								{o.imageUrl && <img src={o.imageUrl} alt={o.name} className="mb-3 aspect-video w-full rounded-lg object-cover" />}
-								{o.province && <div className="text-xs uppercase tracking-wide text-[var(--accent)] font-semibold mb-1">{o.province}</div>}
+								{o.province && <div className="t-eyebrow text-[var(--accent)] mb-1">{o.province}</div>}
 								{o.address && <div className="mb-1">{o.address}</div>}
 								{o.phone && <div>Phone: <a href={`tel:${o.phone}`} className="hover:text-[var(--accent)]">{o.phone}</a></div>}
 								{o.email && <div>Email: <a href={`mailto:${o.email}`} className="hover:text-[var(--accent)]">{o.email}</a></div>}

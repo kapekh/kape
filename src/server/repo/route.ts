@@ -4,7 +4,7 @@
  * (renamed page slug or a legacy nested path), or not-found. The `$` route renders
  * whatever this returns — so adding a page or a content record needs no new route.
  */
-import { collectionFor, legacyRedirect } from "#/lib/collections";
+import { NON_PUBLIC_CONTENT_TYPES, collectionFor, legacyRedirect } from "#/lib/collections";
 import type { DB } from "../db";
 import { cacheGet, cacheKey, cacheSet, tagPage, tagPostsQuery, tagRecord, tagSourceQuery } from "../render-cache";
 import {
@@ -18,9 +18,6 @@ import {
 } from "./content";
 import { getPersonBySlug, type ResolvedPerson } from "./people";
 import { getProjectBySlug, type ResolvedProject } from "./projects";
-
-// Internal-only content types are never served on the public site.
-const BLOCKED_TYPES = new Set(["internal_news", "document", "announcement"]);
 
 export type ResolvedRoute =
 	| { kind: "page"; page: ResolvedPage }
@@ -59,7 +56,7 @@ export async function resolveRoute(db: DB, rawPath: string, lang: string): Promi
 				if (person) return { kind: "person", label: col.label, person };
 			} else {
 				const post = await getPostBySlug(db, rest, lang);
-				if (post && post.contentType === col.contentType && !BLOCKED_TYPES.has(post.contentType)) {
+				if (post && post.contentType === col.contentType && !NON_PUBLIC_CONTENT_TYPES.has(post.contentType)) {
 					return { kind: "article", label: col.label, post };
 				}
 			}

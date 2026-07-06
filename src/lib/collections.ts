@@ -28,6 +28,15 @@ export const COLLECTIONS: Record<string, CollectionDef> = {
 
 export const collectionFor = (prefix: string): CollectionDef | undefined => COLLECTIONS[prefix];
 
+/**
+ * Content types that are internal-only and never served on the public site:
+ * no detail page (route resolver skips them), no page-section listing, and
+ * excluded from the sitemap. Single source of truth for all three so the lists
+ * can't drift (they previously did — `event` was blocked in the sitemap and in
+ * section queries but still resolvable as a detail page).
+ */
+export const NON_PUBLIC_CONTENT_TYPES = new Set(["internal_news", "document", "announcement", "event"]);
+
 /** Detail permalink for a collection record. */
 export const collectionHref = (prefix: string, slug: string) => `/${prefix}/${slug}`;
 

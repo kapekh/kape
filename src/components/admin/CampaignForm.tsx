@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import { EditorGrid, EditorHeader, FormSection, cancelButtonClass, fieldInput, fieldLabel } from "./form-ui";
 import { MediaPicker } from "./MediaPicker";
+import { useDirty } from "./useDirty";
 
 export type CampaignFormValue = {
 	slug: string;
@@ -98,9 +99,13 @@ export function CampaignForm({ initial, onSubmit, saving, title }: { initial: In
 		});
 	}
 
+	const dirty = useDirty(
+		JSON.stringify({ slug, status, titleEn, titleKm, blurb, blurbKm, currency, goal, coverMediaId, presetsText, allowCustom, tiers, showSupporters, featured }),
+	);
+
 	return (
 		<form onSubmit={submit}>
-			<EditorHeader title={title} saving={saving} saveLabel="Save campaign">
+			<EditorHeader title={title} saving={saving} saveLabel="Save campaign" dirty={dirty}>
 				<Link to="/admin/campaigns" className={cancelButtonClass}>Cancel</Link>
 			</EditorHeader>
 			<EditorGrid
