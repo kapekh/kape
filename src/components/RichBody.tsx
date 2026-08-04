@@ -12,11 +12,19 @@ const FORM_RE = /<div[^>]*\bdata-kape-form="([^"]*)"[^>]*>[\s\S]*?<\/div>/g;
  * siblings (no portals into dangerouslySetInnerHTML, which crashes on
  * re-render) — so a form can live anywhere prose renders.
  */
-export function RichBody({ html, className }: { html: string; className?: string }) {
+export function RichBody({
+	html,
+	className,
+}: {
+	html: string;
+	className?: string;
+}) {
 	if (!html) return null;
 	if (!html.includes("data-kape-form")) {
 		// biome-ignore lint/security/noDangerouslySetInnerHtml: trusted, server-rendered
-		return <div className={className} dangerouslySetInnerHTML={{ __html: html }} />;
+		return (
+			<div className={className} dangerouslySetInnerHTML={{ __html: html }} />
+		);
 	}
 
 	const parts: React.ReactNode[] = [];
@@ -28,14 +36,20 @@ export function RichBody({ html, className }: { html: string; className?: string
 	while ((m = FORM_RE.exec(html)) !== null) {
 		const before = html.slice(last, m.index);
 		// biome-ignore lint/security/noDangerouslySetInnerHtml: trusted, server-rendered
-		if (before.trim()) parts.push(<div key={`h${i}`} dangerouslySetInnerHTML={{ __html: before }} />);
+		if (before.trim())
+			parts.push(
+				<div key={`h${i}`} dangerouslySetInnerHTML={{ __html: before }} />,
+			);
 		parts.push(<FormRenderer key={`f${i}`} slug={m[1]} />);
 		last = m.index + m[0].length;
 		i++;
 	}
 	const after = html.slice(last);
 	// biome-ignore lint/security/noDangerouslySetInnerHtml: trusted, server-rendered
-	if (after.trim()) parts.push(<div key={`h${i}`} dangerouslySetInnerHTML={{ __html: after }} />);
+	if (after.trim())
+		parts.push(
+			<div key={`h${i}`} dangerouslySetInnerHTML={{ __html: after }} />,
+		);
 
 	return <div className={className}>{parts}</div>;
 }

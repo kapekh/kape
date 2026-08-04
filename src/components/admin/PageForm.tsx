@@ -21,7 +21,12 @@ export type PageFormValue = {
 	status: PageStatus;
 	coverMediaId: number | null;
 	sections: SectionNode[];
-	translations: { lang: string; title: string; excerpt: string; body: string }[];
+	translations: {
+		lang: string;
+		title: string;
+		excerpt: string;
+		body: string;
+	}[];
 };
 
 type Initial = {
@@ -49,14 +54,25 @@ export function PageForm({
 	title?: string; // kept for caller compatibility; the page editor has no title bar
 	savedAt?: string | null;
 }) {
-	const [segment, setSegment] = useState(initial?.segment ?? initial?.slug ?? "");
-	const [parentId, setParentId] = useState<number | null>(initial?.parentId ?? null);
-	const [status, setStatus] = useState<PageStatus>((initial?.status as PageStatus) ?? "draft");
+	const [segment, setSegment] = useState(
+		initial?.segment ?? initial?.slug ?? "",
+	);
+	const [parentId, setParentId] = useState<number | null>(
+		initial?.parentId ?? null,
+	);
+	const [status, setStatus] = useState<PageStatus>(
+		(initial?.status as PageStatus) ?? "draft",
+	);
 
 	// Pages for the parent picker (exclude self + own descendants to prevent cycles).
-	const [allPages, setAllPages] = useState<{ id: number; slug: string; parentId: number | null; title: string }[]>([]);
+	const [allPages, setAllPages] = useState<
+		{ id: number; slug: string; parentId: number | null; title: string }[]
+	>([]);
 	useEffect(() => {
-		trpcClient.adminPages.list.query().then(setAllPages).catch(() => {});
+		trpcClient.adminPages.list
+			.query()
+			.then(setAllPages)
+			.catch(() => {});
 	}, []);
 	const parentOptions = useMemo(() => {
 		const selfId = initial?.id;
@@ -64,34 +80,83 @@ export function PageForm({
 		if (selfId != null) {
 			blocked.add(selfId);
 			const childrenOf = new Map<number, number[]>();
-			for (const p of allPages) if (p.parentId != null) (childrenOf.get(p.parentId) ?? childrenOf.set(p.parentId, []).get(p.parentId)!).push(p.id);
+			for (const p of allPages)
+				if (p.parentId != null)
+					(
+						childrenOf.get(p.parentId) ??
+						childrenOf.set(p.parentId, []).get(p.parentId)!
+					).push(p.id);
 			const stack = [selfId];
-			while (stack.length) for (const c of childrenOf.get(stack.pop()!) ?? []) { blocked.add(c); stack.push(c); }
+			while (stack.length)
+				for (const c of childrenOf.get(stack.pop()!) ?? []) {
+					blocked.add(c);
+					stack.push(c);
+				}
 		}
-		return allPages.filter((p) => !blocked.has(p.id)).sort((a, b) => a.slug.localeCompare(b.slug));
+		return allPages
+			.filter((p) => !blocked.has(p.id))
+			.sort((a, b) => a.slug.localeCompare(b.slug));
 	}, [allPages, initial?.id]);
-	const parentSlug = parentId != null ? (allPages.find((p) => p.id === parentId)?.slug ?? "") : "";
+	const parentSlug =
+		parentId != null
+			? (allPages.find((p) => p.id === parentId)?.slug ?? "")
+			: "";
 	const fullPath = `/${[parentSlug, segment.replace(/^\/+|\/+$/g, "")].filter(Boolean).join("/")}`;
-	const [coverMediaId, setCoverMediaId] = useState<number | null>(initial?.coverMediaId ?? null);
-	const [sections, setSections] = useState<SectionNode[]>(initial?.sections ?? []);
-	const [trans, setTrans] = useState<Record<string, { title: string; excerpt: string; body: string }>>(() => {
-		const t: Record<string, { title: string; excerpt: string; body: string }> = {};
+	const [coverMediaId, setCoverMediaId] = useState<number | null>(
+		initial?.coverMediaId ?? null,
+	);
+	const [sections, setSections] = useState<SectionNode[]>(
+		initial?.sections ?? [],
+	);
+	const [trans, setTrans] = useState<
+		Record<string, { title: string; excerpt: string; body: string }>
+	>(() => {
+		const t: Record<string, { title: string; excerpt: string; body: string }> =
+			{};
 		for (const l of languages) {
 			const e = initial?.translations[l.code] ?? {};
-			t[l.code] = { title: e.title ?? "", excerpt: e.excerpt ?? "", body: e.body ?? "" };
+			t[l.code] = {
+				title: e.title ?? "",
+				excerpt: e.excerpt ?? "",
+				body: e.body ?? "",
+			};
 		}
 		return t;
 	});
 
-	function setField(lang: string, field: "title" | "excerpt" | "body", value: string) {
-		setTrans((prev) => ({ ...prev, [lang]: { ...prev[lang], [field]: value } }));
+	function setField(
+		lang: string,
+		field: "title" | "excerpt" | "body",
+		value: string,
+	) {
+		setTrans((prev) => ({
+			...prev,
+			[lang]: { ...prev[lang], [field]: value },
+		}));
 	}
 	function submit(e?: React.SyntheticEvent) {
 		e?.preventDefault();
-		onSubmit({ segment: segment.replace(/^\/+|\/+$/g, ""), parentId, status, coverMediaId, sections, translations: languages.map((l) => ({ lang: l.code, ...trans[l.code] })) });
+		onSubmit({
+			segment: segment.replace(/^\/+|\/+$/g, ""),
+			parentId,
+			status,
+			coverMediaId,
+			sections,
+			translations: languages.map((l) => ({ lang: l.code, ...trans[l.code] })),
+		});
 	}
 
-	const dirty = useDirty(JSON.stringify({ segment, parentId, status, coverMediaId, sections, trans }), savedAt);
+	const dirty = useDirty(
+		JSON.stringify({
+			segment,
+			parentId,
+			status,
+			coverMediaId,
+			sections,
+			trans,
+		}),
+		savedAt,
+	);
 
 	// Resizable editor/preview split (only when the studio is in side-by-side mode).
 	const [panelW, setPanelW] = useState(420);
@@ -107,7 +172,8 @@ export function PageForm({
 		e.preventDefault();
 		const startX = e.clientX;
 		const startW = panelW;
-		const onMove = (ev: MouseEvent) => setPanelW(Math.min(880, Math.max(300, startW + ev.clientX - startX)));
+		const onMove = (ev: MouseEvent) =>
+			setPanelW(Math.min(880, Math.max(300, startW + ev.clientX - startX)));
 		const onUp = () => {
 			window.removeEventListener("mousemove", onMove);
 			window.removeEventListener("mouseup", onUp);
@@ -138,24 +204,39 @@ export function PageForm({
 			>
 				<div className="border-b border-border p-4">
 					<h2 className={panelHead}>Page sections</h2>
-					<p className={`${panelSub} mb-3`}>Compose the page from sections (static + data-driven).</p>
-					<SectionsBuilder value={sections} onChange={setSections} languages={languages} />
+					<p className={`${panelSub} mb-3`}>
+						Compose the page from sections (static + data-driven).
+					</p>
+					<SectionsBuilder
+						value={sections}
+						onChange={setSections}
+						languages={languages}
+					/>
 				</div>
 
 				<div className="border-b border-border p-4">
 					<h2 className={panelHead}>Metadata</h2>
-					<p className={`${panelSub} mb-3`}>Title, brief and cover power SEO and the menu card.</p>
+					<p className={`${panelSub} mb-3`}>
+						Title, brief and cover power SEO and the menu card.
+					</p>
 					<div className="space-y-4">
 						<LangTabs languages={languages}>
 							{(l) => (
 								<div className="space-y-2">
-									<input className={`${fieldInput} ${l.code === "km" ? "font-khmer" : ""}`} placeholder="Title" value={trans[l.code]?.title ?? ""} onChange={(e) => setField(l.code, "title", e.target.value)} />
+									<input
+										className={`${fieldInput} ${l.code === "km" ? "font-khmer" : ""}`}
+										placeholder="Title"
+										value={trans[l.code]?.title ?? ""}
+										onChange={(e) => setField(l.code, "title", e.target.value)}
+									/>
 									<textarea
 										className={`${fieldInput} resize-y ${l.code === "km" ? "font-khmer" : ""}`}
 										rows={2}
 										placeholder="Brief — shown on menu cards and used for SEO."
 										value={trans[l.code]?.excerpt ?? ""}
-										onChange={(e) => setField(l.code, "excerpt", e.target.value)}
+										onChange={(e) =>
+											setField(l.code, "excerpt", e.target.value)
+										}
 									/>
 								</div>
 							)}
@@ -168,21 +249,42 @@ export function PageForm({
 					<div className="mt-3 space-y-3">
 						<div>
 							<label className={fieldLabel}>Parent page</label>
-							<select className={fieldInput} value={parentId ?? ""} onChange={(e) => setParentId(e.target.value ? Number(e.target.value) : null)}>
+							<select
+								className={fieldInput}
+								value={parentId ?? ""}
+								onChange={(e) =>
+									setParentId(e.target.value ? Number(e.target.value) : null)
+								}
+							>
 								<option value="">— Top level</option>
 								{parentOptions.map((p) => (
-									<option key={p.id} value={p.id}>{p.slug} — {p.title}</option>
+									<option key={p.id} value={p.id}>
+										{p.slug} — {p.title}
+									</option>
 								))}
 							</select>
 						</div>
 						<div>
 							<label className={fieldLabel}>URL segment</label>
-							<input className={fieldInput} value={segment} onChange={(e) => setSegment(e.target.value)} placeholder="about" required />
-							<p className="mt-1 text-[11px] text-muted-foreground">URL: <span className="font-mono text-foreground/80">{fullPath}</span></p>
+							<input
+								className={fieldInput}
+								value={segment}
+								onChange={(e) => setSegment(e.target.value)}
+								placeholder="about"
+								required
+							/>
+							<p className="mt-1 text-[11px] text-muted-foreground">
+								URL:{" "}
+								<span className="font-mono text-foreground/80">{fullPath}</span>
+							</p>
 						</div>
 						<div>
 							<label className={fieldLabel}>Status</label>
-							<select className={fieldInput} value={status} onChange={(e) => setStatus(e.target.value as PageStatus)}>
+							<select
+								className={fieldInput}
+								value={status}
+								onChange={(e) => setStatus(e.target.value as PageStatus)}
+							>
 								<option value="draft">Draft</option>
 								<option value="published">Published</option>
 							</select>
@@ -192,7 +294,9 @@ export function PageForm({
 
 				<div className="p-4">
 					<h2 className={panelHead}>Cover image</h2>
-					<p className={`${panelSub} mb-3`}>Page hero, menu card and social/SEO image.</p>
+					<p className={`${panelSub} mb-3`}>
+						Page hero, menu card and social/SEO image.
+					</p>
 					<MediaPicker
 						value={coverMediaId != null ? String(coverMediaId) : ""}
 						onChange={(v) => setCoverMediaId(v ? Number(v) : null)}
@@ -226,12 +330,26 @@ export function PageForm({
 			<div className="flex min-h-0 min-w-0 flex-1 flex-col bg-muted/40">
 				<div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border bg-card px-4 py-2">
 					<span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-						Live preview <span className="ml-1.5 font-normal normal-case text-[11px] text-muted-foreground/70">English · approximate</span>
+						Live preview{" "}
+						<span className="ml-1.5 font-normal normal-case text-[11px] text-muted-foreground/70">
+							English · approximate
+						</span>
 					</span>
 					<div className="flex items-center gap-2">
-						{savedAt && <span className="text-xs text-[var(--palm)]">Saved {savedAt}</span>}
-						<Link to="/admin/pages" className={cancelButtonClass}>Cancel</Link>
-						<button type="button" onClick={() => submit()} disabled={saving || !dirty} className="rounded-full bg-primary text-primary-foreground px-5 py-1.5 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition">
+						{savedAt && (
+							<span className="text-xs text-[var(--palm)]">
+								Saved {savedAt}
+							</span>
+						)}
+						<Link to="/admin/pages" className={cancelButtonClass}>
+							Cancel
+						</Link>
+						<button
+							type="button"
+							onClick={() => submit()}
+							disabled={saving || !dirty}
+							className="rounded-full bg-primary text-primary-foreground px-5 py-1.5 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition"
+						>
 							{saving ? "Saving…" : "Save page"}
 						</button>
 					</div>

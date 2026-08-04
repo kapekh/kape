@@ -63,7 +63,8 @@ export function MediaPicker({
 	const previewUrl = mode === "id" ? url : value;
 	const isImg = type ? type.startsWith("image/") : IMG_EXT.test(previewUrl);
 	const aspectCls = aspect === "square" ? "aspect-square" : "aspect-video";
-	const placeholder = label ?? (kind === "image" ? "Choose image" : "Choose file");
+	const placeholder =
+		label ?? (kind === "image" ? "Choose image" : "Choose file");
 
 	function pick(m: MediaItem) {
 		onChange(mode === "id" ? String(m.id) : (m.url ?? ""));
@@ -87,23 +88,52 @@ export function MediaPicker({
 				{previewUrl ? (
 					isImg ? (
 						<>
-							<img src={previewUrl} alt="" className="h-full w-full object-cover" />
+							<img
+								src={previewUrl}
+								alt=""
+								className="h-full w-full object-cover"
+							/>
 							{/* Hover affordance over the larger preview. */}
-							<span className="absolute inset-0 grid place-items-center bg-black/0 text-sm font-medium text-transparent transition group-hover:bg-black/40 group-hover:text-white">Change image</span>
+							<span className="absolute inset-0 grid place-items-center bg-black/0 text-sm font-medium text-transparent transition group-hover:bg-black/40 group-hover:text-white">
+								Change image
+							</span>
 						</>
 					) : (
 						<span className="text-5xl">📄</span>
 					)
 				) : (
-					<span className="px-3 text-center text-sm text-muted-foreground">+ {placeholder}</span>
+					<span className="px-3 text-center text-sm text-muted-foreground">
+						+ {placeholder}
+					</span>
 				)}
 			</button>
 
 			{previewUrl && (
 				<div className="mt-2 flex flex-wrap items-center gap-2">
-					<button type="button" onClick={() => setOpen(true)} className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted">Change</button>
-					<button type="button" onClick={clear} className="rounded-lg px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10">Remove</button>
-					{!isImg && <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="px-3 text-xs text-[var(--accent)] hover:underline">Open file ↗</a>}
+					<button
+						type="button"
+						onClick={() => setOpen(true)}
+						className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+					>
+						Change
+					</button>
+					<button
+						type="button"
+						onClick={clear}
+						className="rounded-lg px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10"
+					>
+						Remove
+					</button>
+					{!isImg && (
+						<a
+							href={previewUrl}
+							target="_blank"
+							rel="noopener noreferrer"
+							className="px-3 text-xs text-[var(--accent)] hover:underline"
+						>
+							Open file ↗
+						</a>
+					)}
 				</div>
 			)}
 

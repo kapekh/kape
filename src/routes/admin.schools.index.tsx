@@ -1,14 +1,24 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { confirm } from "@/components/Dialogs";
 
-export const Route = createFileRoute("/admin/schools/")({ component: SchoolsList });
+export const Route = createFileRoute("/admin/schools/")({
+	component: SchoolsList,
+});
 
-type Row = Awaited<ReturnType<typeof trpcClient.adminSchools.list.query>>[number];
-const LEVEL_LABELS: Record<string, string> = { preschool: "Preschool", primary: "Primary", secondary: "Secondary", high: "High school", higher: "Higher education" };
+type Row = Awaited<
+	ReturnType<typeof trpcClient.adminSchools.list.query>
+>[number];
+const LEVEL_LABELS: Record<string, string> = {
+	preschool: "Preschool",
+	primary: "Primary",
+	secondary: "Secondary",
+	high: "High school",
+	higher: "Higher education",
+};
 
 function SchoolsList() {
 	const [rows, setRows] = useState<Row[]>([]);
@@ -27,7 +37,11 @@ function SchoolsList() {
 		setProvinces(Object.fromEntries(prov.map((p) => [p.key, p.label])));
 		setProjects(Object.fromEntries(proj.map((p) => [p.id, p.code])));
 		// Resolve only the cover images actually referenced by the rows.
-		const coverIds = [...new Set(s.map((x) => x.coverMediaId).filter((v): v is number => v != null))];
+		const coverIds = [
+			...new Set(
+				s.map((x) => x.coverMediaId).filter((v): v is number => v != null),
+			),
+		];
 		const m = await trpcClient.adminMedia.byIds.query({ ids: coverIds });
 		setMedia(Object.fromEntries(m.map((x) => [x.id, x.url ?? ""])));
 		setLoading(false);
@@ -46,10 +60,19 @@ function SchoolsList() {
 		<div>
 			<div className="flex items-center justify-between mb-6">
 				<div>
-					<h1 className="font-display text-2xl font-semibold text-primary">Schools</h1>
-					<p className="mt-1 text-sm text-muted-foreground">Schools KAPE supports — {rows.length} total.</p>
+					<h1 className="font-display text-2xl font-semibold text-primary">
+						Schools
+					</h1>
+					<p className="mt-1 text-sm text-muted-foreground">
+						Schools KAPE supports — {rows.length} total.
+					</p>
 				</div>
-				<Link to="/admin/schools/new" className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold hover:opacity-90 transition">+ New school</Link>
+				<Link
+					to="/admin/schools/new"
+					className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold hover:opacity-90 transition"
+				>
+					+ New school
+				</Link>
 			</div>
 
 			<div className="overflow-hidden rounded-xl border border-border bg-card">
@@ -66,27 +89,79 @@ function SchoolsList() {
 					</thead>
 					<tbody className="divide-y divide-border">
 						{loading ? (
-							<tr><td colSpan={6} className="px-4 py-6 text-muted-foreground">Loading…</td></tr>
+							<tr>
+								<td colSpan={6} className="px-4 py-6 text-muted-foreground">
+									Loading…
+								</td>
+							</tr>
 						) : rows.length === 0 ? (
-							<tr><td colSpan={6} className="px-4 py-6 text-muted-foreground">No schools yet. <Link to="/admin/schools/new" className="text-[var(--accent)] hover:underline">Add the first school →</Link></td></tr>
+							<tr>
+								<td colSpan={6} className="px-4 py-6 text-muted-foreground">
+									No schools yet.{" "}
+									<Link
+										to="/admin/schools/new"
+										className="text-[var(--accent)] hover:underline"
+									>
+										Add the first school →
+									</Link>
+								</td>
+							</tr>
 						) : (
 							rows.map((r) => (
 								<tr key={r.id} className="hover:bg-muted/20">
 									<td className="px-4 py-2">
 										<div className="h-10 w-14 rounded-md overflow-hidden bg-muted ring-1 ring-border">
-											{r.coverMediaId && media[r.coverMediaId] ? <img src={media[r.coverMediaId]} alt="" className="h-full w-full object-cover" /> : null}
+											{r.coverMediaId && media[r.coverMediaId] ? (
+												<img
+													src={media[r.coverMediaId]}
+													alt=""
+													className="h-full w-full object-cover"
+												/>
+											) : null}
 										</div>
 									</td>
 									<td className="px-2 py-2">
-										<Link to="/admin/schools/$id" params={{ id: String(r.id) }} className="font-medium text-foreground hover:text-[var(--accent)]">{r.name}</Link>
-										{r.code ? <span className="ml-2 text-xs text-muted-foreground">{r.code}</span> : null}
+										<Link
+											to="/admin/schools/$id"
+											params={{ id: String(r.id) }}
+											className="font-medium text-foreground hover:text-[var(--accent)]"
+										>
+											{r.name}
+										</Link>
+										{r.code ? (
+											<span className="ml-2 text-xs text-muted-foreground">
+												{r.code}
+											</span>
+										) : null}
 									</td>
-									<td className="px-2 py-2 text-foreground/80">{r.level ? (LEVEL_LABELS[r.level] ?? r.level) : "—"}</td>
-									<td className="px-2 py-2 text-foreground/80">{r.province ? (provinces[r.province] ?? r.province) : "—"}</td>
-									<td className="px-2 py-2 text-foreground/80">{r.projectId != null ? (projects[r.projectId] ?? "—") : "—"}</td>
+									<td className="px-2 py-2 text-foreground/80">
+										{r.level ? (LEVEL_LABELS[r.level] ?? r.level) : "—"}
+									</td>
+									<td className="px-2 py-2 text-foreground/80">
+										{r.province ? (provinces[r.province] ?? r.province) : "—"}
+									</td>
+									<td className="px-2 py-2 text-foreground/80">
+										{r.projectId != null ? (projects[r.projectId] ?? "—") : "—"}
+									</td>
 									<td className="px-3 py-2 text-right whitespace-nowrap">
-										<Link to="/admin/schools/$id" params={{ id: String(r.id) }} className="text-xs font-semibold text-[var(--accent)] hover:underline">Edit</Link>
-										<span className="ml-2 inline-flex align-middle"><ActionMenu items={[{ label: "Delete school", danger: true, onClick: () => del(r.id) }]} /></span>
+										<Link
+											to="/admin/schools/$id"
+											params={{ id: String(r.id) }}
+											className="text-xs font-semibold text-[var(--accent)] hover:underline"
+										>
+											Edit
+										</Link>
+										<span className="ml-2 inline-flex align-middle">
+											<ActionMenu
+												items={[
+													{
+														label: "Delete school",
+														danger: true,
+														onClick: () => del(r.id),
+													},
+												]}
+											/>
+										</span>
 									</td>
 								</tr>
 							))

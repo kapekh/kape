@@ -1,12 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
-import { OfficeForm, type OfficeFormValue, type TermOpt } from "#/components/admin/OfficeForm";
+import {
+	OfficeForm,
+	type OfficeFormValue,
+	type TermOpt,
+} from "#/components/admin/OfficeForm";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 
-export const Route = createFileRoute("/admin/offices/$id")({ component: EditOffice });
+export const Route = createFileRoute("/admin/offices/$id")({
+	component: EditOffice,
+});
 
-type OfficeRow = NonNullable<Awaited<ReturnType<typeof trpcClient.adminOffices.get.query>>>;
+type OfficeRow = NonNullable<
+	Awaited<ReturnType<typeof trpcClient.adminOffices.get.query>>
+>;
 
 function EditOffice() {
 	const { id } = Route.useParams();
@@ -35,7 +43,17 @@ function EditOffice() {
 		setSavedAt(new Date().toLocaleTimeString());
 	}
 
-	if (notFound) return <p className="text-sm text-muted-foreground">Office not found.</p>;
+	if (notFound)
+		return <p className="text-sm text-muted-foreground">Office not found.</p>;
 	if (!data) return <p className="text-sm text-muted-foreground">Loading…</p>;
-	return <OfficeForm initial={data} provinces={provinces} onSubmit={onSubmit} saving={saving} title="Edit office" savedAt={savedAt} />;
+	return (
+		<OfficeForm
+			initial={data}
+			provinces={provinces}
+			onSubmit={onSubmit}
+			saving={saving}
+			title="Edit office"
+			savedAt={savedAt}
+		/>
+	);
 }

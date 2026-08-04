@@ -3,7 +3,17 @@
  * `forms` row, rendered on the public site and edited in /admin/forms. Used by
  * both server (validation, schema typing) and client (renderer, builder).
  */
-export type FormFieldType = "text" | "textarea" | "email" | "tel" | "number" | "select" | "checkbox" | "file" | "richtext" | "content";
+export type FormFieldType =
+	| "text"
+	| "textarea"
+	| "email"
+	| "tel"
+	| "number"
+	| "select"
+	| "checkbox"
+	| "file"
+	| "richtext"
+	| "content";
 
 export type FormField = {
 	key: string; // stable column key, e.g. "graduation_year"
@@ -36,13 +46,34 @@ export function isContentField(f: { type: FormFieldType }): boolean {
 }
 
 /** File extensions accepted for `file` fields (mirrors the server allow-list). */
-export const ATTACHMENT_EXTS = ["png", "jpg", "jpeg", "webp", "gif", "avif", "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "csv"];
+export const ATTACHMENT_EXTS = [
+	"png",
+	"jpg",
+	"jpeg",
+	"webp",
+	"gif",
+	"avif",
+	"pdf",
+	"doc",
+	"docx",
+	"xls",
+	"xlsx",
+	"ppt",
+	"pptx",
+	"txt",
+	"csv",
+];
 /** Max attachment size for a `file` field. */
 export const ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 
 /** True when a value looks like an uploaded File (works on server + client). */
 function isFileLike(v: unknown): v is { size: number; name: string } {
-	return typeof v === "object" && v !== null && typeof (v as { size?: unknown }).size === "number" && typeof (v as { name?: unknown }).name === "string";
+	return (
+		typeof v === "object" &&
+		v !== null &&
+		typeof (v as { size?: unknown }).size === "number" &&
+		typeof (v as { name?: unknown }).name === "string"
+	);
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -55,7 +86,10 @@ export function isFormClosed(deadline: string | null | undefined): boolean {
 }
 
 /** Validate submitted values against a form's fields. Returns an error or null. */
-export function validateSubmission(fields: FormField[], values: Record<string, unknown>): string | null {
+export function validateSubmission(
+	fields: FormField[],
+	values: Record<string, unknown>,
+): string | null {
 	for (const f of fields) {
 		if (f.type === "content") continue; // author content, not an input
 		const raw = values[f.key];
@@ -67,13 +101,23 @@ export function validateSubmission(fields: FormField[], values: Record<string, u
 			if (f.required && !hasText) return `“${f.label}” is required.`;
 			continue;
 		}
-		const empty = v == null || v === "" || v === false || (isFileLike(v) && v.size === 0);
+		const empty =
+			v == null || v === "" || v === false || (isFileLike(v) && v.size === 0);
 		if (f.required && empty) return `“${f.label}” is required.`;
 		if (empty) continue;
-		if (f.type === "file" && isFileLike(v) && v.size > ATTACHMENT_MAX_BYTES) return `“${f.label}” is too large (max 10 MB).`;
-		if (f.type === "email" && typeof v === "string" && !EMAIL_RE.test(v)) return `“${f.label}” must be a valid email.`;
-		if (f.type === "number" && typeof v === "string" && Number.isNaN(Number(v))) return `“${f.label}” must be a number.`;
-		if (f.type === "select" && f.options?.length && typeof v === "string" && !f.options.includes(v)) return `“${f.label}” has an invalid choice.`;
+		if (f.type === "file" && isFileLike(v) && v.size > ATTACHMENT_MAX_BYTES)
+			return `“${f.label}” is too large (max 10 MB).`;
+		if (f.type === "email" && typeof v === "string" && !EMAIL_RE.test(v))
+			return `“${f.label}” must be a valid email.`;
+		if (f.type === "number" && typeof v === "string" && Number.isNaN(Number(v)))
+			return `“${f.label}” must be a number.`;
+		if (
+			f.type === "select" &&
+			f.options?.length &&
+			typeof v === "string" &&
+			!f.options.includes(v)
+		)
+			return `“${f.label}” has an invalid choice.`;
 	}
 	return null;
 }

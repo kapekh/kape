@@ -7,7 +7,9 @@ export const Route = createFileRoute("/internalsources/directory")({
 	component: Directory,
 });
 
-type Staff = Awaited<ReturnType<typeof trpcClient.staff.directory.query>>[number];
+type Staff = Awaited<
+	ReturnType<typeof trpcClient.staff.directory.query>
+>[number];
 
 function Directory() {
 	const [rows, setRows] = useState<Staff[]>([]);
@@ -22,7 +24,9 @@ function Directory() {
 
 	return (
 		<div>
-			<h1 className="font-display text-2xl font-semibold text-primary mb-6">Staff Directory</h1>
+			<h1 className="font-display text-2xl font-semibold text-primary mb-6">
+				Staff Directory
+			</h1>
 			{loading ? (
 				<p className="text-sm text-muted-foreground">Loading…</p>
 			) : (
@@ -45,9 +49,15 @@ function Directory() {
 								<tr key={r.id} className="border-t border-border">
 									<td className="px-3 py-2">
 										{r.photoUrl ? (
-											<img src={r.photoUrl} alt={r.nameEn ?? ""} className="h-9 w-9 rounded-full object-cover" />
+											<img
+												src={r.photoUrl}
+												alt={r.nameEn ?? ""}
+												className="h-9 w-9 rounded-full object-cover"
+											/>
 										) : (
-											<span className="grid h-9 w-9 place-items-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">{(r.nameEn ?? "?").slice(0, 1)}</span>
+											<span className="grid h-9 w-9 place-items-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+												{(r.nameEn ?? "?").slice(0, 1)}
+											</span>
 										)}
 									</td>
 									<td className="px-3 py-2.5 font-mono">{r.staffNo}</td>

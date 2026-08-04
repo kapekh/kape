@@ -27,7 +27,9 @@ function Documents() {
 
 	return (
 		<div>
-			<h1 className="font-display text-2xl font-semibold text-primary mb-6">Internal Documents</h1>
+			<h1 className="font-display text-2xl font-semibold text-primary mb-6">
+				Internal Documents
+			</h1>
 			{loading ? (
 				<p className="text-sm text-muted-foreground">Loading…</p>
 			) : docs.length === 0 ? (
@@ -36,15 +38,29 @@ function Documents() {
 				<div className="space-y-6">
 					{Object.entries(byCategory).map(([cat, list]) => (
 						<section key={cat}>
-							<h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">{cat}</h2>
+							<h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+								{cat}
+							</h2>
 							<ul className="rounded-xl border border-border bg-card divide-y divide-border">
 								{list.map((d) => (
-									<li key={d.id} className="flex items-center justify-between px-4 py-3 text-sm">
-										<span className="flex items-center gap-2">📄 {d.title}</span>
+									<li
+										key={d.id}
+										className="flex items-center justify-between px-4 py-3 text-sm"
+									>
+										<span className="flex items-center gap-2">
+											📄 {d.title}
+										</span>
 										{d.fileUrl ? (
-											<a href={d.fileUrl} className="text-[var(--accent)] font-semibold hover:underline">Download</a>
+											<a
+												href={d.fileUrl}
+												className="text-[var(--accent)] font-semibold hover:underline"
+											>
+												Download
+											</a>
 										) : (
-											<span className="text-xs text-muted-foreground">no file</span>
+											<span className="text-xs text-muted-foreground">
+												no file
+											</span>
 										)}
 									</li>
 								))}

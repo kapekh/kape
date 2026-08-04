@@ -22,7 +22,11 @@ export function clientIp(request: Request): string {
  * Returns true if the action is allowed, false once the limit is exceeded
  * within the window. `key` should scope the action (e.g. `contact:<ip>`).
  */
-export function rateLimit(key: string, limit: number, windowMs: number): boolean {
+export function rateLimit(
+	key: string,
+	limit: number,
+	windowMs: number,
+): boolean {
 	const now = Date.now();
 	// Opportunistic cleanup so the map can't grow unbounded under attack.
 	if (buckets.size > 10_000) {

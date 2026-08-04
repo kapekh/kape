@@ -4,7 +4,9 @@ import { useState } from "react";
 import { DonorForm, type DonorFormValue } from "#/components/admin/DonorForm";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 
-export const Route = createFileRoute("/admin/donors/new")({ component: NewDonor });
+export const Route = createFileRoute("/admin/donors/new")({
+	component: NewDonor,
+});
 
 function NewDonor() {
 	const navigate = useNavigate();
@@ -17,5 +19,12 @@ function NewDonor() {
 		navigate({ to: "/admin/donors/$id", params: { id: String(id) } });
 	}
 
-	return <DonorForm initial={null} onSubmit={onSubmit} saving={saving} title="New donor" />;
+	return (
+		<DonorForm
+			initial={null}
+			onSubmit={onSubmit}
+			saving={saving}
+			title="New donor"
+		/>
+	);
 }

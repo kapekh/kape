@@ -19,7 +19,11 @@ export type ResolvedProject = {
 	donors: { name: string; logoUrl: string | null }[];
 };
 
-export async function getProjectBySlug(db: DB, slug: string, lang: string): Promise<ResolvedProject | null> {
+export async function getProjectBySlug(
+	db: DB,
+	slug: string,
+	lang: string,
+): Promise<ResolvedProject | null> {
 	const [p] = await db
 		.select()
 		.from(projects)
@@ -47,20 +51,43 @@ export async function getProjectBySlug(db: DB, slug: string, lang: string): Prom
 
 /** {code, name} options for the post editor's program relation select. */
 export async function listProjectOptions(db: DB, lang: string) {
-	const rows = await db.select({ id: projects.id, code: projects.code }).from(projects).where(eq(projects.tenantId, TENANT)).orderBy(asc(projects.sort));
-	const names = await resolveTranslations(db, "project", rows.map((r) => r.id), lang);
-	return rows.map((r) => ({ code: r.code, name: names.get(r.id)?.name ?? r.code }));
+	const rows = await db
+		.select({ id: projects.id, code: projects.code })
+		.from(projects)
+		.where(eq(projects.tenantId, TENANT))
+		.orderBy(asc(projects.sort));
+	const names = await resolveTranslations(
+		db,
+		"project",
+		rows.map((r) => r.id),
+		lang,
+	);
+	return rows.map((r) => ({
+		code: r.code,
+		name: names.get(r.id)?.name ?? r.code,
+	}));
 }
 
-export type ProjectPin = { id: number; lat: number; lng: number; schoolName: string; projectName: string };
+export type ProjectPin = {
+	id: number;
+	lat: number;
+	lng: number;
+	schoolName: string;
+	projectName: string;
+};
 
-export async function listProjectLocations(db: DB, lang: string): Promise<ProjectPin[]> {
+export async function listProjectLocations(
+	db: DB,
+	lang: string,
+): Promise<ProjectPin[]> {
 	const rows = await db
 		.select()
 		.from(projectLocations)
 		.where(eq(projectLocations.tenantId, TENANT))
 		.orderBy(asc(projectLocations.sort));
-	const projectIds = rows.map((r) => r.projectId).filter((x): x is number => x != null);
+	const projectIds = rows
+		.map((r) => r.projectId)
+		.filter((x): x is number => x != null);
 	const names = await resolveTranslations(db, "project", projectIds, lang);
 	return rows.map((r) => ({
 		id: r.id,

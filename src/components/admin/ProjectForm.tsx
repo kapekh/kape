@@ -1,7 +1,14 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
-import { EditorGrid, EditorHeader, FormSection, cancelButtonClass, fieldInput, fieldLabel } from "./form-ui";
+import {
+	cancelButtonClass,
+	EditorGrid,
+	EditorHeader,
+	FormSection,
+	fieldInput,
+	fieldLabel,
+} from "./form-ui";
 import { LangTabs } from "./LangTabs";
 import { MapField } from "./MapField";
 import type { LangOpt } from "./PostForm";
@@ -49,97 +56,208 @@ export function ProjectForm({
 }) {
 	const [code, setCode] = useState(initial?.code ?? "");
 	const [slug, setSlug] = useState(initial?.slug ?? "");
-	const [status, setStatus] = useState<ProjectStatus>((initial?.status as ProjectStatus) ?? "current");
+	const [status, setStatus] = useState<ProjectStatus>(
+		(initial?.status as ProjectStatus) ?? "current",
+	);
 	const [donorIds, setDonorIds] = useState<number[]>(initial?.donorIds ?? []);
 	const [locations, setLocations] = useState(initial?.locations ?? []);
-	const [trans, setTrans] = useState<Record<string, { name: string; summary: string; body: string }>>(() => {
-		const t: Record<string, { name: string; summary: string; body: string }> = {};
+	const [trans, setTrans] = useState<
+		Record<string, { name: string; summary: string; body: string }>
+	>(() => {
+		const t: Record<string, { name: string; summary: string; body: string }> =
+			{};
 		for (const l of languages) {
 			const e = initial?.translations[l.code] ?? {};
-			t[l.code] = { name: e.name ?? "", summary: e.summary ?? "", body: e.body ?? "" };
+			t[l.code] = {
+				name: e.name ?? "",
+				summary: e.summary ?? "",
+				body: e.body ?? "",
+			};
 		}
 		return t;
 	});
 
-	function setField(lang: string, field: "name" | "summary" | "body", value: string) {
-		setTrans((prev) => ({ ...prev, [lang]: { ...prev[lang], [field]: value } }));
+	function setField(
+		lang: string,
+		field: "name" | "summary" | "body",
+		value: string,
+	) {
+		setTrans((prev) => ({
+			...prev,
+			[lang]: { ...prev[lang], [field]: value },
+		}));
 	}
 	function toggleDonor(id: number) {
-		setDonorIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
+		setDonorIds((ids) =>
+			ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id],
+		);
 	}
-	function setLoc(i: number, field: "schoolName" | "lat" | "lng", value: string) {
-		setLocations((ls) => ls.map((l, j) => (j === i ? { ...l, [field]: value } : l)));
+	function setLoc(
+		i: number,
+		field: "schoolName" | "lat" | "lng",
+		value: string,
+	) {
+		setLocations((ls) =>
+			ls.map((l, j) => (j === i ? { ...l, [field]: value } : l)),
+		);
 	}
 	function submit(e: React.FormEvent) {
 		e.preventDefault();
 		onSubmit({
-			code, slug, status, sort: initial?.sort ?? 0,
+			code,
+			slug,
+			status,
+			sort: initial?.sort ?? 0,
 			translations: languages.map((l) => ({ lang: l.code, ...trans[l.code] })),
 			donorIds,
 			locations: locations.filter((l) => l.lat && l.lng),
 		});
 	}
 
-	const dirty = useDirty(JSON.stringify({ code, slug, status, donorIds, locations, trans }), savedAt);
+	const dirty = useDirty(
+		JSON.stringify({ code, slug, status, donorIds, locations, trans }),
+		savedAt,
+	);
 
 	return (
 		<form onSubmit={submit}>
-			<EditorHeader title={title} saving={saving} savedAt={savedAt} saveLabel="Save project" dirty={dirty}>
-				<Link to="/admin/projects" className={cancelButtonClass}>Cancel</Link>
+			<EditorHeader
+				title={title}
+				saving={saving}
+				savedAt={savedAt}
+				saveLabel="Save project"
+				dirty={dirty}
+			>
+				<Link to="/admin/projects" className={cancelButtonClass}>
+					Cancel
+				</Link>
 			</EditorHeader>
 			<EditorGrid
 				main={
 					<>
-						<FormSection title="Content" description="Project name and description. Switch languages with the tabs — your text is kept as you switch.">
+						<FormSection
+							title="Content"
+							description="Project name and description. Switch languages with the tabs — your text is kept as you switch."
+						>
 							<LangTabs languages={languages}>
 								{(l) => (
 									<div className="space-y-4">
 										<div>
 											<label className={fieldLabel}>Name</label>
-											<input className={`${fieldInput} ${l.code === "km" ? "font-khmer" : ""}`} value={trans[l.code]?.name ?? ""} onChange={(e) => setField(l.code, "name", e.target.value)} />
+											<input
+												className={`${fieldInput} ${l.code === "km" ? "font-khmer" : ""}`}
+												value={trans[l.code]?.name ?? ""}
+												onChange={(e) =>
+													setField(l.code, "name", e.target.value)
+												}
+											/>
 										</div>
 										<div>
 											<label className={fieldLabel}>Summary</label>
-											<textarea className={`${fieldInput} ${l.code === "km" ? "font-khmer" : ""}`} rows={2} value={trans[l.code]?.summary ?? ""} onChange={(e) => setField(l.code, "summary", e.target.value)} />
+											<textarea
+												className={`${fieldInput} ${l.code === "km" ? "font-khmer" : ""}`}
+												rows={2}
+												value={trans[l.code]?.summary ?? ""}
+												onChange={(e) =>
+													setField(l.code, "summary", e.target.value)
+												}
+											/>
 										</div>
 										<div>
 											<label className={fieldLabel}>Body</label>
-											<RichTextEditor value={trans[l.code]?.body ?? ""} onChange={(v) => setField(l.code, "body", v)} />
+											<RichTextEditor
+												value={trans[l.code]?.body ?? ""}
+												onChange={(v) => setField(l.code, "body", v)}
+											/>
 										</div>
 									</div>
 								)}
 							</LangTabs>
 						</FormSection>
 
-						<FormSection title="Map locations" description="Sites shown for this project on the About-page map.">
+						<FormSection
+							title="Map locations"
+							description="Sites shown for this project on the About-page map."
+						>
 							<div className="space-y-2">
 								{locations.map((l, i) => (
 									<div key={i} className="flex flex-wrap gap-2 items-center">
-										<input className={`${fieldInput} max-w-[260px]`} placeholder="School / site name" value={l.schoolName} onChange={(e) => setLoc(i, "schoolName", e.target.value)} />
-										<MapField lat={l.lat} lng={l.lng} label={l.schoolName || "site location"} onChange={(la, ln) => { setLoc(i, "lat", la); setLoc(i, "lng", ln); }} />
-										<button type="button" onClick={() => setLocations((ls) => ls.filter((_, j) => j !== i))} className="text-xs text-destructive hover:underline">Remove</button>
+										<input
+											className={`${fieldInput} max-w-[260px]`}
+											placeholder="School / site name"
+											value={l.schoolName}
+											onChange={(e) => setLoc(i, "schoolName", e.target.value)}
+										/>
+										<MapField
+											lat={l.lat}
+											lng={l.lng}
+											label={l.schoolName || "site location"}
+											onChange={(la, ln) => {
+												setLoc(i, "lat", la);
+												setLoc(i, "lng", ln);
+											}}
+										/>
+										<button
+											type="button"
+											onClick={() =>
+												setLocations((ls) => ls.filter((_, j) => j !== i))
+											}
+											className="text-xs text-destructive hover:underline"
+										>
+											Remove
+										</button>
 									</div>
 								))}
-								<button type="button" onClick={() => setLocations((ls) => [...ls, { schoolName: "", lat: "", lng: "" }])} className="text-xs rounded border border-border px-3 py-1 hover:bg-muted">+ Add location</button>
+								<button
+									type="button"
+									onClick={() =>
+										setLocations((ls) => [
+											...ls,
+											{ schoolName: "", lat: "", lng: "" },
+										])
+									}
+									className="text-xs rounded border border-border px-3 py-1 hover:bg-muted"
+								>
+									+ Add location
+								</button>
 							</div>
 						</FormSection>
 					</>
 				}
 				aside={
 					<>
-						<FormSection title="Project details" description="Code, slug and lifecycle.">
+						<FormSection
+							title="Project details"
+							description="Code, slug and lifecycle."
+						>
 							<div className="space-y-4">
 								<div>
 									<label className={fieldLabel}>Code</label>
-									<input className={fieldInput} value={code} onChange={(e) => setCode(e.target.value)} placeholder="NGS" required />
+									<input
+										className={fieldInput}
+										value={code}
+										onChange={(e) => setCode(e.target.value)}
+										placeholder="NGS"
+										required
+									/>
 								</div>
 								<div>
 									<label className={fieldLabel}>Slug</label>
-									<input className={fieldInput} value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="ngs" required />
+									<input
+										className={fieldInput}
+										value={slug}
+										onChange={(e) => setSlug(e.target.value)}
+										placeholder="ngs"
+										required
+									/>
 								</div>
 								<div>
 									<label className={fieldLabel}>Status</label>
-									<select className={fieldInput} value={status} onChange={(e) => setStatus(e.target.value as ProjectStatus)}>
+									<select
+										className={fieldInput}
+										value={status}
+										onChange={(e) => setStatus(e.target.value as ProjectStatus)}
+									>
 										<option value="current">Current</option>
 										<option value="past">Past</option>
 									</select>
@@ -147,14 +265,27 @@ export function ProjectForm({
 							</div>
 						</FormSection>
 
-						<FormSection title="Donors" description="Funders backing this project.">
+						<FormSection
+							title="Donors"
+							description="Funders backing this project."
+						>
 							<div className="space-y-2.5">
 								{donors.length === 0 ? (
-									<span className="text-sm text-muted-foreground">No donors yet — add some under Admin → Donors.</span>
+									<span className="text-sm text-muted-foreground">
+										No donors yet — add some under Admin → Donors.
+									</span>
 								) : (
 									donors.map((d) => (
-										<label key={d.id} className="flex items-center gap-2 text-sm">
-											<input type="checkbox" checked={donorIds.includes(d.id)} onChange={() => toggleDonor(d.id)} /> {d.name}
+										<label
+											key={d.id}
+											className="flex items-center gap-2 text-sm"
+										>
+											<input
+												type="checkbox"
+												checked={donorIds.includes(d.id)}
+												onChange={() => toggleDonor(d.id)}
+											/>{" "}
+											{d.name}
 										</label>
 									))
 								)}

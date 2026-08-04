@@ -25,12 +25,8 @@ import type { SectionNode } from "#/lib/sections";
  */
 
 const timestamps = {
-	createdAt: text("created_at")
-		.notNull()
-		.default(sql`(datetime('now'))`),
-	updatedAt: text("updated_at")
-		.notNull()
-		.default(sql`(datetime('now'))`),
+	createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+	updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
 };
 
 /** Multi-tenant seam. One row for now; everything references it. */
@@ -38,9 +34,7 @@ export const tenants = sqliteTable("tenants", {
 	id: integer("id").primaryKey({ autoIncrement: true }),
 	slug: text("slug").notNull().unique(),
 	name: text("name").notNull(),
-	createdAt: text("created_at")
-		.notNull()
-		.default(sql`(datetime('now'))`),
+	createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 
 /** Runtime-managed languages. Adding a language = INSERT here (+ translations). */
@@ -48,7 +42,9 @@ export const languages = sqliteTable("languages", {
 	code: text("code").primaryKey(), // BCP-47: 'en','km','fr'
 	name: text("name").notNull(), // 'English'
 	nativeName: text("native_name").notNull(), // 'ខ្មែរ'
-	isDefault: integer("is_default", { mode: "boolean" }).notNull().default(false),
+	isDefault: integer("is_default", { mode: "boolean" })
+		.notNull()
+		.default(false),
 	enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
 	rtl: integer("rtl", { mode: "boolean" }).notNull().default(false),
 	sort: integer("sort").notNull().default(0),
@@ -115,9 +111,7 @@ export const media = sqliteTable("media", {
 	size: integer("size"),
 	width: integer("width"),
 	height: integer("height"),
-	createdAt: text("created_at")
-		.notNull()
-		.default(sql`(datetime('now'))`),
+	createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 
 /** All listable content. Translatable title/excerpt/body live in `translations`. */
@@ -225,9 +219,7 @@ export const slugRedirects = sqliteTable(
 		entityType: text("entity_type").notNull(), // 'post' | 'page'
 		fromSlug: text("from_slug").notNull(),
 		toEntityId: integer("to_entity_id").notNull(),
-		createdAt: text("created_at")
-			.notNull()
-			.default(sql`(datetime('now'))`),
+		createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 	},
 	(t) => [unique("uq_redirect").on(t.tenantId, t.entityType, t.fromSlug)],
 );
@@ -241,9 +233,7 @@ export const renderCache = sqliteTable("render_cache", {
 	key: text("key").primaryKey(), // `${lang}::${path}`
 	data: text("data").notNull(), // JSON-serialized resolved route
 	tags: text("tags").notNull().default("||"), // |tag1|tag2|
-	createdAt: text("created_at")
-		.notNull()
-		.default(sql`(datetime('now'))`),
+	createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 
 /** Staff directory (genuinely tabular; bilingual via explicit columns per spec). */
@@ -275,12 +265,17 @@ export const people = sqliteTable(
 	"people",
 	{
 		id: integer("id").primaryKey({ autoIncrement: true }),
-		tenantId: integer("tenant_id").notNull().default(1).references(() => tenants.id),
+		tenantId: integer("tenant_id")
+			.notNull()
+			.default(1)
+			.references(() => tenants.id),
 		nameEn: text("name_en").notNull(),
 		nameKm: text("name_km"),
 		position: text("position"), // role / job title
 		tier: text("tier").notNull().default("staff"), // board | smt | pm | team | staff
-		isPublic: integer("is_public", { mode: "boolean" }).notNull().default(false),
+		isPublic: integer("is_public", { mode: "boolean" })
+			.notNull()
+			.default(false),
 		slug: text("slug"), // public detail URL (/team/<slug>) when isPublic
 		photoMediaId: integer("photo_media_id").references(() => media.id),
 		// Internal-directory fields:
@@ -292,7 +287,10 @@ export const people = sqliteTable(
 		sort: integer("sort").notNull().default(0),
 		...timestamps,
 	},
-	(t) => [index("ix_people_tier").on(t.tenantId, t.tier), index("ix_people_public").on(t.tenantId, t.isPublic)],
+	(t) => [
+		index("ix_people_tier").on(t.tenantId, t.tier),
+		index("ix_people_public").on(t.tenantId, t.isPublic),
+	],
 );
 
 /* ---- Fundraising campaigns + donations (Baray payment gateway) ---- */
@@ -317,10 +315,20 @@ export const campaigns = sqliteTable(
 		currency: text("currency").notNull().default("USD"), // USD | KHR
 		goalAmount: text("goal_amount"), // numeric string; null = no goal (show total only)
 		coverMediaId: integer("cover_media_id").references(() => media.id),
-		presets: text("presets", { mode: "json" }).$type<number[]>().notNull().default([]),
-		allowCustom: integer("allow_custom", { mode: "boolean" }).notNull().default(true),
-		impactTiers: text("impact_tiers", { mode: "json" }).$type<{ amount: number; label: string }[]>().notNull().default([]),
-		showSupporters: integer("show_supporters", { mode: "boolean" }).notNull().default(true),
+		presets: text("presets", { mode: "json" })
+			.$type<number[]>()
+			.notNull()
+			.default([]),
+		allowCustom: integer("allow_custom", { mode: "boolean" })
+			.notNull()
+			.default(true),
+		impactTiers: text("impact_tiers", { mode: "json" })
+			.$type<{ amount: number; label: string }[]>()
+			.notNull()
+			.default([]),
+		showSupporters: integer("show_supporters", { mode: "boolean" })
+			.notNull()
+			.default(true),
 		featured: integer("featured", { mode: "boolean" }).notNull().default(false),
 		sort: integer("sort").notNull().default(0),
 		...timestamps,
@@ -364,11 +372,19 @@ export const roles = sqliteTable(
 	"roles",
 	{
 		id: integer("id").primaryKey({ autoIncrement: true }),
-		tenantId: integer("tenant_id").notNull().default(1).references(() => tenants.id),
+		tenantId: integer("tenant_id")
+			.notNull()
+			.default(1)
+			.references(() => tenants.id),
 		key: text("key").notNull(), // stored in users.role
 		name: text("name").notNull(),
-		permissions: text("permissions", { mode: "json" }).$type<string[]>().notNull().default([]),
-		isSystem: integer("is_system", { mode: "boolean" }).notNull().default(false), // admin/staff — not deletable
+		permissions: text("permissions", { mode: "json" })
+			.$type<string[]>()
+			.notNull()
+			.default([]),
+		isSystem: integer("is_system", { mode: "boolean" })
+			.notNull()
+			.default(false), // admin/staff — not deletable
 		...timestamps,
 	},
 	(t) => [unique("uq_role_key").on(t.tenantId, t.key)],
@@ -382,14 +398,20 @@ export const forms = sqliteTable(
 	"forms",
 	{
 		id: integer("id").primaryKey({ autoIncrement: true }),
-		tenantId: integer("tenant_id").notNull().default(1).references(() => tenants.id),
+		tenantId: integer("tenant_id")
+			.notNull()
+			.default(1)
+			.references(() => tenants.id),
 		slug: text("slug").notNull(),
 		status: text("status").notNull().default("active"), // active | draft
 		title: text("title").notNull(),
 		titleKm: text("title_km"),
 		intro: text("intro"),
 		introKm: text("intro_km"),
-		fields: text("fields", { mode: "json" }).$type<FormField[]>().notNull().default([]),
+		fields: text("fields", { mode: "json" })
+			.$type<FormField[]>()
+			.notNull()
+			.default([]),
 		deadline: text("deadline"), // ISO date (YYYY-MM-DD); after this the form stops accepting responses
 		submitLabel: text("submit_label"),
 		successMessage: text("success_message"),
@@ -401,9 +423,17 @@ export const forms = sqliteTable(
 
 export const formSubmissions = sqliteTable("form_submissions", {
 	id: integer("id").primaryKey({ autoIncrement: true }),
-	tenantId: integer("tenant_id").notNull().default(1).references(() => tenants.id),
-	formId: integer("form_id").notNull().references(() => forms.id),
-	data: text("data", { mode: "json" }).$type<Record<string, string>>().notNull().default({}),
+	tenantId: integer("tenant_id")
+		.notNull()
+		.default(1)
+		.references(() => tenants.id),
+	formId: integer("form_id")
+		.notNull()
+		.references(() => forms.id),
+	data: text("data", { mode: "json" })
+		.$type<Record<string, string>>()
+		.notNull()
+		.default({}),
 	createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 
@@ -419,9 +449,7 @@ export const contactSubmissions = sqliteTable("contact_submissions", {
 	email: text("email").notNull(),
 	phone: text("phone"),
 	message: text("message").notNull(),
-	createdAt: text("created_at")
-		.notNull()
-		.default(sql`(datetime('now'))`),
+	createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 
 export const newsletterSubscribers = sqliteTable(
@@ -433,9 +461,7 @@ export const newsletterSubscribers = sqliteTable(
 			.default(1)
 			.references(() => tenants.id),
 		email: text("email").notNull(),
-		createdAt: text("created_at")
-			.notNull()
-			.default(sql`(datetime('now'))`),
+		createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 	},
 	(t) => [unique("uq_subscriber_email").on(t.tenantId, t.email)],
 );
@@ -452,9 +478,7 @@ export const alumniRegistrations = sqliteTable("alumni_registrations", {
 	graduationYear: integer("graduation_year"),
 	program: text("program"),
 	message: text("message"),
-	createdAt: text("created_at")
-		.notNull()
-		.default(sql`(datetime('now'))`),
+	createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 
 /** Per-day visitor counter (per-doc read/download counts live in posts.meta). */
@@ -484,9 +508,7 @@ export const users = sqliteTable(
 		passwordHash: text("password_hash").notNull(),
 		name: text("name"),
 		role: text("role").notNull().default("editor"), // admin | staff | editor
-		createdAt: text("created_at")
-			.notNull()
-			.default(sql`(datetime('now'))`),
+		createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 	},
 	(t) => [unique("uq_user_email").on(t.tenantId, t.email)],
 );
@@ -504,9 +526,7 @@ export const sessions = sqliteTable(
 			.notNull()
 			.references(() => users.id),
 		userAgent: text("user_agent"),
-		createdAt: text("created_at")
-			.notNull()
-			.default(sql`(datetime('now'))`),
+		createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 		expiresAt: text("expires_at").notNull(),
 		revokedAt: text("revoked_at"),
 	},
@@ -543,7 +563,10 @@ export const terms = sqliteTable(
 export const siteSettings = sqliteTable(
 	"site_settings",
 	{
-		tenantId: integer("tenant_id").notNull().default(1).references(() => tenants.id),
+		tenantId: integer("tenant_id")
+			.notNull()
+			.default(1)
+			.references(() => tenants.id),
 		key: text("key").notNull(),
 		value: text("value").notNull().default(""),
 	},
@@ -553,7 +576,10 @@ export const siteSettings = sqliteTable(
 /** Homepage impact counters. `label` is translated via translations(entity='stat'). */
 export const stats = sqliteTable("stats", {
 	id: integer("id").primaryKey({ autoIncrement: true }),
-	tenantId: integer("tenant_id").notNull().default(1).references(() => tenants.id),
+	tenantId: integer("tenant_id")
+		.notNull()
+		.default(1)
+		.references(() => tenants.id),
 	value: integer("value").notNull().default(0),
 	sort: integer("sort").notNull().default(0),
 });
@@ -561,7 +587,10 @@ export const stats = sqliteTable("stats", {
 /** Homepage hero slideshow. kicker/title/caption translated via translations(entity='hero_slide'). */
 export const heroSlides = sqliteTable("hero_slides", {
 	id: integer("id").primaryKey({ autoIncrement: true }),
-	tenantId: integer("tenant_id").notNull().default(1).references(() => tenants.id),
+	tenantId: integer("tenant_id")
+		.notNull()
+		.default(1)
+		.references(() => tenants.id),
 	mediaId: integer("media_id").references(() => media.id),
 	kind: text("kind").notNull().default("image"), // image | video
 	videoUrl: text("video_url"),
@@ -571,7 +600,10 @@ export const heroSlides = sqliteTable("hero_slides", {
 /** Partner/donor organisations. category references a `partner_category` term. */
 export const partners = sqliteTable("partners", {
 	id: integer("id").primaryKey({ autoIncrement: true }),
-	tenantId: integer("tenant_id").notNull().default(1).references(() => tenants.id),
+	tenantId: integer("tenant_id")
+		.notNull()
+		.default(1)
+		.references(() => tenants.id),
 	name: text("name").notNull(),
 	category: text("category").notNull().default("partner"), // term key (partner_category)
 	logoMediaId: integer("logo_media_id").references(() => media.id),
@@ -589,7 +621,10 @@ export const orgNodes = sqliteTable(
 	"org_nodes",
 	{
 		id: integer("id").primaryKey({ autoIncrement: true }),
-		tenantId: integer("tenant_id").notNull().default(1).references(() => tenants.id),
+		tenantId: integer("tenant_id")
+			.notNull()
+			.default(1)
+			.references(() => tenants.id),
 		parentId: integer("parent_id"),
 		name: text("name").notNull(),
 		title: text("title"), // role / position
@@ -600,7 +635,11 @@ export const orgNodes = sqliteTable(
 		...timestamps,
 	},
 	(t) => [
-		foreignKey({ columns: [t.parentId], foreignColumns: [t.id], name: "fk_org_parent" }),
+		foreignKey({
+			columns: [t.parentId],
+			foreignColumns: [t.id],
+			name: "fk_org_parent",
+		}),
 		index("ix_org_parent").on(t.tenantId, t.parentId),
 	],
 );
@@ -608,7 +647,10 @@ export const orgNodes = sqliteTable(
 /** Funders. Many-to-many with projects via project_donors. */
 export const donors = sqliteTable("donors", {
 	id: integer("id").primaryKey({ autoIncrement: true }),
-	tenantId: integer("tenant_id").notNull().default(1).references(() => tenants.id),
+	tenantId: integer("tenant_id")
+		.notNull()
+		.default(1)
+		.references(() => tenants.id),
 	name: text("name").notNull(),
 	logoMediaId: integer("logo_media_id").references(() => media.id),
 	url: text("url"),
@@ -620,7 +662,10 @@ export const projects = sqliteTable(
 	"projects",
 	{
 		id: integer("id").primaryKey({ autoIncrement: true }),
-		tenantId: integer("tenant_id").notNull().default(1).references(() => tenants.id),
+		tenantId: integer("tenant_id")
+			.notNull()
+			.default(1)
+			.references(() => tenants.id),
 		code: text("code").notNull(), // NGS, HCC, …
 		slug: text("slug").notNull(),
 		status: text("status").notNull().default("current"), // current | past
@@ -633,8 +678,12 @@ export const projects = sqliteTable(
 export const projectDonors = sqliteTable(
 	"project_donors",
 	{
-		projectId: integer("project_id").notNull().references(() => projects.id),
-		donorId: integer("donor_id").notNull().references(() => donors.id),
+		projectId: integer("project_id")
+			.notNull()
+			.references(() => projects.id),
+		donorId: integer("donor_id")
+			.notNull()
+			.references(() => donors.id),
 	},
 	(t) => [primaryKey({ columns: [t.projectId, t.donorId] })],
 );
@@ -642,7 +691,10 @@ export const projectDonors = sqliteTable(
 /** Map pins for a project (About page). */
 export const projectLocations = sqliteTable("project_locations", {
 	id: integer("id").primaryKey({ autoIncrement: true }),
-	tenantId: integer("tenant_id").notNull().default(1).references(() => tenants.id),
+	tenantId: integer("tenant_id")
+		.notNull()
+		.default(1)
+		.references(() => tenants.id),
 	projectId: integer("project_id").references(() => projects.id),
 	schoolName: text("school_name"),
 	lat: text("lat").notNull(),
@@ -653,7 +705,10 @@ export const projectLocations = sqliteTable("project_locations", {
 /** Provincial / head offices (Contact map + cards). province references a `province` term. */
 export const offices = sqliteTable("offices", {
 	id: integer("id").primaryKey({ autoIncrement: true }),
-	tenantId: integer("tenant_id").notNull().default(1).references(() => tenants.id),
+	tenantId: integer("tenant_id")
+		.notNull()
+		.default(1)
+		.references(() => tenants.id),
 	name: text("name").notNull(),
 	province: text("province"), // term key
 	address: text("address"),
@@ -669,7 +724,10 @@ export const offices = sqliteTable("offices", {
 /** Schools KAPE supports. Belongs to a project; province via `location` term. */
 export const schools = sqliteTable("schools", {
 	id: integer("id").primaryKey({ autoIncrement: true }),
-	tenantId: integer("tenant_id").notNull().default(1).references(() => tenants.id),
+	tenantId: integer("tenant_id")
+		.notNull()
+		.default(1)
+		.references(() => tenants.id),
 	name: text("name").notNull(),
 	code: text("code"), // optional school/EMIS code
 	level: text("level"), // preschool | primary | secondary | high | higher

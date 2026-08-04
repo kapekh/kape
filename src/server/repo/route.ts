@@ -4,9 +4,21 @@
  * (renamed page slug or a legacy nested path), or not-found. The `$` route renders
  * whatever this returns — so adding a page or a content record needs no new route.
  */
-import { NON_PUBLIC_CONTENT_TYPES, collectionFor, legacyRedirect } from "#/lib/collections";
+import {
+	collectionFor,
+	legacyRedirect,
+	NON_PUBLIC_CONTENT_TYPES,
+} from "#/lib/collections";
 import type { DB } from "../db";
-import { cacheGet, cacheKey, cacheSet, tagPage, tagPostsQuery, tagRecord, tagSourceQuery } from "../render-cache";
+import {
+	cacheGet,
+	cacheKey,
+	cacheSet,
+	tagPage,
+	tagPostsQuery,
+	tagRecord,
+	tagSourceQuery,
+} from "../render-cache";
 import {
 	findPageRedirect,
 	getAlbum,
@@ -28,7 +40,11 @@ export type ResolvedRoute =
 	| { kind: "redirect"; to: string }
 	| { kind: "notfound" };
 
-export async function resolveRoute(db: DB, rawPath: string, lang: string): Promise<ResolvedRoute> {
+export async function resolveRoute(
+	db: DB,
+	rawPath: string,
+	lang: string,
+): Promise<ResolvedRoute> {
 	const path = rawPath.replace(/^\/+|\/+$/g, ""); // trim slashes
 
 	// 1. Legacy nested path → flat path (301), highest priority so old links never 404.
@@ -56,7 +72,11 @@ export async function resolveRoute(db: DB, rawPath: string, lang: string): Promi
 				if (person) return { kind: "person", label: col.label, person };
 			} else {
 				const post = await getPostBySlug(db, rest, lang);
-				if (post && post.contentType === col.contentType && !NON_PUBLIC_CONTENT_TYPES.has(post.contentType)) {
+				if (
+					post &&
+					post.contentType === col.contentType &&
+					!NON_PUBLIC_CONTENT_TYPES.has(post.contentType)
+				) {
 					return { kind: "article", label: col.label, post };
 				}
 			}
@@ -77,7 +97,11 @@ function tagsFor(r: ResolvedRoute): string[] {
 		for (const s of r.page.sections ?? []) {
 			const q = s.query;
 			if (!q) continue;
-			tags.push(q.source === "posts" ? tagPostsQuery(q.contentType ?? "news") : tagSourceQuery(q.source));
+			tags.push(
+				q.source === "posts"
+					? tagPostsQuery(q.contentType ?? "news")
+					: tagSourceQuery(q.source),
+			);
 		}
 		return tags;
 	}
@@ -93,7 +117,11 @@ function tagsFor(r: ResolvedRoute): string[] {
  * by `lang::path` and tagged for precise invalidation; redirects/not-found are not
  * cached so new or moved content surfaces immediately.
  */
-export async function resolveRouteCached(db: DB, rawPath: string, lang: string): Promise<ResolvedRoute> {
+export async function resolveRouteCached(
+	db: DB,
+	rawPath: string,
+	lang: string,
+): Promise<ResolvedRoute> {
 	const path = rawPath.replace(/^\/+|\/+$/g, "");
 	const key = cacheKey(path, lang);
 	const hit = await cacheGet<ResolvedRoute>(db, key);

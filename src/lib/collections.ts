@@ -15,18 +15,54 @@ export type CollectionDef = {
 };
 
 export const COLLECTIONS: Record<string, CollectionDef> = {
-	news: { prefix: "news", kind: "post", contentType: "news", label: "News & Events" },
-	stories: { prefix: "stories", kind: "post", contentType: "story", label: "Impact Stories" },
-	videos: { prefix: "videos", kind: "post", contentType: "video", label: "Videos" },
-	galleries: { prefix: "galleries", kind: "album", contentType: "album", label: "Photo Galleries" },
+	news: {
+		prefix: "news",
+		kind: "post",
+		contentType: "news",
+		label: "News & Events",
+	},
+	stories: {
+		prefix: "stories",
+		kind: "post",
+		contentType: "story",
+		label: "Impact Stories",
+	},
+	videos: {
+		prefix: "videos",
+		kind: "post",
+		contentType: "video",
+		label: "Videos",
+	},
+	galleries: {
+		prefix: "galleries",
+		kind: "album",
+		contentType: "album",
+		label: "Photo Galleries",
+	},
 	team: { prefix: "team", kind: "people", label: "Our Team" },
-	publications: { prefix: "publications", kind: "post", contentType: "publication", label: "Publications" },
-	careers: { prefix: "careers", kind: "post", contentType: "job", label: "Careers" },
-	events: { prefix: "events", kind: "post", contentType: "event", label: "Events" },
+	publications: {
+		prefix: "publications",
+		kind: "post",
+		contentType: "publication",
+		label: "Publications",
+	},
+	careers: {
+		prefix: "careers",
+		kind: "post",
+		contentType: "job",
+		label: "Careers",
+	},
+	events: {
+		prefix: "events",
+		kind: "post",
+		contentType: "event",
+		label: "Events",
+	},
 	projects: { prefix: "projects", kind: "project", label: "Projects" },
 };
 
-export const collectionFor = (prefix: string): CollectionDef | undefined => COLLECTIONS[prefix];
+export const collectionFor = (prefix: string): CollectionDef | undefined =>
+	COLLECTIONS[prefix];
 
 /**
  * Content types that are internal-only and never served on the public site:
@@ -35,10 +71,16 @@ export const collectionFor = (prefix: string): CollectionDef | undefined => COLL
  * can't drift (they previously did — `event` was blocked in the sitemap and in
  * section queries but still resolvable as a detail page).
  */
-export const NON_PUBLIC_CONTENT_TYPES = new Set(["internal_news", "document", "announcement", "event"]);
+export const NON_PUBLIC_CONTENT_TYPES = new Set([
+	"internal_news",
+	"document",
+	"announcement",
+	"event",
+]);
 
 /** Detail permalink for a collection record. */
-export const collectionHref = (prefix: string, slug: string) => `/${prefix}/${slug}`;
+export const collectionHref = (prefix: string, slug: string) =>
+	`/${prefix}/${slug}`;
 
 /**
  * Old nested paths → new flat paths (301). Keys are matched as either an exact
@@ -59,7 +101,8 @@ export const LEGACY_REDIRECTS: { from: string; to: string }[] = [
 export function legacyRedirect(path: string): string | null {
 	for (const r of LEGACY_REDIRECTS) {
 		if (path === r.from) return r.to;
-		if (path.startsWith(`${r.from}/`)) return `${r.to}/${path.slice(r.from.length + 1)}`;
+		if (path.startsWith(`${r.from}/`))
+			return `${r.to}/${path.slice(r.from.length + 1)}`;
 	}
 	return null;
 }

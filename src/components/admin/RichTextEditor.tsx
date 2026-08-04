@@ -1,9 +1,8 @@
 import { EditorContent, useEditor } from "@tiptap/react";
 import { useEffect, useState } from "react";
-
-import { prompt } from "@/components/Dialogs";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { richTextExtensions } from "#/lib/richtext/extensions";
+import { prompt } from "@/components/Dialogs";
 import { MediaLibraryDialog } from "./MediaLibraryDialog";
 
 function parseContent(value: string): object | string {
@@ -39,26 +38,76 @@ export function RichTextEditor({
 	const [forms, setForms] = useState<{ slug: string; title: string }[]>([]);
 	useEffect(() => {
 		if (formMenu && forms.length === 0) {
-			trpcClient.adminForms.list.query().then((fs) => setForms(fs.map((f) => ({ slug: f.slug, title: f.title })))).catch(() => {});
+			trpcClient.adminForms.list
+				.query()
+				.then((fs) =>
+					setForms(fs.map((f) => ({ slug: f.slug, title: f.title }))),
+				)
+				.catch(() => {});
 		}
 	}, [formMenu, forms.length]);
-	const btn = "px-2 py-1 text-xs rounded border border-border hover:bg-muted disabled:opacity-40";
+	const btn =
+		"px-2 py-1 text-xs rounded border border-border hover:bg-muted disabled:opacity-40";
 
 	return (
 		<div className="rounded-lg border border-border bg-background transition focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[var(--accent)]/25">
 			{editor && (
 				<div className="flex flex-wrap gap-1 border-b border-border p-1.5">
-					<button type="button" className={btn} onClick={() => editor.chain().focus().toggleBold().run()}>B</button>
-					<button type="button" className={btn} onClick={() => editor.chain().focus().toggleItalic().run()}><i>I</i></button>
-					<button type="button" className={btn} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>H2</button>
-					<button type="button" className={btn} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>H3</button>
-					<button type="button" className={btn} onClick={() => editor.chain().focus().toggleBulletList().run()}>• List</button>
-					<button type="button" className={btn} onClick={() => editor.chain().focus().toggleBlockquote().run()}>❝</button>
+					<button
+						type="button"
+						className={btn}
+						onClick={() => editor.chain().focus().toggleBold().run()}
+					>
+						B
+					</button>
+					<button
+						type="button"
+						className={btn}
+						onClick={() => editor.chain().focus().toggleItalic().run()}
+					>
+						<i>I</i>
+					</button>
+					<button
+						type="button"
+						className={btn}
+						onClick={() =>
+							editor.chain().focus().toggleHeading({ level: 2 }).run()
+						}
+					>
+						H2
+					</button>
+					<button
+						type="button"
+						className={btn}
+						onClick={() =>
+							editor.chain().focus().toggleHeading({ level: 3 }).run()
+						}
+					>
+						H3
+					</button>
+					<button
+						type="button"
+						className={btn}
+						onClick={() => editor.chain().focus().toggleBulletList().run()}
+					>
+						• List
+					</button>
+					<button
+						type="button"
+						className={btn}
+						onClick={() => editor.chain().focus().toggleBlockquote().run()}
+					>
+						❝
+					</button>
 					<button
 						type="button"
 						className={btn}
 						onClick={() => {
-							void prompt({ title: "Add link", placeholder: "https://…", confirmLabel: "Apply" }).then((url) => {
+							void prompt({
+								title: "Add link",
+								placeholder: "https://…",
+								confirmLabel: "Apply",
+							}).then((url) => {
 								if (url) editor.chain().focus().setLink({ href: url }).run();
 								else editor.chain().focus().unsetLink().run();
 							});
@@ -66,17 +115,47 @@ export function RichTextEditor({
 					>
 						Link
 					</button>
-					<button type="button" className={btn} onClick={() => setImgOpen(true)}>🖼 Image</button>
+					<button
+						type="button"
+						className={btn}
+						onClick={() => setImgOpen(true)}
+					>
+						🖼 Image
+					</button>
 					<span className="relative">
-						<button type="button" className={btn} onClick={() => setFormMenu((o) => !o)}>▤ Form</button>
+						<button
+							type="button"
+							className={btn}
+							onClick={() => setFormMenu((o) => !o)}
+						>
+							▤ Form
+						</button>
 						{formMenu && (
 							<div className="absolute left-0 top-full z-20 mt-1 max-h-56 w-56 overflow-y-auto rounded-lg border border-border bg-card p-1 shadow-[var(--shadow-lift)]">
 								{forms.length === 0 ? (
-									<div className="px-2 py-1.5 text-xs text-muted-foreground">No forms yet — create one in Forms.</div>
+									<div className="px-2 py-1.5 text-xs text-muted-foreground">
+										No forms yet — create one in Forms.
+									</div>
 								) : (
 									forms.map((f) => (
-										<button key={f.slug} type="button" className="block w-full truncate rounded px-2 py-1.5 text-left text-sm hover:bg-muted" onClick={() => { editor.chain().focus().insertContent({ type: "formEmbed", attrs: { slug: f.slug } }).run(); setFormMenu(false); }}>
-											{f.title} <span className="text-muted-foreground">/{f.slug}</span>
+										<button
+											key={f.slug}
+											type="button"
+											className="block w-full truncate rounded px-2 py-1.5 text-left text-sm hover:bg-muted"
+											onClick={() => {
+												editor
+													.chain()
+													.focus()
+													.insertContent({
+														type: "formEmbed",
+														attrs: { slug: f.slug },
+													})
+													.run();
+												setFormMenu(false);
+											}}
+										>
+											{f.title}{" "}
+											<span className="text-muted-foreground">/{f.slug}</span>
 										</button>
 									))
 								)}
@@ -84,8 +163,20 @@ export function RichTextEditor({
 						)}
 					</span>
 					<span className="flex-1" />
-					<button type="button" className={btn} onClick={() => editor.chain().focus().undo().run()}>Undo</button>
-					<button type="button" className={btn} onClick={() => editor.chain().focus().redo().run()}>Redo</button>
+					<button
+						type="button"
+						className={btn}
+						onClick={() => editor.chain().focus().undo().run()}
+					>
+						Undo
+					</button>
+					<button
+						type="button"
+						className={btn}
+						onClick={() => editor.chain().focus().redo().run()}
+					>
+						Redo
+					</button>
 				</div>
 			)}
 

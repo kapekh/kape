@@ -1,12 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
-import { PartnerForm, type PartnerFormValue, type TermOpt } from "#/components/admin/PartnerForm";
+import {
+	PartnerForm,
+	type PartnerFormValue,
+	type TermOpt,
+} from "#/components/admin/PartnerForm";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 
-export const Route = createFileRoute("/admin/partners/$id")({ component: EditPartner });
+export const Route = createFileRoute("/admin/partners/$id")({
+	component: EditPartner,
+});
 
-type PartnerRow = NonNullable<Awaited<ReturnType<typeof trpcClient.adminPartners.get.query>>>;
+type PartnerRow = NonNullable<
+	Awaited<ReturnType<typeof trpcClient.adminPartners.get.query>>
+>;
 
 function EditPartner() {
 	const { id } = Route.useParams();
@@ -35,7 +43,17 @@ function EditPartner() {
 		setSavedAt(new Date().toLocaleTimeString());
 	}
 
-	if (notFound) return <p className="text-sm text-muted-foreground">Partner not found.</p>;
+	if (notFound)
+		return <p className="text-sm text-muted-foreground">Partner not found.</p>;
 	if (!data) return <p className="text-sm text-muted-foreground">Loading…</p>;
-	return <PartnerForm initial={data} categories={categories} onSubmit={onSubmit} saving={saving} title="Edit partner" savedAt={savedAt} />;
+	return (
+		<PartnerForm
+			initial={data}
+			categories={categories}
+			onSubmit={onSubmit}
+			saving={saving}
+			title="Edit partner"
+			savedAt={savedAt}
+		/>
+	);
 }

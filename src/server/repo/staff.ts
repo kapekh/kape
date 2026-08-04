@@ -13,9 +13,20 @@ export async function staffNews(db: DB, lang: string) {
 	const rows = await db
 		.select()
 		.from(posts)
-		.where(and(eq(posts.tenantId, TENANT), eq(posts.contentType, "internal_news"), eq(posts.status, "published")))
+		.where(
+			and(
+				eq(posts.tenantId, TENANT),
+				eq(posts.contentType, "internal_news"),
+				eq(posts.status, "published"),
+			),
+		)
 		.orderBy(desc(posts.publishedAt));
-	const f = await resolveTranslations(db, "post", rows.map((r) => r.id), lang);
+	const f = await resolveTranslations(
+		db,
+		"post",
+		rows.map((r) => r.id),
+		lang,
+	);
 	return rows.map((r) => ({
 		id: r.id,
 		slug: r.slug,
@@ -33,7 +44,12 @@ export async function staffEvents(db: DB, lang: string) {
 		.from(posts)
 		.where(and(eq(posts.tenantId, TENANT), eq(posts.contentType, "event")))
 		.orderBy(asc(posts.publishedAt));
-	const f = await resolveTranslations(db, "post", rows.map((r) => r.id), lang);
+	const f = await resolveTranslations(
+		db,
+		"post",
+		rows.map((r) => r.id),
+		lang,
+	);
 	return rows.map((r) => {
 		const meta = (r.meta ?? {}) as Record<string, unknown>;
 		return {
@@ -53,7 +69,12 @@ export async function staffDocuments(db: DB, lang: string) {
 		.from(posts)
 		.where(and(eq(posts.tenantId, TENANT), eq(posts.contentType, "document")))
 		.orderBy(desc(posts.id));
-	const f = await resolveTranslations(db, "post", rows.map((r) => r.id), lang);
+	const f = await resolveTranslations(
+		db,
+		"post",
+		rows.map((r) => r.id),
+		lang,
+	);
 	return rows.map((r) => {
 		const meta = (r.meta ?? {}) as Record<string, unknown>;
 		return {
@@ -67,6 +88,10 @@ export async function staffDocuments(db: DB, lang: string) {
 
 /** Staff directory rows (with resolved photo URLs). */
 export async function staffDirectory(db: DB) {
-	const rows = await db.select().from(staff).where(eq(staff.tenantId, TENANT)).orderBy(asc(staff.sort));
+	const rows = await db
+		.select()
+		.from(staff)
+		.where(eq(staff.tenantId, TENANT))
+		.orderBy(asc(staff.sort));
 	return attachMediaUrl(db, rows, "photoMediaId", "photoUrl");
 }

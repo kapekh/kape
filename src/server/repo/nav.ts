@@ -37,12 +37,20 @@ type TargetKind = "page" | "project" | "post";
 type Meta = { title: string; brief: string; image: string | null };
 
 /** What entity (if any) a nav item draws its card metadata from. */
-function classifyTarget(targetKind: string, targetRef: string): { kind: TargetKind; slug: string } | null {
-	if (targetRef.startsWith("projects/") || targetRef.startsWith("current-projects/") || targetRef.startsWith("past-projects/")) {
+function classifyTarget(
+	targetKind: string,
+	targetRef: string,
+): { kind: TargetKind; slug: string } | null {
+	if (
+		targetRef.startsWith("projects/") ||
+		targetRef.startsWith("current-projects/") ||
+		targetRef.startsWith("past-projects/")
+	) {
 		return { kind: "project", slug: targetRef.split("/").pop() ?? "" };
 	}
 	if (targetKind === "post") return { kind: "post", slug: targetRef };
-	if (targetKind === "page" && targetRef) return { kind: "page", slug: targetRef };
+	if (targetKind === "page" && targetRef)
+		return { kind: "page", slug: targetRef };
 	return null;
 }
 
@@ -60,25 +68,44 @@ export async function getNavTree(db: DB, lang: string): Promise<NavNode[]> {
 		.where(and(eq(navItems.tenantId, TENANT), eq(navItems.visible, true)))
 		.orderBy(asc(navItems.sort));
 
-	const navTr = await resolveTranslations(db, "nav_item", items.map((i) => i.id), lang);
+	const navTr = await resolveTranslations(
+		db,
+		"nav_item",
+		items.map((i) => i.id),
+		lang,
+	);
 
 	// One media lookup for everything (nav images + page/project/post covers).
 	const mediaUrl = new Map<number, string | null>();
 	const resolveMedia = async (ids: (number | null)[]) => {
-		const uniq = [...new Set(ids.filter((v): v is number => v != null && !mediaUrl.has(v)))];
+		const uniq = [
+			...new Set(ids.filter((v): v is number => v != null && !mediaUrl.has(v))),
+		];
 		if (!uniq.length) return;
-		const rows = await db.select({ id: media.id, url: media.url }).from(media).where(inArray(media.id, uniq));
+		const rows = await db
+			.select({ id: media.id, url: media.url })
+			.from(media)
+			.where(inArray(media.id, uniq));
 		for (const r of rows) mediaUrl.set(r.id, r.url);
 	};
 
 	// Classify each item's target and gather slugs per entity type.
-	const cls = new Map(items.map((it) => [it.id, classifyTarget(it.targetKind, it.targetRef)] as const));
+	const cls = new Map(
+		items.map(
+			(it) => [it.id, classifyTarget(it.targetKind, it.targetRef)] as const,
+		),
+	);
 	const pageSlugs: string[] = [];
 	const projectSlugs: string[] = [];
 	const postSlugs: string[] = [];
 	for (const c of cls.values()) {
 		if (!c) continue;
-		(c.kind === "page" ? pageSlugs : c.kind === "project" ? projectSlugs : postSlugs).push(c.slug);
+		(c.kind === "page"
+			? pageSlugs
+			: c.kind === "project"
+				? projectSlugs
+				: postSlugs
+		).push(c.slug);
 	}
 
 	const pageMeta = new Map<string, Meta>();
@@ -86,38 +113,72 @@ export async function getNavTree(db: DB, lang: string): Promise<NavNode[]> {
 	const postMeta = new Map<string, Meta>();
 
 	if (pageSlugs.length) {
-		const rows = await db.select().from(pages).where(and(eq(pages.tenantId, TENANT), inArray(pages.slug, pageSlugs)));
-		const tr = await resolveTranslations(db, "page", rows.map((r) => r.id), lang);
+		const rows = await db
+			.select()
+			.from(pages)
+			.where(and(eq(pages.tenantId, TENANT), inArray(pages.slug, pageSlugs)));
+		const tr = await resolveTranslations(
+			db,
+			"page",
+			rows.map((r) => r.id),
+			lang,
+		);
 		await resolveMedia(rows.map((r) => r.heroMediaId));
 		for (const r of rows) {
 			pageMeta.set(r.slug, {
 				title: tr.get(r.id)?.title ?? "",
 				brief: tr.get(r.id)?.excerpt ?? "",
-				image: r.heroMediaId != null ? (mediaUrl.get(r.heroMediaId) ?? null) : null,
+				image:
+					r.heroMediaId != null ? (mediaUrl.get(r.heroMediaId) ?? null) : null,
 			});
 		}
 	}
 	if (projectSlugs.length) {
-		const rows = await db.select().from(projects).where(and(eq(projects.tenantId, TENANT), inArray(projects.slug, projectSlugs)));
-		const tr = await resolveTranslations(db, "project", rows.map((r) => r.id), lang);
+		const rows = await db
+			.select()
+			.from(projects)
+			.where(
+				and(
+					eq(projects.tenantId, TENANT),
+					inArray(projects.slug, projectSlugs),
+				),
+			);
+		const tr = await resolveTranslations(
+			db,
+			"project",
+			rows.map((r) => r.id),
+			lang,
+		);
 		await resolveMedia(rows.map((r) => r.logoMediaId));
 		for (const r of rows) {
 			projectMeta.set(r.slug, {
 				title: tr.get(r.id)?.name ?? "",
 				brief: tr.get(r.id)?.summary ?? "",
-				image: r.logoMediaId != null ? (mediaUrl.get(r.logoMediaId) ?? null) : null,
+				image:
+					r.logoMediaId != null ? (mediaUrl.get(r.logoMediaId) ?? null) : null,
 			});
 		}
 	}
 	if (postSlugs.length) {
-		const rows = await db.select().from(posts).where(and(eq(posts.tenantId, TENANT), inArray(posts.slug, postSlugs)));
-		const tr = await resolveTranslations(db, "post", rows.map((r) => r.id), lang);
+		const rows = await db
+			.select()
+			.from(posts)
+			.where(and(eq(posts.tenantId, TENANT), inArray(posts.slug, postSlugs)));
+		const tr = await resolveTranslations(
+			db,
+			"post",
+			rows.map((r) => r.id),
+			lang,
+		);
 		await resolveMedia(rows.map((r) => r.coverMediaId));
 		for (const r of rows) {
 			postMeta.set(r.slug, {
 				title: tr.get(r.id)?.title ?? "",
 				brief: tr.get(r.id)?.excerpt ?? "",
-				image: r.coverMediaId != null ? (mediaUrl.get(r.coverMediaId) ?? null) : null,
+				image:
+					r.coverMediaId != null
+						? (mediaUrl.get(r.coverMediaId) ?? null)
+						: null,
 			});
 		}
 	}
@@ -138,7 +199,8 @@ export async function getNavTree(db: DB, lang: string): Promise<NavNode[]> {
 		const target = targetFor(it);
 		const navLabel = navTr.get(it.id)?.label ?? "";
 		const navDesc = navTr.get(it.id)?.description ?? null;
-		const navImg = it.imageMediaId != null ? (mediaUrl.get(it.imageMediaId) ?? null) : null;
+		const navImg =
+			it.imageMediaId != null ? (mediaUrl.get(it.imageMediaId) ?? null) : null;
 		nodeById.set(it.id, {
 			id: it.id,
 			label: navLabel || target?.title || "", // nav label overrides the target title for menu text

@@ -7,7 +7,10 @@
  */
 export const defaultUiStrings: Record<string, { en: string; km?: string }> = {
 	// top bar
-	"top.contact": { en: "Tel: 042-941-481 · kape@kapekh.org", km: "ទូរស័ព្ទ: 042-941-481 · kape@kapekh.org" },
+	"top.contact": {
+		en: "Tel: 042-941-481 · kape@kapekh.org",
+		km: "ទូរស័ព្ទ: 042-941-481 · kape@kapekh.org",
+	},
 	"top.search": { en: "Search", km: "ស្វែងរក" },
 	"top.sitemap": { en: "Site Map", km: "ផែនទីគេហទំព័រ" },
 	"lang.english": { en: "English", km: "English" },
@@ -31,9 +34,18 @@ export const defaultUiStrings: Record<string, { en: string; km?: string }> = {
 	"nav.who.about": { en: "About KAPE", km: "អំពី KAPE" },
 	"nav.who.news": { en: "News and Events", km: "ព័ត៌មាន និងព្រឹត្តិការណ៍" },
 	"nav.who.fact": { en: "Fact Sheet", km: "ឯកសារពិត" },
-	"nav.who.vision": { en: "Vision, Mission & Core Values", km: "ចក្ខុវិស័យ បេសកកម្ម និងតម្លៃស្នូល" },
-	"nav.who.speech": { en: "Executive Director's Speech", km: "សុន្ទរកថានាយកប្រតិបត្តិ" },
-	"nav.who.leader": { en: "Leadership Team & Organizational Chart", km: "ក្រុមដឹកនាំ និងគ្រោងស្ថាប័ន" },
+	"nav.who.vision": {
+		en: "Vision, Mission & Core Values",
+		km: "ចក្ខុវិស័យ បេសកកម្ម និងតម្លៃស្នូល",
+	},
+	"nav.who.speech": {
+		en: "Executive Director's Speech",
+		km: "សុន្ទរកថានាយកប្រតិបត្តិ",
+	},
+	"nav.who.leader": {
+		en: "Leadership Team & Organizational Chart",
+		km: "ក្រុមដឹកនាំ និងគ្រោងស្ថាប័ន",
+	},
 	"nav.who.partners": { en: "Our Partners", km: "ដៃគូរបស់យើង" },
 
 	// what we do
@@ -55,7 +67,10 @@ export const defaultUiStrings: Record<string, { en: string; km?: string }> = {
 	"nav.media.escup": { en: "ESCUP Sources", km: "ប្រភព ESCUP" },
 	"nav.media.life": { en: "Life Skills Education", km: "ការអប់រំជំនាញជីវិត" },
 	"nav.media.ai": { en: "AI and Digital Education", km: "AI និងការអប់រំឌីជីថល" },
-	"nav.media.policies": { en: "Policies and Regulations", km: "គោលនយោបាយ និងបទបញ្ជា" },
+	"nav.media.policies": {
+		en: "Policies and Regulations",
+		km: "គោលនយោបាយ និងបទបញ្ជា",
+	},
 
 	// opportunities
 	"nav.opps.partner": { en: "Partner with KAPE", km: "ភាពជាដៃគូជាមួយ KAPE" },
@@ -65,8 +80,14 @@ export const defaultUiStrings: Record<string, { en: string; km?: string }> = {
 	"nav.opps.volunteer": { en: "Volunteer with KAPE", km: "ស្ម័គ្រចិត្តជាមួយ KAPE" },
 
 	// homepage hero
-	"home.badge": { en: "Three decades of impact · 1994 — 2026", km: "បីទសវត្សរ៍នៃផលប៉ះពាល់ · ១៩៩៤ — ២០២៦" },
-	"home.hero.1": { en: "Where every Cambodian child", km: "កន្លែងដែលកុមារកម្ពុជាគ្រប់រូប" },
+	"home.badge": {
+		en: "Three decades of impact · 1994 — 2026",
+		km: "បីទសវត្សរ៍នៃផលប៉ះពាល់ · ១៩៩៤ — ២០២៦",
+	},
+	"home.hero.1": {
+		en: "Where every Cambodian child",
+		km: "កន្លែងដែលកុមារកម្ពុជាគ្រប់រូប",
+	},
 	"home.hero.learns": { en: "learns,", km: "រៀន," },
 	"home.hero.dreams": { en: "dreams,", km: "សុបិន," },
 	"home.hero.rises": { en: "and rises.", km: "និងរីកចម្រើន។" },
@@ -104,7 +125,10 @@ export const defaultUiStrings: Record<string, { en: string; km?: string }> = {
 
 	"home.reach.kicker": { en: "Our reach", km: "វិសាលភាពរបស់យើង" },
 	"home.reach.title.a": { en: "Three decades.", km: "បីទសវត្សរ៍។" },
-	"home.reach.title.b": { en: "Countless beginnings.", km: "ការចាប់ផ្តើមរាប់មិនអស់។" },
+	"home.reach.title.b": {
+		en: "Countless beginnings.",
+		km: "ការចាប់ផ្តើមរាប់មិនអស់។",
+	},
 
 	"home.about.kicker": { en: "About KAPE", km: "អំពី KAPE" },
 	"home.about.title": {
@@ -115,8 +139,14 @@ export const defaultUiStrings: Record<string, { en: string; km?: string }> = {
 		en: "KAPE is a local non-profit working primarily in the formal education sector across 15 provinces in Cambodia. We implement projects at every level of the learning journey — from preschools and primary classrooms to secondary schools, tertiary programs and a Master's Degree in Mentoring.",
 		km: "KAPE គឺជាអង្គការមិនរកប្រាក់ចំណេញក្នុងស្រុក ដែលធ្វើការសំខាន់ក្នុងវិស័យអប់រំផ្លូវការនៅ១៥ខេត្តក្នុងប្រទេសកម្ពុជា។ យើងអនុវត្តគម្រោងនៅគ្រប់កម្រិតនៃដំណើរសិក្សា — ពីសាលាមត្តេយ្យ និងបឋមសិក្សា ដល់មធ្យមសិក្សា កម្មវិធីឧត្តមសិក្សា និងបរិញ្ញាបត្រអនុបណ្ឌិតផ្នែកការណែនាំ។",
 	},
-	"home.about.p2.pre": { en: "Direct beneficiaries number well over", km: "អ្នកទទួលផលផ្ទាល់មានច្រើនជាង" },
-	"home.about.p2.mid": { en: "children and several hundred teachers, at more than", km: "កុមារ និងគ្រូបង្រៀនរាប់រយនាក់ នៅសាលាជាង" },
+	"home.about.p2.pre": {
+		en: "Direct beneficiaries number well over",
+		km: "អ្នកទទួលផលផ្ទាល់មានច្រើនជាង",
+	},
+	"home.about.p2.mid": {
+		en: "children and several hundred teachers, at more than",
+		km: "កុមារ និងគ្រូបង្រៀនរាប់រយនាក់ នៅសាលាជាង",
+	},
 	"home.about.p2.suf": {
 		en: "schools. Together with partners, we build the conditions for every child to thrive.",
 		km: "សាលា។ ជាមួយដៃគូ យើងបង្កើតលក្ខខណ្ឌឱ្យកុមារគ្រប់រូបអាចរីកចម្រើន។",
@@ -139,8 +169,14 @@ export const defaultUiStrings: Record<string, { en: string; km?: string }> = {
 	},
 	"footer.explore": { en: "Explore", km: "រុករក" },
 	"footer.newsletter": { en: "Newsletter", km: "ព្រឹត្តិបត្រ" },
-	"footer.newsletter.lead": { en: "Subscribe to receive our e-newsletter.", km: "ជាវដើម្បីទទួលព្រឹត្តិបត្ររបស់យើង។" },
-	"footer.copyright": { en: "© 2026 Kampuchea Action to Promote Education", km: "© ២០២៦ Kampuchea Action to Promote Education" },
+	"footer.newsletter.lead": {
+		en: "Subscribe to receive our e-newsletter.",
+		km: "ជាវដើម្បីទទួលព្រឹត្តិបត្ររបស់យើង។",
+	},
+	"footer.copyright": {
+		en: "© 2026 Kampuchea Action to Promote Education",
+		km: "© ២០២៦ Kampuchea Action to Promote Education",
+	},
 
 	// subpage chrome
 	"sub.home": { en: "Home", km: "ទំព័រដើម" },

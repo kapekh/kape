@@ -7,11 +7,27 @@
  * to tRPC routers (server enforcement) and admin nav items (client gating).
  */
 export type PermissionArea =
-	| "pages" | "posts" | "projects" | "media" | "forms"
-	| "campaigns" | "people" | "partners" | "schools" | "offices"
-	| "messages" | "navigation" | "lists" | "settings" | "users";
+	| "pages"
+	| "posts"
+	| "projects"
+	| "media"
+	| "forms"
+	| "campaigns"
+	| "people"
+	| "partners"
+	| "schools"
+	| "offices"
+	| "messages"
+	| "navigation"
+	| "lists"
+	| "settings"
+	| "users";
 
-export const PERMISSION_AREAS: { key: PermissionArea; label: string; group: string }[] = [
+export const PERMISSION_AREAS: {
+	key: PermissionArea;
+	label: string;
+	group: string;
+}[] = [
 	{ key: "pages", label: "Pages", group: "Content" },
 	{ key: "posts", label: "Posts (news, stories, videos…)", group: "Content" },
 	{ key: "projects", label: "Projects", group: "Content" },

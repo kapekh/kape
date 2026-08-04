@@ -7,7 +7,9 @@ import { useState } from "react";
  * is merely hidden when inactive, which also keeps rich-text editors from
  * remounting (no flicker, no lost cursor) on tab change.
  */
-export function LangTabs<L extends { code: string; name: string; nativeName?: string }>({
+export function LangTabs<
+	L extends { code: string; name: string; nativeName?: string },
+>({
 	languages,
 	children,
 }: {
@@ -15,13 +17,19 @@ export function LangTabs<L extends { code: string; name: string; nativeName?: st
 	children: (lang: L) => React.ReactNode;
 }) {
 	const [active, setActive] = useState<string | null>(null);
-	const activeCode = active && languages.some((l) => l.code === active) ? active : languages[0]?.code;
+	const activeCode =
+		active && languages.some((l) => l.code === active)
+			? active
+			: languages[0]?.code;
 
 	if (languages.length === 0) return null;
 
 	return (
 		<div>
-			<div role="tablist" className="mb-4 flex flex-wrap gap-1 border-b border-border">
+			<div
+				role="tablist"
+				className="mb-4 flex flex-wrap gap-1 border-b border-border"
+			>
 				{languages.map((l) => {
 					const on = activeCode === l.code;
 					return (
@@ -34,7 +42,9 @@ export function LangTabs<L extends { code: string; name: string; nativeName?: st
 							className={`-mb-px flex items-center gap-1.5 rounded-t-lg border-b-2 px-4 py-2 text-sm font-medium transition ${on ? "border-[var(--accent)] text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
 						>
 							{l.name}
-							<span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{l.code}</span>
+							<span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+								{l.code}
+							</span>
 						</button>
 					);
 				})}

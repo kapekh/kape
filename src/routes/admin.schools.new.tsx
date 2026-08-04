@@ -1,10 +1,17 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
-import { SchoolForm, type ProjectOpt, type SchoolFormValue, type TermOpt } from "#/components/admin/SchoolForm";
+import {
+	type ProjectOpt,
+	SchoolForm,
+	type SchoolFormValue,
+	type TermOpt,
+} from "#/components/admin/SchoolForm";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 
-export const Route = createFileRoute("/admin/schools/new")({ component: NewSchool });
+export const Route = createFileRoute("/admin/schools/new")({
+	component: NewSchool,
+});
 
 function NewSchool() {
 	const navigate = useNavigate();
@@ -32,5 +39,14 @@ function NewSchool() {
 	}
 
 	if (!ready) return <p className="text-sm text-muted-foreground">Loading…</p>;
-	return <SchoolForm initial={null} provinces={provinces} projects={projects} onSubmit={onSubmit} saving={saving} title="New school" />;
+	return (
+		<SchoolForm
+			initial={null}
+			provinces={provinces}
+			projects={projects}
+			onSubmit={onSubmit}
+			saving={saving}
+			title="New school"
+		/>
+	);
 }

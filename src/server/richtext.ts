@@ -1,8 +1,9 @@
-import { renderToHTMLString } from "@tiptap/static-renderer";
-
-import { basicRichTextExtensions, richTextExtensions } from "#/lib/richtext/extensions";
-
 import type { JSONContent } from "@tiptap/core";
+import { renderToHTMLString } from "@tiptap/static-renderer";
+import {
+	basicRichTextExtensions,
+	richTextExtensions,
+} from "#/lib/richtext/extensions";
 
 /**
  * Render stored Tiptap/ProseMirror JSON to an HTML string (server-side, no DOM).
@@ -13,7 +14,9 @@ import type { JSONContent } from "@tiptap/core";
  * are HTML-escaped by the renderer. (Add `sanitize-html` here if we ever allow
  * untrusted authors.)
  */
-export function renderBody(json: string | JSONContent | null | undefined): string {
+export function renderBody(
+	json: string | JSONContent | null | undefined,
+): string {
 	if (!json) return "";
 
 	let doc: JSONContent;
@@ -40,7 +43,9 @@ export function renderBody(json: string | JSONContent | null | undefined): strin
  * restricted allow-list — text + links only, no images or form embeds. Accepts
  * stringified ProseMirror JSON; returns "" for empty/invalid input.
  */
-export function renderBasicRichText(json: string | JSONContent | null | undefined): string {
+export function renderBasicRichText(
+	json: string | JSONContent | null | undefined,
+): string {
 	if (!json) return "";
 	let doc: JSONContent;
 	if (typeof json === "string") {
@@ -54,7 +59,10 @@ export function renderBasicRichText(json: string | JSONContent | null | undefine
 	}
 	if (!doc || typeof doc !== "object") return "";
 	try {
-		return renderToHTMLString({ content: doc, extensions: basicRichTextExtensions });
+		return renderToHTMLString({
+			content: doc,
+			extensions: basicRichTextExtensions,
+		});
 	} catch {
 		return "";
 	}

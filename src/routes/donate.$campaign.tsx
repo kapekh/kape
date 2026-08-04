@@ -7,7 +7,10 @@ export const Route = createFileRoute("/donate/$campaign")({
 	loader: async ({ context, location, params }) => {
 		const lang = detectLang(location.pathname);
 		const detail = await context.queryClient.ensureQueryData(
-			context.trpc.campaigns.bySlug.queryOptions({ slug: params.campaign, lang }),
+			context.trpc.campaigns.bySlug.queryOptions({
+				slug: params.campaign,
+				lang,
+			}),
 		);
 		if (!detail) throw notFound();
 		return { detail };
@@ -15,7 +18,11 @@ export const Route = createFileRoute("/donate/$campaign")({
 	head: ({ loaderData }) => ({
 		meta: [
 			{ title: loaderData ? `${loaderData.detail.title} — Donate` : "Donate" },
-			{ name: "description", content: loaderData?.detail.blurb ?? "Support KAPE's work across Cambodia." },
+			{
+				name: "description",
+				content:
+					loaderData?.detail.blurb ?? "Support KAPE's work across Cambodia.",
+			},
 		],
 	}),
 	component: CampaignPage,

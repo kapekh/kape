@@ -25,7 +25,16 @@ function NewPage() {
 		navigate({ to: "/admin/pages/$id", params: { id: String(id) } });
 	}
 
-	if (!langs.length) return <p className="text-sm text-muted-foreground">Loading…</p>;
+	if (!langs.length)
+		return <p className="text-sm text-muted-foreground">Loading…</p>;
 
-	return <PageForm initial={null} languages={langs} onSubmit={onSubmit} saving={saving} title="New page" />;
+	return (
+		<PageForm
+			initial={null}
+			languages={langs}
+			onSubmit={onSubmit}
+			saving={saving}
+			title="New page"
+		/>
+	);
 }

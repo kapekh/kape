@@ -28,16 +28,25 @@ function encryptPayload(payload: unknown, sk: string, iv: string): string {
 	const key = Buffer.from(sk, "base64");
 	const ivBuffer = Buffer.from(iv, "base64");
 	const cipher = crypto.createCipheriv("aes-256-cbc", key, ivBuffer);
-	const encrypted = Buffer.concat([cipher.update(JSON.stringify(payload), "utf8"), cipher.final()]);
+	const encrypted = Buffer.concat([
+		cipher.update(JSON.stringify(payload), "utf8"),
+		cipher.final(),
+	]);
 	return encrypted.toString("base64");
 }
 
 /** Decrypt the `encrypted_order_id` sent on the Baray webhook. */
-export function decryptOrderId(encryptedOrderId: string, cfg: BarayConfig): string {
+export function decryptOrderId(
+	encryptedOrderId: string,
+	cfg: BarayConfig,
+): string {
 	const key = Buffer.from(cfg.sk, "base64");
 	const ivBuffer = Buffer.from(cfg.iv, "base64");
 	const decipher = crypto.createDecipheriv("aes-256-cbc", key, ivBuffer);
-	const decrypted = Buffer.concat([decipher.update(Buffer.from(encryptedOrderId, "base64")), decipher.final()]);
+	const decrypted = Buffer.concat([
+		decipher.update(Buffer.from(encryptedOrderId, "base64")),
+		decipher.final(),
+	]);
 	return decrypted.toString("utf8");
 }
 
@@ -55,7 +64,10 @@ export type IntentResult = { intentId: string; redirectUrl: string };
  * Create a payment intent and return the hosted pay-page URL to redirect to.
  * Throws on any non-2xx response or misconfiguration.
  */
-export async function createPaymentIntent(input: IntentInput, cfg: BarayConfig): Promise<IntentResult> {
+export async function createPaymentIntent(
+	input: IntentInput,
+	cfg: BarayConfig,
+): Promise<IntentResult> {
 	const payload = {
 		amount: input.amount,
 		currency: input.currency,
@@ -72,10 +84,15 @@ export async function createPaymentIntent(input: IntentInput, cfg: BarayConfig):
 
 	if (!res.ok) {
 		const detail = await res.text().catch(() => "");
-		throw new Error(`Baray /pay failed (${res.status}): ${detail.slice(0, 300)}`);
+		throw new Error(
+			`Baray /pay failed (${res.status}): ${detail.slice(0, 300)}`,
+		);
 	}
 
 	const intent = (await res.json()) as { _id?: string };
 	if (!intent._id) throw new Error("Baray /pay returned no intent id");
-	return { intentId: intent._id, redirectUrl: `${env.BARAY_PAY_URL}/${intent._id}` };
+	return {
+		intentId: intent._id,
+		redirectUrl: `${env.BARAY_PAY_URL}/${intent._id}`,
+	};
 }

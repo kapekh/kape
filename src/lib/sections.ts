@@ -40,7 +40,16 @@ export type SectionNode = {
 export type PageSections = SectionNode[];
 
 /** Field kinds the admin section-form renders. */
-export type FieldKind = "text" | "textarea" | "richtext" | "image" | "url" | "items" | "cards" | "select" | "form";
+export type FieldKind =
+	| "text"
+	| "textarea"
+	| "richtext"
+	| "image"
+	| "url"
+	| "items"
+	| "cards"
+	| "select"
+	| "form";
 
 export type SectionField = {
 	key: string;
@@ -196,11 +205,16 @@ export const SECTION_DEFS: SectionDef[] = [
 				label: "Resources",
 				kind: "items",
 				itemFields: [
-					{ key: "kind", label: "Kind (pdf/video/image)", kind: "select", options: [
-						{ value: "pdf", label: "PDF" },
-						{ value: "video", label: "Video" },
-						{ value: "image", label: "Image" },
-					] },
+					{
+						key: "kind",
+						label: "Kind (pdf/video/image)",
+						kind: "select",
+						options: [
+							{ value: "pdf", label: "PDF" },
+							{ value: "video", label: "Video" },
+							{ value: "image", label: "Image" },
+						],
+					},
 					{ key: "title", label: "Title", kind: "text" },
 					{ key: "meta", label: "Meta", kind: "text" },
 					{ key: "href", label: "Link", kind: "url" },
@@ -237,7 +251,11 @@ export const SECTION_DEFS: SectionDef[] = [
 				kind: "items",
 				itemFields: [
 					{ key: "heading", label: "Group heading", kind: "text" },
-					{ key: "links", label: "Links (label|href, comma-separated)", kind: "textarea" },
+					{
+						key: "links",
+						label: "Links (label|href, comma-separated)",
+						kind: "textarea",
+					},
 				],
 			},
 		],
@@ -246,14 +264,20 @@ export const SECTION_DEFS: SectionDef[] = [
 		type: "form",
 		label: "Form",
 		kind: "static",
-		description: "Embed a built form, or a quick contact / subscribe / sign-up form.",
+		description:
+			"Embed a built form, or a quick contact / subscribe / sign-up form.",
 		layouts: [
 			{ value: "contact", label: "Contact (name, email, phone, message)" },
 			{ value: "subscribe", label: "Subscribe (email)" },
 			{ value: "signup", label: "Sign-up (name, email, message)" },
 		],
 		fields: [
-			{ key: "formSlug", label: "Built form", kind: "form", help: "Pick a form from /admin/forms — it brings its own title, intro and submit button. Leave empty to use a quick layout below." },
+			{
+				key: "formSlug",
+				label: "Built form",
+				kind: "form",
+				help: "Pick a form from /admin/forms — it brings its own title, intro and submit button. Leave empty to use a quick layout below.",
+			},
 			{ key: "title", label: "Title", kind: "text" },
 			{ key: "body", label: "Intro", kind: "textarea" },
 			{ key: "submitLabel", label: "Submit button", kind: "text" },
@@ -309,7 +333,13 @@ export const SECTION_DEFS: SectionDef[] = [
 			{ value: "grid-2", label: "2-column cards" },
 			{ value: "list", label: "List" },
 		],
-		sources: [{ value: "publications", label: "Publications", contentType: "publication" }],
+		sources: [
+			{
+				value: "publications",
+				label: "Publications",
+				contentType: "publication",
+			},
+		],
 		fields: [
 			{ key: "title", label: "Section title", kind: "text" },
 			{ key: "category", label: "Category filter", kind: "text" },
@@ -360,4 +390,5 @@ export const SECTION_DEFS: SectionDef[] = [
 	},
 ];
 
-export const sectionDef = (type: string): SectionDef | undefined => SECTION_DEFS.find((d) => d.type === type);
+export const sectionDef = (type: string): SectionDef | undefined =>
+	SECTION_DEFS.find((d) => d.type === type);

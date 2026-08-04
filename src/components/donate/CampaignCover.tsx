@@ -22,7 +22,8 @@ const GRADIENTS: [string, string][] = [
 
 function hash(s: string) {
 	let h = 0;
-	for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) & 0xffffffff;
+	for (let i = 0; i < s.length; i++)
+		h = (h * 31 + s.charCodeAt(i)) & 0xffffffff;
 	return Math.abs(h);
 }
 
@@ -40,7 +41,14 @@ export function CampaignCover({
 	iconClass?: string;
 }) {
 	if (coverUrl) {
-		return <img src={coverUrl} alt={alt} loading="lazy" className={`h-full w-full object-cover ${className}`} />;
+		return (
+			<img
+				src={coverUrl}
+				alt={alt}
+				loading="lazy"
+				className={`h-full w-full object-cover ${className}`}
+			/>
+		);
 	}
 	const h = hash(slug);
 	const icon = ICONS[h % ICONS.length];
@@ -54,7 +62,15 @@ export function CampaignCover({
 			{/* soft decorative blobs */}
 			<span className="absolute -left-6 -top-6 h-28 w-28 rounded-full bg-white/15 blur-xl" />
 			<span className="absolute -bottom-8 -right-4 h-32 w-32 rounded-full bg-black/10 blur-xl" />
-			<svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" className={`relative text-white/90 ${iconClass}`}>
+			<svg
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="white"
+				strokeWidth={1.4}
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				className={`relative text-white/90 ${iconClass}`}
+			>
 				<path d={icon} />
 			</svg>
 		</div>

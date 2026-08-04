@@ -19,22 +19,34 @@ export function PageSwitcher() {
 	const inputRef = useRef<HTMLInputElement>(null);
 
 	useEffect(() => {
-		trpcClient.adminPages.list.query().then((rows) => setPages(rows as PageOpt[]));
+		trpcClient.adminPages.list
+			.query()
+			.then((rows) => setPages(rows as PageOpt[]));
 	}, []);
 
-	const currentLabel = current === "new" ? "New page…" : pages.find((p) => String(p.id) === current)?.title || pages.find((p) => String(p.id) === current)?.slug || "Untitled page";
+	const currentLabel =
+		current === "new"
+			? "New page…"
+			: pages.find((p) => String(p.id) === current)?.title ||
+				pages.find((p) => String(p.id) === current)?.slug ||
+				"Untitled page";
 
 	const filtered = useMemo(() => {
 		const q = query.trim().toLowerCase();
 		if (!q) return pages;
-		return pages.filter((p) => (p.title || "").toLowerCase().includes(q) || (p.slug || "").toLowerCase().includes(q));
+		return pages.filter(
+			(p) =>
+				(p.title || "").toLowerCase().includes(q) ||
+				(p.slug || "").toLowerCase().includes(q),
+		);
 	}, [pages, query]);
 
 	// Close on outside click / Escape.
 	useEffect(() => {
 		if (!open) return;
 		const onDown = (e: MouseEvent) => {
-			if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+			if (wrapRef.current && !wrapRef.current.contains(e.target as Node))
+				setOpen(false);
 		};
 		document.addEventListener("mousedown", onDown);
 		return () => document.removeEventListener("mousedown", onDown);
@@ -78,7 +90,9 @@ export function PageSwitcher() {
 
 	return (
 		<div ref={wrapRef} className="relative flex min-w-0 items-center gap-2">
-			<span className="hidden text-xs font-medium uppercase tracking-wide text-muted-foreground sm:inline">Page</span>
+			<span className="hidden text-xs font-medium uppercase tracking-wide text-muted-foreground sm:inline">
+				Page
+			</span>
 			<button
 				type="button"
 				onClick={() => setOpen((o) => !o)}
@@ -87,8 +101,18 @@ export function PageSwitcher() {
 				className="flex min-w-0 max-w-[280px] items-center gap-2 rounded-lg border border-border bg-card py-1.5 pl-3 pr-2.5 text-sm font-semibold text-primary hover:border-[var(--accent)] focus:border-[var(--accent)] focus:outline-none transition"
 			>
 				<span className="min-w-0 truncate">{currentLabel}</span>
-				<svg className="h-3 w-3 shrink-0 text-muted-foreground" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8">
-					<path d="M3 4.5L6 7.5L9 4.5" strokeLinecap="round" strokeLinejoin="round" />
+				<svg
+					className="h-3 w-3 shrink-0 text-muted-foreground"
+					viewBox="0 0 12 12"
+					fill="none"
+					stroke="currentColor"
+					strokeWidth="1.8"
+				>
+					<path
+						d="M3 4.5L6 7.5L9 4.5"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+					/>
 				</svg>
 			</button>
 
@@ -104,9 +128,14 @@ export function PageSwitcher() {
 							className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-[var(--accent)] focus:outline-none"
 						/>
 					</div>
-					<ul role="listbox" className="thin-scroll max-h-72 overflow-y-auto py-1">
+					<ul
+						role="listbox"
+						className="thin-scroll max-h-72 overflow-y-auto py-1"
+					>
 						{filtered.length === 0 ? (
-							<li className="px-3 py-3 text-center text-xs text-muted-foreground">No pages match “{query}”.</li>
+							<li className="px-3 py-3 text-center text-xs text-muted-foreground">
+								No pages match “{query}”.
+							</li>
 						) : (
 							filtered.map((p, i) => {
 								const isCurrent = String(p.id) === current;
@@ -120,8 +149,12 @@ export function PageSwitcher() {
 											onClick={() => choose(p)}
 											className={`flex w-full flex-col items-start gap-0.5 px-3 py-1.5 text-left transition ${i === active ? "bg-muted" : ""} ${isCurrent ? "text-[var(--accent)]" : "text-foreground"}`}
 										>
-											<span className="w-full truncate text-sm font-medium">{p.title || p.slug || "Untitled page"}</span>
-											<span className="w-full truncate font-mono text-[11px] text-muted-foreground">/{p.slug}</span>
+											<span className="w-full truncate text-sm font-medium">
+												{p.title || p.slug || "Untitled page"}
+											</span>
+											<span className="w-full truncate font-mono text-[11px] text-muted-foreground">
+												/{p.slug}
+											</span>
 										</button>
 									</li>
 								);
@@ -136,7 +169,13 @@ export function PageSwitcher() {
 						}}
 						className="flex w-full items-center gap-2 border-t border-border px-3 py-2 text-sm font-semibold text-primary hover:bg-muted transition"
 					>
-						<svg className="h-4 w-4 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8">
+						<svg
+							className="h-4 w-4 shrink-0"
+							viewBox="0 0 16 16"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="1.8"
+						>
 							<path d="M8 3.5v9M3.5 8h9" strokeLinecap="round" />
 						</svg>
 						New page…
@@ -150,7 +189,13 @@ export function PageSwitcher() {
 				title="New page"
 				className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-border text-primary hover:border-[var(--accent)] hover:text-[var(--accent)] transition"
 			>
-				<svg className="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8">
+				<svg
+					className="h-4 w-4"
+					viewBox="0 0 16 16"
+					fill="none"
+					stroke="currentColor"
+					strokeWidth="1.8"
+				>
 					<path d="M8 3.5v9M3.5 8h9" strokeLinecap="round" />
 				</svg>
 			</button>

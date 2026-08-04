@@ -1,4 +1,4 @@
-import { Node, mergeAttributes } from "@tiptap/core";
+import { mergeAttributes, Node } from "@tiptap/core";
 
 /**
  * A rich-text node that embeds an admin-built form anywhere prose renders —
@@ -31,6 +31,10 @@ export const FormEmbed = Node.create({
 	renderHTML({ node, HTMLAttributes }) {
 		const slug = node.attrs.slug || "";
 		// The text child is a placeholder shown in the editor and before hydration.
-		return ["div", mergeAttributes(HTMLAttributes, { class: "kape-form-embed" }), `▤ Form: ${slug || "(none selected)"}`];
+		return [
+			"div",
+			mergeAttributes(HTMLAttributes, { class: "kape-form-embed" }),
+			`▤ Form: ${slug || "(none selected)"}`,
+		];
 	},
 });

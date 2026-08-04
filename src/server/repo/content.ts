@@ -3,7 +3,14 @@ import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import type { SectionNode } from "#/lib/sections";
 import type { DB } from "../db";
 import { renderBody } from "../richtext";
-import { media, pages, postMedia, posts, slugRedirects, terms } from "../schema";
+import {
+	media,
+	pages,
+	postMedia,
+	posts,
+	slugRedirects,
+	terms,
+} from "../schema";
 import { resolveOne, resolveTranslations } from "./i18n";
 import { resolveSections } from "./sections";
 
@@ -27,7 +34,12 @@ export function listTerms(db: DB, taxonomy: string) {
 		.orderBy(asc(terms.sort));
 }
 
-export type ChildLink = { slug: string; title: string; excerpt: string; coverUrl: string | null };
+export type ChildLink = {
+	slug: string;
+	title: string;
+	excerpt: string;
+	coverUrl: string | null;
+};
 
 export type ResolvedPage = {
 	id: number;
@@ -46,21 +58,40 @@ export type ResolvedPage = {
 };
 
 /** Published direct children of a page, for rendering a hub/index. */
-async function getChildPages(db: DB, parentId: number, lang: string): Promise<ChildLink[]> {
+async function getChildPages(
+	db: DB,
+	parentId: number,
+	lang: string,
+): Promise<ChildLink[]> {
 	const rows = await db
 		.select()
 		.from(pages)
-		.where(and(eq(pages.tenantId, TENANT), eq(pages.parentId, parentId), eq(pages.status, "published")))
+		.where(
+			and(
+				eq(pages.tenantId, TENANT),
+				eq(pages.parentId, parentId),
+				eq(pages.status, "published"),
+			),
+		)
 		.orderBy(asc(pages.sortOrder));
 	const out: ChildLink[] = [];
 	for (const r of rows) {
 		const f = await resolveOne(db, "page", r.id, lang);
 		let coverUrl: string | null = null;
 		if (r.heroMediaId != null) {
-			const [m] = await db.select({ url: media.url }).from(media).where(eq(media.id, r.heroMediaId)).limit(1);
+			const [m] = await db
+				.select({ url: media.url })
+				.from(media)
+				.where(eq(media.id, r.heroMediaId))
+				.limit(1);
 			coverUrl = m?.url ?? null;
 		}
-		out.push({ slug: r.slug, title: f.title ?? r.segment ?? r.slug, excerpt: f.excerpt ?? "", coverUrl });
+		out.push({
+			slug: r.slug,
+			title: f.title ?? r.segment ?? r.slug,
+			excerpt: f.excerpt ?? "",
+			coverUrl,
+		});
 	}
 	return out;
 }
@@ -85,16 +116,23 @@ export async function getPageBySlug(
 	const fields = await resolveOne(db, "page", page.id, lang);
 	let coverUrl: string | null = null;
 	if (page.heroMediaId != null) {
-		const [m] = await db.select({ url: media.url }).from(media).where(eq(media.id, page.heroMediaId)).limit(1);
+		const [m] = await db
+			.select({ url: media.url })
+			.from(media)
+			.where(eq(media.id, page.heroMediaId))
+			.limit(1);
 		coverUrl = m?.url ?? null;
 	}
-	const sections = Array.isArray(page.sections) && page.sections.length
-		? await resolveSections(db, page.sections, lang)
-		: null;
+	const sections =
+		Array.isArray(page.sections) && page.sections.length
+			? await resolveSections(db, page.sections, lang)
+			: null;
 	const bodyHtml = renderBody(fields.body ?? null);
 	// A parent page with no content of its own becomes a hub: surface its
 	// published children so the URL renders a usable index, not a blank card.
-	const children = isEmptyPageBody(bodyHtml, sections) ? await getChildPages(db, page.id, lang) : undefined;
+	const children = isEmptyPageBody(bodyHtml, sections)
+		? await getChildPages(db, page.id, lang)
+		: undefined;
 	return {
 		id: page.id,
 		slug: page.slug,
@@ -145,10 +183,18 @@ export async function listPosts(
 		rows.map((r) => r.id),
 		lang,
 	);
-	const coverIds = [...new Set(rows.map((r) => r.coverMediaId).filter((v): v is number => v != null))];
+	const coverIds = [
+		...new Set(
+			rows.map((r) => r.coverMediaId).filter((v): v is number => v != null),
+		),
+	];
 	const covers = new Map<number, string | null>();
 	if (coverIds.length) {
-		for (const m of await db.select({ id: media.id, url: media.url }).from(media).where(inArray(media.id, coverIds))) covers.set(m.id, m.url);
+		for (const m of await db
+			.select({ id: media.id, url: media.url })
+			.from(media)
+			.where(inArray(media.id, coverIds)))
+			covers.set(m.id, m.url);
 	}
 
 	return rows.map((r) => ({
@@ -158,7 +204,7 @@ export async function listPosts(
 		publishedAt: r.publishedAt,
 		title: fields.get(r.id)?.title ?? "",
 		excerpt: fields.get(r.id)?.excerpt ?? "",
-		image: r.coverMediaId != null ? covers.get(r.coverMediaId) ?? null : null,
+		image: r.coverMediaId != null ? (covers.get(r.coverMediaId) ?? null) : null,
 	}));
 }
 
@@ -172,13 +218,32 @@ export type PublicationItem = {
 };
 
 /** Public publications (type=publication) for a given meta.category, newest first. */
-export async function listPublications(db: DB, lang: string, category: string): Promise<PublicationItem[]> {
+export async function listPublications(
+	db: DB,
+	lang: string,
+	category: string,
+): Promise<PublicationItem[]> {
 	const rows = await db
 		.select()
 		.from(posts)
-		.where(and(eq(posts.tenantId, TENANT), eq(posts.contentType, "publication"), eq(posts.status, "published")));
-	const filtered = rows.filter((r) => String((r.meta as Record<string, unknown> | null)?.category ?? "") === category);
-	const f = await resolveTranslations(db, "post", filtered.map((r) => r.id), lang);
+		.where(
+			and(
+				eq(posts.tenantId, TENANT),
+				eq(posts.contentType, "publication"),
+				eq(posts.status, "published"),
+			),
+		);
+	const filtered = rows.filter(
+		(r) =>
+			String((r.meta as Record<string, unknown> | null)?.category ?? "") ===
+			category,
+	);
+	const f = await resolveTranslations(
+		db,
+		"post",
+		filtered.map((r) => r.id),
+		lang,
+	);
 	return filtered
 		.map((r) => {
 			const m = (r.meta ?? {}) as Record<string, unknown>;
@@ -196,27 +261,48 @@ export async function listPublications(db: DB, lang: string, category: string): 
 
 /** Increment a post's download counter (stored in meta.downloadCount). */
 export async function trackDownload(db: DB, id: number): Promise<void> {
-	const [p] = await db.select().from(posts).where(and(eq(posts.tenantId, TENANT), eq(posts.id, id))).limit(1);
+	const [p] = await db
+		.select()
+		.from(posts)
+		.where(and(eq(posts.tenantId, TENANT), eq(posts.id, id)))
+		.limit(1);
 	if (!p) return;
 	const m = (p.meta ?? {}) as Record<string, unknown>;
 	m.downloadCount = Number(m.downloadCount ?? 0) + 1;
 	await db.update(posts).set({ meta: m }).where(eq(posts.id, id));
 }
 
-export type JobItem = { id: number; slug: string; title: string; location: string; deadline: string };
+export type JobItem = {
+	id: number;
+	slug: string;
+	title: string;
+	location: string;
+	deadline: string;
+};
 
 /** Active job vacancies (type=job): published and not past their deadline. */
 export async function listJobs(db: DB, lang: string): Promise<JobItem[]> {
 	const rows = await db
 		.select()
 		.from(posts)
-		.where(and(eq(posts.tenantId, TENANT), eq(posts.contentType, "job"), eq(posts.status, "published")));
+		.where(
+			and(
+				eq(posts.tenantId, TENANT),
+				eq(posts.contentType, "job"),
+				eq(posts.status, "published"),
+			),
+		);
 	const today = new Date().toISOString().slice(0, 10);
 	const active = rows.filter((r) => {
 		const dl = (r.meta as Record<string, unknown> | null)?.deadline;
 		return !dl || String(dl) >= today; // hide past-deadline jobs
 	});
-	const f = await resolveTranslations(db, "post", active.map((r) => r.id), lang);
+	const f = await resolveTranslations(
+		db,
+		"post",
+		active.map((r) => r.id),
+		lang,
+	);
 	return active.map((r) => {
 		const m = (r.meta ?? {}) as Record<string, unknown>;
 		return {
@@ -229,16 +315,33 @@ export async function listJobs(db: DB, lang: string): Promise<JobItem[]> {
 	});
 }
 
-export type VideoItem = { id: number; slug: string; title: string; excerpt: string; youtubeUrl: string };
+export type VideoItem = {
+	id: number;
+	slug: string;
+	title: string;
+	excerpt: string;
+	youtubeUrl: string;
+};
 
 /** Published videos (type=video) with their YouTube URL from meta. */
 export async function listVideos(db: DB, lang: string): Promise<VideoItem[]> {
 	const rows = await db
 		.select()
 		.from(posts)
-		.where(and(eq(posts.tenantId, TENANT), eq(posts.contentType, "video"), eq(posts.status, "published")))
+		.where(
+			and(
+				eq(posts.tenantId, TENANT),
+				eq(posts.contentType, "video"),
+				eq(posts.status, "published"),
+			),
+		)
 		.orderBy(desc(posts.id));
-	const f = await resolveTranslations(db, "post", rows.map((r) => r.id), lang);
+	const f = await resolveTranslations(
+		db,
+		"post",
+		rows.map((r) => r.id),
+		lang,
+	);
 	return rows.map((r) => {
 		const m = (r.meta ?? {}) as Record<string, unknown>;
 		return {
@@ -251,16 +354,33 @@ export async function listVideos(db: DB, lang: string): Promise<VideoItem[]> {
 	});
 }
 
-export type AlbumItem = { id: number; slug: string; title: string; cover: string | null; count: number };
+export type AlbumItem = {
+	id: number;
+	slug: string;
+	title: string;
+	cover: string | null;
+	count: number;
+};
 
 /** Photo albums (type=album) with a cover and photo count. */
 export async function listAlbums(db: DB, lang: string): Promise<AlbumItem[]> {
 	const albums = await db
 		.select()
 		.from(posts)
-		.where(and(eq(posts.tenantId, TENANT), eq(posts.contentType, "album"), eq(posts.status, "published")))
+		.where(
+			and(
+				eq(posts.tenantId, TENANT),
+				eq(posts.contentType, "album"),
+				eq(posts.status, "published"),
+			),
+		)
 		.orderBy(desc(posts.id));
-	const f = await resolveTranslations(db, "post", albums.map((a) => a.id), lang);
+	const f = await resolveTranslations(
+		db,
+		"post",
+		albums.map((a) => a.id),
+		lang,
+	);
 	const out: AlbumItem[] = [];
 	for (const a of albums) {
 		const pm = await db
@@ -269,20 +389,41 @@ export async function listAlbums(db: DB, lang: string): Promise<AlbumItem[]> {
 			.innerJoin(media, eq(postMedia.mediaId, media.id))
 			.where(eq(postMedia.postId, a.id))
 			.orderBy(asc(postMedia.sort));
-		out.push({ id: a.id, slug: a.slug, title: f.get(a.id)?.title ?? "", cover: pm[0]?.url ?? null, count: pm.length });
+		out.push({
+			id: a.id,
+			slug: a.slug,
+			title: f.get(a.id)?.title ?? "",
+			cover: pm[0]?.url ?? null,
+			count: pm.length,
+		});
 	}
 	return out;
 }
 
 export type AlbumPhoto = { url: string; caption: string };
-export type ResolvedAlbum = { id: number; slug: string; title: string; photos: AlbumPhoto[] };
+export type ResolvedAlbum = {
+	id: number;
+	slug: string;
+	title: string;
+	photos: AlbumPhoto[];
+};
 
 /** A single album with its ordered photos and (translated) captions. */
-export async function getAlbum(db: DB, slug: string, lang: string): Promise<ResolvedAlbum | null> {
+export async function getAlbum(
+	db: DB,
+	slug: string,
+	lang: string,
+): Promise<ResolvedAlbum | null> {
 	const [a] = await db
 		.select()
 		.from(posts)
-		.where(and(eq(posts.tenantId, TENANT), eq(posts.slug, slug), eq(posts.contentType, "album")))
+		.where(
+			and(
+				eq(posts.tenantId, TENANT),
+				eq(posts.slug, slug),
+				eq(posts.contentType, "album"),
+			),
+		)
 		.limit(1);
 	if (!a) return null;
 	const f = await resolveOne(db, "post", a.id, lang);
@@ -292,12 +433,20 @@ export async function getAlbum(db: DB, slug: string, lang: string): Promise<Reso
 		.innerJoin(media, eq(postMedia.mediaId, media.id))
 		.where(eq(postMedia.postId, a.id))
 		.orderBy(asc(postMedia.sort));
-	const caps = await resolveTranslations(db, "media", pm.map((p) => p.mediaId), lang);
+	const caps = await resolveTranslations(
+		db,
+		"media",
+		pm.map((p) => p.mediaId),
+		lang,
+	);
 	return {
 		id: a.id,
 		slug: a.slug,
 		title: f.title ?? "",
-		photos: pm.map((p) => ({ url: p.url ?? "", caption: caps.get(p.mediaId)?.caption ?? "" })),
+		photos: pm.map((p) => ({
+			url: p.url ?? "",
+			caption: caps.get(p.mediaId)?.caption ?? "",
+		})),
 	};
 }
 
@@ -316,14 +465,27 @@ export type ResolvedPost = {
 };
 
 /** If `slug` was an old page slug, return the page's current slug (for a 301). */
-export async function findPageRedirect(db: DB, slug: string): Promise<string | null> {
+export async function findPageRedirect(
+	db: DB,
+	slug: string,
+): Promise<string | null> {
 	const [r] = await db
 		.select()
 		.from(slugRedirects)
-		.where(and(eq(slugRedirects.tenantId, TENANT), eq(slugRedirects.entityType, "page"), eq(slugRedirects.fromSlug, slug)))
+		.where(
+			and(
+				eq(slugRedirects.tenantId, TENANT),
+				eq(slugRedirects.entityType, "page"),
+				eq(slugRedirects.fromSlug, slug),
+			),
+		)
 		.limit(1);
 	if (!r) return null;
-	const [p] = await db.select({ slug: pages.slug }).from(pages).where(eq(pages.id, r.toEntityId)).limit(1);
+	const [p] = await db
+		.select({ slug: pages.slug })
+		.from(pages)
+		.where(eq(pages.id, r.toEntityId))
+		.limit(1);
 	return p?.slug ?? null;
 }
 
@@ -346,7 +508,11 @@ export async function getPostBySlug(
 
 	let coverUrl: string | null = null;
 	if (post.coverMediaId) {
-		const [c] = await db.select({ url: media.url }).from(media).where(eq(media.id, post.coverMediaId)).limit(1);
+		const [c] = await db
+			.select({ url: media.url })
+			.from(media)
+			.where(eq(media.id, post.coverMediaId))
+			.limit(1);
 		coverUrl = c?.url ?? null;
 	}
 
@@ -356,7 +522,12 @@ export async function getPostBySlug(
 		.innerJoin(media, eq(postMedia.mediaId, media.id))
 		.where(eq(postMedia.postId, post.id))
 		.orderBy(asc(postMedia.sort));
-	const caps = await resolveTranslations(db, "media", pm.map((p) => p.mediaId), lang);
+	const caps = await resolveTranslations(
+		db,
+		"media",
+		pm.map((p) => p.mediaId),
+		lang,
+	);
 
 	return {
 		id: post.id,
@@ -369,6 +540,9 @@ export async function getPostBySlug(
 		excerpt: f.excerpt ?? "",
 		bodyHtml: renderBody(f.body ?? null),
 		coverUrl,
-		gallery: pm.map((p) => ({ url: p.url ?? "", caption: caps.get(p.mediaId)?.caption ?? "" })),
+		gallery: pm.map((p) => ({
+			url: p.url ?? "",
+			caption: caps.get(p.mediaId)?.caption ?? "",
+		})),
 	};
 }

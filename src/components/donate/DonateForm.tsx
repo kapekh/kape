@@ -9,8 +9,13 @@ const MIN: Record<string, number> = { USD: 0.03, KHR: 100 };
 
 export function DonateForm({ campaign }: { campaign: CampaignPublic }) {
 	const cur = campaign.currency;
-	const presets = campaign.presets.length ? campaign.presets : [25, 50, 100, 250];
-	const tiers = useMemo(() => [...campaign.impactTiers].sort((a, b) => a.amount - b.amount), [campaign.impactTiers]);
+	const presets = campaign.presets.length
+		? campaign.presets
+		: [25, 50, 100, 250];
+	const tiers = useMemo(
+		() => [...campaign.impactTiers].sort((a, b) => a.amount - b.amount),
+		[campaign.impactTiers],
+	);
 
 	// Amounts shown as selectable cards: tier amounts (with their labels) merged
 	// with any presets that don't have a tier (label-less). One unified picker.
@@ -18,9 +23,15 @@ export function DonateForm({ campaign }: { campaign: CampaignPublic }) {
 		const byAmount = new Map<number, string | null>();
 		for (const p of presets) byAmount.set(p, byAmount.get(p) ?? null);
 		for (const t of tiers) byAmount.set(t.amount, t.label);
-		return [...byAmount.entries()].sort((a, b) => a[0] - b[0]).map(([amount, label]) => ({ amount, label }));
+		return [...byAmount.entries()]
+			.sort((a, b) => a[0] - b[0])
+			.map(([amount, label]) => ({ amount, label }));
 	}, [presets, tiers]);
-	const defaultAmount = options.find((o) => o.label)?.amount ?? options[1]?.amount ?? options[0]?.amount ?? 50;
+	const defaultAmount =
+		options.find((o) => o.label)?.amount ??
+		options[1]?.amount ??
+		options[0]?.amount ??
+		50;
 
 	const [amount, setAmount] = useState<number>(defaultAmount);
 	const [custom, setCustom] = useState("");
@@ -43,7 +54,11 @@ export function DonateForm({ campaign }: { campaign: CampaignPublic }) {
 	}, [tiers, value]);
 
 	const credited =
-		visibility === "anonymous" ? "Anonymous" : visibility === "custom" ? displayName.trim() || "Anonymous" : name.trim() || "Anonymous";
+		visibility === "anonymous"
+			? "Anonymous"
+			: visibility === "custom"
+				? displayName.trim() || "Anonymous"
+				: name.trim() || "Anonymous";
 
 	function review(e: React.FormEvent) {
 		e.preventDefault();
@@ -62,9 +77,20 @@ export function DonateForm({ campaign }: { campaign: CampaignPublic }) {
 			const res = await fetch("/api/pay/donate", {
 				method: "POST",
 				headers: { "content-type": "application/json" },
-				body: JSON.stringify({ campaign: campaign.slug, amount: value, name, email, message, visibility, displayName }),
+				body: JSON.stringify({
+					campaign: campaign.slug,
+					amount: value,
+					name,
+					email,
+					message,
+					visibility,
+					displayName,
+				}),
 			});
-			const data = (await res.json().catch(() => ({}))) as { redirectUrl?: string; error?: string };
+			const data = (await res.json().catch(() => ({}))) as {
+				redirectUrl?: string;
+				error?: string;
+			};
 			if (res.ok && data.redirectUrl) {
 				window.location.href = data.redirectUrl;
 				return;
@@ -79,7 +105,8 @@ export function DonateForm({ campaign }: { campaign: CampaignPublic }) {
 		}
 	}
 
-	const field = "w-full rounded-xl border border-border bg-background px-4 py-3 text-base focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20";
+	const field =
+		"w-full rounded-xl border border-border bg-background px-4 py-3 text-base focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20";
 	const seg = (active: boolean) =>
 		`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition ${active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`;
 
@@ -88,8 +115,12 @@ export function DonateForm({ campaign }: { campaign: CampaignPublic }) {
 			{/* Step 1 — amount as impact */}
 			<fieldset>
 				<legend className="flex items-baseline gap-2 mb-3">
-					<span className="grid h-6 w-6 place-items-center rounded-full bg-[var(--accent)] text-xs font-bold text-accent-foreground">1</span>
-					<span className="text-sm font-semibold text-primary">Choose your impact</span>
+					<span className="grid h-6 w-6 place-items-center rounded-full bg-[var(--accent)] text-xs font-bold text-accent-foreground">
+						1
+					</span>
+					<span className="text-sm font-semibold text-primary">
+						Choose your impact
+					</span>
 				</legend>
 				<div className="grid gap-2.5">
 					{options.map((o) => {
@@ -98,23 +129,42 @@ export function DonateForm({ campaign }: { campaign: CampaignPublic }) {
 							<button
 								key={o.amount}
 								type="button"
-								onClick={() => { setAmount(o.amount); setCustom(""); }}
+								onClick={() => {
+									setAmount(o.amount);
+									setCustom("");
+								}}
 								aria-pressed={active}
 								className={`group flex items-center gap-3 rounded-2xl border p-3.5 text-left transition ${active ? "border-[var(--accent)] bg-[var(--accent)]/8 ring-1 ring-[var(--accent)]" : "border-border bg-background/40 hover:border-[var(--accent)]/50"}`}
 							>
-								<span className={`grid h-5 w-5 flex-none place-items-center rounded-full border-2 transition ${active ? "border-[var(--accent)]" : "border-border group-hover:border-[var(--accent)]/60"}`}>
-									{active && <span className="h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />}
+								<span
+									className={`grid h-5 w-5 flex-none place-items-center rounded-full border-2 transition ${active ? "border-[var(--accent)]" : "border-border group-hover:border-[var(--accent)]/60"}`}
+								>
+									{active && (
+										<span className="h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />
+									)}
 								</span>
-								<span className="font-display text-lg font-bold tabular-nums text-primary w-20 flex-none">{money(o.amount, cur)}</span>
-								{o.label ? <span className="text-sm text-foreground/80">{o.label}</span> : <span className="text-sm text-muted-foreground">One-time gift</span>}
+								<span className="font-display text-lg font-bold tabular-nums text-primary w-20 flex-none">
+									{money(o.amount, cur)}
+								</span>
+								{o.label ? (
+									<span className="text-sm text-foreground/80">{o.label}</span>
+								) : (
+									<span className="text-sm text-muted-foreground">
+										One-time gift
+									</span>
+								)}
 							</button>
 						);
 					})}
 				</div>
 				{campaign.allowCustom && (
 					<div className="mt-2.5">
-						<div className={`flex items-center gap-2 rounded-2xl border p-1.5 pl-4 transition ${custom ? "border-[var(--accent)] ring-1 ring-[var(--accent)]" : "border-border"}`}>
-							<span className="font-display text-lg font-bold text-primary">{cur === "USD" ? "$" : "៛"}</span>
+						<div
+							className={`flex items-center gap-2 rounded-2xl border p-1.5 pl-4 transition ${custom ? "border-[var(--accent)] ring-1 ring-[var(--accent)]" : "border-border"}`}
+						>
+							<span className="font-display text-lg font-bold text-primary">
+								{cur === "USD" ? "$" : "៛"}
+							</span>
 							<input
 								name="custom-amount"
 								type="number"
@@ -127,7 +177,9 @@ export function DonateForm({ campaign }: { campaign: CampaignPublic }) {
 							/>
 						</div>
 						{custom && impact && (
-							<p className="mt-2 text-sm text-[var(--accent)]">✨ Funds <span className="font-semibold">{impact.label}</span></p>
+							<p className="mt-2 text-sm text-[var(--accent)]">
+								✨ Funds <span className="font-semibold">{impact.label}</span>
+							</p>
 						)}
 					</div>
 				)}
@@ -136,59 +188,160 @@ export function DonateForm({ campaign }: { campaign: CampaignPublic }) {
 			{/* Step 2 — credit + details */}
 			<fieldset>
 				<legend className="flex items-baseline gap-2 mb-3">
-					<span className="grid h-6 w-6 place-items-center rounded-full bg-[var(--accent)] text-xs font-bold text-accent-foreground">2</span>
-					<span className="text-sm font-semibold text-primary">Your details</span>
+					<span className="grid h-6 w-6 place-items-center rounded-full bg-[var(--accent)] text-xs font-bold text-accent-foreground">
+						2
+					</span>
+					<span className="text-sm font-semibold text-primary">
+						Your details
+					</span>
 				</legend>
 				<div className="space-y-3">
 					<div className="grid sm:grid-cols-2 gap-3">
-						<input name="donor-name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} placeholder={visibility === "name" ? "Your name" : "Your name (optional)"} className={field} />
-						<input name="donor-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email for your receipt" className={field} />
+						<input
+							name="donor-name"
+							autoComplete="name"
+							value={name}
+							onChange={(e) => setName(e.target.value)}
+							placeholder={
+								visibility === "name" ? "Your name" : "Your name (optional)"
+							}
+							className={field}
+						/>
+						<input
+							name="donor-email"
+							type="email"
+							autoComplete="email"
+							value={email}
+							onChange={(e) => setEmail(e.target.value)}
+							placeholder="Email for your receipt"
+							className={field}
+						/>
 					</div>
-					<textarea name="donor-message" value={message} onChange={(e) => setMessage(e.target.value)} rows={2} placeholder="Leave a message of support (optional)" className={field} />
+					<textarea
+						name="donor-message"
+						value={message}
+						onChange={(e) => setMessage(e.target.value)}
+						rows={2}
+						placeholder="Leave a message of support (optional)"
+						className={field}
+					/>
 
 					<div>
-						<div className="text-xs font-medium text-muted-foreground mb-1.5">Show me on the supporters wall as…</div>
+						<div className="text-xs font-medium text-muted-foreground mb-1.5">
+							Show me on the supporters wall as…
+						</div>
 						<div className="flex gap-1 rounded-xl border border-border p-1">
-							<button type="button" onClick={() => setVisibility("name")} className={seg(visibility === "name")}>My name</button>
-							<button type="button" onClick={() => setVisibility("custom")} className={seg(visibility === "custom")}>Custom</button>
-							<button type="button" onClick={() => setVisibility("anonymous")} className={seg(visibility === "anonymous")}>Anonymous</button>
+							<button
+								type="button"
+								onClick={() => setVisibility("name")}
+								className={seg(visibility === "name")}
+							>
+								My name
+							</button>
+							<button
+								type="button"
+								onClick={() => setVisibility("custom")}
+								className={seg(visibility === "custom")}
+							>
+								Custom
+							</button>
+							<button
+								type="button"
+								onClick={() => setVisibility("anonymous")}
+								className={seg(visibility === "anonymous")}
+							>
+								Anonymous
+							</button>
 						</div>
 						{visibility === "custom" && (
-							<input name="display-name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="e.g. The Sok Family" className={`mt-2 ${field}`} />
+							<input
+								name="display-name"
+								value={displayName}
+								onChange={(e) => setDisplayName(e.target.value)}
+								placeholder="e.g. The Sok Family"
+								className={`mt-2 ${field}`}
+							/>
 						)}
 					</div>
 				</div>
 			</fieldset>
 
-			{error && <div className="rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">{error}</div>}
+			{error && (
+				<div className="rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+					{error}
+				</div>
+			)}
 
-			<button type="submit" className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--accent)] text-accent-foreground px-8 py-4 text-base font-bold shadow-[var(--shadow-lift)] transition hover:-translate-y-0.5 active:translate-y-0">
+			<button
+				type="submit"
+				className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--accent)] text-accent-foreground px-8 py-4 text-base font-bold shadow-[var(--shadow-lift)] transition hover:-translate-y-0.5 active:translate-y-0"
+			>
 				♡ Donate {money(value > 0 ? value : 0, cur)}
 			</button>
 			<p className="flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
-				<svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3l7 4v5c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V7z" strokeLinejoin="round" /></svg>
+				<svg
+					viewBox="0 0 24 24"
+					className="h-3.5 w-3.5"
+					fill="none"
+					stroke="currentColor"
+					strokeWidth="2"
+				>
+					<path
+						d="M12 3l7 4v5c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V7z"
+						strokeLinejoin="round"
+					/>
+				</svg>
 				Secured by Baray — KHQR, card, or mobile wallet
 			</p>
 
 			{/* Confirm modal */}
 			{confirm && (
 				<div className="fixed inset-0 z-50 grid place-items-center p-4">
-					<button type="button" aria-label="Close" className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => !busy && setConfirm(false)} />
+					<button
+						type="button"
+						aria-label="Close"
+						className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+						onClick={() => !busy && setConfirm(false)}
+					/>
 					<div className="relative w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl">
-						<h3 className="font-display text-xl font-semibold text-primary">Confirm your gift</h3>
+						<h3 className="font-display text-xl font-semibold text-primary">
+							Confirm your gift
+						</h3>
 						<div className="mt-4 rounded-2xl bg-[var(--accent)]/8 p-4 text-center">
-							<div className="font-display text-4xl font-bold text-primary tabular-nums">{money(value, cur)}</div>
-							{impact && <div className="mt-1 text-sm text-foreground/70">funds {impact.label}</div>}
+							<div className="font-display text-4xl font-bold text-primary tabular-nums">
+								{money(value, cur)}
+							</div>
+							{impact && (
+								<div className="mt-1 text-sm text-foreground/70">
+									funds {impact.label}
+								</div>
+							)}
 						</div>
 						<dl className="mt-4 space-y-2 text-sm">
 							<Row label="Campaign" value={campaign.title} />
 							<Row label="Credited as" value={credited} />
 							{message && <Row label="Message" value={`“${message}”`} />}
 						</dl>
-						{error && <div className="mt-3 rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-2.5 text-sm text-destructive">{error}</div>}
+						{error && (
+							<div className="mt-3 rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-2.5 text-sm text-destructive">
+								{error}
+							</div>
+						)}
 						<div className="mt-6 flex gap-3">
-							<button type="button" onClick={() => setConfirm(false)} disabled={busy} className="flex-none rounded-full border border-border px-5 py-2.5 text-sm font-semibold hover:bg-muted transition disabled:opacity-50">Back</button>
-							<button type="button" onClick={pay} disabled={busy} className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[var(--accent)] text-accent-foreground px-6 py-2.5 text-sm font-semibold hover:opacity-90 transition disabled:opacity-60">
+							<button
+								type="button"
+								onClick={() => setConfirm(false)}
+								disabled={busy}
+								className="flex-none rounded-full border border-border px-5 py-2.5 text-sm font-semibold hover:bg-muted transition disabled:opacity-50"
+							>
+								Back
+							</button>
+							<button
+								type="button"
+								onClick={pay}
+								disabled={busy}
+								className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[var(--accent)] text-accent-foreground px-6 py-2.5 text-sm font-semibold hover:opacity-90 transition disabled:opacity-60"
+							>
 								{busy ? "Redirecting…" : "Confirm & pay"}
 							</button>
 						</div>

@@ -29,17 +29,35 @@ export function MediaThumb({
 				className={`grid h-10 w-10 shrink-0 place-items-center overflow-hidden ${radius} border border-dashed border-border bg-muted/40 transition hover:border-[var(--accent)]`}
 				title="Choose image"
 			>
-				{preview ? <img src={preview} alt="" className="h-full w-full object-cover" /> : <span className="text-lg text-muted-foreground">＋</span>}
+				{preview ? (
+					<img src={preview} alt="" className="h-full w-full object-cover" />
+				) : (
+					<span className="text-lg text-muted-foreground">＋</span>
+				)}
 			</button>
 			{preview && (
-				<button type="button" onClick={() => { onChange(null, null); setPreview(null); }} className="text-xs text-destructive hover:underline" title="Remove">×</button>
+				<button
+					type="button"
+					onClick={() => {
+						onChange(null, null);
+						setPreview(null);
+					}}
+					className="text-xs text-destructive hover:underline"
+					title="Remove"
+				>
+					×
+				</button>
 			)}
 			<MediaLibraryDialog
 				open={open}
 				onClose={() => setOpen(false)}
 				kind="image"
 				selectedId={value}
-				onSelect={(m) => { onChange(m.id, m.url); setPreview(m.url); setOpen(false); }}
+				onSelect={(m) => {
+					onChange(m.id, m.url);
+					setPreview(m.url);
+					setOpen(false);
+				}}
 			/>
 		</div>
 	);

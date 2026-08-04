@@ -38,7 +38,8 @@ export function SearchableSelect({
 		if (!open) return;
 		inputRef.current?.focus();
 		const onDoc = (e: MouseEvent) => {
-			if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+			if (rootRef.current && !rootRef.current.contains(e.target as Node))
+				setOpen(false);
 		};
 		document.addEventListener("mousedown", onDoc);
 		return () => document.removeEventListener("mousedown", onDoc);
@@ -47,7 +48,9 @@ export function SearchableSelect({
 	const filtered = options.filter((o) => {
 		if (!q) return true;
 		const s = q.toLowerCase();
-		return o.label.toLowerCase().includes(s) || o.value.toLowerCase().includes(s);
+		return (
+			o.label.toLowerCase().includes(s) || o.value.toLowerCase().includes(s)
+		);
 	});
 
 	function pick(v: string) {
@@ -83,7 +86,9 @@ export function SearchableSelect({
 				onClick={() => setOpen((o) => !o)}
 				className="flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-background px-3 py-2 text-left text-sm transition focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/25 disabled:opacity-50"
 			>
-				<span className={`truncate ${display ? "" : "text-muted-foreground"}`}>{display || placeholder}</span>
+				<span className={`truncate ${display ? "" : "text-muted-foreground"}`}>
+					{display || placeholder}
+				</span>
 				<span className="shrink-0 text-muted-foreground">▾</span>
 			</button>
 
@@ -104,12 +109,19 @@ export function SearchableSelect({
 					</div>
 					<div className="thin-scroll max-h-56 overflow-y-auto py-1">
 						{emptyOption !== undefined && (
-							<button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => pick("")} className={`block w-full px-3 py-1.5 text-left text-sm hover:bg-muted ${value === "" ? "font-medium text-[var(--accent)]" : "text-muted-foreground"}`}>
+							<button
+								type="button"
+								onMouseDown={(e) => e.preventDefault()}
+								onClick={() => pick("")}
+								className={`block w-full px-3 py-1.5 text-left text-sm hover:bg-muted ${value === "" ? "font-medium text-[var(--accent)]" : "text-muted-foreground"}`}
+							>
 								{emptyOption}
 							</button>
 						)}
 						{filtered.length === 0 ? (
-							<div className="px-3 py-2 text-sm text-muted-foreground">No matches</div>
+							<div className="px-3 py-2 text-sm text-muted-foreground">
+								No matches
+							</div>
 						) : (
 							filtered.map((o, i) => (
 								<button

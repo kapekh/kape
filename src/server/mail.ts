@@ -31,7 +31,9 @@ export async function sendContactEmail(msg: {
 	const text = `Name: ${msg.name}\nEmail: ${msg.email}\nPhone: ${msg.phone ?? "-"}\n\n${msg.message}`;
 
 	if (!transport) {
-		console.log(`[mail] (SMTP not configured) would send to ${env.MAIL_TO}:\n${subject}\n${text}`);
+		console.log(
+			`[mail] (SMTP not configured) would send to ${env.MAIL_TO}:\n${subject}\n${text}`,
+		);
 		return;
 	}
 	await transport.sendMail({

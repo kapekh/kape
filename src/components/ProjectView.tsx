@@ -1,13 +1,20 @@
+import type { ResolvedProject } from "#/server/repo/projects";
 import { RichBody } from "@/components/RichBody";
 import { SubPage } from "@/components/SubPage";
 
-import type { ResolvedProject } from "#/server/repo/projects";
-
-export function ProjectView({ project, section }: { project: ResolvedProject | null; section: string }) {
+export function ProjectView({
+	project,
+	section,
+}: {
+	project: ResolvedProject | null;
+	section: string;
+}) {
 	if (!project) {
 		return (
 			<SubPage section={section} title="Project not found">
-				<p className="text-muted-foreground">This project doesn't exist or was moved.</p>
+				<p className="text-muted-foreground">
+					This project doesn't exist or was moved.
+				</p>
 			</SubPage>
 		);
 	}
@@ -23,11 +30,24 @@ export function ProjectView({ project, section }: { project: ResolvedProject | n
 					<span className="font-semibold text-primary">Supported by</span>
 					{project.donors.map((d) =>
 						d.logoUrl ? (
-							<span key={d.name} title={d.name} className="grid h-10 w-24 place-items-center rounded-lg border border-border bg-white p-1.5 shadow-sm">
-								<img src={d.logoUrl} alt={d.name} className="max-h-full max-w-full object-contain" />
+							<span
+								key={d.name}
+								title={d.name}
+								className="grid h-10 w-24 place-items-center rounded-lg border border-border bg-white p-1.5 shadow-sm"
+							>
+								<img
+									src={d.logoUrl}
+									alt={d.name}
+									className="max-h-full max-w-full object-contain"
+								/>
 							</span>
 						) : (
-							<span key={d.name} className="rounded-full bg-card px-3 py-1 text-xs font-medium text-foreground/80 shadow-sm">{d.name}</span>
+							<span
+								key={d.name}
+								className="rounded-full bg-card px-3 py-1 text-xs font-medium text-foreground/80 shadow-sm"
+							>
+								{d.name}
+							</span>
 						),
 					)}
 				</div>

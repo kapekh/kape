@@ -4,9 +4,13 @@ import { useEffect, useState } from "react";
 import { DonorForm, type DonorFormValue } from "#/components/admin/DonorForm";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 
-export const Route = createFileRoute("/admin/donors/$id")({ component: EditDonor });
+export const Route = createFileRoute("/admin/donors/$id")({
+	component: EditDonor,
+});
 
-type DonorRow = NonNullable<Awaited<ReturnType<typeof trpcClient.adminDonors.get.query>>>;
+type DonorRow = NonNullable<
+	Awaited<ReturnType<typeof trpcClient.adminDonors.get.query>>
+>;
 
 function EditDonor() {
 	const { id } = Route.useParams();
@@ -30,7 +34,16 @@ function EditDonor() {
 		setSavedAt(new Date().toLocaleTimeString());
 	}
 
-	if (notFound) return <p className="text-sm text-muted-foreground">Donor not found.</p>;
+	if (notFound)
+		return <p className="text-sm text-muted-foreground">Donor not found.</p>;
 	if (!data) return <p className="text-sm text-muted-foreground">Loading…</p>;
-	return <DonorForm initial={data} onSubmit={onSubmit} saving={saving} title="Edit donor" savedAt={savedAt} />;
+	return (
+		<DonorForm
+			initial={data}
+			onSubmit={onSubmit}
+			saving={saving}
+			title="Edit donor"
+			savedAt={savedAt}
+		/>
+	);
 }

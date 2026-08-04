@@ -12,7 +12,8 @@ export const LANGS = ["en", "km"]; // all enabled languages, each path-prefixed
 // Functional routes live at fixed paths and are never language-prefixed. This
 // covers explicit route files (contact, donate, …) and any static file route
 // with an extension (/sitemap.xml, /robots.txt, /manifest.json, …).
-const FUNCTIONAL = /^\/(contact|donate|internalsources|admin|login|api|uploads)(\/|$)|^\/[^/]+\.[a-z0-9]+$/i;
+const FUNCTIONAL =
+	/^\/(contact|donate|internalsources|admin|login|api|uploads)(\/|$)|^\/[^/]+\.[a-z0-9]+$/i;
 
 export const isFunctional = (path: string) => FUNCTIONAL.test(path);
 
@@ -23,7 +24,11 @@ export function detectLang(pathname: string): string {
 }
 
 /** Split a pathname into its language + the remaining content path (leading "/"). */
-export function stripLang(pathname: string): { lang: string; path: string; prefixed: boolean } {
+export function stripLang(pathname: string): {
+	lang: string;
+	path: string;
+	prefixed: boolean;
+} {
 	const parts = pathname.replace(/^\/+/, "").split("/");
 	if (LANGS.includes(parts[0])) {
 		const rest = parts.slice(1).join("/");
@@ -34,7 +39,10 @@ export function stripLang(pathname: string): { lang: string; path: string; prefi
 }
 
 /** Prefix an internal content href with the language (externals + functional routes untouched). */
-export function localizedHref(href: string | null | undefined, lang: string): string | undefined {
+export function localizedHref(
+	href: string | null | undefined,
+	lang: string,
+): string | undefined {
 	if (!href) return undefined;
 	if (/^(https?:|mailto:|tel:|#)/.test(href)) return href;
 	if (FUNCTIONAL.test(href)) return href;

@@ -1,12 +1,19 @@
 import { useEffect, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
-import { FormSection, fieldInput, fieldLabel } from "#/components/admin/form-ui";
+import {
+	FormSection,
+	fieldInput,
+	fieldLabel,
+} from "#/components/admin/form-ui";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { confirm } from "@/components/Dialogs";
 
-type Term = Awaited<ReturnType<typeof trpcClient.adminTerms.list.query>>[number];
-const cellInput = "w-full bg-transparent px-3 py-2 text-sm focus:outline-none focus:bg-[var(--accent)]/5 rounded";
+type Term = Awaited<
+	ReturnType<typeof trpcClient.adminTerms.list.query>
+>[number];
+const cellInput =
+	"w-full bg-transparent px-3 py-2 text-sm focus:outline-none focus:bg-[var(--accent)]/5 rounded";
 
 /** Reusable CRUD for one taxonomy of managed reference terms. */
 export function TermsManager({
@@ -32,14 +39,27 @@ export function TermsManager({
 	}, [taxonomy]);
 
 	function patch(id: number, field: "key" | "label", value: string) {
-		setRows((rs) => rs.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
+		setRows((rs) =>
+			rs.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
+		);
 	}
 	async function save(r: Term) {
-		await trpcClient.adminTerms.update.mutate({ id: r.id, taxonomy, key: r.key, label: r.label, sort: r.sort });
+		await trpcClient.adminTerms.update.mutate({
+			id: r.id,
+			taxonomy,
+			key: r.key,
+			label: r.label,
+			sort: r.sort,
+		});
 	}
 	async function create() {
 		if (!add.key.trim() || !add.label.trim()) return;
-		await trpcClient.adminTerms.create.mutate({ taxonomy, key: add.key.trim(), label: add.label.trim(), sort: rows.length });
+		await trpcClient.adminTerms.create.mutate({
+			taxonomy,
+			key: add.key.trim(),
+			label: add.label.trim(),
+			sort: rows.length,
+		});
 		setAdd({ key: "", label: "" });
 		refresh();
 	}
@@ -54,21 +74,46 @@ export function TermsManager({
 	return (
 		<div className="space-y-5">
 			<div>
-				<h1 className="font-display text-2xl font-semibold text-primary">{title}</h1>
-				{description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
+				<h1 className="font-display text-2xl font-semibold text-primary">
+					{title}
+				</h1>
+				{description && (
+					<p className="mt-1 text-sm text-muted-foreground">{description}</p>
+				)}
 			</div>
 
-			<FormSection title="Add item" description="Key is the stored value; label is what's shown.">
+			<FormSection
+				title="Add item"
+				description="Key is the stored value; label is what's shown."
+			>
 				<div className="flex flex-wrap items-end gap-3">
 					<div>
 						<label className={fieldLabel}>Key</label>
-						<input className={`${fieldInput} w-48 font-mono`} placeholder="annual-report" value={add.key} onChange={(e) => setAdd({ ...add, key: e.target.value })} onKeyDown={(e) => e.key === "Enter" && create()} />
+						<input
+							className={`${fieldInput} w-48 font-mono`}
+							placeholder="annual-report"
+							value={add.key}
+							onChange={(e) => setAdd({ ...add, key: e.target.value })}
+							onKeyDown={(e) => e.key === "Enter" && create()}
+						/>
 					</div>
 					<div className="flex-1 min-w-[200px]">
 						<label className={fieldLabel}>Label</label>
-						<input className={fieldInput} placeholder="Annual Report" value={add.label} onChange={(e) => setAdd({ ...add, label: e.target.value })} onKeyDown={(e) => e.key === "Enter" && create()} />
+						<input
+							className={fieldInput}
+							placeholder="Annual Report"
+							value={add.label}
+							onChange={(e) => setAdd({ ...add, label: e.target.value })}
+							onKeyDown={(e) => e.key === "Enter" && create()}
+						/>
 					</div>
-					<button type="button" onClick={create} className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:opacity-90 transition">Add</button>
+					<button
+						type="button"
+						onClick={create}
+						className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:opacity-90 transition"
+					>
+						Add
+					</button>
 				</div>
 			</FormSection>
 
@@ -83,21 +128,53 @@ export function TermsManager({
 					</thead>
 					<tbody className="divide-y divide-border">
 						{loading ? (
-							<tr><td colSpan={3} className="px-3 py-4 text-muted-foreground">Loading…</td></tr>
+							<tr>
+								<td colSpan={3} className="px-3 py-4 text-muted-foreground">
+									Loading…
+								</td>
+							</tr>
 						) : rows.length === 0 ? (
-							<tr><td colSpan={3} className="px-3 py-4 text-muted-foreground">No items yet — add one above.</td></tr>
+							<tr>
+								<td colSpan={3} className="px-3 py-4 text-muted-foreground">
+									No items yet — add one above.
+								</td>
+							</tr>
 						) : (
 							rows.map((r) => (
 								<tr key={r.id} className="hover:bg-muted/20">
 									<td className="px-1">
-										<input className={`${cellInput} font-mono`} value={r.key} onChange={(e) => patch(r.id, "key", e.target.value)} />
+										<input
+											className={`${cellInput} font-mono`}
+											value={r.key}
+											onChange={(e) => patch(r.id, "key", e.target.value)}
+										/>
 									</td>
 									<td className="px-1">
-										<input className={cellInput} value={r.label} onChange={(e) => patch(r.id, "label", e.target.value)} />
+										<input
+											className={cellInput}
+											value={r.label}
+											onChange={(e) => patch(r.id, "label", e.target.value)}
+										/>
 									</td>
 									<td className="px-3 py-2 text-right whitespace-nowrap">
-										<button type="button" onClick={() => save(r)} className={btn}>Save</button>
-										<span className="ml-2 inline-flex align-middle"><ActionMenu items={[{ label: "Delete", danger: true, onClick: () => del(r.id) }]} /></span>
+										<button
+											type="button"
+											onClick={() => save(r)}
+											className={btn}
+										>
+											Save
+										</button>
+										<span className="ml-2 inline-flex align-middle">
+											<ActionMenu
+												items={[
+													{
+														label: "Delete",
+														danger: true,
+														onClick: () => del(r.id),
+													},
+												]}
+											/>
+										</span>
 									</td>
 								</tr>
 							))

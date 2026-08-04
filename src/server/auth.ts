@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { SignJWT, jwtVerify } from "jose";
+import { jwtVerify, SignJWT } from "jose";
 
 import { env } from "#/env";
 import type { DB } from "./db";
@@ -17,7 +17,12 @@ const SECRET = new TextEncoder().encode(env.AUTH_SECRET);
 export const SESSION_COOKIE = "kape_session";
 const MAX_AGE_S = 60 * 60 * 24 * 30; // 30 days
 
-export type AuthUser = { id: number; email: string; name: string | null; role: string };
+export type AuthUser = {
+	id: number;
+	email: string;
+	name: string | null;
+	role: string;
+};
 
 export function hashPassword(pw: string): Promise<string> {
 	return Bun.password.hash(pw, { algorithm: "argon2id" });
@@ -34,7 +39,9 @@ async function signToken(sid: string, uid: number): Promise<string> {
 		.sign(SECRET);
 }
 
-async function verifyToken(token: string): Promise<{ sid: string; uid: number } | null> {
+async function verifyToken(
+	token: string,
+): Promise<{ sid: string; uid: number } | null> {
 	try {
 		const { payload } = await jwtVerify(token, SECRET);
 		return { sid: String(payload.sid), uid: Number(payload.uid) };
@@ -49,7 +56,11 @@ export async function authenticate(
 	email: string,
 	password: string,
 ): Promise<AuthUser | null> {
-	const [u] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+	const [u] = await db
+		.select()
+		.from(users)
+		.where(eq(users.email, email))
+		.limit(1);
 	if (!u) {
 		// Equalise timing so missing emails aren't distinguishable.
 		await Bun.password.hash("not-a-real-password");
@@ -60,10 +71,16 @@ export async function authenticate(
 }
 
 /** Create a session row and return its signed JWT. */
-export async function createSession(db: DB, userId: number, userAgent?: string) {
+export async function createSession(
+	db: DB,
+	userId: number,
+	userAgent?: string,
+) {
 	const id = crypto.randomUUID();
 	const expiresAt = new Date(Date.now() + MAX_AGE_S * 1000).toISOString();
-	await db.insert(sessions).values({ id, userId, expiresAt, userAgent: userAgent ?? null });
+	await db
+		.insert(sessions)
+		.values({ id, userId, expiresAt, userAgent: userAgent ?? null });
 	return { id, token: await signToken(id, userId) };
 }
 
@@ -86,13 +103,24 @@ export async function validateToken(
 	const payload = await verifyToken(token);
 	if (!payload) return null;
 
-	const [sess] = await db.select().from(sessions).where(eq(sessions.id, payload.sid)).limit(1);
+	const [sess] = await db
+		.select()
+		.from(sessions)
+		.where(eq(sessions.id, payload.sid))
+		.limit(1);
 	if (!sess || sess.revokedAt) return null;
 	if (new Date(sess.expiresAt).getTime() < Date.now()) return null;
 
-	const [u] = await db.select().from(users).where(eq(users.id, sess.userId)).limit(1);
+	const [u] = await db
+		.select()
+		.from(users)
+		.where(eq(users.id, sess.userId))
+		.limit(1);
 	if (!u) return null;
-	return { user: { id: u.id, email: u.email, name: u.name, role: u.role }, sessionId: sess.id };
+	return {
+		user: { id: u.id, email: u.email, name: u.name, role: u.role },
+		sessionId: sess.id,
+	};
 }
 
 /* ---- cookie helpers ---- */
@@ -102,7 +130,10 @@ export function parseCookies(header: string | null): Record<string, string> {
 	if (!header) return out;
 	for (const part of header.split(";")) {
 		const i = part.indexOf("=");
-		if (i > 0) out[part.slice(0, i).trim()] = decodeURIComponent(part.slice(i + 1).trim());
+		if (i > 0)
+			out[part.slice(0, i).trim()] = decodeURIComponent(
+				part.slice(i + 1).trim(),
+			);
 	}
 	return out;
 }

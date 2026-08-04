@@ -22,7 +22,9 @@ function Calendar() {
 
 	return (
 		<div>
-			<h1 className="font-display text-2xl font-semibold text-primary mb-6">Calendar of Events</h1>
+			<h1 className="font-display text-2xl font-semibold text-primary mb-6">
+				Calendar of Events
+			</h1>
 			{loading ? (
 				<p className="text-sm text-muted-foreground">Loading…</p>
 			) : (

@@ -2,8 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import {
-	PostForm,
 	type LangOpt,
+	PostForm,
 	type PostFormValue,
 	type TypeOpt,
 } from "#/components/admin/PostForm";
@@ -13,7 +13,9 @@ export const Route = createFileRoute("/admin/posts/$id")({
 	component: EditPost,
 });
 
-type PostEdit = NonNullable<Awaited<ReturnType<typeof trpcClient.adminPosts.get.query>>>;
+type PostEdit = NonNullable<
+	Awaited<ReturnType<typeof trpcClient.adminPosts.get.query>>
+>;
 
 function EditPost() {
 	const { id } = Route.useParams();
@@ -45,8 +47,20 @@ function EditPost() {
 		setSavedAt(new Date().toLocaleTimeString());
 	}
 
-	if (notFound) return <p className="text-sm text-muted-foreground">Post not found.</p>;
-	if (!data || !langs.length) return <p className="text-sm text-muted-foreground">Loading…</p>;
+	if (notFound)
+		return <p className="text-sm text-muted-foreground">Post not found.</p>;
+	if (!data || !langs.length)
+		return <p className="text-sm text-muted-foreground">Loading…</p>;
 
-	return <PostForm initial={data} languages={langs} contentTypes={types} onSubmit={onSubmit} saving={saving} title="Edit post" savedAt={savedAt} />;
+	return (
+		<PostForm
+			initial={data}
+			languages={langs}
+			contentTypes={types}
+			onSubmit={onSubmit}
+			saving={saving}
+			title="Edit post"
+			savedAt={savedAt}
+		/>
+	);
 }

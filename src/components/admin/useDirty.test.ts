@@ -6,9 +6,12 @@ import { useDirty } from "./useDirty";
 
 describe("useDirty", () => {
 	it("is clean initially, dirty on change, and clean again when reverted", () => {
-		const { result, rerender } = renderHook(({ snap, sig }) => useDirty(snap, sig), {
-			initialProps: { snap: "A", sig: 0 },
-		});
+		const { result, rerender } = renderHook(
+			({ snap, sig }) => useDirty(snap, sig),
+			{
+				initialProps: { snap: "A", sig: 0 },
+			},
+		);
 		expect(result.current).toBe(false); // baseline = "A"
 		rerender({ snap: "B", sig: 0 });
 		expect(result.current).toBe(true); // changed
@@ -17,9 +20,12 @@ describe("useDirty", () => {
 	});
 
 	it("resets the baseline when savedSignal changes (save completed)", () => {
-		const { result, rerender } = renderHook(({ snap, sig }) => useDirty(snap, sig), {
-			initialProps: { snap: "A", sig: 0 },
-		});
+		const { result, rerender } = renderHook(
+			({ snap, sig }) => useDirty(snap, sig),
+			{
+				initialProps: { snap: "A", sig: 0 },
+			},
+		);
 		rerender({ snap: "B", sig: 0 });
 		expect(result.current).toBe(true); // edited, unsaved
 		rerender({ snap: "B", sig: 1 }); // save completed → signal changes

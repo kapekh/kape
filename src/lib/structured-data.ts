@@ -5,7 +5,10 @@
  * when VITE_SITE_URL is configured (relative ones aren't useful in JSON-LD).
  */
 
-const SITE_URL = (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/$/, "");
+const SITE_URL = (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(
+	/\/$/,
+	"",
+);
 
 /** Organisation identity — emitted site-wide. */
 export function organizationLd(): Record<string, unknown> {
@@ -14,7 +17,8 @@ export function organizationLd(): Record<string, unknown> {
 		"@type": "Organization",
 		name: "Kampuchea Action to Promote Education",
 		alternateName: "KAPE",
-		description: "KAPE advances equitable, transformative education for children across Cambodia.",
+		description:
+			"KAPE advances equitable, transformative education for children across Cambodia.",
 		email: "kape@kapekh.org",
 		telephone: "+855-42-941-481",
 		areaServed: { "@type": "Country", name: "Cambodia" },
@@ -40,9 +44,16 @@ export function articleLd(a: {
 	datePublished?: string | null;
 	author?: string | null;
 }): Record<string, unknown> {
-	const image = a.image && SITE_URL && !a.image.startsWith("http") ? `${SITE_URL}${a.image}` : a.image;
-	const publisher: Record<string, unknown> = { "@type": "Organization", name: "KAPE" };
-	if (SITE_URL) publisher.logo = { "@type": "ImageObject", url: `${SITE_URL}/logo.png` };
+	const image =
+		a.image && SITE_URL && !a.image.startsWith("http")
+			? `${SITE_URL}${a.image}`
+			: a.image;
+	const publisher: Record<string, unknown> = {
+		"@type": "Organization",
+		name: "KAPE",
+	};
+	if (SITE_URL)
+		publisher.logo = { "@type": "ImageObject", url: `${SITE_URL}/logo.png` };
 	return {
 		"@context": "https://schema.org",
 		"@type": "NewsArticle",

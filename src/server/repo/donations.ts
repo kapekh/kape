@@ -37,7 +37,11 @@ export async function createDonation(db: DB, v: NewDonation): Promise<void> {
 }
 
 /** Attach the Baray intent id once the gateway has accepted the intent. */
-export async function setDonationIntent(db: DB, orderId: string, intentId: string): Promise<void> {
+export async function setDonationIntent(
+	db: DB,
+	orderId: string,
+	intentId: string,
+): Promise<void> {
 	await db
 		.update(donations)
 		.set({ intentId, updatedAt: new Date().toISOString() })
@@ -57,13 +61,22 @@ export async function getDonationByOrderId(db: DB, orderId: string) {
  * Mark a donation paid (idempotent — repeated webhooks are a no-op once paid).
  * Returns true when a matching pending donation was found.
  */
-export async function markDonationPaid(db: DB, orderId: string, bank: string): Promise<boolean> {
+export async function markDonationPaid(
+	db: DB,
+	orderId: string,
+	bank: string,
+): Promise<boolean> {
 	const row = await getDonationByOrderId(db, orderId);
 	if (!row) return false;
 	if (row.status === "paid") return true;
 	await db
 		.update(donations)
-		.set({ status: "paid", bank, paidAt: new Date().toISOString(), updatedAt: new Date().toISOString() })
+		.set({
+			status: "paid",
+			bank,
+			paidAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
+		})
 		.where(eq(donations.id, row.id));
 	return true;
 }
@@ -96,7 +109,10 @@ export async function adminListDonations(db: DB) {
 }
 
 /** Donations owned by one campaign, newest first. */
-export async function adminListDonationsForCampaign(db: DB, campaignId: number) {
+export async function adminListDonationsForCampaign(
+	db: DB,
+	campaignId: number,
+) {
 	return db
 		.select({
 			id: donations.id,
@@ -114,16 +130,27 @@ export async function adminListDonationsForCampaign(db: DB, campaignId: number) 
 			campaignId: donations.campaignId,
 		})
 		.from(donations)
-		.where(and(eq(donations.tenantId, TENANT), eq(donations.campaignId, campaignId)))
+		.where(
+			and(eq(donations.tenantId, TENANT), eq(donations.campaignId, campaignId)),
+		)
 		.orderBy(desc(donations.createdAt));
 }
 
 /** Whether a campaign has any confirmed (paid) donations — blocks deletion. */
-export async function campaignHasPaidDonations(db: DB, campaignId: number): Promise<boolean> {
+export async function campaignHasPaidDonations(
+	db: DB,
+	campaignId: number,
+): Promise<boolean> {
 	const [row] = await db
 		.select({ id: donations.id })
 		.from(donations)
-		.where(and(eq(donations.tenantId, TENANT), eq(donations.campaignId, campaignId), eq(donations.status, "paid")))
+		.where(
+			and(
+				eq(donations.tenantId, TENANT),
+				eq(donations.campaignId, campaignId),
+				eq(donations.status, "paid"),
+			),
+		)
 		.limit(1);
 	return !!row;
 }
@@ -132,6 +159,11 @@ export async function campaignHasPaidDonations(db: DB, campaignId: number): Prom
 export async function adminMarkDonationPaid(db: DB, id: number): Promise<void> {
 	await db
 		.update(donations)
-		.set({ status: "paid", bank: "manual", paidAt: new Date().toISOString(), updatedAt: new Date().toISOString() })
+		.set({
+			status: "paid",
+			bank: "manual",
+			paidAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
+		})
 		.where(and(eq(donations.tenantId, TENANT), eq(donations.id, id)));
 }

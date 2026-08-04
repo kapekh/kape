@@ -1,5 +1,11 @@
 import { useRouterState } from "@tanstack/react-router";
-import { Fragment, createContext, useContext, useEffect, type ReactNode } from "react";
+import {
+	createContext,
+	Fragment,
+	type ReactNode,
+	useContext,
+	useEffect,
+} from "react";
 
 import { isFunctional, stripLang } from "./i18n-config";
 
@@ -71,7 +77,9 @@ export function LanguageSwitcher({ className = "" }: { className?: string }) {
 	// (full load so the header/footer/strings re-render in the new language).
 	function switchTo(code: string) {
 		const { path } = stripLang(pathname);
-		const target = isFunctional(path) ? path : `/${code}${path === "/" ? "" : path}`;
+		const target = isFunctional(path)
+			? path
+			: `/${code}${path === "/" ? "" : path}`;
 		window.location.assign(target || `/${code}`);
 	}
 

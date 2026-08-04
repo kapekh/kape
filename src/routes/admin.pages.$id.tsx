@@ -9,7 +9,9 @@ export const Route = createFileRoute("/admin/pages/$id")({
 	component: EditPage,
 });
 
-type PageEdit = NonNullable<Awaited<ReturnType<typeof trpcClient.adminPages.get.query>>>;
+type PageEdit = NonNullable<
+	Awaited<ReturnType<typeof trpcClient.adminPages.get.query>>
+>;
 
 function EditPage() {
 	const { id } = Route.useParams();
@@ -38,8 +40,19 @@ function EditPage() {
 		setSavedAt(new Date().toLocaleTimeString());
 	}
 
-	if (notFound) return <p className="text-sm text-muted-foreground">Page not found.</p>;
-	if (!data || !langs.length) return <p className="text-sm text-muted-foreground">Loading…</p>;
+	if (notFound)
+		return <p className="text-sm text-muted-foreground">Page not found.</p>;
+	if (!data || !langs.length)
+		return <p className="text-sm text-muted-foreground">Loading…</p>;
 
-	return <PageForm initial={data} languages={langs} onSubmit={onSubmit} saving={saving} title="Edit page" savedAt={savedAt} />;
+	return (
+		<PageForm
+			initial={data}
+			languages={langs}
+			onSubmit={onSubmit}
+			saving={saving}
+			title="Edit page"
+			savedAt={savedAt}
+		/>
+	);
 }

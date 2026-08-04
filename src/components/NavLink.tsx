@@ -1,7 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import type { AnchorHTMLAttributes, ReactNode } from "react";
 
-type Props = AnchorHTMLAttributes<HTMLAnchorElement> & { href?: string | null; children?: ReactNode };
+type Props = AnchorHTMLAttributes<HTMLAnchorElement> & {
+	href?: string | null;
+	children?: ReactNode;
+};
 
 /**
  * Internal links navigate client-side (SPA, with the router's View Transition);

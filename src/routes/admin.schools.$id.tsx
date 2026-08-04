@@ -1,12 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
-import { SchoolForm, type ProjectOpt, type SchoolFormValue, type TermOpt } from "#/components/admin/SchoolForm";
+import {
+	type ProjectOpt,
+	SchoolForm,
+	type SchoolFormValue,
+	type TermOpt,
+} from "#/components/admin/SchoolForm";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 
-export const Route = createFileRoute("/admin/schools/$id")({ component: EditSchool });
+export const Route = createFileRoute("/admin/schools/$id")({
+	component: EditSchool,
+});
 
-type SchoolRow = NonNullable<Awaited<ReturnType<typeof trpcClient.adminSchools.get.query>>>;
+type SchoolRow = NonNullable<
+	Awaited<ReturnType<typeof trpcClient.adminSchools.get.query>>
+>;
 
 function EditSchool() {
 	const { id } = Route.useParams();
@@ -38,7 +47,18 @@ function EditSchool() {
 		setSavedAt(new Date().toLocaleTimeString());
 	}
 
-	if (notFound) return <p className="text-sm text-muted-foreground">School not found.</p>;
+	if (notFound)
+		return <p className="text-sm text-muted-foreground">School not found.</p>;
 	if (!data) return <p className="text-sm text-muted-foreground">Loading…</p>;
-	return <SchoolForm initial={data} provinces={provinces} projects={projects} onSubmit={onSubmit} saving={saving} title="Edit school" savedAt={savedAt} />;
+	return (
+		<SchoolForm
+			initial={data}
+			provinces={provinces}
+			projects={projects}
+			onSubmit={onSubmit}
+			saving={saving}
+			title="Edit school"
+			savedAt={savedAt}
+		/>
+	);
 }

@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 
-export type ActionItem = { label: string; onClick: () => void; danger?: boolean; disabled?: boolean };
+export type ActionItem = {
+	label: string;
+	onClick: () => void;
+	danger?: boolean;
+	disabled?: boolean;
+};
 
 /**
  * Compact "⋯" overflow menu for table rows. Destructive actions (Delete) live
@@ -8,7 +13,13 @@ export type ActionItem = { label: string; onClick: () => void; danger?: boolean;
  * so it escapes the table's overflow clipping; closes on outside-click / scroll
  * / Escape.
  */
-export function ActionMenu({ items, label = "Row actions" }: { items: ActionItem[]; label?: string }) {
+export function ActionMenu({
+	items,
+	label = "Row actions",
+}: {
+	items: ActionItem[];
+	label?: string;
+}) {
 	const [open, setOpen] = useState(false);
 	const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
 	const btnRef = useRef<HTMLButtonElement>(null);
@@ -20,7 +31,8 @@ export function ActionMenu({ items, label = "Row actions" }: { items: ActionItem
 		const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
 		const onDown = (e: MouseEvent) => {
 			const t = e.target as Node;
-			if (!btnRef.current?.contains(t) && !menuRef.current?.contains(t)) setOpen(false);
+			if (!btnRef.current?.contains(t) && !menuRef.current?.contains(t))
+				setOpen(false);
 		};
 		window.addEventListener("scroll", close, true);
 		window.addEventListener("resize", close);
@@ -57,7 +69,12 @@ export function ActionMenu({ items, label = "Row actions" }: { items: ActionItem
 				<div
 					ref={menuRef}
 					role="menu"
-					style={{ position: "fixed", top: pos.top, left: pos.left, zIndex: 50 }}
+					style={{
+						position: "fixed",
+						top: pos.top,
+						left: pos.left,
+						zIndex: 50,
+					}}
 					className="thin-scroll w-36 rounded-lg border border-border bg-card py-1 shadow-[var(--shadow-soft)]"
 				>
 					{items.map((it) => (

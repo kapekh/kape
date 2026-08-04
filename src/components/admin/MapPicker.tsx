@@ -1,6 +1,5 @@
-import { useEffect, useRef } from "react";
-
 import type * as LType from "leaflet";
+import { useEffect, useRef } from "react";
 
 /**
  * Click-to-pick location map (keyless Leaflet + OSM). Click to drop a pin or
@@ -18,7 +17,9 @@ export function MapPicker({
 }) {
 	const ref = useRef<HTMLDivElement>(null);
 	const mapRef = useRef<LType.Map | undefined>(undefined);
-	const placeRef = useRef<((la: number, ln: number) => void) | undefined>(undefined);
+	const placeRef = useRef<((la: number, ln: number) => void) | undefined>(
+		undefined,
+	);
 	const onPickRef = useRef(onPick);
 	onPickRef.current = onPick;
 
@@ -26,7 +27,11 @@ export function MapPicker({
 	useEffect(() => {
 		if (!ref.current || typeof window === "undefined") return;
 		let cancelled = false;
-		const hasInitial = lat !== "" && lng !== "" && !Number.isNaN(Number(lat)) && !Number.isNaN(Number(lng));
+		const hasInitial =
+			lat !== "" &&
+			lng !== "" &&
+			!Number.isNaN(Number(lat)) &&
+			!Number.isNaN(Number(lng));
 		const startLat = hasInitial ? Number(lat) : 12.5; // Cambodia
 		const startLng = hasInitial ? Number(lng) : 104.9;
 
@@ -41,15 +46,20 @@ export function MapPicker({
 			const L = await import("leaflet");
 			if (cancelled || !ref.current) return;
 
-			const map = L.map(ref.current).setView([startLat, startLng], hasInitial ? 13 : 7);
+			const map = L.map(ref.current).setView(
+				[startLat, startLng],
+				hasInitial ? 13 : 7,
+			);
 			L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 				attribution: "&copy; OpenStreetMap contributors",
 				maxZoom: 19,
 			}).addTo(map);
 			const icon = L.icon({
 				iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-				iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-				shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+				iconRetinaUrl:
+					"https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+				shadowUrl:
+					"https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 				iconSize: [25, 41],
 				iconAnchor: [12, 41],
 				popupAnchor: [1, -34],
@@ -91,9 +101,15 @@ export function MapPicker({
 	useEffect(() => {
 		const la = Number(lat);
 		const ln = Number(lng);
-		if (lat === "" || lng === "" || Number.isNaN(la) || Number.isNaN(ln)) return;
+		if (lat === "" || lng === "" || Number.isNaN(la) || Number.isNaN(ln))
+			return;
 		placeRef.current?.(la, ln);
 	}, [lat, lng]);
 
-	return <div ref={ref} className="h-72 w-full rounded-lg border border-border overflow-hidden z-0" />;
+	return (
+		<div
+			ref={ref}
+			className="h-72 w-full rounded-lg border border-border overflow-hidden z-0"
+		/>
+	);
 }

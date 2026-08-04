@@ -92,9 +92,15 @@ export async function getUiStrings(
 	const defaultLang = await getDefaultLang(db);
 	const wanted = Array.from(new Set([defaultLang, lang]));
 	const rows = await db
-		.select({ key: uiStrings.key, lang: uiStrings.lang, value: uiStrings.value })
+		.select({
+			key: uiStrings.key,
+			lang: uiStrings.lang,
+			value: uiStrings.value,
+		})
 		.from(uiStrings)
-		.where(and(eq(uiStrings.tenantId, TENANT), inArray(uiStrings.lang, wanted)));
+		.where(
+			and(eq(uiStrings.tenantId, TENANT), inArray(uiStrings.lang, wanted)),
+		);
 
 	const out: Record<string, string> = {};
 	for (const r of rows) if (r.lang === defaultLang) out[r.key] = r.value;

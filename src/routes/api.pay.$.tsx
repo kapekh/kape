@@ -1,11 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { barayConfig, createPaymentIntent, decryptOrderId } from "#/server/baray";
+import {
+	barayConfig,
+	createPaymentIntent,
+	decryptOrderId,
+} from "#/server/baray";
 import { db } from "#/server/db";
 import { siteOrigin } from "#/server/origin";
 import { clientIp, rateLimit } from "#/server/ratelimit";
 import { getActiveCampaignBySlug } from "#/server/repo/campaigns";
-import { createDonation, markDonationPaid, setDonationIntent, type DonorVisibility } from "#/server/repo/donations";
+import {
+	createDonation,
+	type DonorVisibility,
+	markDonationPaid,
+	setDonationIntent,
+} from "#/server/repo/donations";
 
 // Smallest accepted gift per currency (Baray: USD ≥ $0.03, KHR ≥ 100).
 const MIN = { USD: 0.03, KHR: 100 } as const;
@@ -19,36 +28,69 @@ function formatAmount(value: number, currency: "USD" | "KHR"): string {
 async function startDonation(request: Request): Promise<Response> {
 	const cfg = barayConfig();
 	if (!cfg) {
-		return Response.json({ error: "Donations are not configured yet. Please check back soon." }, { status: 503 });
+		return Response.json(
+			{ error: "Donations are not configured yet. Please check back soon." },
+			{ status: 503 },
+		);
 	}
 
 	const ip = clientIp(request);
 	if (!rateLimit(`pay:donate:${ip}`, 8, 60_000)) {
-		return Response.json({ error: "Too many attempts. Please try again shortly." }, { status: 429 });
+		return Response.json(
+			{ error: "Too many attempts. Please try again shortly." },
+			{ status: 429 },
+		);
 	}
 
-	const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+	const body = (await request.json().catch(() => ({}))) as Record<
+		string,
+		unknown
+	>;
 
 	// Every donation belongs to an active campaign; the campaign fixes the currency.
 	const slug = typeof body.campaign === "string" ? body.campaign : "";
 	const campaign = slug ? await getActiveCampaignBySlug(db, slug) : null;
 	if (!campaign) {
-		return Response.json({ error: "This campaign is not accepting donations right now." }, { status: 404 });
+		return Response.json(
+			{ error: "This campaign is not accepting donations right now." },
+			{ status: 404 },
+		);
 	}
 	const currency = campaign.currency === "KHR" ? "KHR" : "USD";
 	const value = Number(body.amount);
 	if (!Number.isFinite(value) || value < MIN[currency]) {
-		return Response.json({ error: `Minimum donation is ${currency === "USD" ? "$0.03" : "100 KHR"}.` }, { status: 400 });
+		return Response.json(
+			{
+				error: `Minimum donation is ${currency === "USD" ? "$0.03" : "100 KHR"}.`,
+			},
+			{ status: 400 },
+		);
 	}
 
-	const name = typeof body.name === "string" ? body.name.slice(0, 200).trim() : "";
-	const email = typeof body.email === "string" ? body.email.slice(0, 254).trim() : "";
-	const message = typeof body.message === "string" ? body.message.slice(0, 1000) : undefined;
+	const name =
+		typeof body.name === "string" ? body.name.slice(0, 200).trim() : "";
+	const email =
+		typeof body.email === "string" ? body.email.slice(0, 254).trim() : "";
+	const message =
+		typeof body.message === "string" ? body.message.slice(0, 1000) : undefined;
 
 	// How to credit the donor on the public supporters wall.
-	const visibility: DonorVisibility = body.visibility === "name" ? "name" : body.visibility === "custom" ? "custom" : "anonymous";
-	const customName = typeof body.displayName === "string" ? body.displayName.slice(0, 80).trim() : "";
-	const displayName = visibility === "name" ? name || null : visibility === "custom" ? customName || null : null;
+	const visibility: DonorVisibility =
+		body.visibility === "name"
+			? "name"
+			: body.visibility === "custom"
+				? "custom"
+				: "anonymous";
+	const customName =
+		typeof body.displayName === "string"
+			? body.displayName.slice(0, 80).trim()
+			: "";
+	const displayName =
+		visibility === "name"
+			? name || null
+			: visibility === "custom"
+				? customName || null
+				: null;
 
 	const orderId = `KAPE-${crypto.randomUUID()}`;
 	const amount = formatAmount(value, currency);
@@ -80,7 +122,10 @@ async function startDonation(request: Request): Promise<Response> {
 		return Response.json({ redirectUrl });
 	} catch (e) {
 		console.error("[baray] create intent failed", e);
-		return Response.json({ error: "Could not start the payment. Please try again." }, { status: 502 });
+		return Response.json(
+			{ error: "Could not start the payment. Please try again." },
+			{ status: 502 },
+		);
 	}
 }
 
@@ -89,9 +134,15 @@ async function handleWebhook(request: Request): Promise<Response> {
 	const cfg = barayConfig();
 	if (!cfg) return Response.json({ error: "not configured" }, { status: 503 });
 
-	const body = (await request.json().catch(() => ({}))) as { encrypted_order_id?: string; bank?: string };
+	const body = (await request.json().catch(() => ({}))) as {
+		encrypted_order_id?: string;
+		bank?: string;
+	};
 	if (!body.encrypted_order_id) {
-		return Response.json({ error: "missing encrypted_order_id" }, { status: 400 });
+		return Response.json(
+			{ error: "missing encrypted_order_id" },
+			{ status: 400 },
+		);
 	}
 
 	let orderId: string;

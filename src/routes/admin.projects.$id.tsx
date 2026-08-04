@@ -2,12 +2,20 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import type { LangOpt } from "#/components/admin/PostForm";
-import { ProjectForm, type DonorOpt, type ProjectFormValue } from "#/components/admin/ProjectForm";
+import {
+	type DonorOpt,
+	ProjectForm,
+	type ProjectFormValue,
+} from "#/components/admin/ProjectForm";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 
-export const Route = createFileRoute("/admin/projects/$id")({ component: EditProject });
+export const Route = createFileRoute("/admin/projects/$id")({
+	component: EditProject,
+});
 
-type ProjectEdit = NonNullable<Awaited<ReturnType<typeof trpcClient.adminProjects.get.query>>>;
+type ProjectEdit = NonNullable<
+	Awaited<ReturnType<typeof trpcClient.adminProjects.get.query>>
+>;
 
 function EditProject() {
 	const { id } = Route.useParams();
@@ -39,8 +47,20 @@ function EditProject() {
 		setSavedAt(new Date().toLocaleTimeString());
 	}
 
-	if (notFound) return <p className="text-sm text-muted-foreground">Project not found.</p>;
-	if (!data || !langs.length) return <p className="text-sm text-muted-foreground">Loading…</p>;
+	if (notFound)
+		return <p className="text-sm text-muted-foreground">Project not found.</p>;
+	if (!data || !langs.length)
+		return <p className="text-sm text-muted-foreground">Loading…</p>;
 
-	return <ProjectForm initial={data} languages={langs} donors={donors} onSubmit={onSubmit} saving={saving} title="Edit project" savedAt={savedAt} />;
+	return (
+		<ProjectForm
+			initial={data}
+			languages={langs}
+			donors={donors}
+			onSubmit={onSubmit}
+			saving={saving}
+			title="Edit project"
+			savedAt={savedAt}
+		/>
+	);
 }

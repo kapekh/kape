@@ -1,10 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
-import { CampaignForm, type CampaignFormValue } from "#/components/admin/CampaignForm";
+import {
+	CampaignForm,
+	type CampaignFormValue,
+} from "#/components/admin/CampaignForm";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 
-export const Route = createFileRoute("/admin/campaigns/$id/")({ component: EditCampaign });
+export const Route = createFileRoute("/admin/campaigns/$id/")({
+	component: EditCampaign,
+});
 
 type Initial = Awaited<ReturnType<typeof trpcClient.adminCampaigns.get.query>>;
 
@@ -25,6 +30,14 @@ function EditCampaign() {
 		navigate({ to: "/admin/campaigns" });
 	}
 
-	if (!initial) return <div className="p-6 text-muted-foreground">Loading…</div>;
-	return <CampaignForm initial={initial} onSubmit={onSubmit} saving={saving} title="Edit campaign" />;
+	if (!initial)
+		return <div className="p-6 text-muted-foreground">Loading…</div>;
+	return (
+		<CampaignForm
+			initial={initial}
+			onSubmit={onSubmit}
+			saving={saving}
+			title="Edit campaign"
+		/>
+	);
 }

@@ -68,17 +68,29 @@ function autoLayout(rows: OrgRow[]): Map<number, { x: number; y: number }> {
 	return pos;
 }
 
-function rowsToFlow(rows: OrgRow[], handlers: Omit<NodeData, "row">): { nodes: Node<NodeData>[]; edges: Edge[] } {
+function rowsToFlow(
+	rows: OrgRow[],
+	handlers: Omit<NodeData, "row">,
+): { nodes: Node<NodeData>[]; edges: Edge[] } {
 	const auto = autoLayout(rows);
 	const nodes: Node<NodeData>[] = rows.map((r) => ({
 		id: String(r.id),
 		type: "org",
-		position: r.posX != null && r.posY != null ? { x: r.posX, y: r.posY } : (auto.get(r.id) ?? { x: 0, y: 0 }),
+		position:
+			r.posX != null && r.posY != null
+				? { x: r.posX, y: r.posY }
+				: (auto.get(r.id) ?? { x: 0, y: 0 }),
 		data: { row: r, ...handlers },
 	}));
 	const edges: Edge[] = rows
 		.filter((r) => r.parentId != null)
-		.map((r) => ({ id: `e${r.parentId}-${r.id}`, source: String(r.parentId), target: String(r.id), type: "smoothstep", style: { stroke: "var(--border)", strokeWidth: 2 } }));
+		.map((r) => ({
+			id: `e${r.parentId}-${r.id}`,
+			source: String(r.parentId),
+			target: String(r.id),
+			type: "smoothstep",
+			style: { stroke: "var(--border)", strokeWidth: 2 },
+		}));
 	return { nodes, edges };
 }
 
@@ -87,18 +99,58 @@ function OrgFlowNode({ data }: NodeProps<Node<NodeData>>) {
 	const { row, onEdit, onAddChild, onDelete } = data;
 	return (
 		<div className="w-[210px] rounded-2xl border border-border bg-card px-3 py-2.5 shadow-[var(--shadow-soft)] text-center">
-			<Handle type="target" position={Position.Top} className="!h-2.5 !w-2.5 !bg-[var(--accent)] !border-0" />
+			<Handle
+				type="target"
+				position={Position.Top}
+				className="!h-2.5 !w-2.5 !bg-[var(--accent)] !border-0"
+			/>
 			<div className="flex items-center justify-center gap-1.5">
-				{row.personId != null && <span className="h-2 w-2 rounded-full bg-[var(--palm)]" title="Linked to a team member" />}
-				<span className="truncate text-sm font-semibold text-primary">{row.name}</span>
+				{row.personId != null && (
+					<span
+						className="h-2 w-2 rounded-full bg-[var(--palm)]"
+						title="Linked to a team member"
+					/>
+				)}
+				<span className="truncate text-sm font-semibold text-primary">
+					{row.name}
+				</span>
 			</div>
-			{row.title && <div className="mt-0.5 truncate text-xs text-muted-foreground">{row.title}</div>}
+			{row.title && (
+				<div className="mt-0.5 truncate text-xs text-muted-foreground">
+					{row.title}
+				</div>
+			)}
 			<div className="nodrag mt-2 flex items-center justify-center gap-1 border-t border-border pt-1.5">
-				<button type="button" title="Add report" onClick={() => onAddChild(row.id)} className="rounded px-1.5 py-0.5 text-xs font-semibold text-[var(--accent)] hover:bg-[var(--accent)]/10">＋</button>
-				<button type="button" title="Edit" onClick={() => onEdit(row.id)} className="rounded px-1.5 py-0.5 text-xs text-foreground/70 hover:bg-muted">✎</button>
-				<button type="button" title="Delete" onClick={() => onDelete(row.id)} className="rounded px-1.5 py-0.5 text-xs text-destructive hover:bg-destructive/10">✕</button>
+				<button
+					type="button"
+					title="Add report"
+					onClick={() => onAddChild(row.id)}
+					className="rounded px-1.5 py-0.5 text-xs font-semibold text-[var(--accent)] hover:bg-[var(--accent)]/10"
+				>
+					＋
+				</button>
+				<button
+					type="button"
+					title="Edit"
+					onClick={() => onEdit(row.id)}
+					className="rounded px-1.5 py-0.5 text-xs text-foreground/70 hover:bg-muted"
+				>
+					✎
+				</button>
+				<button
+					type="button"
+					title="Delete"
+					onClick={() => onDelete(row.id)}
+					className="rounded px-1.5 py-0.5 text-xs text-destructive hover:bg-destructive/10"
+				>
+					✕
+				</button>
 			</div>
-			<Handle type="source" position={Position.Bottom} className="!h-2.5 !w-2.5 !bg-[var(--accent)] !border-0" />
+			<Handle
+				type="source"
+				position={Position.Bottom}
+				className="!h-2.5 !w-2.5 !bg-[var(--accent)] !border-0"
+			/>
 		</div>
 	);
 }
@@ -139,8 +191,13 @@ export function OrgCanvas({
 				onEdgesChange={onEdgesChange}
 				nodeTypes={nodeTypes}
 				// Dragging a connection from a parent's bottom handle to a child's top handle re-parents.
-				onConnect={(c) => { if (c.source && c.target) onReparent(Number(c.target), Number(c.source)); }}
-				onNodeDragStop={(_e, node) => onMovePosition(Number(node.id), node.position.x, node.position.y)}
+				onConnect={(c) => {
+					if (c.source && c.target)
+						onReparent(Number(c.target), Number(c.source));
+				}}
+				onNodeDragStop={(_e, node) =>
+					onMovePosition(Number(node.id), node.position.x, node.position.y)
+				}
 				fitView
 				fitViewOptions={{ padding: 0.2 }}
 				minZoom={0.2}
@@ -148,7 +205,12 @@ export function OrgCanvas({
 			>
 				<Background gap={18} color="var(--border)" />
 				<Controls showInteractive={false} />
-				<MiniMap pannable zoomable className="!bg-card" nodeColor="var(--accent)" />
+				<MiniMap
+					pannable
+					zoomable
+					className="!bg-card"
+					nodeColor="var(--accent)"
+				/>
 			</ReactFlow>
 		</div>
 	);

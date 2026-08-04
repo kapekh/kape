@@ -1,6 +1,5 @@
-import { useEffect, useRef } from "react";
-
 import type * as LType from "leaflet";
+import { useEffect, useRef } from "react";
 
 export type MapMarker = { lat: number; lng: number; label: string };
 
@@ -45,8 +44,10 @@ export function MapView({
 			// Explicit icon URLs (bundlers break Leaflet's default icon paths).
 			const icon = L.icon({
 				iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-				iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-				shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+				iconRetinaUrl:
+					"https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+				shadowUrl:
+					"https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 				iconSize: [25, 41],
 				iconAnchor: [12, 41],
 				popupAnchor: [1, -34],
@@ -63,5 +64,10 @@ export function MapView({
 		};
 	}, [markers, center, zoom]);
 
-	return <div ref={ref} className="h-80 w-full rounded-2xl border border-border overflow-hidden z-0" />;
+	return (
+		<div
+			ref={ref}
+			className="h-80 w-full rounded-2xl border border-border overflow-hidden z-0"
+		/>
+	);
 }

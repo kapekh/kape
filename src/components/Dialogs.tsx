@@ -7,12 +7,34 @@ import { useEffect, useRef, useState } from "react";
  * toast() from anywhere.
  */
 
-type ConfirmOpts = { title?: string; message: string; confirmLabel?: string; cancelLabel?: string; danger?: boolean };
-type PromptOpts = { title?: string; message?: string; placeholder?: string; defaultValue?: string; confirmLabel?: string };
+type ConfirmOpts = {
+	title?: string;
+	message: string;
+	confirmLabel?: string;
+	cancelLabel?: string;
+	danger?: boolean;
+};
+type PromptOpts = {
+	title?: string;
+	message?: string;
+	placeholder?: string;
+	defaultValue?: string;
+	confirmLabel?: string;
+};
 
 type Req =
-	| { kind: "confirm"; id: number; opts: ConfirmOpts; resolve: (v: boolean) => void }
-	| { kind: "prompt"; id: number; opts: PromptOpts; resolve: (v: string | null) => void };
+	| {
+			kind: "confirm";
+			id: number;
+			opts: ConfirmOpts;
+			resolve: (v: boolean) => void;
+	  }
+	| {
+			kind: "prompt";
+			id: number;
+			opts: PromptOpts;
+			resolve: (v: string | null) => void;
+	  };
 
 let counter = 0;
 let queue: Req[] = [];
@@ -101,9 +123,17 @@ export function DialogHost() {
 	);
 }
 
-function Modal({ req, onFinish }: { req: Req; onFinish: (req: Req, value: boolean | string | null) => void }) {
+function Modal({
+	req,
+	onFinish,
+}: {
+	req: Req;
+	onFinish: (req: Req, value: boolean | string | null) => void;
+}) {
 	const isPrompt = req.kind === "prompt";
-	const [value, setValue] = useState(isPrompt ? ((req.opts as PromptOpts).defaultValue ?? "") : "");
+	const [value, setValue] = useState(
+		isPrompt ? ((req.opts as PromptOpts).defaultValue ?? "") : "",
+	);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const cancel = () => onFinish(req, isPrompt ? null : false);
 	const accept = () => onFinish(req, isPrompt ? value : true);
@@ -112,7 +142,11 @@ function Modal({ req, onFinish }: { req: Req; onFinish: (req: Req, value: boolea
 		if (isPrompt) inputRef.current?.focus();
 		const onKey = (e: KeyboardEvent) => {
 			if (e.key === "Escape") cancel();
-			else if (e.key === "Enter" && (isPrompt || (e.target as HTMLElement)?.tagName !== "TEXTAREA")) accept();
+			else if (
+				e.key === "Enter" &&
+				(isPrompt || (e.target as HTMLElement)?.tagName !== "TEXTAREA")
+			)
+				accept();
 		};
 		window.addEventListener("keydown", onKey);
 		return () => window.removeEventListener("keydown", onKey);
@@ -124,10 +158,29 @@ function Modal({ req, onFinish }: { req: Req; onFinish: (req: Req, value: boolea
 
 	return (
 		<div className="fixed inset-0 z-[150] grid place-items-center p-4">
-			<button type="button" aria-label="Cancel" className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={cancel} />
-			<div role="dialog" aria-modal="true" className="relative w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl animate-[mega-content-in_0.18s_ease-out]">
-				{o.title && <h2 className="font-display text-lg font-semibold text-primary">{o.title}</h2>}
-				{o.message && <p className={`whitespace-pre-line text-sm text-foreground/85 ${o.title ? "mt-2" : ""}`}>{o.message}</p>}
+			<button
+				type="button"
+				aria-label="Cancel"
+				className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+				onClick={cancel}
+			/>
+			<div
+				role="dialog"
+				aria-modal="true"
+				className="relative w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl animate-[mega-content-in_0.18s_ease-out]"
+			>
+				{o.title && (
+					<h2 className="font-display text-lg font-semibold text-primary">
+						{o.title}
+					</h2>
+				)}
+				{o.message && (
+					<p
+						className={`whitespace-pre-line text-sm text-foreground/85 ${o.title ? "mt-2" : ""}`}
+					>
+						{o.message}
+					</p>
+				)}
 				{isPrompt && (
 					<input
 						ref={inputRef}
@@ -138,7 +191,11 @@ function Modal({ req, onFinish }: { req: Req; onFinish: (req: Req, value: boolea
 					/>
 				)}
 				<div className="mt-6 flex justify-end gap-2">
-					<button type="button" onClick={cancel} className="rounded-full border border-border px-5 py-2 text-sm font-semibold text-foreground/70 hover:bg-muted transition">
+					<button
+						type="button"
+						onClick={cancel}
+						className="rounded-full border border-border px-5 py-2 text-sm font-semibold text-foreground/70 hover:bg-muted transition"
+					>
 						{o.cancelLabel ?? "Cancel"}
 					</button>
 					<button
