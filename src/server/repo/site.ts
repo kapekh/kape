@@ -11,7 +11,7 @@ import {
 	stats,
 	visitorDaily,
 } from "../schema";
-import { resolveOne, resolveTranslations } from "./i18n";
+import { resolveTranslations } from "./i18n";
 import { attachMediaUrl } from "./media-util";
 
 const TENANT = 1;
@@ -76,11 +76,11 @@ export async function listHeroSlides(db: DB, lang: string) {
 }
 
 /**
- * The homepage pop-up: announcements are `posts` of type `announcement`. Show
- * the soonest one whose deadline hasn't passed; if none have a deadline, show
- * the newest evergreen one. Past-deadline announcements are hidden.
+ * The homepage pop-up: announcements are `posts` of type `announcement`. Every
+ * notice still open is returned — deadline ones soonest first, then evergreen
+ * ones newest first. Past-deadline announcements are hidden.
  */
-export async function getActiveAnnouncement(db: DB, lang: string) {
+export async function listActiveAnnouncements(db: DB, lang: string) {
 	const rows = await db
 		.select({ id: posts.id, meta: posts.meta, publishedAt: posts.publishedAt })
 		.from(posts)
@@ -101,24 +101,31 @@ export async function getActiveAnnouncement(db: DB, lang: string) {
 			publishedAt: r.publishedAt ?? "",
 		};
 	});
-	const active = items
+	const dated = items
 		.filter((r) => r.deadline && r.deadline >= today)
 		.sort((a, b) => a.deadline.localeCompare(b.deadline));
 	const evergreen = items
 		.filter((r) => !r.deadline)
 		.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
-	const pick = active[0] ?? evergreen[0];
-	if (!pick) return null;
-	const f = await resolveOne(db, "post", pick.id, lang);
-	return {
-		id: pick.id,
-		title: f.title ?? "",
-		message: f.excerpt ?? "",
-		linkUrl: pick.link || null,
-		deadline: pick.deadline || null,
-		hasDeadline: Boolean(pick.deadline),
-	};
+	const active = [...dated, ...evergreen];
+	const f = await resolveTranslations(
+		db,
+		"post",
+		active.map((r) => r.id),
+		lang,
+	);
+	return active.map((r) => ({
+		id: r.id,
+		title: f.get(r.id)?.title ?? "",
+		message: f.get(r.id)?.excerpt ?? "",
+		linkUrl: r.link || null,
+		deadline: r.deadline || null,
+		hasDeadline: Boolean(r.deadline),
+	}));
 }
+
+// compat: `trpc/router.ts` (not this job's file) still imports the old name
+export const getActiveAnnouncement = listActiveAnnouncements;
 
 export async function listOffices(db: DB) {
 	const rows = await db
@@ -138,10 +145,10 @@ export async function listPartners(db: DB) {
 	return attachMediaUrl(db, rows, "logoMediaId", "logoUrl");
 }
 
-/** Record one visit for today and return {today, total}. (Write-on-read counter.) */
+/** Record one visit for today and return {today, month, total}. (Write-on-read counter.) */
 export async function recordAndGetVisits(
 	db: DB,
-): Promise<{ today: number; total: number }> {
+): Promise<{ today: number; month: number; total: number }> {
 	const today = new Date().toISOString().slice(0, 10);
 	await db
 		.insert(visitorDaily)
@@ -154,6 +161,12 @@ export async function recordAndGetVisits(
 		.select()
 		.from(visitorDaily)
 		.where(eq(visitorDaily.tenantId, TENANT));
-	const total = rows.reduce((s, r) => s + r.count, 0);
-	return { today: rows.find((r) => r.date === today)?.count ?? 0, total };
+	const month = today.slice(0, 7);
+	return {
+		today: rows.find((r) => r.date === today)?.count ?? 0,
+		month: rows
+			.filter((r) => r.date.startsWith(month))
+			.reduce((s, r) => s + r.count, 0),
+		total: rows.reduce((s, r) => s + r.count, 0),
+	};
 }

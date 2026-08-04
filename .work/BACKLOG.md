@@ -36,7 +36,7 @@ errors in the files you own**.
 | J14 | Content repo follow-ups, from J03 | — | `src/server/repo/content.ts`, `src/server/repo/sections.ts` | **done** `6dd884a`, bar the Type column | most |
 | J13 | Repo hygiene, from J02's findings | — | `src/integrations/tanstack-query/root-provider.tsx`, `README.md` | item 1 done `0784475`; items 2-3 open | most |
 | J04 | Lightbox, share, related | D05 D10 D11 | `src/routes/$.tsx`, `src/components/Lightbox.tsx`, `src/components/ShareButtons.tsx` | **done** `866229e` | J09 J05 |
-| J05 | Announcement modal + month counter | D09 D25 | `src/components/AnnouncementPopup.tsx`, `src/server/repo/site.ts` | code-complete, **held** on F04 | J03 J04 |
+| J05 | Announcement modal + month counter | D09 D25 | `src/components/AnnouncementPopup.tsx`, `src/server/repo/site.ts` | **done** | J03 J04 |
 | J07 | Form builder field types | D21 | `src/lib/forms.ts`, `src/components/FormRenderer.tsx`, `src/components/admin/FormBuilder*` | ready | most |
 | J08 | Rich text tables | D18 | `src/lib/richtext/extensions.ts`, editor toolbar | **done** | most |
 | J09 | Project metadata | D19 | `src/server/schema.ts`, `src/components/ProjectView.tsx`, `drizzle/`, projects repo + admin editor | **done** `4566c2b` | J04 J14 |
@@ -48,7 +48,7 @@ errors in the files you own**.
 | J17 | Project content + 8 sub-projects | — | `src/server/seed/projects.ts` | after J15, J09 | J16 J18 J19 |
 | J18 | Structured records | — | `src/server/seed/records.ts` | after J15 | J16 J17 J19 |
 | J20 | UX flow audit of the live client site | — | `.work/UX-AUDIT.md`, `.work/ux-shots/` | **done** `8b09f2f` | anything |
-| J21 | Five visitor-visible defects, from J20 | F04 F14 F23 F27 F40 | `src/components/AnnouncementPopup.tsx`, `src/components/Header.tsx`, `src/integrations/trpc/router.ts` | F14 F23 F27 in the tree, uncommitted; F04 after J05 | nothing |
+| J21 | Five visitor-visible defects, from J20 | F04 F14 F23 F27 F40 | `src/components/Header.tsx`, `src/integrations/trpc/router.ts` | F04 fixed with J05; F14 F23 F27 in the tree, uncommitted; F40 open | nothing |
 | J19 | Import the real imagery | — | `scripts/import-lovable-assets.ts`, `src/server/seed/media.ts` | **unblocked** | J16 J17 J18 |
 
 `src/server/schema.ts` and `drizzle/` are contended by J02, J09, J10. Those three are strictly
