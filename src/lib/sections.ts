@@ -205,11 +205,13 @@ export const SECTION_DEFS: SectionDef[] = [
 					{ value: "md", label: "Medium" },
 				],
 			},
+			{ key: "image", label: "Band background image", kind: "image" },
 			{
 				key: "items",
 				label: "Stats",
 				kind: "items",
 				itemFields: [
+					{ key: "icon", label: "Icon", kind: "image" },
 					{ key: "value", label: "Value", kind: "text" },
 					{ key: "label", label: "Label", kind: "text" },
 				],
@@ -281,6 +283,8 @@ export const SECTION_DEFS: SectionDef[] = [
 			{ key: "title", label: "Title", kind: "text" },
 			{ key: "body", label: "Body", kind: "richtext" },
 			{ key: "image", label: "Image", kind: "image" },
+			{ key: "statValue", label: "Overlay stat value", kind: "text" },
+			{ key: "statLabel", label: "Overlay stat label", kind: "text" },
 			TONE,
 		],
 	},
@@ -334,6 +338,52 @@ export const SECTION_DEFS: SectionDef[] = [
 			TONE,
 		],
 	},
+	{
+		type: "certificates",
+		label: "Certificate grid",
+		kind: "static",
+		description: "Accreditations and credentials: an image with a PDF link.",
+		layouts: [
+			{ value: "cols-2", label: "2 columns" },
+			{ value: "cols-3", label: "3 columns" },
+			{ value: "cols-4", label: "4 columns" },
+		],
+		fields: [
+			EYEBROW,
+			{ key: "title", label: "Section title", kind: "text" },
+			{
+				key: "items",
+				label: "Certificates",
+				kind: "items",
+				itemFields: [
+					{ key: "image", label: "Certificate image", kind: "image" },
+					{ key: "title", label: "Title", kind: "text" },
+					{ key: "issuer", label: "Issuer", kind: "text" },
+					{ key: "year", label: "Year", kind: "text" },
+					{ key: "fileUrl", label: "PDF link", kind: "url" },
+				],
+			},
+			TONE,
+			CENTER,
+		],
+	},
+	{
+		type: "siteMap",
+		label: "Site map",
+		kind: "static",
+		description:
+			"The published navigation tree with each entry's description. Content comes from the nav, not from fields.",
+		layouts: [
+			{ value: "columns", label: "Columns" },
+			{ value: "list", label: "Indented list" },
+		],
+		fields: [
+			EYEBROW,
+			{ key: "title", label: "Section title", kind: "text" },
+			TONE,
+			CENTER,
+		],
+	},
 
 	/* ---------------- Dynamic ---------------- */
 	{
@@ -346,6 +396,7 @@ export const SECTION_DEFS: SectionDef[] = [
 			{ value: "grid-2", label: "2-column cards" },
 			{ value: "grid-3", label: "3-column cards" },
 			{ value: "list", label: "Simple list" },
+			{ value: "table", label: "Table (jobs: location + deadline)" },
 		],
 		sources: [
 			{ value: "posts", label: "News", contentType: "news" },
@@ -369,6 +420,7 @@ export const SECTION_DEFS: SectionDef[] = [
 		fields: [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
+			{ key: "moreHref", label: "“All videos” link", kind: "url" },
 			TONE,
 		],
 	},
@@ -458,12 +510,35 @@ export const SECTION_DEFS: SectionDef[] = [
 		type: "partners",
 		label: "Partners",
 		kind: "dynamic",
-		description: "Partner links grouped by category.",
-		layouts: [{ value: "groups", label: "Grouped pills" }],
+		description:
+			"Partner links grouped by category, or a scrolling logo strip.",
+		layouts: [
+			{ value: "groups", label: "Grouped pills" },
+			{ value: "marquee", label: "Scrolling logo strip" },
+		],
 		sources: [{ value: "partners", label: "Partners" }],
 		fields: [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
+			TONE,
+		],
+	},
+	{
+		type: "projectList",
+		label: "Project list",
+		kind: "dynamic",
+		description:
+			"Programs and projects as cards. Set the category filter to `current` or `past` to split the landing pages.",
+		layouts: [
+			{ value: "grid-2", label: "2-column cards" },
+			{ value: "grid-3", label: "3-column cards" },
+			{ value: "list", label: "Simple list" },
+		],
+		sources: [{ value: "projects", label: "Projects" }],
+		fields: [
+			EYEBROW,
+			{ key: "title", label: "Section title", kind: "text" },
+			{ key: "moreHref", label: "“See all” link", kind: "url" },
 			TONE,
 		],
 	},

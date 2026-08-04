@@ -68,6 +68,51 @@ export async function listProjectOptions(db: DB, lang: string) {
 	}));
 }
 
+export type ProjectCard = {
+	id: number;
+	slug: string;
+	code: string;
+	status: string;
+	name: string;
+	summary: string;
+	image: string | null;
+};
+
+/** Public project cards for the `projectList` section, optionally filtered by status. */
+export async function listProjectCards(
+	db: DB,
+	lang: string,
+	status?: string,
+	limit?: number,
+): Promise<ProjectCard[]> {
+	const rows = await db
+		.select()
+		.from(projects)
+		.where(
+			status
+				? and(eq(projects.tenantId, TENANT), eq(projects.status, status))
+				: eq(projects.tenantId, TENANT),
+		)
+		.orderBy(asc(projects.sort));
+	const capped = limit ? rows.slice(0, limit) : rows;
+	const names = await resolveTranslations(
+		db,
+		"project",
+		capped.map((r) => r.id),
+		lang,
+	);
+	const withLogo = await attachMediaUrl(db, capped, "logoMediaId", "logoUrl");
+	return withLogo.map((r) => ({
+		id: r.id,
+		slug: r.slug,
+		code: r.code,
+		status: r.status,
+		name: names.get(r.id)?.name ?? r.code,
+		summary: names.get(r.id)?.summary ?? "",
+		image: r.logoUrl,
+	}));
+}
+
 export type ProjectPin = {
 	id: number;
 	lat: number;

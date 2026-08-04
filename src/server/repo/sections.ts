@@ -16,7 +16,7 @@ import {
 } from "./content";
 import { getOrgTree } from "./org";
 import { listPeople } from "./people";
-import { listProjectLocations, listProjectOptions } from "./projects";
+import { listProjectCards, listProjectLocations } from "./projects";
 import { listOffices, listPartners } from "./site";
 import { staffDirectory, staffDocuments, staffEvents } from "./staff";
 
@@ -55,7 +55,7 @@ async function resolveQuery(
 		case "partners":
 			return listPartners(db);
 		case "projects":
-			return listProjectOptions(db, lang);
+			return listProjectCards(db, lang, q.category, q.limit);
 		case "staff":
 			return staffDirectory(db);
 		case "events":
@@ -107,6 +107,7 @@ export async function resolveSections(
 				if (s.query.source === "posts") {
 					props.linkBase = POST_LINK_BASE[s.query.contentType ?? "news"] ?? "";
 				}
+				if (s.query.source === "projects") props.linkBase = "/projects";
 			}
 			return { ...s, props };
 		}),

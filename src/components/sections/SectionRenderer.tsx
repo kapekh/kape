@@ -1,5 +1,7 @@
+import { useLoaderData } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
+import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import type { SectionNode } from "#/lib/sections";
 import { useLang } from "@/lib/i18n";
 import { localizedHref } from "@/lib/i18n-config";
@@ -510,12 +512,14 @@ function Cards(p: P) {
 function StatItem({
 	value,
 	label,
+	icon,
 	run,
 	valueClass = "text-5xl md:text-6xl",
 	labelClass = "text-xs",
 }: {
 	value: string;
 	label: string;
+	icon?: string;
 	run: boolean;
 	valueClass?: string;
 	labelClass?: string;
@@ -530,6 +534,13 @@ function StatItem({
 		: value;
 	return (
 		<div className="group">
+			{icon && (
+				<img
+					src={icon}
+					alt=""
+					className="mb-4 h-10 w-10 object-contain opacity-90"
+				/>
+			)}
 			<div
 				aria-hidden="true"
 				className={`font-display ${valueClass} font-semibold tabular-nums tracking-tight text-[var(--secondary)] whitespace-nowrap`}
@@ -583,6 +594,13 @@ function Stats(p: P) {
 					<div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-x-8 gap-y-10">
 						{items.map((it, n) => (
 							<div key={n}>
+								{it.icon && (
+									<img
+										src={it.icon}
+										alt=""
+										className="mb-3 h-10 w-10 object-contain"
+									/>
+								)}
 								<div
 									className={`font-display ${valueClass} font-semibold tabular-nums tracking-tight text-primary whitespace-nowrap`}
 								>
@@ -628,6 +646,7 @@ function Stats(p: P) {
 							key={n}
 							value={String(it.value)}
 							label={it.label}
+							icon={it.icon}
 							run={inView}
 							valueClass={valueClass}
 							labelClass={labelClass}
@@ -970,6 +989,50 @@ function PostList(p: P) {
 							</li>
 						))}
 					</ul>
+				) : layout === "table" ? (
+					<div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-sm">
+						<table className="w-full text-sm">
+							<thead className="bg-muted/60 text-left">
+								<tr>
+									<th className="px-4 py-3 font-semibold text-foreground/70">
+										Position
+									</th>
+									<th className="px-4 py-3 font-semibold text-foreground/70">
+										Location
+									</th>
+									<th className="px-4 py-3 font-semibold text-foreground/70">
+										Deadline
+									</th>
+									<th className="px-4 py-3" />
+								</tr>
+							</thead>
+							<tbody className="divide-y divide-border">
+								{posts.map((post) => (
+									<tr key={post.id} className="hover:bg-muted/30 transition">
+										<td className="px-4 py-3 font-medium text-foreground">
+											{post.title}
+										</td>
+										<td className="px-4 py-3 text-foreground/70">
+											{post.location}
+										</td>
+										<td className="px-4 py-3 text-foreground/70">
+											{post.deadline}
+										</td>
+										<td className="px-4 py-3 text-right">
+											{base && (
+												<NavLink
+													href={link(post.slug)}
+													className="font-semibold text-[var(--accent)] hover:underline"
+												>
+													Apply →
+												</NavLink>
+											)}
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
 				) : layout === "featured" && posts.length > 1 ? (
 					<div className="grid gap-8 lg:grid-cols-12">
 						<article className="group lg:col-span-7">
@@ -1151,6 +1214,14 @@ function AlbumGrid(p: P) {
 
 function PublicationList(p: P) {
 	const items: any[] = Array.isArray(p.data) ? p.data : [];
+	// Optimistic bump so the counter the reader just incremented is visibly theirs.
+	const [bumped, setBumped] = useState<Record<number, number>>({});
+	const track = (id: number) => {
+		setBumped((b) => ({ ...b, [id]: (b[id] ?? 0) + 1 }));
+		trpcClient.posts.trackDownload.mutate({ id }).catch(() => {});
+	};
+
+	const list = p.layout === "list";
 	return (
 		<section className={`${PAD} ${toneBg(p.tone)}`}>
 			<Container>
@@ -1158,33 +1229,55 @@ function PublicationList(p: P) {
 				{items.length === 0 ? (
 					<Empty>No publications in this category yet.</Empty>
 				) : (
-					<div
-						className={`grid gap-4 ${p.layout === "list" ? "" : "md:grid-cols-2"}`}
-					>
-						{items.map((it) => (
-							<NavLink
-								key={it.id}
-								href={it.fileUrl || "#"}
-								className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-[var(--shadow-soft)]"
-							>
-								<div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
-									{Icon.doc("h-6 w-6")}
-								</div>
-								<div className="min-w-0 flex-1">
-									<div className="font-medium text-foreground group-hover:text-[var(--accent)] transition">
-										{it.title}
-									</div>
-									{it.year && (
-										<div className="text-xs text-muted-foreground">
-											{it.year}
+					<div className={`grid gap-4 ${list ? "" : "md:grid-cols-2"}`}>
+						{items.map((it) => {
+							const n =
+								it.downloadCount == null
+									? null
+									: Number(it.downloadCount) + (bumped[it.id] ?? 0);
+							return (
+								<a
+									key={it.id}
+									href={it.fileUrl || "#"}
+									target={it.fileUrl ? "_blank" : undefined}
+									rel="noreferrer"
+									onClick={() => it.fileUrl && track(it.id)}
+									className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-[var(--shadow-soft)]"
+								>
+									{it.image ? (
+										<img
+											src={it.image}
+											alt={it.title || ""}
+											className={`shrink-0 rounded-xl object-cover ring-1 ring-border ${list ? "h-16 w-12" : "h-24 w-[4.5rem]"}`}
+										/>
+									) : (
+										<div
+											className={`grid shrink-0 place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)] ${list ? "h-12 w-12" : "h-24 w-[4.5rem]"}`}
+										>
+											{Icon.doc("h-6 w-6")}
 										</div>
 									)}
-								</div>
-								<span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-[var(--accent)]">
-									{Icon.download("h-4 w-4")} PDF
-								</span>
-							</NavLink>
-						))}
+									<div className="min-w-0 flex-1">
+										<div className="font-medium text-foreground group-hover:text-[var(--accent)] transition">
+											{it.title}
+										</div>
+										{it.year && (
+											<div className="text-xs text-muted-foreground">
+												{it.year}
+											</div>
+										)}
+										{n != null && (
+											<div className="mt-1 text-xs text-muted-foreground">
+												{n.toLocaleString()} download{n === 1 ? "" : "s"}
+											</div>
+										)}
+									</div>
+									<span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-[var(--accent)]">
+										{Icon.download("h-4 w-4")} PDF
+									</span>
+								</a>
+							);
+						})}
 					</div>
 				)}
 			</Container>
@@ -1208,15 +1301,25 @@ function People(p: P) {
 				{people.length === 0 ? (
 					<Empty>No team members listed yet.</Empty>
 				) : (
-					<div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-6">
+					<div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-5">
 						{people.map((person) => (
 							<NavLink
 								key={person.id}
 								href={L(`/team/${person.slug}`)}
 								className="group text-center"
 							>
-								<div className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] text-primary-foreground font-display text-2xl font-bold shadow-md ring-4 ring-card transition group-hover:scale-105">
-									{initials(person.name)}
+								<div className="mx-auto h-24 w-24 overflow-hidden rounded-full shadow-md ring-4 ring-card transition group-hover:scale-105">
+									{person.photoUrl ? (
+										<img
+											src={person.photoUrl}
+											alt={person.name || ""}
+											className="h-full w-full object-cover"
+										/>
+									) : (
+										<div className="grid h-full w-full place-items-center bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] text-primary-foreground font-display text-2xl font-bold">
+											{initials(person.name)}
+										</div>
+									)}
 								</div>
 								<div className="mt-3 text-sm font-semibold text-primary group-hover:text-[var(--accent)] transition">
 									{person.name}
@@ -1304,12 +1407,93 @@ function Directory(p: P) {
 	);
 }
 
+type PartnerRow = {
+	id: number;
+	name: string;
+	url?: string | null;
+	logoUrl?: string | null;
+};
+
+function PartnerLogo({ row, linked }: { row: PartnerRow; linked: boolean }) {
+	const badge = row.logoUrl ? (
+		<img
+			src={row.logoUrl}
+			alt={row.name}
+			className="max-h-12 w-auto max-w-[9rem] object-contain grayscale opacity-70 transition duration-300 hover:grayscale-0 hover:opacity-100"
+		/>
+	) : (
+		<span className="whitespace-nowrap text-sm font-medium text-foreground/70">
+			{row.name}
+		</span>
+	);
+	const realUrl = row.url && row.url !== "#" ? row.url : null;
+	if (!linked || !realUrl)
+		return (
+			<span title={row.name} className="shrink-0">
+				{badge}
+			</span>
+		);
+	return (
+		<NavLink
+			href={realUrl}
+			title={row.name}
+			target="_blank"
+			rel="noreferrer"
+			className="shrink-0"
+		>
+			{badge}
+		</NavLink>
+	);
+}
+
+function PartnerMarquee({ rows }: { rows: PartnerRow[] }) {
+	// The `marquee` keyframe travels -50%, so the track holds the list twice and the
+	// seam lands where it started. The second copy is decorative: hidden from AT and
+	// unlinked, so it adds no duplicate tab stops.
+	return (
+		<div className="relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
+			<div
+				className="flex w-max hover:[animation-play-state:paused] motion-reduce:[animation:none]"
+				style={{ animation: "marquee 45s linear infinite" }}
+			>
+				{[0, 1].map((copy) => (
+					<div
+						key={copy}
+						className="flex items-center gap-10 pr-10"
+						aria-hidden={copy === 1}
+					>
+						{rows.map((r) => (
+							<PartnerLogo key={r.id} row={r} linked={copy === 0} />
+						))}
+					</div>
+				))}
+			</div>
+		</div>
+	);
+}
+
 function Partners(p: P) {
 	const rows: any[] = Array.isArray(p.data) ? p.data : [];
 	const byCat = new Map<string, any[]>();
 	for (const r of rows) {
 		const k = r.category || "Partners";
 		byCat.set(k, [...(byCat.get(k) ?? []), r]);
+	}
+	if (p.layout === "marquee") {
+		return (
+			<section className={`${PAD} ${toneBg(p.tone)}`}>
+				<Container>
+					<Heading eyebrow={p.eyebrow} title={p.title} />
+				</Container>
+				{rows.length === 0 ? (
+					<Container>
+						<Empty>No partners listed yet.</Empty>
+					</Container>
+				) : (
+					<PartnerMarquee rows={rows} />
+				)}
+			</section>
+		);
 	}
 	return (
 		<section className={`${PAD} ${toneBg(p.tone)}`}>
@@ -1378,6 +1562,265 @@ function Partners(p: P) {
 	);
 }
 
+type ProjectRow = {
+	id: number;
+	slug: string;
+	code: string;
+	status: string;
+	name: string;
+	summary: string;
+	image: string | null;
+};
+
+function ProjectList(p: P) {
+	const L = useL();
+	const rows: ProjectRow[] = Array.isArray(p.data) ? p.data : [];
+	const base = p.linkBase ?? "";
+	const cols =
+		p.layout === "grid-2" ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-3";
+	return (
+		<section className={`${PAD} ${toneBg(p.tone)}`}>
+			<Container>
+				<div className="mb-12 flex items-end justify-between gap-4 flex-wrap">
+					<Heading eyebrow={p.eyebrow} title={p.title} />
+					{p.moreHref && (
+						<NavLink
+							href={L(p.moreHref) ?? "#"}
+							className="text-sm font-semibold text-primary underline underline-offset-8 hover:text-[var(--accent)]"
+						>
+							See all →
+						</NavLink>
+					)}
+				</div>
+				{rows.length === 0 ? (
+					<Empty>No projects listed yet.</Empty>
+				) : p.layout === "list" ? (
+					<ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+						{rows.map((r) => (
+							<li key={r.id}>
+								<NavLink
+									href={base ? L(`${base}/${r.slug}`) : "#"}
+									className="group flex items-center justify-between gap-4 px-5 py-4 hover:bg-[var(--accent)]/5 transition"
+								>
+									<span className="font-medium text-foreground/85 group-hover:text-[var(--accent)] transition">
+										{r.name}
+									</span>
+									<span className="shrink-0 text-xs uppercase tracking-wider text-muted-foreground">
+										{r.code}
+									</span>
+								</NavLink>
+							</li>
+						))}
+					</ul>
+				) : (
+					<div className={`grid grid-cols-1 gap-5 ${cols}`}>
+						{rows.map((r) => (
+							<NavLink
+								key={r.id}
+								href={base ? L(`${base}/${r.slug}`) : "#"}
+								className={`${card} group flex flex-col p-6`}
+							>
+								{r.image ? (
+									<img
+										src={r.image}
+										alt={r.name || ""}
+										className="mb-4 h-12 w-auto max-w-[10rem] object-contain"
+									/>
+								) : (
+									<div className="mb-4 inline-flex w-fit rounded-lg bg-[var(--accent)]/10 px-3 py-1.5 font-display text-sm font-bold text-[var(--accent)]">
+										{r.code}
+									</div>
+								)}
+								<h3 className="t-card-title text-primary group-hover:text-[var(--accent)] transition">
+									{r.name}
+								</h3>
+								{r.summary && (
+									<p className="mt-2 t-body text-foreground/75 line-clamp-3">
+										{r.summary}
+									</p>
+								)}
+								{r.status && (
+									<span className="mt-4 inline-flex w-fit rounded-full bg-muted px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+										{r.status}
+									</span>
+								)}
+							</NavLink>
+						))}
+					</div>
+				)}
+			</Container>
+		</section>
+	);
+}
+
+type CertificateItem = {
+	image?: string;
+	title?: string;
+	issuer?: string;
+	year?: string;
+	fileUrl?: string;
+};
+
+function Certificates(p: P) {
+	const items: CertificateItem[] = Array.isArray(p.items) ? p.items : [];
+	const cols =
+		p.layout === "cols-2"
+			? "sm:grid-cols-2"
+			: p.layout === "cols-4"
+				? "sm:grid-cols-2 lg:grid-cols-4"
+				: "sm:grid-cols-2 lg:grid-cols-3";
+	return (
+		<section className={`${PAD} ${toneBg(p.tone)}`}>
+			<Container>
+				<Heading eyebrow={p.eyebrow} title={p.title} center={p.center} />
+				{items.length === 0 ? (
+					<Empty>No accreditations listed yet.</Empty>
+				) : (
+					<div className={`grid grid-cols-1 gap-6 ${cols}`}>
+						{items.map((it, n) => {
+							const body = (
+								<>
+									<div className="aspect-[3/4] overflow-hidden rounded-2xl bg-muted ring-1 ring-border">
+										{it.image ? (
+											<img
+												src={it.image}
+												alt={it.title || ""}
+												className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+											/>
+										) : (
+											<div className="grid h-full w-full place-items-center text-[var(--accent)]">
+												{Icon.doc("h-10 w-10")}
+											</div>
+										)}
+									</div>
+									<div className="mt-4">
+										{it.title && (
+											<h3 className="t-card-title text-primary group-hover:text-[var(--accent)] transition">
+												{it.title}
+											</h3>
+										)}
+										{(it.issuer || it.year) && (
+											<p className="mt-1 t-meta text-muted-foreground">
+												{[it.issuer, it.year].filter(Boolean).join(" · ")}
+											</p>
+										)}
+										{it.fileUrl && (
+											<span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent)]">
+												{Icon.download("h-4 w-4")} PDF
+											</span>
+										)}
+									</div>
+								</>
+							);
+							return it.fileUrl ? (
+								<a
+									key={n}
+									href={it.fileUrl}
+									target="_blank"
+									rel="noreferrer"
+									className="group block"
+								>
+									{body}
+								</a>
+							) : (
+								<div key={n} className="group block">
+									{body}
+								</div>
+							);
+						})}
+					</div>
+				)}
+			</Container>
+		</section>
+	);
+}
+
+type NavEntry = {
+	id: number;
+	label: string;
+	description: string | null;
+	href: string | null;
+	children: NavEntry[];
+};
+
+/** The published nav tree as an on-page index. Content comes from the nav, not from props. */
+function SiteMap(p: P) {
+	const L = useL();
+	const rootData = useLoaderData({ from: "__root__" }) as { nav?: NavEntry[] };
+	const nav: NavEntry[] = Array.isArray(rootData?.nav) ? rootData.nav : [];
+
+	const entry = (node: NavEntry) => (
+		<li key={node.id}>
+			{node.href ? (
+				<NavLink
+					href={L(node.href) ?? "#"}
+					className="font-medium text-foreground/85 hover:text-[var(--accent)] transition"
+				>
+					{node.label}
+				</NavLink>
+			) : (
+				<span className="font-medium text-foreground/85">{node.label}</span>
+			)}
+			{node.description && (
+				<p className="mt-0.5 t-meta text-muted-foreground">
+					{node.description}
+				</p>
+			)}
+			{node.children.length > 0 && (
+				<ul className="mt-2 space-y-2 border-l border-border pl-4">
+					{node.children.map((c) => entry(c))}
+				</ul>
+			)}
+		</li>
+	);
+
+	return (
+		<section className={`${PAD} ${toneBg(p.tone)}`}>
+			<Container>
+				<Heading eyebrow={p.eyebrow} title={p.title} center={p.center} />
+				{nav.length === 0 ? (
+					<Empty>No navigation published yet.</Empty>
+				) : (
+					<div
+						className={
+							p.layout === "list"
+								? "max-w-3xl"
+								: "grid gap-10 sm:grid-cols-2 lg:grid-cols-3"
+						}
+					>
+						{nav.map((top) => (
+							<div key={top.id} className={p.layout === "list" ? "mb-8" : ""}>
+								{top.href ? (
+									<NavLink
+										href={L(top.href) ?? "#"}
+										className="t-eyebrow text-[var(--accent)] hover:underline"
+									>
+										{top.label}
+									</NavLink>
+								) : (
+									<div className="t-eyebrow text-[var(--accent)]">
+										{top.label}
+									</div>
+								)}
+								{top.description && (
+									<p className="mt-1 t-meta text-muted-foreground">
+										{top.description}
+									</p>
+								)}
+								{top.children.length > 0 && (
+									<ul className="mt-4 space-y-3">
+										{top.children.map((c) => entry(c))}
+									</ul>
+								)}
+							</div>
+						))}
+					</div>
+				)}
+			</Container>
+		</section>
+	);
+}
+
 /** Hierarchical management tree, rendered as an n8n-style React Flow canvas. */
 function OrgChart(p: P) {
 	const roots: any[] = Array.isArray(p.data) ? p.data : [];
@@ -1418,7 +1861,10 @@ export const sectionRegistry: Record<string, (p: P) => React.ReactNode> = {
 	split: Split,
 	pills: Pills,
 	form: FormSection,
+	certificates: Certificates,
+	siteMap: SiteMap,
 	postList: PostList,
+	projectList: ProjectList,
 	videoGrid: VideoGrid,
 	albumGrid: AlbumGrid,
 	publicationList: PublicationList,
