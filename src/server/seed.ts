@@ -19,6 +19,7 @@ import {
 } from "./seed/internal";
 import { seedHeroSlides } from "./seed/media";
 import { seedNav } from "./seed/nav";
+import { seedWhatWeDoPages } from "./seed/pages-what-we-do";
 import { seedWhoWeArePages } from "./seed/pages-who-we-are";
 import {
 	seedDonors,
@@ -52,6 +53,7 @@ async function main() {
 	await seedBase();
 	await seedNav();
 	await seedWhoWeArePages();
+	await seedWhatWeDoPages();
 
 	await seedNews();
 	await seedStories();
