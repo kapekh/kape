@@ -406,8 +406,10 @@ export function Header({
 				style={{ viewTransitionName: "site-topbar" }}
 			>
 				<div className="mx-auto max-w-7xl px-6 py-2 flex items-center justify-between">
-					<span className="opacity-80">{contact || t("top.contact")}</span>
-					<div className="flex items-center gap-4 opacity-80">
+					<span className="hidden opacity-80 sm:inline">
+						{contact || t("top.contact")}
+					</span>
+					<div className="flex items-center gap-3 opacity-80 sm:gap-4">
 						{showSearch && (
 							<a
 								href={searchHref}
@@ -421,6 +423,33 @@ export function Header({
 							className="hover:text-[var(--secondary)] transition"
 						>
 							{t("top.sitemap")}
+						</a>
+						<a
+							href="/login"
+							aria-label={t("top.login", "Staff login")}
+							className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-primary-foreground/30 bg-white/10 px-2 py-0.5 font-semibold hover:bg-white/20 hover:text-[var(--secondary)] transition sm:px-3"
+						>
+							<svg
+								className="h-3 w-3"
+								viewBox="0 0 20 20"
+								fill="none"
+								stroke="currentColor"
+								strokeWidth="2"
+								aria-hidden="true"
+							>
+								<path
+									d="M12 3h4a1 1 0 011 1v12a1 1 0 01-1 1h-4"
+									strokeLinecap="round"
+								/>
+								<path
+									d="M9 7l3 3-3 3M12 10H3"
+									strokeLinecap="round"
+									strokeLinejoin="round"
+								/>
+							</svg>
+							<span className="hidden sm:inline">
+								{t("top.login", "Staff login")}
+							</span>
 						</a>
 						<LanguageSwitcher />
 						<ThemeToggle className="h-6 w-6 text-primary-foreground/80 hover:bg-white/10" />
