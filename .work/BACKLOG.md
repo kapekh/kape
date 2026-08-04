@@ -14,7 +14,7 @@ now 204 files. Formatting landed mechanically in `6f4b6b2`.
 
 | command | before | now |
 |---|---|---|
-| `bun run test` | 3 tests pass | **16 tests, 5 files** (J08 +4, J05 +3, J21 +6) |
+| `bun run test` | 3 tests pass | **23 tests, 6 files** (J08 +4, J05 +3, J21 +6, J11 +7) |
 | `bun run format` | 185 errors (ours) | **clean** |
 | `bun run lint` | 210 errors, 60 warnings | 216 errors, 67 warnings |
 | `bun run check` | 477 errors (ours) | 216 errors, 67 warnings |
@@ -41,7 +41,7 @@ errors in the files you own**.
 | J08 | Rich text tables | D18 | `src/lib/richtext/extensions.ts`, editor toolbar | **done** | most |
 | J09 | Project metadata | D19 | `src/server/schema.ts`, `src/components/ProjectView.tsx`, `drizzle/`, projects repo + admin editor | **done** `4566c2b` | J04 J14 |
 | J10 | Map pin richness | D20 | `src/components/MapView.tsx`, `src/server/schema.ts`, `drizzle/` | **done** `a67d622` | J04 J14 |
-| J11 | Site search | D26 | `src/routes/$lang.search.tsx`, `src/server/repo/search.ts`, `src/lib/header-defaults.ts`, `src/components/Header.tsx` | **in flight** `w1:pC` | most |
+| J11 | Site search | D26 | `src/routes/$lang.search.tsx`, `src/server/repo/search.ts`, `src/lib/header-defaults.ts` | **done** `743146d` | most |
 | J12 | Lint pass | — | repo-wide | after the visual jobs | nothing |
 | J15 | Split the seed by area | — | `src/server/seed.ts` → `src/server/seed/` | **done** | nothing |
 | J16 | Page copy transfer, 6 pages | — | `src/server/seed/pages-*.ts` | **done** `d06b0b9` | J17 J18 J19 |
@@ -49,7 +49,7 @@ errors in the files you own**.
 | J18 | Structured records | — | `src/server/seed/records.ts` | **done** `db65314` | J16 J17 J19 |
 | J20 | UX flow audit of the live client site | — | `.work/UX-AUDIT.md`, `.work/ux-shots/` | **done** `8b09f2f` | anything |
 | J21 | Five visitor-visible defects, from J20 | F04 F14 F23 F27 F40 | `src/components/Header.tsx`, `src/integrations/trpc/router.ts`, `src/lib/i18n-config.ts`, `src/routes/$.tsx`, `src/routes/$lang.*` | **done**; F04 rode with J05 `1fdf941` | nothing |
-| J19 | Import the real imagery | — | `scripts/import-lovable-assets.ts`, `src/server/seed/media.ts` | **in flight** `w1:pB` | J16 J17 J18 |
+| J19 | Import the real imagery | — | `scripts/import-lovable-assets.ts`, `src/server/seed/media.ts` | **dropped** — see below | J16 J17 J18 |
 
 `src/server/schema.ts` and `drizzle/` are contended by J02, J09, J10. All three are done; the
 migration lane is free at `0016`.
@@ -69,8 +69,21 @@ almost no project prose to transfer. KAPE has to write it before those 26 pages 
 `.work/km-review.md` was going to be shared by J16, J17 and J18. Three panes appending to one file
 lose each other's writes, so each now writes `.work/km-review-j1N.md` and the orchestrator merges.
 
-`src/components/Header.tsx` is contended by J06, J11 and J21. All three of its owners are done, so
-**J11 is unblocked**.
+`src/components/Header.tsx` is contended by J06, J11 and J21. All three of its owners are done and
+the file is free.
+
+**J19 is dropped, on the client's instruction: we do not want the Lovable imagery.** What is wanted
+from that prototype is the copy and the UI/UX, nothing else. The finished product is a CMS and every
+asset will be uploaded and changed through `/admin`, so importing 59 photographs solves a problem
+nobody has — placeholders are the correct state until an editor replaces them. The job ran to
+completion before this was known; its work is described in `.work/j19-report.md` and its artefacts
+are still in the tree, uncommitted (`scripts/import-lovable-assets.ts`, the `src/server/seed/media.ts`
+diff, 24MB in `public/uploads/`, `.work/j19-shots/`). **Do not resurrect it.** One thing it found is
+worth keeping: `hero_slides` is exposed over tRPC as `heroSlides` but no public route renders it —
+the home hero comes from page section props, so the table is dead data.
+
+**The remaining work is copy and UI/UX.** Read that as the standing priority when choosing what to
+do next, ahead of anything infrastructural.
 
 J21 never had a job file. It existed as a backlog row because its F14/F23/F27 fixes were already
 sitting in the working tree and would otherwise have been lost. Report at `.work/j21-report.md`.
