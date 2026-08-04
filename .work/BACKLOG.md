@@ -43,7 +43,7 @@ errors in the files you own**.
 | J10 | Map pin richness | D20 | `src/components/MapView.tsx`, `src/server/schema.ts`, `drizzle/` | after J09 | J04 J14 |
 | J11 | Site search | D26 | `src/routes/search.tsx`, `src/server/repo/search.ts` | ready | most |
 | J12 | Lint pass | — | repo-wide | after the visual jobs | nothing |
-| J15 | Split the seed by area | — | `src/server/seed.ts` → `src/server/seed/` | ready, **runs alone** | nothing |
+| J15 | Split the seed by area | — | `src/server/seed.ts` → `src/server/seed/` | **done** | nothing |
 | J16 | Page copy transfer, 6 pages | — | `src/server/seed/pages-*.ts` | after J15 | J17 J18 J19 |
 | J17 | Project content + 8 sub-projects | — | `src/server/seed/projects.ts` | after J15, J09 | J16 J18 J19 |
 | J18 | Structured records | — | `src/server/seed/records.ts` | after J15 | J16 J17 J19 |
