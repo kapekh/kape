@@ -713,6 +713,7 @@ export const projectLocations = sqliteTable("project_locations", {
 		.default(1)
 		.references(() => tenants.id),
 	projectId: integer("project_id").references(() => projects.id),
+	photoMediaId: integer("photo_media_id").references(() => media.id),
 	schoolName: text("school_name"),
 	lat: text("lat").notNull(),
 	lng: text("lng").notNull(),

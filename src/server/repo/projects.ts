@@ -137,6 +137,9 @@ export type ProjectPin = {
 	lng: number;
 	schoolName: string;
 	projectName: string;
+	projectHref: string | null;
+	status: string | null;
+	photoUrl: string | null;
 };
 
 export async function listProjectLocations(
@@ -144,19 +147,33 @@ export async function listProjectLocations(
 	lang: string,
 ): Promise<ProjectPin[]> {
 	const rows = await db
-		.select()
+		.select({
+			id: projectLocations.id,
+			projectId: projectLocations.projectId,
+			photoMediaId: projectLocations.photoMediaId,
+			schoolName: projectLocations.schoolName,
+			lat: projectLocations.lat,
+			lng: projectLocations.lng,
+			slug: projects.slug,
+			status: projects.status,
+		})
 		.from(projectLocations)
+		.leftJoin(projects, eq(projectLocations.projectId, projects.id))
 		.where(eq(projectLocations.tenantId, TENANT))
 		.orderBy(asc(projectLocations.sort));
+	const withPhoto = await attachMediaUrl(db, rows, "photoMediaId", "photoUrl");
 	const projectIds = rows
 		.map((r) => r.projectId)
 		.filter((x): x is number => x != null);
 	const names = await resolveTranslations(db, "project", projectIds, lang);
-	return rows.map((r) => ({
+	return withPhoto.map((r) => ({
 		id: r.id,
 		lat: Number(r.lat),
 		lng: Number(r.lng),
 		schoolName: r.schoolName ?? "",
 		projectName: r.projectId ? (names.get(r.projectId)?.name ?? "") : "",
+		projectHref: r.slug ? `/projects/${r.slug}` : null,
+		status: r.status,
+		photoUrl: r.photoUrl,
 	}));
 }
