@@ -123,6 +123,15 @@ fill it.
   main file byte-identical; the writes were all in the WAL. To prove a database was not touched,
   query it through a connection, which reads through the WAL. Do not hash it.
 - `db:migrate`, `db:push` and `db:studio` work as of `0784475`. They did not before.
+- **A dev server on `kape.db` migrates it, and no worker can prevent that.** `src/server/db.ts`
+  runs `migrate()` on boot and vite restarts the SSR module on any file change, so the mere
+  existence of a new `drizzle/*.sql` is enough. J09 generated a migration and `kape.db` applied it
+  within the same second, with three dev servers up. So: **any worker running a dev server must
+  export `DATABASE_PATH` to a scratch copy**, never the repo default, and the orchestrator stops
+  stray servers before a schema job starts. "Never migrate a database you did not create" is not
+  something a worker can honour on its own.
+- Workers cannot write to the database - the permission classifier denies it. Acceptance that needs
+  fixture data must either use what is already seeded or stop and ask, as J03 and J04 both did.
 
 ## Rules
 
