@@ -31,8 +31,9 @@ errors in the files you own**.
 | J00 | Biome scope fix + format | — | `biome.json`, repo-wide | **done** `87f6f0c` `6f4b6b2` | — |
 | J01 | Section catalogue expansion | D02 D03 D07 | `src/lib/sections.ts` | **done** `58ae318` | — |
 | J06 | Chrome and Khmer identity | D22 D23 D24 | `src/components/Header.tsx`, `src/components/Footer.tsx`, `src/styles.css`, `src/components/KhmerCalendar.tsx` | **done** `37235ad` | — |
-| J02 | Restore the nested IA | D08 D12 | `src/lib/collections.ts`, `src/server/repo/route.ts`, `src/server/schema.ts`, `drizzle/` | ready | J04 J07 J08 |
-| J03 | Renderer visual fidelity | D01 D04 D06 D13 D14 D15 D16 D17 D27 | `src/components/sections/SectionRenderer.tsx` | ready, **grew** | J04 J05 |
+| J02 | Restore the nested IA | D08 D12 | `src/lib/collections.ts`, `src/server/repo/route.ts`, `src/server/schema.ts`, `drizzle/` | **done** `60ac37f` | — |
+| J03 | Renderer visual fidelity | D01 D04 D06 D13 D14 D15 D16 D17 D27 | `src/components/sections/SectionRenderer.tsx`, `src/lib/sections.ts` | in progress | J04 J05 |
+| J13 | Repo hygiene, from J02's findings | — | `package.json`, `src/integrations/tanstack-query/root-provider.tsx`, `src/server/seed.ts` | needs a decision | — |
 | J04 | Lightbox, share, related | D05 D10 D11 | `src/routes/$.tsx`, `src/components/Lightbox.tsx`, `src/components/ShareButtons.tsx` | ready | J03 J05 |
 | J05 | Announcement modal + month counter | D09 D25 | `src/components/AnnouncementPopup.tsx`, `src/server/repo/site.ts` | ready | J03 J04 |
 | J07 | Form builder field types | D21 | `src/lib/forms.ts`, `src/components/FormRenderer.tsx`, `src/components/admin/FormBuilder*` | ready | most |
@@ -65,6 +66,15 @@ J01 and J06 ran concurrently and both pushed back on the contract rather than co
   `videoGrid.moreHref` are read by the renderer but authorable nowhere — same class as D02.
 - **`tsconfig.json` had the same scope bug as `biome.json`** and excluded only the previous
   prototype. Fixed in `ba0c534`; `bunx tsc --noEmit` is now 0 errors and is a usable gate.
+
+## Open content gap, not a job
+
+`current-projects` and `past-projects` both 301 to `projects`, and **no page exists at slug
+`projects`**, so both legacy URLs land on the not-found body. Every other collection prefix
+(`news`, `stories`, `videos`, `galleries`, `team`, `publications`, `careers`) has a landing page;
+this one was never authored. Pre-existing, not caused by J02, and it is one `pages` row — author
+it in admin or add it to `src/server/seed.ts`. J03's `projectList` section (D14) is what would
+fill it.
 
 ## Rules
 

@@ -29,8 +29,11 @@ editor can only bury that in prose, so it cannot be listed, sorted or filtered.
 1. `bun run test` passes, 3 of 3.
 2. `bun run db:generate` produces exactly one migration; it is additive — no drop, no rename, no
    type change on an existing column. Paste the SQL.
-3. `bun run db:migrate` applies clean on a scratch copy of the DB. Never migrate a database you did
-   not create for this job.
+3. the migration applies clean on a **scratch copy** made with `VACUUM INTO` - `kape.db` is in
+   WAL mode and a bare `cp` silently loses recent writes. Never migrate a database you did not
+   create. Note `bun run db:migrate` does **not** work in this repo: drizzle-kit needs
+   `better-sqlite3` or `@libsql/client` and neither is a dependency. Apply it the way the app
+   does, with `drizzle-orm/bun-sqlite`'s migrator, as `src/server/db.ts` does on boot.
 4. Existing project rows still load with the new columns null. Show one.
 5. A project with every new field populated renders it; a project with none renders without empty
    labels or dangling punctuation. Screenshot both.

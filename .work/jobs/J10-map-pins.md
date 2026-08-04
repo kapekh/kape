@@ -29,7 +29,10 @@ status tag, and a link through to the project.
 `ba0c534`, so any type error during your run is yours.
 
 1. `bun run test` passes, 3 of 3.
-2. One additive migration, applied clean on a scratch DB copy. Paste the SQL.
+2. One additive migration, applied clean on a scratch copy made with `VACUUM INTO` — `kape.db` is
+   in WAL mode and a bare `cp` silently loses recent writes. Paste the SQL. `bun run db:migrate`
+   does not work in this repo; apply it with `drizzle-orm/bun-sqlite`'s migrator, as
+   `src/server/db.ts` does on boot.
 3. Every pin's link resolves to a real project page — click through all of them and report the
    count. A pin linking to a 404 is a fail.
 4. A location with no photo and no project still renders a working pin. Show it.
