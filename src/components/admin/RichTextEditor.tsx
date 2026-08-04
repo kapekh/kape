@@ -1,6 +1,8 @@
-import { EditorContent, useEditor } from "@tiptap/react";
+import type { ChainedCommands } from "@tiptap/core";
+import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import { useEffect, useState } from "react";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { emptyDescriptionList } from "#/lib/richtext/description-list";
 import { richTextExtensions } from "#/lib/richtext/extensions";
 import { prompt } from "@/components/Dialogs";
 import { MediaLibraryDialog } from "./MediaLibraryDialog";
@@ -13,6 +15,15 @@ function parseContent(value: string): object | string {
 		return value;
 	}
 }
+
+const TABLE_ACTIONS: [string, (c: ChainedCommands) => ChainedCommands][] = [
+	["+ Row", (c) => c.addRowAfter()],
+	["− Row", (c) => c.deleteRow()],
+	["+ Col", (c) => c.addColumnAfter()],
+	["− Col", (c) => c.deleteColumn()],
+	["Header", (c) => c.toggleHeaderRow()],
+	["✕ Table", (c) => c.deleteTable()],
+];
 
 /**
  * Tiptap editor. Emits ProseMirror JSON (stringified) via onChange — the same
@@ -31,6 +42,11 @@ export function RichTextEditor({
 		extensions: richTextExtensions,
 		content: parseContent(value),
 		onUpdate: ({ editor }) => onChange(JSON.stringify(editor.getJSON())),
+	});
+
+	const inTable = useEditorState({
+		editor,
+		selector: ({ editor }) => editor?.isActive("table") ?? false,
 	});
 
 	const [imgOpen, setImgOpen] = useState(false);
@@ -122,6 +138,42 @@ export function RichTextEditor({
 					>
 						🖼 Image
 					</button>
+					<button
+						type="button"
+						className={btn}
+						onClick={() =>
+							editor
+								.chain()
+								.focus()
+								.insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+								.run()
+						}
+					>
+						▦ Table
+					</button>
+					<button
+						type="button"
+						className={btn}
+						onClick={() =>
+							editor.chain().focus().insertContent(emptyDescriptionList).run()
+						}
+					>
+						⁝⁝ Terms
+					</button>
+					{inTable && (
+						<span className="flex flex-wrap items-center gap-1 rounded border border-[var(--accent)]/40 bg-[var(--accent)]/5 px-1">
+							{TABLE_ACTIONS.map(([label, run]) => (
+								<button
+									key={label}
+									type="button"
+									className={btn}
+									onClick={() => run(editor.chain().focus()).run()}
+								>
+									{label}
+								</button>
+							))}
+						</span>
+					)}
 					<span className="relative">
 						<button
 							type="button"

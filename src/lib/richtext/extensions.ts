@@ -1,7 +1,38 @@
+import { mergeAttributes } from "@tiptap/core";
 import { Image } from "@tiptap/extension-image";
+import {
+	Table,
+	TableCell,
+	TableHeader,
+	TableRow,
+} from "@tiptap/extension-table";
 import { StarterKit } from "@tiptap/starter-kit";
 
+import {
+	DescriptionDetails,
+	DescriptionList,
+	DescriptionTerm,
+} from "./description-list";
 import { FormEmbed } from "./form-node";
+
+/**
+ * The editor renders tables through prosemirror-tables' own node view, so the
+ * scroll container below only exists in server-rendered output — which is the
+ * only place a narrow viewport can overflow.
+ */
+const ResponsiveTable = Table.extend({
+	renderHTML({ HTMLAttributes }) {
+		return [
+			"div",
+			{ class: "my-6 overflow-x-auto rounded-xl border border-border" },
+			[
+				"table",
+				mergeAttributes(this.options.HTMLAttributes, HTMLAttributes),
+				["tbody", 0],
+			],
+		];
+	},
+});
 
 /**
  * The authoritative rich-text extension list.
@@ -24,6 +55,22 @@ export const richTextExtensions = [
 	}),
 	Image,
 	FormEmbed,
+	ResponsiveTable.configure({
+		HTMLAttributes: { class: "w-full min-w-[32rem] border-collapse text-sm" },
+	}),
+	TableRow,
+	TableHeader.configure({
+		HTMLAttributes: {
+			class:
+				"border border-border bg-secondary/10 px-4 py-3 text-left align-top font-semibold text-secondary",
+		},
+	}),
+	TableCell.configure({
+		HTMLAttributes: { class: "border border-border px-4 py-3 align-top" },
+	}),
+	DescriptionList,
+	DescriptionTerm,
+	DescriptionDetails,
 ];
 
 /**
