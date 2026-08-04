@@ -68,6 +68,36 @@ J01 and J06 ran concurrently and both pushed back on the contract rather than co
 - **`tsconfig.json` had the same scope bug as `biome.json`** and excluded only the previous
   prototype. Fixed in `ba0c534`; `bunx tsc --noEmit` is now 0 errors and is a usable gate.
 
+## Content transfer from `feedback/` — measured 2026-08-04
+
+The audit compared **capabilities**, not content: it was told a hardcoded prototype page is only a
+delta if our catalogue cannot express it. So the copy itself was never in its remit. Measured
+directly, route by route, against `kape.db`:
+
+| state | count | detail |
+|---|---|---|
+| copy already matches, verbatim | 18 | carried over from the earlier drop; spot-checked `what-we-do/ict-innovation` word for word |
+| page exists but has **zero sections** | 4 | `who-we-are/` about, fact-sheet, director-speech, vision-mission |
+| page missing entirely | 2 | `what-we-do/ten-subsectors`, `who-we-are/accreditations` |
+| resolves via legacy 301 to a collection | 5 | leadership→team, news→news, photo-gallery→galleries, video-gallery→videos, impact-stories→stories |
+| project record exists, body is **placeholder** | 18 | e.g. `ngs` body reads "New Generation Schools overview and outcomes." |
+| sub-project missing entirely | 8 | `dep/{air,camscam,ideal,midl,dvitsa}`, `iep/{ctsp,dwd,lotus-outreach}` — J02's `parentId` now allows these |
+
+Structured records, ours vs theirs: people 7 / 24 leaders, partners 5 / 34, posts 26 / 36 news
++ 12 stories.
+
+**Design is not the gap.** `src/styles.css` was already a superset of theirs, and J06 matched the
+Khmer font stacks. What is missing is copy, records and imagery.
+
+### Two standing constraints
+
+- **Imagery does not exist on either side.** `feedback/` ships 59 `.asset.json` stubs and zero
+  binaries; the `url` field is a relative `/__l5e/...` path only Lovable's own server resolves. Our
+  63 media rows are picsum placeholders. Unblocked only by the client's Lovable project URL.
+- **Khmer must be machine-translated**, per the user's decision, and marked. Their content is
+  English-only. Every generated string goes in `.work/km-review.md` for a native speaker to sweep
+  before launch. Nothing generated may ship unreviewed as final copy.
+
 ## Open content gap, not a job
 
 `current-projects` and `past-projects` both 301 to `projects`, and **no page exists at slug
@@ -95,3 +125,20 @@ fill it.
 - Workers do not commit and do not touch git. The orchestrator reviews the working tree and
   commits. A worker that commits has made its own work unreviewable.
 - Workers do not run `biome --write` outside the files they own, and never with the linter on.
+
+## Transferred content must be CMS-managed
+
+The product's whole premise is that non-technical admins compose the site themselves. Content that
+renders but cannot be edited in `/admin` has not been transferred - it has been hardcoded somewhere
+new. The seed is a **delivery mechanism**, not a place content lives; what it writes must be
+ordinary CMS rows the page builder can edit.
+
+The specific trap, verified in `SectionsBuilder.tsx`: `setProp` spreads existing props
+(`{...props, [key]: v}`), so an unknown prop **survives** a save - but the editor only renders a
+control for keys declared as fields in `SECTION_DEFS` (`props[f.key]`, line 711). So a seeded prop
+with no field def is invisible to the admin and permanently uneditable, while looking perfect on
+the public page. Nothing errors. Nobody finds out until an editor tries to change it.
+
+So every content job owes the inverse of what J01 and J03 proved. They showed every field is read
+by a renderer; content jobs must show **every prop they seed is declared as a field**, and that a
+real edit in `/admin` round-trips to the public page.
