@@ -400,6 +400,7 @@ function RichText(p: P) {
 	return (
 		<section className={`${PAD} ${toneBg(p.tone)}`}>
 			<Container className={p.layout === "narrow" ? "max-w-3xl" : "max-w-4xl"}>
+				<Heading eyebrow={p.eyebrow} title={p.title} />
 				<RichBody className="prose-kape" html={p.bodyHtml ?? ""} />
 			</Container>
 		</section>

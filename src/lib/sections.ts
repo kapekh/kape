@@ -152,7 +152,12 @@ export const SECTION_DEFS: SectionDef[] = [
 			{ value: "default", label: "Full width" },
 			{ value: "narrow", label: "Narrow (readable)" },
 		],
-		fields: [{ key: "body", label: "Body", kind: "richtext" }, TONE],
+		fields: [
+			EYEBROW,
+			{ key: "title", label: "Section title", kind: "text" },
+			{ key: "body", label: "Body", kind: "richtext" },
+			TONE,
+		],
 	},
 	{
 		type: "cards",
