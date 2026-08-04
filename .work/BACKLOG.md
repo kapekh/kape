@@ -33,27 +33,32 @@ errors in the files you own**.
 | J06 | Chrome and Khmer identity | D22 D23 D24 | `src/components/Header.tsx`, `src/components/Footer.tsx`, `src/styles.css`, `src/components/KhmerCalendar.tsx` | **done** `37235ad` | — |
 | J02 | Restore the nested IA | D08 D12 | `src/lib/collections.ts`, `src/server/repo/route.ts`, `src/server/schema.ts`, `drizzle/` | **done** `60ac37f` | — |
 | J03 | Renderer visual fidelity | D01 D04 D06 D13 D14 D15 D16 D17 D27 | `src/components/sections/SectionRenderer.tsx`, `src/lib/sections.ts` | **done** `a4542e4` | — |
-| J14 | Content repo follow-ups, from J03 | — | `src/server/repo/content.ts`, `src/server/repo/sections.ts` | **done**, bar the Type column | most |
+| J14 | Content repo follow-ups, from J03 | — | `src/server/repo/content.ts`, `src/server/repo/sections.ts` | **done** `6dd884a`, bar the Type column | most |
 | J13 | Repo hygiene, from J02's findings | — | `src/integrations/tanstack-query/root-provider.tsx`, `README.md` | item 1 done `0784475`; items 2-3 open | most |
-| J04 | Lightbox, share, related | D05 D10 D11 | `src/routes/$.tsx`, `src/components/Lightbox.tsx`, `src/components/ShareButtons.tsx` | in progress | J09 J05 |
-| J05 | Announcement modal + month counter | D09 D25 | `src/components/AnnouncementPopup.tsx`, `src/server/repo/site.ts` | ready | J03 J04 |
+| J04 | Lightbox, share, related | D05 D10 D11 | `src/routes/$.tsx`, `src/components/Lightbox.tsx`, `src/components/ShareButtons.tsx` | **done** `866229e` | J09 J05 |
+| J05 | Announcement modal + month counter | D09 D25 | `src/components/AnnouncementPopup.tsx`, `src/server/repo/site.ts` | code-complete, **held** on F04 | J03 J04 |
 | J07 | Form builder field types | D21 | `src/lib/forms.ts`, `src/components/FormRenderer.tsx`, `src/components/admin/FormBuilder*` | ready | most |
 | J08 | Rich text tables | D18 | `src/lib/richtext/extensions.ts`, editor toolbar | **done** | most |
-| J09 | Project metadata | D19 | `src/server/schema.ts`, `src/components/ProjectView.tsx`, `drizzle/`, projects repo + admin editor | **unblocked** | J04 J14 |
-| J10 | Map pin richness | D20 | `src/components/MapView.tsx`, `src/server/schema.ts`, `drizzle/` | after J09 | J04 J14 |
+| J09 | Project metadata | D19 | `src/server/schema.ts`, `src/components/ProjectView.tsx`, `drizzle/`, projects repo + admin editor | **done** `4566c2b` | J04 J14 |
+| J10 | Map pin richness | D20 | `src/components/MapView.tsx`, `src/server/schema.ts`, `drizzle/` | **unblocked** | J04 J14 |
 | J11 | Site search | D26 | `src/routes/search.tsx`, `src/server/repo/search.ts` | ready | most |
 | J12 | Lint pass | — | repo-wide | after the visual jobs | nothing |
 | J15 | Split the seed by area | — | `src/server/seed.ts` → `src/server/seed/` | **done** | nothing |
 | J16 | Page copy transfer, 6 pages | — | `src/server/seed/pages-*.ts` | after J15 | J17 J18 J19 |
 | J17 | Project content + 8 sub-projects | — | `src/server/seed/projects.ts` | after J15, J09 | J16 J18 J19 |
 | J18 | Structured records | — | `src/server/seed/records.ts` | after J15 | J16 J17 J19 |
-| J20 | UX flow audit of the live client site | — | `.work/UX-AUDIT.md`, `.work/ux-shots/` | in progress | anything |
+| J20 | UX flow audit of the live client site | — | `.work/UX-AUDIT.md`, `.work/ux-shots/` | **done** `8b09f2f` | anything |
+| J21 | Five visitor-visible defects, from J20 | F04 F14 F23 F27 F40 | `src/components/AnnouncementPopup.tsx`, `src/components/Header.tsx`, `src/integrations/trpc/router.ts` | F14 F23 F27 in the tree, uncommitted; F04 after J05 | nothing |
 | J19 | Import the real imagery | — | `scripts/import-lovable-assets.ts`, `src/server/seed/media.ts` | **unblocked** | J16 J17 J18 |
 
 `src/server/schema.ts` and `drizzle/` are contended by J02, J09, J10. Those three are strictly
 sequential — one migration at a time or the snapshots collide.
 
-`src/components/Header.tsx` is contended by J06 and J11. J06 is done, so J11 is unblocked.
+`src/components/Header.tsx` is contended by J06, J11 and J21. J06 is done; J21 has uncommitted
+changes in the file right now, so J11 stays blocked until they land.
+
+J21 has no job file. It exists as a backlog row because its F14/F23/F27 fixes are already sitting
+in the working tree and would otherwise be lost.
 
 ## What the first round changed
 
@@ -142,6 +147,9 @@ fill it.
 - `feedback/` is read-only reference. Never edit it, never import from it, never ship it.
 - Workers do not commit and do not touch git. The orchestrator reviews the working tree and
   commits. A worker that commits has made its own work unreviewable.
+- **Workers never touch the worklog.** The shared Obsidian worklog records verified state, and a
+  worker only ever has a claim. Write findings into the job's own report and let the orchestrator
+  promote them after verifying. Concurrent panes editing one file also lose each other's edits.
 - Workers do not run `biome --write` outside the files they own, and never with the linter on.
 
 ## Transferred content must be CMS-managed
