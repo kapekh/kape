@@ -1,12 +1,37 @@
 # J03 — Renderer visual fidelity
 
-Deltas: D01, D04, D06 (render half), D17. **Starts only after J01 lands** — you render the fields
-J01 made authorable, and you render whatever new section defs it added.
+Deltas: D01, D04, D06, D13, D14, D15, D16, D17, D27.
+
+**J01 has landed** (`58ae318`). It added `eyebrow`, `tone`, `center` and the hero extras where a
+renderer line already consumed them, and registered `orgChart`. It deliberately did **not** add
+fields for D06, D13, D14, D15 and D16, because each needs renderer work first and the field would
+otherwise be dead. Those came here, so this job is now larger than first written. Read
+`.work/jobs/J01-section-catalogue.md` and its findings below before planning.
+
+You may add catalogue entries in `src/lib/sections.ts` for the deltas handed to you — J01 is
+finished, so that file is yours now. Nothing else about its ownership changes.
+
+## Findings from J01 you must not rediscover
+
+- `PostList` (~933-1044) branches `list` / `featured` / else-grid. A `table` layout added without
+  a branch renders silently as a grid.
+- `listJobs` is at `content.ts:284-316`, not the line range the audit gave, and returns
+  `id, slug, title, location, deadline` — **no `type` field**. D13's type column has no data
+  without a repo change. Decide and report: drop the column, or extend the query.
+- Source `projects` resolves to `listProjectOptions` (`repo/projects.ts:53-69`) returning
+  `{code, name}` — a picker list with no slug, title or image. D14 needs a **new repo query** as
+  well as a renderer and a catalogue entry.
+- `orgChart`'s query source is `orgchart` (lowercase) at `repo/sections.ts:51`.
+- **D27, new:** `split.statValue`/`statLabel` (~744, 750), the `stats` band background image
+  (~607) and `videoGrid.moreHref` (~1061) are read by the renderer but authorable nowhere. Same
+  class as D02. Add the fields; no renderer work needed.
 
 ## Files you own
 
 - `src/components/sections/SectionRenderer.tsx`
+- `src/lib/sections.ts` (inherited from J01, now finished)
 - `src/components/PublicationGrid.tsx` (currently dead code — no importers; revive or delete it)
+- a projects repo query, if D14 needs one — name the file in your report before you add it
 
 ## Do
 
@@ -39,9 +64,10 @@ J01 made authorable, and you render whatever new section defs it added.
 
 ## Out of scope
 
-`src/lib/sections.ts` (J01 owns it). `src/styles.css` (J06 owns it). Article and album pages
+`src/styles.css` (J06 owns it, and it is done — do not reopen it). Article and album pages
 (J04 owns `$.tsx`).
 
 ## Stop conditions
 
-- A field you need was not added by J01: report it, skip that item, do not edit the catalogue.
+- A delta needs a repo query beyond the one D14 calls for: report it, do not widen silently.
+- Anything pulls you into `$.tsx` or `styles.css`: stop and report.

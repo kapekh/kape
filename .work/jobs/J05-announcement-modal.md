@@ -1,6 +1,10 @@
-# J05 — Announcement modal
+# J05 — Announcement modal and month counter
 
-Delta: D09.
+Deltas: D09, D25. **D25 was handed here by J06**, which found the month visit figure needs
+`recordAndGetVisits` in `src/server/repo/site.ts` — your file — and correctly refused to reach
+across for it. J06 verified the number is derivable: `SELECT sum(count) FROM visitor_daily WHERE
+date LIKE '<YYYY-MM>%'`. No schema change, no admin endpoint, one added field on an existing
+return shape. Do it as part of this job.
 
 ## Files you own
 
@@ -21,6 +25,9 @@ only the soonest one is ever seen.
 2. Rebuild the popup as a modal with prev/next and a counter.
 3. Keep a dismissal that survives a reload, and keep whatever the current show/hide trigger is
    unless the client's version clearly contradicts it.
+4. **D25** — add a month figure to `recordAndGetVisits`'s return so the footer can render
+   Today · This Month · Total. `Footer.tsx` is not yours: land the server side, and report the
+   exact shape you return so the footer change can follow.
 
 ## Acceptance
 
