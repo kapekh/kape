@@ -26,6 +26,7 @@ import {
 	navItems,
 	newsletterSubscribers,
 	offices,
+	type ProjectSnapshot,
 	pages,
 	partners,
 	people,
@@ -1572,10 +1573,29 @@ export type ProjectInput = {
 	slug: string;
 	status: string;
 	sort: number;
+	startDate: string;
+	endDate: string;
+	targetAreas: string[];
+	snapshots: ProjectSnapshot[];
 	translations: { lang: string; name: string; summary: string; body: string }[];
 	donorIds: number[];
 	locations: ProjectLocationInput[];
 };
+
+/** Blank dates are stored as NULL, and blank list entries dropped, so the
+ *  public view never renders an empty label. */
+function projectColumns(input: ProjectInput) {
+	return {
+		code: input.code,
+		slug: input.slug,
+		status: input.status,
+		sort: input.sort,
+		startDate: input.startDate || null,
+		endDate: input.endDate || null,
+		targetAreas: input.targetAreas.map((a) => a.trim()).filter(Boolean),
+		snapshots: input.snapshots.filter((s) => s.value.trim() && s.label.trim()),
+	};
+}
 
 export async function adminListProjects(db: DB) {
 	const rows = await db
@@ -1655,6 +1675,10 @@ export async function getProjectForEdit(db: DB, id: number) {
 		slug: p.slug,
 		status: p.status,
 		sort: p.sort,
+		startDate: p.startDate ?? "",
+		endDate: p.endDate ?? "",
+		targetAreas: p.targetAreas ?? [],
+		snapshots: p.snapshots ?? [],
 		translations: byLang,
 		donorIds: dRows.map((d) => d.donorId),
 		locations: locs.map((l) => ({
@@ -1702,13 +1726,7 @@ export async function createProject(
 ): Promise<number> {
 	const [p] = await db
 		.insert(projects)
-		.values({
-			tenantId: TENANT,
-			code: input.code,
-			slug: input.slug,
-			status: input.status,
-			sort: input.sort,
-		})
+		.values({ tenantId: TENANT, ...projectColumns(input) })
 		.returning({ id: projects.id });
 	await setProjectRelations(db, p.id, input);
 	return p.id;
@@ -1720,12 +1738,7 @@ export async function updateProject(
 ): Promise<void> {
 	await db
 		.update(projects)
-		.set({
-			code: input.code,
-			slug: input.slug,
-			status: input.status,
-			sort: input.sort,
-		})
+		.set(projectColumns(input))
 		.where(and(eq(projects.tenantId, TENANT), eq(projects.id, id)));
 	await setProjectRelations(db, id, input);
 }

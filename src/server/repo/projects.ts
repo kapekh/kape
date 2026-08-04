@@ -2,7 +2,13 @@ import { and, asc, eq } from "drizzle-orm";
 
 import type { DB } from "../db";
 import { renderBody } from "../richtext";
-import { donors, projectDonors, projectLocations, projects } from "../schema";
+import {
+	donors,
+	type ProjectSnapshot,
+	projectDonors,
+	projectLocations,
+	projects,
+} from "../schema";
 import { resolveOne, resolveTranslations } from "./i18n";
 import { attachMediaUrl } from "./media-util";
 
@@ -16,6 +22,10 @@ export type ResolvedProject = {
 	name: string;
 	summary: string;
 	bodyHtml: string;
+	startDate: string | null;
+	endDate: string | null;
+	targetAreas: string[];
+	snapshots: ProjectSnapshot[];
 	donors: { name: string; logoUrl: string | null }[];
 };
 
@@ -45,6 +55,10 @@ export async function getProjectBySlug(
 		name: f.name ?? "",
 		summary: f.summary ?? "",
 		bodyHtml: renderBody(f.body ?? null),
+		startDate: p.startDate,
+		endDate: p.endDate,
+		targetAreas: p.targetAreas ?? [],
+		snapshots: p.snapshots ?? [],
 		donors: dsWithLogo.map((d) => ({ name: d.name, logoUrl: d.logoUrl })),
 	};
 }
@@ -76,6 +90,8 @@ export type ProjectCard = {
 	name: string;
 	summary: string;
 	image: string | null;
+	startDate: string | null;
+	endDate: string | null;
 };
 
 /** Public project cards for the `projectList` section, optionally filtered by status. */
@@ -110,6 +126,8 @@ export async function listProjectCards(
 		name: names.get(r.id)?.name ?? r.code,
 		summary: names.get(r.id)?.summary ?? "",
 		image: r.logoUrl,
+		startDate: r.startDate,
+		endDate: r.endDate,
 	}));
 }
 

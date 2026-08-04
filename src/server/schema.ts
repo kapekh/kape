@@ -657,6 +657,9 @@ export const donors = sqliteTable("donors", {
 	sort: integer("sort").notNull().default(0),
 });
 
+/** One headline figure on a project page, e.g. 385 / schools reached. */
+export type ProjectSnapshot = { value: string; label: string };
+
 /** Projects (the "programs": NGS, NGPRC, …). name/summary/body translated. */
 export const projects = sqliteTable(
 	"projects",
@@ -673,6 +676,16 @@ export const projects = sqliteTable(
 			(): AnySQLiteColumn => projects.id,
 		),
 		status: text("status").notNull().default("current"), // current | past
+		startDate: text("start_date"), // ISO yyyy-mm-dd
+		endDate: text("end_date"),
+		targetAreas: text("target_areas", { mode: "json" })
+			.$type<string[]>()
+			.notNull()
+			.default([]),
+		snapshots: text("snapshots", { mode: "json" })
+			.$type<ProjectSnapshot[]>()
+			.notNull()
+			.default([]),
 		logoMediaId: integer("logo_media_id").references(() => media.id),
 		sort: integer("sort").notNull().default(0),
 	},

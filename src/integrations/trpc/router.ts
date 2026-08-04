@@ -1026,6 +1026,10 @@ const projectInput = z.object({
 	slug: z.string().min(1),
 	status: z.enum(["current", "past"]),
 	sort: z.number(),
+	startDate: z.string(),
+	endDate: z.string(),
+	targetAreas: z.array(z.string()),
+	snapshots: z.array(z.object({ value: z.string(), label: z.string() })),
 	translations: z.array(
 		z.object({
 			lang: z.string(),

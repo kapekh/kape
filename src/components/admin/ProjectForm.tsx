@@ -17,11 +17,16 @@ import { useDirty } from "./useDirty";
 
 export type DonorOpt = { id: number; name: string };
 export type ProjectStatus = "current" | "past";
+export type Snapshot = { value: string; label: string };
 export type ProjectFormValue = {
 	code: string;
 	slug: string;
 	status: ProjectStatus;
 	sort: number;
+	startDate: string;
+	endDate: string;
+	targetAreas: string[];
+	snapshots: Snapshot[];
 	translations: { lang: string; name: string; summary: string; body: string }[];
 	donorIds: number[];
 	locations: { schoolName: string; lat: string; lng: string }[];
@@ -32,6 +37,10 @@ type Initial = {
 	slug: string;
 	status: string;
 	sort: number;
+	startDate: string;
+	endDate: string;
+	targetAreas: string[];
+	snapshots: Snapshot[];
 	translations: Record<string, Record<string, string>>;
 	donorIds: number[];
 	locations: { schoolName: string; lat: string; lng: string }[];
@@ -61,6 +70,14 @@ export function ProjectForm({
 	);
 	const [donorIds, setDonorIds] = useState<number[]>(initial?.donorIds ?? []);
 	const [locations, setLocations] = useState(initial?.locations ?? []);
+	const [startDate, setStartDate] = useState(initial?.startDate ?? "");
+	const [endDate, setEndDate] = useState(initial?.endDate ?? "");
+	const [targetAreas, setTargetAreas] = useState(
+		(initial?.targetAreas ?? []).join("\n"),
+	);
+	const [snapshots, setSnapshots] = useState<(Snapshot & { key: string })[]>(
+		() => (initial?.snapshots ?? []).map((s, i) => ({ ...s, key: `s${i}` })),
+	);
 	const [trans, setTrans] = useState<
 		Record<string, { name: string; summary: string; body: string }>
 	>(() => {
@@ -101,6 +118,11 @@ export function ProjectForm({
 			ls.map((l, j) => (j === i ? { ...l, [field]: value } : l)),
 		);
 	}
+	function setSnapshot(i: number, field: keyof Snapshot, value: string) {
+		setSnapshots((ss) =>
+			ss.map((s, j) => (j === i ? { ...s, [field]: value } : s)),
+		);
+	}
 	function submit(e: React.FormEvent) {
 		e.preventDefault();
 		onSubmit({
@@ -108,6 +130,15 @@ export function ProjectForm({
 			slug,
 			status,
 			sort: initial?.sort ?? 0,
+			startDate,
+			endDate,
+			targetAreas: targetAreas
+				.split("\n")
+				.map((a) => a.trim())
+				.filter(Boolean),
+			snapshots: snapshots
+				.filter((s) => s.value.trim() && s.label.trim())
+				.map((s) => ({ value: s.value, label: s.label })),
 			translations: languages.map((l) => ({ lang: l.code, ...trans[l.code] })),
 			donorIds,
 			locations: locations.filter((l) => l.lat && l.lng),
@@ -115,7 +146,18 @@ export function ProjectForm({
 	}
 
 	const dirty = useDirty(
-		JSON.stringify({ code, slug, status, donorIds, locations, trans }),
+		JSON.stringify({
+			code,
+			slug,
+			status,
+			donorIds,
+			locations,
+			trans,
+			startDate,
+			endDate,
+			targetAreas,
+			snapshots,
+		}),
 		savedAt,
 	);
 
@@ -222,6 +264,67 @@ export function ProjectForm({
 								</button>
 							</div>
 						</FormSection>
+
+						<FormSection
+							title="Target areas"
+							description="Provinces or districts this project works in. One per line."
+						>
+							<textarea
+								className={fieldInput}
+								rows={4}
+								value={targetAreas}
+								onChange={(e) => setTargetAreas(e.target.value)}
+								placeholder={"Kampong Cham\nTboung Khmum"}
+							/>
+						</FormSection>
+
+						<FormSection
+							title="Snapshot figures"
+							description="Headline numbers shown as tiles on the project page."
+						>
+							<div className="space-y-2">
+								{snapshots.map((s, i) => (
+									<div
+										key={s.key}
+										className="flex flex-wrap gap-2 items-center"
+									>
+										<input
+											className={`${fieldInput} max-w-[140px]`}
+											placeholder="385+"
+											value={s.value}
+											onChange={(e) => setSnapshot(i, "value", e.target.value)}
+										/>
+										<input
+											className={`${fieldInput} max-w-[260px]`}
+											placeholder="schools reached"
+											value={s.label}
+											onChange={(e) => setSnapshot(i, "label", e.target.value)}
+										/>
+										<button
+											type="button"
+											onClick={() =>
+												setSnapshots((ss) => ss.filter((_, j) => j !== i))
+											}
+											className="text-xs text-destructive hover:underline"
+										>
+											Remove
+										</button>
+									</div>
+								))}
+								<button
+									type="button"
+									onClick={() =>
+										setSnapshots((ss) => [
+											...ss,
+											{ value: "", label: "", key: crypto.randomUUID() },
+										])
+									}
+									className="text-xs rounded border border-border px-3 py-1 hover:bg-muted"
+								>
+									+ Add figure
+								</button>
+							</div>
+						</FormSection>
 					</>
 				}
 				aside={
@@ -261,6 +364,30 @@ export function ProjectForm({
 										<option value="current">Current</option>
 										<option value="past">Past</option>
 									</select>
+								</div>
+								<div>
+									<label className={fieldLabel} htmlFor="project-start-date">
+										Start date
+									</label>
+									<input
+										id="project-start-date"
+										type="date"
+										className={fieldInput}
+										value={startDate}
+										onChange={(e) => setStartDate(e.target.value)}
+									/>
+								</div>
+								<div>
+									<label className={fieldLabel} htmlFor="project-end-date">
+										End date
+									</label>
+									<input
+										id="project-end-date"
+										type="date"
+										className={fieldInput}
+										value={endDate}
+										onChange={(e) => setEndDate(e.target.value)}
+									/>
 								</div>
 							</div>
 						</FormSection>
