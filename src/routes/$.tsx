@@ -33,21 +33,19 @@ const RELATED_POOL = 5;
  * a redirect, or not-found. Adding a page or record needs no new route file.
  */
 export const Route = createFileRoute("/$")({
-	loader: async ({ context, params }) => {
+	loader: async ({ context, params, location }) => {
 		const raw = params._splat ?? "";
 		const { lang, path, prefixed } = stripLang(`/${raw}`);
 		if (!prefixed) {
-			// No language prefix → canonical default-language URL.
+			// No language prefix → canonical default-language URL. The query string
+			// has to survive: the payment provider returns to /donate/success?order=…
 			throw redirect({
-				to: "/$",
-				params: {
-					_splat: path === "/" ? DEFAULT_LANG : `${DEFAULT_LANG}${path}`,
-				},
+				href: `/${DEFAULT_LANG}${path === "/" ? "" : path}${location.searchStr}`,
 				statusCode: 301,
 			});
 		}
-		// Functional routes (contact, donate, …) are never language-prefixed — they
-		// live at fixed paths. A localized URL like /en/contact would otherwise fall
+		// Functional routes (admin, api, …) are never language-prefixed — they live
+		// at fixed paths. A localized URL like /en/admin would otherwise fall
 		// through to content resolution and 404, so redirect it to the canonical path.
 		if (isFunctional(path)) {
 			throw redirect({ href: path, statusCode: 301 });

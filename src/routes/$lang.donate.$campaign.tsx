@@ -3,7 +3,7 @@ import { createFileRoute, notFound } from "@tanstack/react-router";
 import { CampaignDetail } from "@/components/donate/CampaignDetail";
 import { detectLang } from "@/lib/i18n-config";
 
-export const Route = createFileRoute("/donate/$campaign")({
+export const Route = createFileRoute("/$lang/donate/$campaign")({
 	loader: async ({ context, location, params }) => {
 		const lang = detectLang(location.pathname);
 		const detail = await context.queryClient.ensureQueryData(

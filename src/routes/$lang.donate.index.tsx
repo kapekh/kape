@@ -7,7 +7,7 @@ import { DONATE_DEFAULTS } from "@/lib/donate-defaults";
 import { useLang } from "@/lib/i18n";
 import { detectLang, localizedHref } from "@/lib/i18n-config";
 
-export const Route = createFileRoute("/donate/")({
+export const Route = createFileRoute("/$lang/donate/")({
 	loader: async ({ context, location }) => {
 		const lang = detectLang(location.pathname);
 		const [campaigns, settings] = await Promise.all([

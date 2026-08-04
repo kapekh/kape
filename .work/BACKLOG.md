@@ -48,7 +48,7 @@ errors in the files you own**.
 | J17 | Project content + 8 sub-projects | — | `src/server/seed/projects.ts` | **done** `4ce8dc9` | J16 J18 J19 |
 | J18 | Structured records | — | `src/server/seed/records.ts` | **done** `db65314` | J16 J17 J19 |
 | J20 | UX flow audit of the live client site | — | `.work/UX-AUDIT.md`, `.work/ux-shots/` | **done** `8b09f2f` | anything |
-| J21 | Five visitor-visible defects, from J20 | F04 F14 F23 F27 F40 | `src/components/Header.tsx`, `src/integrations/trpc/router.ts` | F04 fixed with J05; F14 F23 F27 in the tree, uncommitted; F40 open | nothing |
+| J21 | Five visitor-visible defects, from J20 | F04 F14 F23 F27 F40 | `src/components/Header.tsx`, `src/integrations/trpc/router.ts`, `src/lib/i18n-config.ts`, `src/routes/$.tsx`, `src/routes/$lang.*` | **done**; F04 rode with J05 `1fdf941` | nothing |
 | J19 | Import the real imagery | — | `scripts/import-lovable-assets.ts`, `src/server/seed/media.ts` | **unblocked** | J16 J17 J18 |
 
 `src/server/schema.ts` and `drizzle/` are contended by J02, J09, J10. All three are done; the
@@ -69,11 +69,17 @@ almost no project prose to transfer. KAPE has to write it before those 26 pages 
 `.work/km-review.md` was going to be shared by J16, J17 and J18. Three panes appending to one file
 lose each other's writes, so each now writes `.work/km-review-j1N.md` and the orchestrator merges.
 
-`src/components/Header.tsx` is contended by J06, J11 and J21. J06 is done; J21 has uncommitted
-changes in the file right now, so J11 stays blocked until they land.
+`src/components/Header.tsx` is contended by J06, J11 and J21. All three of its owners are done, so
+**J11 is unblocked**.
 
-J21 has no job file. It exists as a backlog row because its F14/F23/F27 fixes are already sitting
-in the working tree and would otherwise be lost.
+J21 never had a job file. It existed as a backlog row because its F14/F23/F27 fixes were already
+sitting in the working tree and would otherwise have been lost. Report at `.work/j21-report.md`.
+
+**Contact and donate are language-prefixed now.** `/km/contact`, `/en/donate/success`, and so on;
+`routes/contact.tsx` and the four `donate*.tsx` files moved under `$lang.`. Anything that adds a
+public page with its own route file has to go under `$lang.` too, or it silently reverts the visitor
+to English. `FUNCTIONAL` in `lib/i18n-config.ts` is now only the staff app, the API, uploads and
+static files.
 
 ## What the first round changed
 

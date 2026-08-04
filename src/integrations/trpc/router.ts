@@ -7,6 +7,7 @@ import {
 	type PermissionArea,
 } from "#/lib/permissions";
 import type { SectionNode } from "#/lib/sections";
+import { invalidateTags, tagSourceQuery } from "#/server/render-cache";
 import type { PageInput } from "#/server/repo/admin";
 import {
 	adminListDonors,
@@ -160,8 +161,8 @@ import {
 import { resolveRouteCached } from "#/server/repo/route";
 import { resolveSections } from "#/server/repo/sections";
 import {
-	getActiveAnnouncement,
 	getSettings,
+	listActiveAnnouncements,
 	listHeroSlides,
 	listOffices,
 	listPartners,
@@ -340,7 +341,7 @@ const siteRouter = {
 		.query(({ ctx, input }) => listHeroSlides(ctx.db, input.lang)),
 	announcement: publicProcedure
 		.input(langInput)
-		.query(({ ctx, input }) => getActiveAnnouncement(ctx.db, input.lang)),
+		.query(({ ctx, input }) => listActiveAnnouncements(ctx.db, input.lang)),
 	offices: publicProcedure.query(({ ctx }) => listOffices(ctx.db)),
 	partners: publicProcedure.query(({ ctx }) => listPartners(ctx.db)),
 	projectLocations: publicProcedure
@@ -599,9 +600,15 @@ const postsRouter = {
 		.query(({ ctx, input }) =>
 			listPublications(ctx.db, input.lang, input.category),
 		),
+	// Public mutations skip adminProcedure's blanket cache bust, so this one drops
+	// just the publication listings — otherwise a page keeps serving the count it
+	// was cached with and two pages disagree about the same document.
 	trackDownload: publicProcedure
 		.input(z.object({ id: z.number() }))
-		.mutation(({ ctx, input }) => trackDownload(ctx.db, input.id)),
+		.mutation(async ({ ctx, input }) => {
+			await trackDownload(ctx.db, input.id);
+			await invalidateTags(ctx.db, [tagSourceQuery("publications")]);
+		}),
 } satisfies TRPCRouterRecord;
 
 const sectionNodeSchema: z.ZodType = z.object({

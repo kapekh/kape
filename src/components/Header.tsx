@@ -347,10 +347,16 @@ export function Header({
 	const donateHref = withLang(settings.header_donate_link || "#donate", lang);
 	const searchHref = withLang(settings.header_search_link || "#", lang);
 	const sitemapHref = withLang(settings.header_sitemap_link || "#", lang);
+	// a labelled control must not hand a reader a machine file (/sitemap.xml)
+	const isPageHref = (h?: string) => !!h && !/\.[a-z0-9]+(?:[?#]|$)/i.test(h);
 	// Only show "Search" when it points at a real, distinct destination — otherwise
 	// it's a labelled control that just opens the sitemap (or nowhere).
 	const showSearch =
-		!!searchHref && searchHref !== "#" && searchHref !== sitemapHref;
+		!!searchHref &&
+		searchHref !== "#" &&
+		searchHref !== sitemapHref &&
+		isPageHref(settings.header_search_link);
+	const showSitemap = isPageHref(settings.header_sitemap_link);
 
 	// Close everything on Escape.
 	useEffect(() => {
@@ -418,12 +424,14 @@ export function Header({
 								{t("top.search")}
 							</a>
 						)}
-						<a
-							href={sitemapHref}
-							className="hover:text-[var(--secondary)] transition"
-						>
-							{t("top.sitemap")}
-						</a>
+						{showSitemap && (
+							<a
+								href={sitemapHref}
+								className="hover:text-[var(--secondary)] transition"
+							>
+								{t("top.sitemap")}
+							</a>
+						)}
 						<a
 							href="/login"
 							aria-label={t("top.login", "Staff login")}
@@ -516,10 +524,11 @@ export function Header({
 								}
 								return (
 									<div key={n.id} className="relative py-2">
+										{/* no onFocus: focus-to-open makes Tab swap the panel out from under a
+										    keyboard user before they reach its links. Enter/Space opens it. */}
 										<button
 											type="button"
 											onMouseEnter={() => setOpenId(hasChildren ? n.id : null)}
-											onFocus={() => setOpenId(hasChildren ? n.id : null)}
 											onClick={() => setOpenId(active ? null : n.id)}
 											aria-expanded={active}
 											className={`relative flex items-center gap-1 transition ${active ? "text-primary" : "hover:text-primary"}`}

@@ -9,11 +9,12 @@
 export const DEFAULT_LANG = "en";
 export const LANGS = ["en", "km"]; // all enabled languages, each path-prefixed
 
-// Functional routes live at fixed paths and are never language-prefixed. This
-// covers explicit route files (contact, donate, …) and any static file route
-// with an extension (/sitemap.xml, /robots.txt, /manifest.json, …).
+// Functional routes live at fixed paths and are never language-prefixed: the
+// staff-facing app, the API, and static file routes with an extension
+// (/sitemap.xml, /robots.txt, /manifest.json, …). Public pages are prefixed
+// even when they have their own route file — /km/contact, /km/donate.
 const FUNCTIONAL =
-	/^\/(contact|donate|internalsources|admin|login|api|uploads)(\/|$)|^\/[^/]+\.[a-z0-9]+$/i;
+	/^\/(internalsources|admin|login|api|uploads)(\/|$)|^\/[^/]+\.[a-z0-9]+$/i;
 
 export const isFunctional = (path: string) => FUNCTIONAL.test(path);
 

@@ -1,15 +1,22 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { ContactForm } from "@/components/ContactForm";
 import { type MapMarker, MapView } from "@/components/MapView";
 import { Card, Grid, SubPage } from "@/components/SubPage";
 import { useLang } from "@/lib/i18n";
+import { DEFAULT_LANG, LANGS } from "@/lib/i18n-config";
 
-export const Route = createFileRoute("/contact")({
-	loader: ({ context }) =>
-		context.queryClient.ensureQueryData(
+export const Route = createFileRoute("/$lang/contact")({
+	loader: ({ context, params, location }) => {
+		if (!LANGS.includes(params.lang))
+			throw redirect({
+				href: `/${DEFAULT_LANG}${location.pathname}${location.searchStr}`,
+				statusCode: 301,
+			});
+		return context.queryClient.ensureQueryData(
 			context.trpc.site.offices.queryOptions(),
-		),
+		);
+	},
 	head: () => ({
 		meta: [
 			{ title: "Contact KAPE" },

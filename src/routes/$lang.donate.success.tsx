@@ -4,7 +4,7 @@ import { Card, Section, SubPage } from "@/components/SubPage";
 import { useLang } from "@/lib/i18n";
 import { localizedHref } from "@/lib/i18n-config";
 
-export const Route = createFileRoute("/donate/success")({
+export const Route = createFileRoute("/$lang/donate/success")({
 	validateSearch: (s: Record<string, unknown>) => ({
 		order: typeof s.order === "string" ? s.order : "",
 	}),

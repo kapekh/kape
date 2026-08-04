@@ -14,20 +14,15 @@ import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as InternalsourcesRouteImport } from './routes/internalsources'
-import { Route as DonateRouteImport } from './routes/donate'
-import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as InternalsourcesIndexRouteImport } from './routes/internalsources.index'
-import { Route as DonateIndexRouteImport } from './routes/donate.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as UploadsSplatRouteImport } from './routes/uploads.$'
 import { Route as InternalsourcesDocumentsRouteImport } from './routes/internalsources.documents'
 import { Route as InternalsourcesDirectoryRouteImport } from './routes/internalsources.directory'
 import { Route as InternalsourcesCalendarRouteImport } from './routes/internalsources.calendar'
-import { Route as DonateSuccessRouteImport } from './routes/donate.success'
-import { Route as DonateCampaignRouteImport } from './routes/donate.$campaign'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminPublicationCategoriesRouteImport } from './routes/admin.publication-categories'
 import { Route as AdminPartnerCategoriesRouteImport } from './routes/admin.partner-categories'
@@ -40,6 +35,8 @@ import { Route as AdminLanguagesRouteImport } from './routes/admin.languages'
 import { Route as AdminFooterRouteImport } from './routes/admin.footer'
 import { Route as AdminDocCategoriesRouteImport } from './routes/admin.doc-categories'
 import { Route as AdminAccountRouteImport } from './routes/admin.account'
+import { Route as LangDonateRouteImport } from './routes/$lang.donate'
+import { Route as LangContactRouteImport } from './routes/$lang.contact'
 import { Route as AdminUsersIndexRouteImport } from './routes/admin.users.index'
 import { Route as AdminSchoolsIndexRouteImport } from './routes/admin.schools.index'
 import { Route as AdminRolesIndexRouteImport } from './routes/admin.roles.index'
@@ -53,6 +50,7 @@ import { Route as AdminFormsIndexRouteImport } from './routes/admin.forms.index'
 import { Route as AdminDonorsIndexRouteImport } from './routes/admin.donors.index'
 import { Route as AdminDonationsIndexRouteImport } from './routes/admin.donations.index'
 import { Route as AdminCampaignsIndexRouteImport } from './routes/admin.campaigns.index'
+import { Route as LangDonateIndexRouteImport } from './routes/$lang.donate.index'
 import { Route as ApiTrpcSplatRouteImport } from './routes/api.trpc.$'
 import { Route as ApiPaySplatRouteImport } from './routes/api.pay.$'
 import { Route as ApiMediaSplatRouteImport } from './routes/api.media.$'
@@ -82,6 +80,8 @@ import { Route as AdminDonorsNewRouteImport } from './routes/admin.donors.new'
 import { Route as AdminDonorsIdRouteImport } from './routes/admin.donors.$id'
 import { Route as AdminCampaignsNewRouteImport } from './routes/admin.campaigns.new'
 import { Route as AdminCampaignsIdRouteImport } from './routes/admin.campaigns.$id'
+import { Route as LangDonateSuccessRouteImport } from './routes/$lang.donate.success'
+import { Route as LangDonateCampaignRouteImport } from './routes/$lang.donate.$campaign'
 import { Route as AdminFormsIdIndexRouteImport } from './routes/admin.forms.$id.index'
 import { Route as AdminCampaignsIdIndexRouteImport } from './routes/admin.campaigns.$id.index'
 import { Route as AdminFormsIdSubmissionsRouteImport } from './routes/admin.forms.$id.submissions'
@@ -112,16 +112,6 @@ const InternalsourcesRoute = InternalsourcesRouteImport.update({
   path: '/internalsources',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DonateRoute = DonateRouteImport.update({
-  id: '/donate',
-  path: '/donate',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ContactRoute = ContactRouteImport.update({
-  id: '/contact',
-  path: '/contact',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -141,11 +131,6 @@ const InternalsourcesIndexRoute = InternalsourcesIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => InternalsourcesRoute,
-} as any)
-const DonateIndexRoute = DonateIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => DonateRoute,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
@@ -173,16 +158,6 @@ const InternalsourcesCalendarRoute = InternalsourcesCalendarRouteImport.update({
   id: '/calendar',
   path: '/calendar',
   getParentRoute: () => InternalsourcesRoute,
-} as any)
-const DonateSuccessRoute = DonateSuccessRouteImport.update({
-  id: '/success',
-  path: '/success',
-  getParentRoute: () => DonateRoute,
-} as any)
-const DonateCampaignRoute = DonateCampaignRouteImport.update({
-  id: '/$campaign',
-  path: '/$campaign',
-  getParentRoute: () => DonateRoute,
 } as any)
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
   id: '/settings',
@@ -244,6 +219,16 @@ const AdminAccountRoute = AdminAccountRouteImport.update({
   id: '/account',
   path: '/account',
   getParentRoute: () => AdminRoute,
+} as any)
+const LangDonateRoute = LangDonateRouteImport.update({
+  id: '/$lang/donate',
+  path: '/$lang/donate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LangContactRoute = LangContactRouteImport.update({
+  id: '/$lang/contact',
+  path: '/$lang/contact',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminUsersIndexRoute = AdminUsersIndexRouteImport.update({
   id: '/users/',
@@ -309,6 +294,11 @@ const AdminCampaignsIndexRoute = AdminCampaignsIndexRouteImport.update({
   id: '/campaigns/',
   path: '/campaigns/',
   getParentRoute: () => AdminRoute,
+} as any)
+const LangDonateIndexRoute = LangDonateIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LangDonateRoute,
 } as any)
 const ApiTrpcSplatRoute = ApiTrpcSplatRouteImport.update({
   id: '/api/trpc/$',
@@ -455,6 +445,16 @@ const AdminCampaignsIdRoute = AdminCampaignsIdRouteImport.update({
   path: '/campaigns/$id',
   getParentRoute: () => AdminRoute,
 } as any)
+const LangDonateSuccessRoute = LangDonateSuccessRouteImport.update({
+  id: '/success',
+  path: '/success',
+  getParentRoute: () => LangDonateRoute,
+} as any)
+const LangDonateCampaignRoute = LangDonateCampaignRouteImport.update({
+  id: '/$campaign',
+  path: '/$campaign',
+  getParentRoute: () => LangDonateRoute,
+} as any)
 const AdminFormsIdIndexRoute = AdminFormsIdIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -481,13 +481,13 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/admin': typeof AdminRouteWithChildren
-  '/contact': typeof ContactRoute
-  '/donate': typeof DonateRouteWithChildren
   '/internalsources': typeof InternalsourcesRouteWithChildren
   '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/$lang/contact': typeof LangContactRoute
+  '/$lang/donate': typeof LangDonateRouteWithChildren
   '/admin/account': typeof AdminAccountRoute
   '/admin/doc-categories': typeof AdminDocCategoriesRoute
   '/admin/footer': typeof AdminFooterRoute
@@ -500,15 +500,14 @@ export interface FileRoutesByFullPath {
   '/admin/partner-categories': typeof AdminPartnerCategoriesRoute
   '/admin/publication-categories': typeof AdminPublicationCategoriesRoute
   '/admin/settings': typeof AdminSettingsRoute
-  '/donate/$campaign': typeof DonateCampaignRoute
-  '/donate/success': typeof DonateSuccessRoute
   '/internalsources/calendar': typeof InternalsourcesCalendarRoute
   '/internalsources/directory': typeof InternalsourcesDirectoryRoute
   '/internalsources/documents': typeof InternalsourcesDocumentsRoute
   '/uploads/$': typeof UploadsSplatRoute
   '/admin/': typeof AdminIndexRoute
-  '/donate/': typeof DonateIndexRoute
   '/internalsources/': typeof InternalsourcesIndexRoute
+  '/$lang/donate/$campaign': typeof LangDonateCampaignRoute
+  '/$lang/donate/success': typeof LangDonateSuccessRoute
   '/admin/campaigns/$id': typeof AdminCampaignsIdRouteWithChildren
   '/admin/campaigns/new': typeof AdminCampaignsNewRoute
   '/admin/donors/$id': typeof AdminDonorsIdRoute
@@ -538,6 +537,7 @@ export interface FileRoutesByFullPath {
   '/api/media/$': typeof ApiMediaSplatRoute
   '/api/pay/$': typeof ApiPaySplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
+  '/$lang/donate/': typeof LangDonateIndexRoute
   '/admin/campaigns/': typeof AdminCampaignsIndexRoute
   '/admin/donations/': typeof AdminDonationsIndexRoute
   '/admin/donors/': typeof AdminDonorsIndexRoute
@@ -559,11 +559,11 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
-  '/contact': typeof ContactRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/$lang/contact': typeof LangContactRoute
   '/admin/account': typeof AdminAccountRoute
   '/admin/doc-categories': typeof AdminDocCategoriesRoute
   '/admin/footer': typeof AdminFooterRoute
@@ -576,15 +576,14 @@ export interface FileRoutesByTo {
   '/admin/partner-categories': typeof AdminPartnerCategoriesRoute
   '/admin/publication-categories': typeof AdminPublicationCategoriesRoute
   '/admin/settings': typeof AdminSettingsRoute
-  '/donate/$campaign': typeof DonateCampaignRoute
-  '/donate/success': typeof DonateSuccessRoute
   '/internalsources/calendar': typeof InternalsourcesCalendarRoute
   '/internalsources/directory': typeof InternalsourcesDirectoryRoute
   '/internalsources/documents': typeof InternalsourcesDocumentsRoute
   '/uploads/$': typeof UploadsSplatRoute
   '/admin': typeof AdminIndexRoute
-  '/donate': typeof DonateIndexRoute
   '/internalsources': typeof InternalsourcesIndexRoute
+  '/$lang/donate/$campaign': typeof LangDonateCampaignRoute
+  '/$lang/donate/success': typeof LangDonateSuccessRoute
   '/admin/campaigns/new': typeof AdminCampaignsNewRoute
   '/admin/donors/$id': typeof AdminDonorsIdRoute
   '/admin/donors/new': typeof AdminDonorsNewRoute
@@ -612,6 +611,7 @@ export interface FileRoutesByTo {
   '/api/media/$': typeof ApiMediaSplatRoute
   '/api/pay/$': typeof ApiPaySplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
+  '/$lang/donate': typeof LangDonateIndexRoute
   '/admin/campaigns': typeof AdminCampaignsIndexRoute
   '/admin/donations': typeof AdminDonationsIndexRoute
   '/admin/donors': typeof AdminDonorsIndexRoute
@@ -635,13 +635,13 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/admin': typeof AdminRouteWithChildren
-  '/contact': typeof ContactRoute
-  '/donate': typeof DonateRouteWithChildren
   '/internalsources': typeof InternalsourcesRouteWithChildren
   '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/$lang/contact': typeof LangContactRoute
+  '/$lang/donate': typeof LangDonateRouteWithChildren
   '/admin/account': typeof AdminAccountRoute
   '/admin/doc-categories': typeof AdminDocCategoriesRoute
   '/admin/footer': typeof AdminFooterRoute
@@ -654,15 +654,14 @@ export interface FileRoutesById {
   '/admin/partner-categories': typeof AdminPartnerCategoriesRoute
   '/admin/publication-categories': typeof AdminPublicationCategoriesRoute
   '/admin/settings': typeof AdminSettingsRoute
-  '/donate/$campaign': typeof DonateCampaignRoute
-  '/donate/success': typeof DonateSuccessRoute
   '/internalsources/calendar': typeof InternalsourcesCalendarRoute
   '/internalsources/directory': typeof InternalsourcesDirectoryRoute
   '/internalsources/documents': typeof InternalsourcesDocumentsRoute
   '/uploads/$': typeof UploadsSplatRoute
   '/admin/': typeof AdminIndexRoute
-  '/donate/': typeof DonateIndexRoute
   '/internalsources/': typeof InternalsourcesIndexRoute
+  '/$lang/donate/$campaign': typeof LangDonateCampaignRoute
+  '/$lang/donate/success': typeof LangDonateSuccessRoute
   '/admin/campaigns/$id': typeof AdminCampaignsIdRouteWithChildren
   '/admin/campaigns/new': typeof AdminCampaignsNewRoute
   '/admin/donors/$id': typeof AdminDonorsIdRoute
@@ -692,6 +691,7 @@ export interface FileRoutesById {
   '/api/media/$': typeof ApiMediaSplatRoute
   '/api/pay/$': typeof ApiPaySplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
+  '/$lang/donate/': typeof LangDonateIndexRoute
   '/admin/campaigns/': typeof AdminCampaignsIndexRoute
   '/admin/donations/': typeof AdminDonationsIndexRoute
   '/admin/donors/': typeof AdminDonorsIndexRoute
@@ -716,13 +716,13 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/admin'
-    | '/contact'
-    | '/donate'
     | '/internalsources'
     | '/llms.txt'
     | '/login'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/$lang/contact'
+    | '/$lang/donate'
     | '/admin/account'
     | '/admin/doc-categories'
     | '/admin/footer'
@@ -735,15 +735,14 @@ export interface FileRouteTypes {
     | '/admin/partner-categories'
     | '/admin/publication-categories'
     | '/admin/settings'
-    | '/donate/$campaign'
-    | '/donate/success'
     | '/internalsources/calendar'
     | '/internalsources/directory'
     | '/internalsources/documents'
     | '/uploads/$'
     | '/admin/'
-    | '/donate/'
     | '/internalsources/'
+    | '/$lang/donate/$campaign'
+    | '/$lang/donate/success'
     | '/admin/campaigns/$id'
     | '/admin/campaigns/new'
     | '/admin/donors/$id'
@@ -773,6 +772,7 @@ export interface FileRouteTypes {
     | '/api/media/$'
     | '/api/pay/$'
     | '/api/trpc/$'
+    | '/$lang/donate/'
     | '/admin/campaigns/'
     | '/admin/donations/'
     | '/admin/donors/'
@@ -794,11 +794,11 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/$'
-    | '/contact'
     | '/llms.txt'
     | '/login'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/$lang/contact'
     | '/admin/account'
     | '/admin/doc-categories'
     | '/admin/footer'
@@ -811,15 +811,14 @@ export interface FileRouteTypes {
     | '/admin/partner-categories'
     | '/admin/publication-categories'
     | '/admin/settings'
-    | '/donate/$campaign'
-    | '/donate/success'
     | '/internalsources/calendar'
     | '/internalsources/directory'
     | '/internalsources/documents'
     | '/uploads/$'
     | '/admin'
-    | '/donate'
     | '/internalsources'
+    | '/$lang/donate/$campaign'
+    | '/$lang/donate/success'
     | '/admin/campaigns/new'
     | '/admin/donors/$id'
     | '/admin/donors/new'
@@ -847,6 +846,7 @@ export interface FileRouteTypes {
     | '/api/media/$'
     | '/api/pay/$'
     | '/api/trpc/$'
+    | '/$lang/donate'
     | '/admin/campaigns'
     | '/admin/donations'
     | '/admin/donors'
@@ -869,13 +869,13 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/admin'
-    | '/contact'
-    | '/donate'
     | '/internalsources'
     | '/llms.txt'
     | '/login'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/$lang/contact'
+    | '/$lang/donate'
     | '/admin/account'
     | '/admin/doc-categories'
     | '/admin/footer'
@@ -888,15 +888,14 @@ export interface FileRouteTypes {
     | '/admin/partner-categories'
     | '/admin/publication-categories'
     | '/admin/settings'
-    | '/donate/$campaign'
-    | '/donate/success'
     | '/internalsources/calendar'
     | '/internalsources/directory'
     | '/internalsources/documents'
     | '/uploads/$'
     | '/admin/'
-    | '/donate/'
     | '/internalsources/'
+    | '/$lang/donate/$campaign'
+    | '/$lang/donate/success'
     | '/admin/campaigns/$id'
     | '/admin/campaigns/new'
     | '/admin/donors/$id'
@@ -926,6 +925,7 @@ export interface FileRouteTypes {
     | '/api/media/$'
     | '/api/pay/$'
     | '/api/trpc/$'
+    | '/$lang/donate/'
     | '/admin/campaigns/'
     | '/admin/donations/'
     | '/admin/donors/'
@@ -949,13 +949,13 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
   AdminRoute: typeof AdminRouteWithChildren
-  ContactRoute: typeof ContactRoute
-  DonateRoute: typeof DonateRouteWithChildren
   InternalsourcesRoute: typeof InternalsourcesRouteWithChildren
   LlmsDottxtRoute: typeof LlmsDottxtRoute
   LoginRoute: typeof LoginRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  LangContactRoute: typeof LangContactRoute
+  LangDonateRoute: typeof LangDonateRouteWithChildren
   UploadsSplatRoute: typeof UploadsSplatRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiFormsSplatRoute: typeof ApiFormsSplatRoute
@@ -1001,20 +1001,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InternalsourcesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/donate': {
-      id: '/donate'
-      path: '/donate'
-      fullPath: '/donate'
-      preLoaderRoute: typeof DonateRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/contact': {
-      id: '/contact'
-      path: '/contact'
-      fullPath: '/contact'
-      preLoaderRoute: typeof ContactRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -1042,13 +1028,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/internalsources/'
       preLoaderRoute: typeof InternalsourcesIndexRouteImport
       parentRoute: typeof InternalsourcesRoute
-    }
-    '/donate/': {
-      id: '/donate/'
-      path: '/'
-      fullPath: '/donate/'
-      preLoaderRoute: typeof DonateIndexRouteImport
-      parentRoute: typeof DonateRoute
     }
     '/admin/': {
       id: '/admin/'
@@ -1084,20 +1063,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/internalsources/calendar'
       preLoaderRoute: typeof InternalsourcesCalendarRouteImport
       parentRoute: typeof InternalsourcesRoute
-    }
-    '/donate/success': {
-      id: '/donate/success'
-      path: '/success'
-      fullPath: '/donate/success'
-      preLoaderRoute: typeof DonateSuccessRouteImport
-      parentRoute: typeof DonateRoute
-    }
-    '/donate/$campaign': {
-      id: '/donate/$campaign'
-      path: '/$campaign'
-      fullPath: '/donate/$campaign'
-      preLoaderRoute: typeof DonateCampaignRouteImport
-      parentRoute: typeof DonateRoute
     }
     '/admin/settings': {
       id: '/admin/settings'
@@ -1182,6 +1147,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/account'
       preLoaderRoute: typeof AdminAccountRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/$lang/donate': {
+      id: '/$lang/donate'
+      path: '/$lang/donate'
+      fullPath: '/$lang/donate'
+      preLoaderRoute: typeof LangDonateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$lang/contact': {
+      id: '/$lang/contact'
+      path: '/$lang/contact'
+      fullPath: '/$lang/contact'
+      preLoaderRoute: typeof LangContactRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/users/': {
       id: '/admin/users/'
@@ -1273,6 +1252,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/campaigns/'
       preLoaderRoute: typeof AdminCampaignsIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/$lang/donate/': {
+      id: '/$lang/donate/'
+      path: '/'
+      fullPath: '/$lang/donate/'
+      preLoaderRoute: typeof LangDonateIndexRouteImport
+      parentRoute: typeof LangDonateRoute
     }
     '/api/trpc/$': {
       id: '/api/trpc/$'
@@ -1477,6 +1463,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCampaignsIdRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/$lang/donate/success': {
+      id: '/$lang/donate/success'
+      path: '/success'
+      fullPath: '/$lang/donate/success'
+      preLoaderRoute: typeof LangDonateSuccessRouteImport
+      parentRoute: typeof LangDonateRoute
+    }
+    '/$lang/donate/$campaign': {
+      id: '/$lang/donate/$campaign'
+      path: '/$campaign'
+      fullPath: '/$lang/donate/$campaign'
+      preLoaderRoute: typeof LangDonateCampaignRouteImport
+      parentRoute: typeof LangDonateRoute
+    }
     '/admin/forms/$id/': {
       id: '/admin/forms/$id/'
       path: '/'
@@ -1643,21 +1643,6 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
-interface DonateRouteChildren {
-  DonateCampaignRoute: typeof DonateCampaignRoute
-  DonateSuccessRoute: typeof DonateSuccessRoute
-  DonateIndexRoute: typeof DonateIndexRoute
-}
-
-const DonateRouteChildren: DonateRouteChildren = {
-  DonateCampaignRoute: DonateCampaignRoute,
-  DonateSuccessRoute: DonateSuccessRoute,
-  DonateIndexRoute: DonateIndexRoute,
-}
-
-const DonateRouteWithChildren =
-  DonateRoute._addFileChildren(DonateRouteChildren)
-
 interface InternalsourcesRouteChildren {
   InternalsourcesCalendarRoute: typeof InternalsourcesCalendarRoute
   InternalsourcesDirectoryRoute: typeof InternalsourcesDirectoryRoute
@@ -1676,17 +1661,33 @@ const InternalsourcesRouteWithChildren = InternalsourcesRoute._addFileChildren(
   InternalsourcesRouteChildren,
 )
 
+interface LangDonateRouteChildren {
+  LangDonateCampaignRoute: typeof LangDonateCampaignRoute
+  LangDonateSuccessRoute: typeof LangDonateSuccessRoute
+  LangDonateIndexRoute: typeof LangDonateIndexRoute
+}
+
+const LangDonateRouteChildren: LangDonateRouteChildren = {
+  LangDonateCampaignRoute: LangDonateCampaignRoute,
+  LangDonateSuccessRoute: LangDonateSuccessRoute,
+  LangDonateIndexRoute: LangDonateIndexRoute,
+}
+
+const LangDonateRouteWithChildren = LangDonateRoute._addFileChildren(
+  LangDonateRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
   AdminRoute: AdminRouteWithChildren,
-  ContactRoute: ContactRoute,
-  DonateRoute: DonateRouteWithChildren,
   InternalsourcesRoute: InternalsourcesRouteWithChildren,
   LlmsDottxtRoute: LlmsDottxtRoute,
   LoginRoute: LoginRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  LangContactRoute: LangContactRoute,
+  LangDonateRoute: LangDonateRouteWithChildren,
   UploadsSplatRoute: UploadsSplatRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiFormsSplatRoute: ApiFormsSplatRoute,

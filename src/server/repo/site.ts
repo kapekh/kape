@@ -124,9 +124,6 @@ export async function listActiveAnnouncements(db: DB, lang: string) {
 	}));
 }
 
-// compat: `trpc/router.ts` (not this job's file) still imports the old name
-export const getActiveAnnouncement = listActiveAnnouncements;
-
 export async function listOffices(db: DB) {
 	const rows = await db
 		.select()
