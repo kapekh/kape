@@ -1,14 +1,19 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import students from "@/assets/students.jpg.asset.json";
 import { AnnouncementPopup } from "@/components/AnnouncementPopup";
 import { JsonLd } from "@/components/JsonLd";
+import { PhotoGrid } from "@/components/Lightbox";
 import { NavLink } from "@/components/NavLink";
 import { ProjectView } from "@/components/ProjectView";
 import { RichBody } from "@/components/RichBody";
+import { ShareButtons } from "@/components/ShareButtons";
 import { SubPage } from "@/components/SubPage";
 import { SectionRenderer } from "@/components/sections/SectionRenderer";
-import { useLang } from "@/lib/i18n";
+import { useTRPC } from "@/integrations/trpc/react";
+import { COLLECTIONS, collectionHref } from "@/lib/collections";
+import { useLang, useT } from "@/lib/i18n";
 import {
 	DEFAULT_LANG,
 	isFunctional,
@@ -17,6 +22,9 @@ import {
 	stripLang,
 } from "@/lib/i18n-config";
 import { articleLd } from "@/lib/structured-data";
+
+// pool, not display count — the current article is filtered out of it
+const RELATED_POOL = 5;
 
 /**
  * The public catch-all + i18n router. Every content URL is language-prefixed
@@ -54,6 +62,16 @@ export const Route = createFileRoute("/$")({
 				params: { _splat: `${lang}/${resolved.to}` },
 				statusCode: 301,
 			});
+		}
+		if (resolved.kind === "article") {
+			// warm the related rail so it is in the SSR html, not a client-side pop-in
+			await context.queryClient.ensureQueryData(
+				context.trpc.posts.list.queryOptions({
+					lang,
+					type: resolved.post.contentType,
+					limit: RELATED_POOL,
+				}),
+			);
 		}
 		return resolved;
 	},
@@ -126,6 +144,74 @@ export const Route = createFileRoute("/$")({
 	},
 	component: ResolvedRoute,
 });
+
+/** "More news / more stories" rail. Renders nothing when the article has no siblings. */
+function RelatedPosts({
+	contentType,
+	slug,
+	label,
+}: {
+	contentType: string;
+	slug: string;
+	label: string;
+}) {
+	const trpc = useTRPC();
+	const { lang } = useLang();
+	const t = useT();
+	const { data } = useQuery(
+		trpc.posts.list.queryOptions({
+			lang,
+			type: contentType,
+			limit: RELATED_POOL,
+		}),
+	);
+	const related = (data ?? []).filter((p) => p.slug !== slug).slice(0, 3);
+	if (related.length === 0) return null;
+	const prefix =
+		Object.values(COLLECTIONS).find((c) => c.contentType === contentType)
+			?.prefix ?? contentType;
+	return (
+		<section className="mt-12 border-t border-border pt-8">
+			<h2 className="t-subsection text-primary">
+				{t("related.more", "More from")} {label}
+			</h2>
+			<div className="mt-5 grid gap-5 sm:grid-cols-3">
+				{related.map((p) => (
+					<NavLink
+						key={p.slug}
+						href={localizedHref(collectionHref(prefix, p.slug), lang)}
+						className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-background/40 transition hover:-translate-y-1 hover:shadow-[var(--shadow-soft)]"
+					>
+						{p.image && (
+							<div className="aspect-[16/10] overflow-hidden">
+								<img
+									src={p.image}
+									alt=""
+									className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+								/>
+							</div>
+						)}
+						<div className="flex flex-1 flex-col p-4">
+							{p.publishedAt && (
+								<div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
+									{p.publishedAt}
+								</div>
+							)}
+							<h3 className="mt-1 font-display text-base font-semibold text-primary transition group-hover:text-[var(--accent)]">
+								{p.title}
+							</h3>
+							{p.excerpt && (
+								<p className="mt-2 line-clamp-3 text-xs text-muted-foreground">
+									{p.excerpt}
+								</p>
+							)}
+						</div>
+					</NavLink>
+				))}
+			</div>
+		</section>
+	);
+}
 
 function ResolvedRoute() {
 	const r = Route.useLoaderData();
@@ -243,26 +329,16 @@ function ResolvedRoute() {
 				)}
 				<RichBody className="prose-kape" html={post.bodyHtml} />
 				{post.gallery.length > 0 && (
-					<div className="mt-10 grid grid-cols-2 md:grid-cols-3 gap-3">
-						{post.gallery.map((p) => (
-							<figure
-								key={p.url}
-								className="group relative overflow-hidden rounded-2xl border border-border"
-							>
-								<img
-									src={p.url}
-									alt={p.caption}
-									className="aspect-square w-full object-cover group-hover:scale-105 transition duration-700"
-								/>
-								{p.caption && (
-									<figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent text-white text-xs p-3 opacity-0 group-hover:opacity-100 transition">
-										{p.caption}
-									</figcaption>
-								)}
-							</figure>
-						))}
+					<div className="mt-10">
+						<PhotoGrid photos={post.gallery} />
 					</div>
 				)}
+				<ShareButtons title={post.title} />
+				<RelatedPosts
+					contentType={post.contentType}
+					slug={post.slug}
+					label={r.label}
+				/>
 			</SubPage>
 		);
 	}
@@ -283,25 +359,7 @@ function ResolvedRoute() {
 				title={album.title}
 				lead="Click any photo to view it larger."
 			>
-				<div className={`grid ${albumCols} gap-3`}>
-					{album.photos.map((p) => (
-						<figure
-							key={p.url}
-							className="group relative overflow-hidden rounded-2xl border border-border"
-						>
-							<img
-								src={p.url}
-								alt={p.caption}
-								className="aspect-square w-full object-cover group-hover:scale-105 transition duration-700"
-							/>
-							{p.caption && (
-								<figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent text-white text-xs p-3 opacity-0 group-hover:opacity-100 transition">
-									{p.caption}
-								</figcaption>
-							)}
-						</figure>
-					))}
-				</div>
+				<PhotoGrid photos={album.photos} className={albumCols} />
 			</SubPage>
 		);
 	}
