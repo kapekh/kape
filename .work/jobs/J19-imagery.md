@@ -1,8 +1,9 @@
 # J19 — Bring the real imagery across
 
-**Unblocked.** The client's deployment is `https://kapecambodia.lovable.app`, and all 59 assets
+**Released.** The client's deployment is `https://kapecambodia.lovable.app`, and all 59 assets
 were verified fetchable from it on 2026-08-04: every one returned 200 with a byte count matching
-the `size` recorded in its `.asset.json`. 32 JPEG, 25 PNG, 1 WebP, 1 PDF.
+the `size` recorded in its `.asset.json`. 32 JPEG, 25 PNG, 1 WebP, 1 PDF. Re-checked at dispatch:
+the root is 200 and `students.jpg` returns exactly its recorded 17029 bytes as `image/jpeg`.
 
 ## Why this is urgent rather than cosmetic
 
@@ -28,11 +29,14 @@ place the client's actual photographs exist. If it is taken down, they are gone.
 3. Create a `media` row per asset, keyed so the seed can reference it by its original filename.
 4. Replace the picsum placeholders in the seed with these media rows wherever the prototype used
    that asset. `createPicsumMedia` stays only where the client genuinely has no image.
-5. The script must be re-runnable without duplicating media rows.
+5. The script must be re-runnable without duplicating media rows. `saveUpload` names every object
+   with a fresh `crypto.randomUUID()`, so it gives you no idempotency — key the skip on the asset's
+   `original_filename` (or `asset_id`) already being present in `media`, and check before you fetch.
 
 ## Acceptance
 
-**Also gates on `bunx tsc --noEmit` reporting 0 errors** and `bun run test` passing 3 of 3.
+**Also gates on `bunx tsc --noEmit` reporting 0 errors** and `bun run test` passing **16 of 16
+across 5 files**. Do not trust an older contract's "3 of 3".
 
 1. All 59 assets imported. Report the count, and every byte count matching its stub. Any mismatch
    is a fail, not a warning.
@@ -54,3 +58,16 @@ Image optimisation, resizing, format conversion. Page copy (J16, J17). Deciding 
 - The deployment stops responding mid-import: stop and report how many landed. Do **not** fall
   back to placeholders silently — a half-imported set that looks complete is the worst outcome.
 - An asset 404s: record it by filename and continue. Report the list.
+
+## Traps in this repo, all paid for already
+
+- **Never run against `kape.db`.** Copy it with `VACUUM INTO`, never `cp` — it is WAL-mode and a
+  bare copy loses recent writes. Point `DATABASE_PATH` at the copy and prove `kape.db` is unchanged
+  by md5 at the end.
+- **`SSG_CACHE=off` for any verification run.** `resolveRouteCached` reads through a `render_cache`
+  table with a 7-day TTL, so a page will keep serving picsum after your import lands and it looks
+  like the change never happened. No error, no log line. This cost J14 forty minutes.
+- **Export `PORT` to match `--port`.** SSR self-fetches tRPC at `http://localhost:${PORT ?? 3000}`;
+  without it you either get a whole-page 500 or you silently measure another pane's database.
+- Do not touch the worklog at `~/.claude/projects/.../worklog/`. Findings go in `.work/j19-report.md`;
+  the orchestrator promotes them after verifying.
