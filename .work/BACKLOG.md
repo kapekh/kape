@@ -43,6 +43,11 @@ errors in the files you own**.
 | J10 | Map pin richness | D20 | `src/components/MapView.tsx`, `src/server/schema.ts`, `drizzle/` | after J09 | J04 J14 |
 | J11 | Site search | D26 | `src/routes/search.tsx`, `src/server/repo/search.ts` | ready | most |
 | J12 | Lint pass | — | repo-wide | after the visual jobs | nothing |
+| J15 | Split the seed by area | — | `src/server/seed.ts` → `src/server/seed/` | ready, **runs alone** | nothing |
+| J16 | Page copy transfer, 6 pages | — | `src/server/seed/pages-*.ts` | after J15 | J17 J18 J19 |
+| J17 | Project content + 8 sub-projects | — | `src/server/seed/projects.ts` | after J15, J09 | J16 J18 J19 |
+| J18 | Structured records | — | `src/server/seed/records.ts` | after J15 | J16 J17 J19 |
+| J19 | Import the real imagery | — | `scripts/import-lovable-assets.ts`, `src/server/seed/media.ts` | **unblocked** | J16 J17 J18 |
 
 `src/server/schema.ts` and `drizzle/` are contended by J02, J09, J10. Those three are strictly
 sequential — one migration at a time or the snapshots collide.
@@ -91,9 +96,12 @@ Khmer font stacks. What is missing is copy, records and imagery.
 
 ### Two standing constraints
 
-- **Imagery does not exist on either side.** `feedback/` ships 59 `.asset.json` stubs and zero
-  binaries; the `url` field is a relative `/__l5e/...` path only Lovable's own server resolves. Our
-  63 media rows are picsum placeholders. Unblocked only by the client's Lovable project URL.
+- **Imagery lives only on the client's deployment.** `feedback/` ships 59 `.asset.json` stubs and
+  zero binaries; the `url` is a relative `/__l5e/...` path. Resolved: the client's site is
+  `https://kapecambodia.lovable.app`, and all 59 assets were verified fetchable from it on
+  2026-08-04, each returning 200 with a byte count matching its recorded `size` (32 JPEG, 25 PNG,
+  1 WebP, 1 PDF). That deployment is the only place the client's real photographs exist, so J19
+  should run early - if it goes down they are gone.
 - **Khmer must be machine-translated**, per the user's decision, and marked. Their content is
   English-only. Every generated string goes in `.work/km-review.md` for a native speaker to sweep
   before launch. Nothing generated may ship unreviewed as final copy.

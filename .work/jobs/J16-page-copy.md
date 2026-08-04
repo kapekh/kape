@@ -35,6 +35,21 @@ as `slug | field | en | km` so a native speaker can sweep them. Nothing generate
 
 ## Acceptance
 
+### CMS acceptance - non-negotiable
+
+The product exists so admins compose the site themselves. Content that renders but cannot be
+edited in `/admin` is not transferred, it is hardcoded in a new place.
+
+- **A.** Every prop you seed is declared as a field in `SECTION_DEFS`. `SectionsBuilder` only draws
+  a control for declared keys, and silently preserves the rest, so an undeclared prop is invisible
+  and permanently uneditable while looking perfect publicly. Run `bun scripts/check-authorable.ts`
+  and paste its output; it must report zero undeclared props.
+- **B.** Open at least three of your pages in `/admin/pages`, change a real string in the builder,
+  save, and show the change on the public URL. Screenshot the builder and the result.
+- **C.** No section on your pages renders as `UnknownSection` in the builder or the preview.
+- **D.** If a piece of copy cannot be expressed with a declared field, say so and leave it out.
+  Do **not** smuggle it in as an undeclared prop.
+
 **Also gates on `bunx tsc --noEmit` reporting 0 errors** and `bun run test` passing 3 of 3.
 
 1. All six pages render at their real URLs with content. Screenshot each. Run the dev server with
