@@ -40,20 +40,24 @@ errors in the files you own**.
 | J07 | Form builder field types | D21 | `src/lib/forms.ts`, `src/components/FormRenderer.tsx`, `src/components/admin/FormBuilder*` | ready | most |
 | J08 | Rich text tables | D18 | `src/lib/richtext/extensions.ts`, editor toolbar | **done** | most |
 | J09 | Project metadata | D19 | `src/server/schema.ts`, `src/components/ProjectView.tsx`, `drizzle/`, projects repo + admin editor | **done** `4566c2b` | J04 J14 |
-| J10 | Map pin richness | D20 | `src/components/MapView.tsx`, `src/server/schema.ts`, `drizzle/` | **released**, owns the schema lane | J04 J14 |
+| J10 | Map pin richness | D20 | `src/components/MapView.tsx`, `src/server/schema.ts`, `drizzle/` | **done** `a67d622` | J04 J14 |
 | J11 | Site search | D26 | `src/routes/search.tsx`, `src/server/repo/search.ts` | ready | most |
 | J12 | Lint pass | — | repo-wide | after the visual jobs | nothing |
 | J15 | Split the seed by area | — | `src/server/seed.ts` → `src/server/seed/` | **done** | nothing |
-| J16 | Page copy transfer, 6 pages | — | `src/server/seed/pages-*.ts` | **released** | J17 J18 J19 |
-| J17 | Project content + 8 sub-projects | — | `src/server/seed/projects.ts` | **released** | J16 J18 J19 |
-| J18 | Structured records | — | `src/server/seed/records.ts` | **released** | J16 J17 J19 |
+| J16 | Page copy transfer, 6 pages | — | `src/server/seed/pages-*.ts` | **done** `d06b0b9` | J17 J18 J19 |
+| J17 | Project content + 8 sub-projects | — | `src/server/seed/projects.ts` | **done** `4ce8dc9` | J16 J18 J19 |
+| J18 | Structured records | — | `src/server/seed/records.ts` | **done** `db65314` | J16 J17 J19 |
 | J20 | UX flow audit of the live client site | — | `.work/UX-AUDIT.md`, `.work/ux-shots/` | **done** `8b09f2f` | anything |
 | J21 | Five visitor-visible defects, from J20 | F04 F14 F23 F27 F40 | `src/components/Header.tsx`, `src/integrations/trpc/router.ts` | F04 fixed with J05; F14 F23 F27 in the tree, uncommitted; F40 open | nothing |
 | J19 | Import the real imagery | — | `scripts/import-lovable-assets.ts`, `src/server/seed/media.ts` | **unblocked** | J16 J17 J18 |
 
-`src/server/schema.ts` and `drizzle/` are contended by J02, J09, J10. Those three are strictly
-sequential — one migration at a time or the snapshots collide. J02 and J09 are done, so **J10 holds
-the lane alone** and is the last job in it.
+`src/server/schema.ts` and `drizzle/` are contended by J02, J09, J10. All three are done; the
+migration lane is free at `0016`.
+
+**Acceptance B went unrun on J16 and J17.** The permission classifier denied both workers the admin
+login, quoting credential exploration, while J18 got through and did the round-trip. Whatever the
+rule is, it is not applied consistently, and B is the one criterion that proves content is
+CMS-managed rather than hardcoded somewhere new. The orchestrator owes those two round-trips.
 
 `.work/km-review.md` was going to be shared by J16, J17 and J18. Three panes appending to one file
 lose each other's writes, so each now writes `.work/km-review-j1N.md` and the orchestrator merges.
@@ -98,8 +102,10 @@ directly, route by route, against `kape.db`:
 | project record exists, body is **placeholder** | 18 | e.g. `ngs` body reads "New Generation Schools overview and outcomes." |
 | sub-project missing entirely | 8 | `dep/{air,camscam,ideal,midl,dvitsa}`, `iep/{ctsp,dwd,lotus-outreach}` — J02's `parentId` now allows these |
 
-Structured records, ours vs theirs: people 7 / 24 leaders, partners 5 / 34, posts 26 / 36 news
-+ 12 stories.
+Structured records, ours vs theirs: people 7 / 24 leaders, partners 5 / **26**, posts 26 / **6**
+news + **3** stories. The 34 / 36 / 12 figures first recorded here were wrong; J18 measured the
+four data files directly and both routes map their arrays with no slicing, so those are the
+client's whole lists. `.work/AUDIT.md` carries the same error where it repeats them.
 
 **Design is not the gap.** `src/styles.css` was already a superset of theirs, and J06 matched the
 Khmer font stacks. What is missing is copy, records and imagery.
