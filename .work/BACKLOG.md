@@ -14,7 +14,7 @@ now 204 files. Formatting landed mechanically in `6f4b6b2`.
 
 | command | before | now |
 |---|---|---|
-| `bun run test` | 3 tests pass | 3 tests pass |
+| `bun run test` | 3 tests pass | **10 tests, 4 files** (J08 +4, J05 +3) |
 | `bun run format` | 185 errors (ours) | **clean** |
 | `bun run lint` | 210 errors, 60 warnings | 216 errors, 67 warnings |
 | `bun run check` | 477 errors (ours) | 216 errors, 67 warnings |
@@ -40,19 +40,23 @@ errors in the files you own**.
 | J07 | Form builder field types | D21 | `src/lib/forms.ts`, `src/components/FormRenderer.tsx`, `src/components/admin/FormBuilder*` | ready | most |
 | J08 | Rich text tables | D18 | `src/lib/richtext/extensions.ts`, editor toolbar | **done** | most |
 | J09 | Project metadata | D19 | `src/server/schema.ts`, `src/components/ProjectView.tsx`, `drizzle/`, projects repo + admin editor | **done** `4566c2b` | J04 J14 |
-| J10 | Map pin richness | D20 | `src/components/MapView.tsx`, `src/server/schema.ts`, `drizzle/` | **unblocked** | J04 J14 |
+| J10 | Map pin richness | D20 | `src/components/MapView.tsx`, `src/server/schema.ts`, `drizzle/` | **released**, owns the schema lane | J04 J14 |
 | J11 | Site search | D26 | `src/routes/search.tsx`, `src/server/repo/search.ts` | ready | most |
 | J12 | Lint pass | — | repo-wide | after the visual jobs | nothing |
 | J15 | Split the seed by area | — | `src/server/seed.ts` → `src/server/seed/` | **done** | nothing |
-| J16 | Page copy transfer, 6 pages | — | `src/server/seed/pages-*.ts` | after J15 | J17 J18 J19 |
-| J17 | Project content + 8 sub-projects | — | `src/server/seed/projects.ts` | after J15, J09 | J16 J18 J19 |
-| J18 | Structured records | — | `src/server/seed/records.ts` | after J15 | J16 J17 J19 |
+| J16 | Page copy transfer, 6 pages | — | `src/server/seed/pages-*.ts` | **released** | J17 J18 J19 |
+| J17 | Project content + 8 sub-projects | — | `src/server/seed/projects.ts` | **released** | J16 J18 J19 |
+| J18 | Structured records | — | `src/server/seed/records.ts` | **released** | J16 J17 J19 |
 | J20 | UX flow audit of the live client site | — | `.work/UX-AUDIT.md`, `.work/ux-shots/` | **done** `8b09f2f` | anything |
 | J21 | Five visitor-visible defects, from J20 | F04 F14 F23 F27 F40 | `src/components/Header.tsx`, `src/integrations/trpc/router.ts` | F04 fixed with J05; F14 F23 F27 in the tree, uncommitted; F40 open | nothing |
 | J19 | Import the real imagery | — | `scripts/import-lovable-assets.ts`, `src/server/seed/media.ts` | **unblocked** | J16 J17 J18 |
 
 `src/server/schema.ts` and `drizzle/` are contended by J02, J09, J10. Those three are strictly
-sequential — one migration at a time or the snapshots collide.
+sequential — one migration at a time or the snapshots collide. J02 and J09 are done, so **J10 holds
+the lane alone** and is the last job in it.
+
+`.work/km-review.md` was going to be shared by J16, J17 and J18. Three panes appending to one file
+lose each other's writes, so each now writes `.work/km-review-j1N.md` and the orchestrator merges.
 
 `src/components/Header.tsx` is contended by J06, J11 and J21. J06 is done; J21 has uncommitted
 changes in the file right now, so J11 stays blocked until they land.

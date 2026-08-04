@@ -1,6 +1,9 @@
 # J18 — Transfer the structured records
 
-**Starts after J15.**
+J15 has landed, so start now. Read `.work/BACKLOG.md`'s **Rules** section first — in particular:
+export `DATABASE_PATH` to a `VACUUM INTO` scratch copy for any dev server, export `SSG_CACHE=off`
+or `render_cache` will replay stale HTML at you, do not touch git, and do not touch the shared
+worklog.
 
 ## Why
 
@@ -19,7 +22,7 @@ pages a visitor actually lands on.
 ## Files you own
 
 - `src/server/seed/records.ts` (post-J15)
-- `.work/km-review.md` (append only)
+- `.work/km-review-j18.md` (yours alone; J16 and J17 write their own, the orchestrator merges)
 
 ## Do
 
@@ -29,14 +32,14 @@ pages a visitor actually lands on.
 3. Leaders carry a tier (`board`, `smt`, `pm`, `team`) in our schema — map theirs onto it and say
    what you inferred rather than read.
 4. **Khmer**: machine-translate names, positions and summaries; append every generated string to
-   `.work/km-review.md` as `entity | field | en | km`. Person names especially need a native
+   `.work/km-review-j18.md` as `entity | field | en | km`. Person names especially need a native
    reviewer — a transliterated name is not a translated one, and getting someone's name wrong in
    public is worse than leaving it in English. If a name has no reliable Khmer form, keep the
    English and log it.
 
 ## Acceptance
 
-**Also gates on `bunx tsc --noEmit` reporting 0 errors** and `bun run test` passing 3 of 3.
+**Also gates on `bunx tsc --noEmit` reporting 0 errors** and `bun run test` passing 10 of 10.
 
 1. Record counts after seeding match the source files. State each: people, partners, posts,
    stories. A count short of the source is a fail unless you list the records you dropped and why.
@@ -47,7 +50,7 @@ pages a visitor actually lands on.
 5. `bun scripts/check-authorable.ts` reports zero problems.
 6. Each record type is editable in `/admin` — open one person, one partner and one post, change a
    field, save, and show the change publicly.
-7. `.work/km-review.md` row count matches the Khmer fields you generated, with names flagged
+7. `.work/km-review-j18.md` row count matches the Khmer fields you generated, with names flagged
    separately as needing a native reviewer.
 8. `bun run db:seed` on a fresh empty database produces all of it.
 9. `bunx biome check` on your files: no new errors.

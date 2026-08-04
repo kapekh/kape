@@ -1,7 +1,11 @@
 # J17 — Real project content, and the missing sub-projects
 
-**Starts after J15 and J09.** J09 is adding project metadata columns; land those first or you will
-transfer content into a shape that is about to change.
+J15 (`bf3da1b`) and J09 (`4566c2b`) have both landed, so start now. `projects` already carries
+`start_date`, `end_date`, `target_areas` and `snapshots` — transfer into that shape, it is settled.
+
+Read `.work/BACKLOG.md`'s **Rules** section first — in particular: export `DATABASE_PATH` to a
+`VACUUM INTO` scratch copy for any dev server, export `SSG_CACHE=off` or `render_cache` will replay
+stale HTML at you, do not touch git, and do not touch the shared worklog.
 
 ## Why
 
@@ -15,7 +19,7 @@ expressible for the first time.
 ## Files you own
 
 - `src/server/seed/projects.ts` (post-J15)
-- `.work/km-review.md` (append only)
+- `.work/km-review-j17.md` (yours alone; J16 and J18 write their own, the orchestrator merges)
 
 ## Do
 
@@ -29,7 +33,7 @@ expressible for the first time.
    of J02, so it is worth actually hitting.
 3. Name mismatches: ours says "New Generation Schools", theirs "New Generation School". **Theirs
    wins** — it is their organisation.
-4. **Khmer**: machine-translate, and append every generated string to `.work/km-review.md` as
+4. **Khmer**: machine-translate, and append every generated string to `.work/km-review-j17.md` as
    `entity | field | en | km`. Nothing generated is final copy.
 
 ## Acceptance
@@ -49,7 +53,7 @@ edited in `/admin` is not transferred, it is hardcoded in a new place.
 - **D.** If a piece of copy cannot be expressed with a declared field, say so and leave it out.
   Do **not** smuggle it in as an undeclared prop.
 
-**Also gates on `bunx tsc --noEmit` reporting 0 errors** and `bun run test` passing 3 of 3.
+**Also gates on `bunx tsc --noEmit` reporting 0 errors** and `bun run test` passing 10 of 10.
 
 1. All 26 project pages render real content — 18 updated, 8 new. List every slug with its URL and
    its resolved title. A project still carrying filler is a fail.
@@ -58,7 +62,7 @@ edited in `/admin` is not transferred, it is hardcoded in a new place.
 3. `/projects/<wrong-parent>/<child>` still returns not-found. J02 built that guard; show it
    survives.
 4. English copy matches the source routes verbatim. Diff the strings for any two projects.
-5. `.work/km-review.md` row count matches the number of Khmer fields you generated.
+5. `.work/km-review-j17.md` row count matches the number of Khmer fields you generated.
 6. `bun run db:seed` on a fresh empty database produces all 26. The seed is the source of truth.
 7. Compare three of your pages against the live client site at
    `https://kapecambodia.lovable.app/current-projects/...` and report any content you could not
@@ -71,6 +75,5 @@ Images — placeholders until J19 lands. The map (J10). Project schema columns (
 
 ## Stop conditions
 
-- J09 has not landed: do not start, the project shape is in flight.
 - A project needs a field the schema does not have after J09: report it rather than folding the
-  content into prose.
+  content into prose. `schema.ts` is J10's right now.

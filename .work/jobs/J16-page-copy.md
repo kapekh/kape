@@ -1,11 +1,17 @@
 # J16 — Transfer the missing page copy
 
-Six pages. **Starts after J15.**
+Six pages. J15 has landed, so start now. Read `.work/BACKLOG.md`'s **Rules** section first — in
+particular: export `DATABASE_PATH` to a `VACUUM INTO` scratch copy for any dev server, export
+`SSG_CACHE=off` or `render_cache` will replay stale HTML at you, do not touch git, and do not touch
+the shared worklog.
 
 ## Files you own
 
-- `src/server/seed/pages-who-we-are.ts` and `src/server/seed/pages-what-we-do.ts` (post-J15 names)
-- `.work/km-review.md` (append only)
+- `src/server/seed/pages-who-we-are.ts`
+- `src/server/seed/pages-what-we-do.ts` — **new, you create it**
+- `src/server/seed.ts`, the composer, to import and call your new module. J17 and J18 edit modules
+  that are already composed, so this file is yours alone. Add your call, change nothing else in it.
+- `.work/km-review-j16.md` (yours alone; J17 and J18 write their own, the orchestrator merges)
 
 ## Do
 
@@ -23,14 +29,14 @@ client's prototype and express it as section nodes.
 
 The prototype's block kit maps onto our catalogue: `SubPage title/lead/badge/heroImage` → a `hero`
 section; `<Section title>` + prose → `richtext` with a title; `<Grid cols=N>` of `<Card>` →
-`cards` with that layout; the fact sheet's profile table → rich-text table (J08 adds those — if it
-has not landed, use a `cards` grid and say so). Accreditations is exactly what J03's new
-`certificates` section was built for.
+`cards` with that layout; the fact sheet's profile table → a rich-text table, which **J08 landed in
+`753403e`**, so use it rather than a `cards` grid. The acronym glossary has a `<dl>` construct from
+the same commit. Accreditations is exactly what J03's new `certificates` section was built for.
 
 **Copy is the client's. Do not improve it, shorten it, or fix its grammar.** If a sentence looks
 wrong, transfer it as-is and note it.
 
-**Khmer**: machine-translate each field, and append every generated string to `.work/km-review.md`
+**Khmer**: machine-translate each field, and append every generated string to `.work/km-review-j16.md`
 as `slug | field | en | km` so a native speaker can sweep them. Nothing generated is final copy.
 
 ## Acceptance
@@ -50,7 +56,7 @@ edited in `/admin` is not transferred, it is hardcoded in a new place.
 - **D.** If a piece of copy cannot be expressed with a declared field, say so and leave it out.
   Do **not** smuggle it in as an undeclared prop.
 
-**Also gates on `bunx tsc --noEmit` reporting 0 errors** and `bun run test` passing 3 of 3.
+**Also gates on `bunx tsc --noEmit` reporting 0 errors** and `bun run test` passing 10 of 10.
 
 1. All six pages render at their real URLs with content. Screenshot each. Run the dev server with
    `PORT` exported to the same port you pass `--port`, or every page 500s.
@@ -59,7 +65,7 @@ edited in `/admin` is not transferred, it is hardcoded in a new place.
    deliberately dropped. "Looks the same" is not evidence.
 3. English text matches the source **verbatim**. Pick any two pages and diff the strings.
 4. Both new pages are reachable from the nav, or you state why not.
-5. `.work/km-review.md` has one row per generated Khmer string, and the count matches the number
+5. `.work/km-review-j16.md` has one row per generated Khmer string, and the count matches the number
    of translated fields you wrote.
 6. `bun run db:seed` on a fresh empty database produces these pages. The seed is the source of
    truth, not hand-edits to `kape.db`.
@@ -73,4 +79,3 @@ arrive. Project pages (J17). People, partners, posts (J18). The section catalogu
 ## Stop conditions
 
 - A page needs a section type the catalogue does not have: report it, do not invent a renderer.
-- The fact sheet needs rich-text tables and J08 has not landed: use `cards` and flag it.
