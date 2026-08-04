@@ -35,6 +35,7 @@ import { Route as AdminLanguagesRouteImport } from './routes/admin.languages'
 import { Route as AdminFooterRouteImport } from './routes/admin.footer'
 import { Route as AdminDocCategoriesRouteImport } from './routes/admin.doc-categories'
 import { Route as AdminAccountRouteImport } from './routes/admin.account'
+import { Route as LangSearchRouteImport } from './routes/$lang.search'
 import { Route as LangDonateRouteImport } from './routes/$lang.donate'
 import { Route as LangContactRouteImport } from './routes/$lang.contact'
 import { Route as AdminUsersIndexRouteImport } from './routes/admin.users.index'
@@ -219,6 +220,11 @@ const AdminAccountRoute = AdminAccountRouteImport.update({
   id: '/account',
   path: '/account',
   getParentRoute: () => AdminRoute,
+} as any)
+const LangSearchRoute = LangSearchRouteImport.update({
+  id: '/$lang/search',
+  path: '/$lang/search',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const LangDonateRoute = LangDonateRouteImport.update({
   id: '/$lang/donate',
@@ -488,6 +494,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/$lang/contact': typeof LangContactRoute
   '/$lang/donate': typeof LangDonateRouteWithChildren
+  '/$lang/search': typeof LangSearchRoute
   '/admin/account': typeof AdminAccountRoute
   '/admin/doc-categories': typeof AdminDocCategoriesRoute
   '/admin/footer': typeof AdminFooterRoute
@@ -564,6 +571,7 @@ export interface FileRoutesByTo {
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/$lang/contact': typeof LangContactRoute
+  '/$lang/search': typeof LangSearchRoute
   '/admin/account': typeof AdminAccountRoute
   '/admin/doc-categories': typeof AdminDocCategoriesRoute
   '/admin/footer': typeof AdminFooterRoute
@@ -642,6 +650,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/$lang/contact': typeof LangContactRoute
   '/$lang/donate': typeof LangDonateRouteWithChildren
+  '/$lang/search': typeof LangSearchRoute
   '/admin/account': typeof AdminAccountRoute
   '/admin/doc-categories': typeof AdminDocCategoriesRoute
   '/admin/footer': typeof AdminFooterRoute
@@ -723,6 +732,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/$lang/contact'
     | '/$lang/donate'
+    | '/$lang/search'
     | '/admin/account'
     | '/admin/doc-categories'
     | '/admin/footer'
@@ -799,6 +809,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/sitemap.xml'
     | '/$lang/contact'
+    | '/$lang/search'
     | '/admin/account'
     | '/admin/doc-categories'
     | '/admin/footer'
@@ -876,6 +887,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/$lang/contact'
     | '/$lang/donate'
+    | '/$lang/search'
     | '/admin/account'
     | '/admin/doc-categories'
     | '/admin/footer'
@@ -956,6 +968,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   LangContactRoute: typeof LangContactRoute
   LangDonateRoute: typeof LangDonateRouteWithChildren
+  LangSearchRoute: typeof LangSearchRoute
   UploadsSplatRoute: typeof UploadsSplatRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiFormsSplatRoute: typeof ApiFormsSplatRoute
@@ -1147,6 +1160,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/account'
       preLoaderRoute: typeof AdminAccountRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/$lang/search': {
+      id: '/$lang/search'
+      path: '/$lang/search'
+      fullPath: '/$lang/search'
+      preLoaderRoute: typeof LangSearchRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/$lang/donate': {
       id: '/$lang/donate'
@@ -1688,6 +1708,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   LangContactRoute: LangContactRoute,
   LangDonateRoute: LangDonateRouteWithChildren,
+  LangSearchRoute: LangSearchRoute,
   UploadsSplatRoute: UploadsSplatRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiFormsSplatRoute: ApiFormsSplatRoute,
