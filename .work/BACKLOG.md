@@ -47,6 +47,7 @@ errors in the files you own**.
 | J16 | Page copy transfer, 6 pages | — | `src/server/seed/pages-*.ts` | after J15 | J17 J18 J19 |
 | J17 | Project content + 8 sub-projects | — | `src/server/seed/projects.ts` | after J15, J09 | J16 J18 J19 |
 | J18 | Structured records | — | `src/server/seed/records.ts` | after J15 | J16 J17 J19 |
+| J20 | UX flow audit of the live client site | — | `.work/UX-AUDIT.md`, `.work/ux-shots/` | in progress | anything |
 | J19 | Import the real imagery | — | `scripts/import-lovable-assets.ts`, `src/server/seed/media.ts` | **unblocked** | J16 J17 J18 |
 
 `src/server/schema.ts` and `drizzle/` are contended by J02, J09, J10. Those three are strictly
