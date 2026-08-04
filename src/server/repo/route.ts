@@ -1,14 +1,19 @@
 /**
  * Single entry point for the public catch-all route. Resolves any URL path to one
- * of: a page (tree), a collection record (flat /<prefix>/<slug>), a 301 redirect
+ * of: a page (tree), a collection record (/<prefix>/<slug>, or
+ * /projects/<parent>/<slug> for a sub-project), a 301 redirect
  * (renamed page slug or a legacy nested path), or not-found. The `$` route renders
  * whatever this returns — so adding a page or a content record needs no new route.
  */
+
+import { and, eq } from "drizzle-orm";
+import { alias } from "drizzle-orm/sqlite-core";
 import {
 	collectionFor,
 	legacyRedirect,
 	NON_PUBLIC_CONTENT_TYPES,
 } from "#/lib/collections";
+
 import type { DB } from "../db";
 import {
 	cacheGet,
@@ -19,6 +24,7 @@ import {
 	tagRecord,
 	tagSourceQuery,
 } from "../render-cache";
+import { projects } from "../schema";
 import {
 	findPageRedirect,
 	getAlbum,
@@ -40,6 +46,34 @@ export type ResolvedRoute =
 	| { kind: "redirect"; to: string }
 	| { kind: "notfound" };
 
+const TENANT = 1;
+
+/**
+ * The record slug inside a `/projects/…` path. Projects are the one collection
+ * that nests: `<parent-slug>/<slug>` resolves only when that parent link really
+ * exists, so a two-segment path can never reach an unrelated project.
+ */
+async function projectRecordSlug(db: DB, rest: string): Promise<string | null> {
+	const parts = rest.split("/");
+	if (parts.length === 1) return parts[0];
+	if (parts.length !== 2) return null;
+	const [parentSlug, slug] = parts;
+	const parent = alias(projects, "parent_project");
+	const [row] = await db
+		.select({ slug: projects.slug })
+		.from(projects)
+		.innerJoin(parent, eq(projects.parentId, parent.id))
+		.where(
+			and(
+				eq(projects.tenantId, TENANT),
+				eq(projects.slug, slug),
+				eq(parent.slug, parentSlug),
+			),
+		)
+		.limit(1);
+	return row?.slug ?? null;
+}
+
 export async function resolveRoute(
 	db: DB,
 	rawPath: string,
@@ -47,24 +81,27 @@ export async function resolveRoute(
 ): Promise<ResolvedRoute> {
 	const path = rawPath.replace(/^\/+|\/+$/g, ""); // trim slashes
 
-	// 1. Legacy nested path → flat path (301), highest priority so old links never 404.
-	const legacy = legacyRedirect(path);
-	if (legacy && legacy !== path) return { kind: "redirect", to: legacy };
-
-	// 2. Exact page by full-path slug (the page tree).
+	// 1. Exact page by full-path slug (the page tree). Runs before the legacy
+	// rules so an admin can author a page at a legacy path — the redirect is the
+	// fallback for paths nobody has authored, not a veto on authoring them.
 	const page = await getPageBySlug(db, path, lang);
 	if (page) return { kind: "page", page };
+
+	// 2. Legacy nested path → flat path (301), so old links never 404.
+	const legacy = legacyRedirect(path);
+	if (legacy && legacy !== path) return { kind: "redirect", to: legacy };
 
 	// 3. Collection record: first segment is a known prefix, rest is the record slug.
 	const slash = path.indexOf("/");
 	if (slash > 0) {
 		const col = collectionFor(path.slice(0, slash));
 		const rest = path.slice(slash + 1);
-		if (col && rest && !rest.includes("/")) {
-			if (col.kind === "project") {
-				const project = await getProjectBySlug(db, rest, lang);
-				if (project) return { kind: "project", label: col.label, project };
-			} else if (col.kind === "album") {
+		if (col?.kind === "project" && rest) {
+			const slug = await projectRecordSlug(db, rest);
+			const project = slug ? await getProjectBySlug(db, slug, lang) : null;
+			if (project) return { kind: "project", label: col.label, project };
+		} else if (col && rest && !rest.includes("/")) {
+			if (col.kind === "album") {
 				const album = await getAlbum(db, rest, lang);
 				if (album) return { kind: "album", label: col.label, album };
 			} else if (col.kind === "people") {

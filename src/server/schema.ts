@@ -668,6 +668,10 @@ export const projects = sqliteTable(
 			.references(() => tenants.id),
 		code: text("code").notNull(), // NGS, HCC, …
 		slug: text("slug").notNull(),
+		// sub-project: child resolves at /projects/<parent-slug>/<slug>
+		parentId: integer("parent_id").references(
+			(): AnySQLiteColumn => projects.id,
+		),
 		status: text("status").notNull().default("current"), // current | past
 		logoMediaId: integer("logo_media_id").references(() => media.id),
 		sort: integer("sort").notNull().default(0),

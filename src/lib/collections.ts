@@ -2,7 +2,8 @@
  * Flat content collections. Every content type owns ONE top-level URL prefix; a
  * record lives at `/<prefix>/<slug>` and the landing at `/<prefix>` (a normal page
  * with a listing section). The path resolver (`resolveRoute`) and the public links
- * both read this single map. Old nested paths 301-redirect here (LEGACY_REDIRECTS).
+ * both read this single map. Old nested paths 301-redirect here (LEGACY_REDIRECTS),
+ * but only while no page has been authored at the old path — the page tree wins.
  */
 
 export type CollectionKind = "post" | "album" | "project" | "people";
