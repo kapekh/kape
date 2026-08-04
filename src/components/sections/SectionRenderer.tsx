@@ -1,5 +1,5 @@
 import { useLoaderData } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import type { SectionNode } from "#/lib/sections";
@@ -54,6 +54,10 @@ function renderTitle(title: string, accent = "text-[var(--secondary)]") {
 		});
 }
 
+// a page whose sections carry no hero has no h1 otherwise, so its first titled
+// section supplies one. Styling is identical either way; only the level changes.
+const OwnsPageTitle = createContext(false);
+
 function Heading({
 	eyebrow,
 	title,
@@ -65,6 +69,7 @@ function Heading({
 	center?: boolean;
 	light?: boolean;
 }) {
+	const H = useContext(OwnsPageTitle) ? "h1" : "h2";
 	if (!title && !eyebrow) return null;
 	return (
 		<div
@@ -78,9 +83,9 @@ function Heading({
 				</div>
 			)}
 			{title && (
-				<h2 className={`mt-3 t-section ${light ? "" : "text-primary"}`}>
+				<H className={`mt-3 t-section ${light ? "" : "text-primary"}`}>
 					{renderTitle(title)}
-				</h2>
+				</H>
 			)}
 		</div>
 	);
@@ -1346,6 +1351,10 @@ function MapSection(p: P) {
 			lat: Number(r.lat),
 			lng: Number(r.lng),
 			label: r.label || r.name || r.schoolName || "",
+			sublabel: r.projectName ?? null,
+			photoUrl: r.photoUrl ?? null,
+			href: r.projectHref ?? null,
+			status: r.status ?? null,
 		}))
 		.filter((m) => Number.isFinite(m.lat) && Number.isFinite(m.lng));
 	const center: [number, number] = markers.length
@@ -1887,9 +1896,14 @@ function UnknownSection({ type }: { type: string }) {
 }
 
 export function SectionRenderer({ sections }: { sections: SectionNode[] }) {
+	// Hero renders its own h1. Without one, promote the first titled section so
+	// collection landings like /team and /news are not h2-first.
+	const titleIndex = sections.some((s) => s.type === "hero")
+		? -1
+		: sections.findIndex((s) => (s.props as { title?: string })?.title);
 	return (
 		<>
-			{sections.map((s) => {
+			{sections.map((s, i) => {
 				const Template = sectionRegistry[s.type];
 				const body = Template ? (
 					<Template layout={s.layout} {...(s.props ?? {})} />
@@ -1900,7 +1914,9 @@ export function SectionRenderer({ sections }: { sections: SectionNode[] }) {
 				// scroll target so the sticky header never covers it.
 				return (
 					<div key={s.id} id={s.id} className="scroll-mt-28">
-						{body}
+						<OwnsPageTitle.Provider value={i === titleIndex}>
+							{body}
+						</OwnsPageTitle.Provider>
 					</div>
 				);
 			})}
