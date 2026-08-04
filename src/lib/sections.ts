@@ -73,6 +73,32 @@ export type SectionDef = {
 	sources?: { value: QuerySource; label: string; contentType?: string }[];
 };
 
+const EYEBROW: SectionField = {
+	key: "eyebrow",
+	label: "Eyebrow",
+	kind: "text",
+};
+
+const TONE: SectionField = {
+	key: "tone",
+	label: "Background",
+	kind: "select",
+	options: [
+		{ value: "card", label: "Card" },
+		{ value: "muted", label: "Muted" },
+	],
+};
+
+const CENTER: SectionField = {
+	key: "center",
+	label: "Heading alignment",
+	kind: "select",
+	options: [
+		{ value: "", label: "Left" },
+		{ value: "center", label: "Centered" },
+	],
+};
+
 /** The catalogue of section templates, harvested from the existing site. */
 export const SECTION_DEFS: SectionDef[] = [
 	/* ---------------- Static ---------------- */
@@ -93,14 +119,26 @@ export const SECTION_DEFS: SectionDef[] = [
 			{ key: "image", label: "Background / side image", kind: "image" },
 			{ key: "ctaLabel", label: "Button label", kind: "text" },
 			{ key: "ctaHref", label: "Button link", kind: "url" },
+			{ key: "cta2Label", label: "Secondary button", kind: "text" },
+			{ key: "cta2Href", label: "Secondary link", kind: "url" },
 			{
 				key: "slides",
 				label: "Slides (carousel)",
 				kind: "items",
 				itemFields: [
 					{ key: "image", label: "Image", kind: "image" },
+					{ key: "kicker", label: "Kicker", kind: "text" },
 					{ key: "title", label: "Title", kind: "text" },
 					{ key: "caption", label: "Caption", kind: "text" },
+				],
+			},
+			{
+				key: "stats",
+				label: "Inline stats (carousel)",
+				kind: "items",
+				itemFields: [
+					{ key: "value", label: "Value", kind: "text" },
+					{ key: "label", label: "Label", kind: "text" },
 				],
 			},
 		],
@@ -114,7 +152,7 @@ export const SECTION_DEFS: SectionDef[] = [
 			{ value: "default", label: "Full width" },
 			{ value: "narrow", label: "Narrow (readable)" },
 		],
-		fields: [{ key: "body", label: "Body", kind: "richtext" }],
+		fields: [{ key: "body", label: "Body", kind: "richtext" }, TONE],
 	},
 	{
 		type: "cards",
@@ -127,8 +165,11 @@ export const SECTION_DEFS: SectionDef[] = [
 			{ value: "cols-4", label: "4 columns" },
 		],
 		fields: [
+			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
 			{ key: "items", label: "Cards", kind: "cards" },
+			TONE,
+			CENTER,
 		],
 	},
 	{
@@ -141,6 +182,7 @@ export const SECTION_DEFS: SectionDef[] = [
 			{ value: "plain", label: "Plain" },
 		],
 		fields: [
+			EYEBROW,
 			{ key: "title", label: "Title", kind: "text" },
 			{
 				key: "valueSize",
@@ -181,6 +223,7 @@ export const SECTION_DEFS: SectionDef[] = [
 		description: "Headline + buttons on a full-width band.",
 		layouts: [{ value: "band", label: "Color band" }],
 		fields: [
+			EYEBROW,
 			{ key: "title", label: "Title", kind: "text" },
 			{ key: "body", label: "Text", kind: "textarea" },
 			{ key: "ctaLabel", label: "Primary button", kind: "text" },
@@ -199,6 +242,7 @@ export const SECTION_DEFS: SectionDef[] = [
 			{ value: "cols-2", label: "2 columns" },
 		],
 		fields: [
+			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
 			{
 				key: "items",
@@ -220,6 +264,7 @@ export const SECTION_DEFS: SectionDef[] = [
 					{ key: "href", label: "Link", kind: "url" },
 				],
 			},
+			TONE,
 		],
 	},
 	{
@@ -232,9 +277,11 @@ export const SECTION_DEFS: SectionDef[] = [
 			{ value: "media-left", label: "Media on left" },
 		],
 		fields: [
+			EYEBROW,
 			{ key: "title", label: "Title", kind: "text" },
 			{ key: "body", label: "Body", kind: "richtext" },
 			{ key: "image", label: "Image", kind: "image" },
+			TONE,
 		],
 	},
 	{
@@ -244,6 +291,7 @@ export const SECTION_DEFS: SectionDef[] = [
 		description: "Groups of pill-style links (e.g. partner categories).",
 		layouts: [{ value: "groups", label: "Grouped" }],
 		fields: [
+			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
 			{
 				key: "groups",
@@ -258,6 +306,7 @@ export const SECTION_DEFS: SectionDef[] = [
 					},
 				],
 			},
+			TONE,
 		],
 	},
 	{
@@ -278,9 +327,11 @@ export const SECTION_DEFS: SectionDef[] = [
 				kind: "form",
 				help: "Pick a form from /admin/forms — it brings its own title, intro and submit button. Leave empty to use a quick layout below.",
 			},
+			EYEBROW,
 			{ key: "title", label: "Title", kind: "text" },
 			{ key: "body", label: "Intro", kind: "textarea" },
 			{ key: "submitLabel", label: "Submit button", kind: "text" },
+			TONE,
 		],
 	},
 
@@ -302,8 +353,10 @@ export const SECTION_DEFS: SectionDef[] = [
 			{ value: "posts", label: "Jobs", contentType: "job" },
 		],
 		fields: [
+			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
 			{ key: "moreHref", label: "“See all” link", kind: "url" },
+			TONE,
 		],
 	},
 	{
@@ -313,7 +366,11 @@ export const SECTION_DEFS: SectionDef[] = [
 		description: "Grid of videos (YouTube).",
 		layouts: [{ value: "grid-3", label: "3-column" }],
 		sources: [{ value: "videos", label: "Videos", contentType: "video" }],
-		fields: [{ key: "title", label: "Section title", kind: "text" }],
+		fields: [
+			EYEBROW,
+			{ key: "title", label: "Section title", kind: "text" },
+			TONE,
+		],
 	},
 	{
 		type: "albumGrid",
@@ -322,7 +379,11 @@ export const SECTION_DEFS: SectionDef[] = [
 		description: "Grid of photo albums.",
 		layouts: [{ value: "grid-3", label: "3-column" }],
 		sources: [{ value: "albums", label: "Albums", contentType: "album" }],
-		fields: [{ key: "title", label: "Section title", kind: "text" }],
+		fields: [
+			EYEBROW,
+			{ key: "title", label: "Section title", kind: "text" },
+			TONE,
+		],
 	},
 	{
 		type: "publicationList",
@@ -341,8 +402,10 @@ export const SECTION_DEFS: SectionDef[] = [
 			},
 		],
 		fields: [
+			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
 			{ key: "category", label: "Category filter", kind: "text" },
+			TONE,
 		],
 	},
 	{
@@ -352,7 +415,11 @@ export const SECTION_DEFS: SectionDef[] = [
 		description: "Leadership / staff avatar grid.",
 		layouts: [{ value: "grid", label: "Avatar grid" }],
 		sources: [{ value: "people", label: "Leadership", contentType: "person" }],
-		fields: [{ key: "title", label: "Section title", kind: "text" }],
+		fields: [
+			EYEBROW,
+			{ key: "title", label: "Section title", kind: "text" },
+			TONE,
+		],
 	},
 	{
 		type: "map",
@@ -364,7 +431,11 @@ export const SECTION_DEFS: SectionDef[] = [
 			{ value: "locations", label: "Project locations" },
 			{ value: "offices", label: "Offices" },
 		],
-		fields: [{ key: "title", label: "Section title", kind: "text" }],
+		fields: [
+			EYEBROW,
+			{ key: "title", label: "Section title", kind: "text" },
+			TONE,
+		],
 	},
 	{
 		type: "directory",
@@ -377,7 +448,11 @@ export const SECTION_DEFS: SectionDef[] = [
 			{ value: "events", label: "Events" },
 			{ value: "documents", label: "Documents" },
 		],
-		fields: [{ key: "title", label: "Section title", kind: "text" }],
+		fields: [
+			EYEBROW,
+			{ key: "title", label: "Section title", kind: "text" },
+			TONE,
+		],
 	},
 	{
 		type: "partners",
@@ -386,7 +461,24 @@ export const SECTION_DEFS: SectionDef[] = [
 		description: "Partner links grouped by category.",
 		layouts: [{ value: "groups", label: "Grouped pills" }],
 		sources: [{ value: "partners", label: "Partners" }],
-		fields: [{ key: "title", label: "Section title", kind: "text" }],
+		fields: [
+			EYEBROW,
+			{ key: "title", label: "Section title", kind: "text" },
+			TONE,
+		],
+	},
+	{
+		type: "orgChart",
+		label: "Organization chart",
+		kind: "dynamic",
+		description: "The management hierarchy as an interactive chart.",
+		layouts: [{ value: "default", label: "Chart" }],
+		sources: [{ value: "orgchart", label: "Organization chart" }],
+		fields: [
+			EYEBROW,
+			{ key: "title", label: "Section title", kind: "text" },
+			TONE,
+		],
 	},
 ];
 
