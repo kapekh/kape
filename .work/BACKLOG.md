@@ -34,13 +34,13 @@ errors in the files you own**.
 | J02 | Restore the nested IA | D08 D12 | `src/lib/collections.ts`, `src/server/repo/route.ts`, `src/server/schema.ts`, `drizzle/` | **done** `60ac37f` | — |
 | J03 | Renderer visual fidelity | D01 D04 D06 D13 D14 D15 D16 D17 D27 | `src/components/sections/SectionRenderer.tsx`, `src/lib/sections.ts` | **done** `a4542e4` | — |
 | J14 | Content repo follow-ups, from J03 | — | `src/server/repo/content.ts`, `src/server/repo/sections.ts` | ready | most |
-| J13 | Repo hygiene, from J02's findings | — | `package.json`, `src/integrations/tanstack-query/root-provider.tsx`, `src/server/seed.ts` | needs a decision | — |
-| J04 | Lightbox, share, related | D05 D10 D11 | `src/routes/$.tsx`, `src/components/Lightbox.tsx`, `src/components/ShareButtons.tsx` | ready | J03 J05 |
+| J13 | Repo hygiene, from J02's findings | — | `src/integrations/tanstack-query/root-provider.tsx`, `README.md` | item 1 done `0784475`; items 2-3 open | most |
+| J04 | Lightbox, share, related | D05 D10 D11 | `src/routes/$.tsx`, `src/components/Lightbox.tsx`, `src/components/ShareButtons.tsx` | in progress | J09 J05 |
 | J05 | Announcement modal + month counter | D09 D25 | `src/components/AnnouncementPopup.tsx`, `src/server/repo/site.ts` | ready | J03 J04 |
 | J07 | Form builder field types | D21 | `src/lib/forms.ts`, `src/components/FormRenderer.tsx`, `src/components/admin/FormBuilder*` | ready | most |
 | J08 | Rich text tables | D18 | `src/lib/richtext/extensions.ts`, editor toolbar | ready | most |
-| J09 | Project metadata | D19 | `src/server/schema.ts`, `src/components/ProjectView.tsx`, `drizzle/` | after J02 | J03 J04 |
-| J10 | Map pin richness | D20 | `src/components/MapView.tsx`, `src/server/schema.ts`, `drizzle/` | after J02 J09 | J03 J04 |
+| J09 | Project metadata | D19 | `src/server/schema.ts`, `src/components/ProjectView.tsx`, `drizzle/`, projects repo + admin editor | **unblocked** | J04 J14 |
+| J10 | Map pin richness | D20 | `src/components/MapView.tsx`, `src/server/schema.ts`, `drizzle/` | after J09 | J04 J14 |
 | J11 | Site search | D26 | `src/routes/search.tsx`, `src/server/repo/search.ts` | ready | most |
 | J12 | Lint pass | — | repo-wide | after the visual jobs | nothing |
 
@@ -76,6 +76,15 @@ J01 and J06 ran concurrently and both pushed back on the contract rather than co
 this one was never authored. Pre-existing, not caused by J02, and it is one `pages` row — author
 it in admin or add it to `src/server/seed.ts`. J03's `projectList` section (D14) is what would
 fill it.
+
+## Database facts, learned the hard way
+
+- `kape.db` is **WAL-mode**. Copy it with `VACUUM INTO`, never `cp` — a bare copy silently drops
+  everything still in the 4MB `-wal` file and then fails with misleading FK errors.
+- **`md5sum kape.db` proves nothing.** J03 inserted a page and mutated three rows while leaving the
+  main file byte-identical; the writes were all in the WAL. To prove a database was not touched,
+  query it through a connection, which reads through the WAL. Do not hash it.
+- `db:migrate`, `db:push` and `db:studio` work as of `0784475`. They did not before.
 
 ## Rules
 

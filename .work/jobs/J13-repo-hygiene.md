@@ -5,7 +5,16 @@ cost a worker real time, and one of them can silently corrupt a demonstration.
 
 **Item 1 needs a decision from the user before starting** — it adds or removes a dependency.
 
-## 1. `bun run db:migrate` has never worked
+## 1. `bun run db:migrate` has never worked — RESOLVED `0784475`
+
+`@libsql/client` added as a dev dependency. `db:migrate`, `db:studio` and `db:push` were all
+verified working against a `VACUUM INTO` copy. Chosen over `better-sqlite3` because it ships
+prebuilt platform binaries and installs under Bun without a node-gyp compile. The app never loads
+it — it still migrates on boot through `drizzle-orm/bun-sqlite`.
+
+The rest of this section is kept as the record of what was wrong.
+
+
 
 `drizzle-kit migrate` needs `better-sqlite3` or `@libsql/client` to open a SQLite database and
 neither is a dependency. It fails before touching any database, identically on `main`. The app
@@ -43,6 +52,13 @@ disagree. Do not leave it as a silent fallback.
 A bare `cp kape.db` produces a copy missing everything still in the 4MB `-wal` file, and the
 symptom is `FOREIGN KEY constraint failed` against rows that appear to exist. J02 lost time to
 exactly this before switching to `VACUUM INTO`.
+
+**Corollary, and it invalidates a check we have already relied on:** `md5sum kape.db` proves
+nothing. J03 inserted a page, mutated three rows, and left the main file byte-identical — every
+write was still in the WAL. J02 cited an unchanged md5 as evidence the dev database was never
+migrated; that particular line carried no weight, though its `PRAGMA table_info(projects)` check
+did, because a live connection reads through the WAL. Any future job proving it did not touch a
+database must query it, not hash it.
 
 Not a code change — document it where someone will read it before copying the database. The
 contracts for J09 and J10 now say it; `README.md` or `docs/` is the durable home.
