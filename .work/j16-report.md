@@ -267,3 +267,20 @@ None hit. The catalogue expressed every page; no renderer was invented.
 Orchestrator: run acceptance B by hand (admin login is denied to workers), add the two `nav.ts`
 lines, and decide the eyebrow question in D1 (client's badge, as shipped, vs the breadcrumb the
 other 18 pages use). A follow-up job is needed for translatable `cards` items.
+
+---
+
+## Acceptance B — run by the orchestrator, 2026-08-04: **PASS**
+
+Signed in as the seeded dev admin on a throwaway `db:seed` database, drove `/admin/pages` in a real
+browser, edited through the section builder's own controls, saved, and read the public URL back.
+
+| page | control the builder drew | edit | visible publicly |
+|---|---|---|---|
+| `who-we-are/about` (id 1) | Rich text → "Section title" = `Our story` | appended a marker | yes |
+| `who-we-are/fact-sheet` (id 2) | Banner → "Lead" | appended a marker | yes |
+| `what-we-do/ten-subsectors` (id 7) | Feature cards → "Section title" = `The ten subsectors` | appended a marker | yes |
+
+This is the check acceptance A could not make: A proves the props are declared, B proves the
+builder actually renders a control for them and that a save reaches the page. Every edit was
+reverted afterwards and the scratch database discarded. Screenshots in `scratchpad/accB/`.

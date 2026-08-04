@@ -54,10 +54,17 @@ errors in the files you own**.
 `src/server/schema.ts` and `drizzle/` are contended by J02, J09, J10. All three are done; the
 migration lane is free at `0016`.
 
-**Acceptance B went unrun on J16 and J17.** The permission classifier denied both workers the admin
-login, quoting credential exploration, while J18 got through and did the round-trip. Whatever the
-rule is, it is not applied consistently, and B is the one criterion that proves content is
-CMS-managed rather than hardcoded somewhere new. The orchestrator owes those two round-trips.
+**Acceptance B is now done for all three content jobs.** J18's worker ran its own; J16's and J17's
+were run by the orchestrator on 2026-08-04 after the permission classifier denied both workers the
+admin login, quoting credential exploration, while letting J18 through. The rule is not applied
+consistently, so **assume a worker cannot log in to `/admin` and plan the round-trip as an
+orchestrator step** rather than writing it into a contract that may be unrunnable.
+
+**The client's project pages are boilerplate.** 24 of the 26 routes under `current-projects.` and
+`past-projects.` carry one identical body sentence — "published on this page and updated by the
+KAPE communications team" — preceded by their meta description repeated verbatim. Only `dep` and
+`iep` differ, and both are parent listing pages. J17 transferred this faithfully; there is simply
+almost no project prose to transfer. KAPE has to write it before those 26 pages say anything.
 
 `.work/km-review.md` was going to be shared by J16, J17 and J18. Three panes appending to one file
 lose each other's writes, so each now writes `.work/km-review-j1N.md` and the orchestrator merges.

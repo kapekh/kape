@@ -515,3 +515,33 @@ grids need a field the schema does not have after J09 (D1). `schema.ts` is J10's
 Orchestrator: run acceptance B by hand (admin login is denied to workers), then put the two client
 questions — the 15 renamed projects, and CamScam/MIDL's status — to KAPE before release. The
 `parentId` editing gap is the one finding here that should become a job.
+
+---
+
+## Acceptance B — run by the orchestrator, 2026-08-04: **PASS**
+
+Signed in as the seeded dev admin on a throwaway `db:seed` database and edited three project
+records through `ProjectForm` at `/admin/projects/<id>`, which is where these records live — the
+criterion's "open three of your pages in `/admin/pages`" does not fit a job that seeds no sections,
+as the report notes above.
+
+| record | field | visible publicly |
+|---|---|---|
+| `ngs` (id 1) | Name | yes, `/en/projects/ngs` |
+| `hcc` (id 3) | Summary | yes, `/en/projects/hcc` |
+| `air` (id 10, sub-project) | Name | yes, `/en/projects/dep/air` |
+
+The sub-project case matters: it proves a record created only through `parentId` is editable and
+renders at its nested URL, even though `ProjectForm` still draws no parent control.
+
+### What the round-trip incidentally established about the source
+
+Spot-checking the seeded copy against `feedback/` confirmed the transfer is faithful and revealed
+that **the client's project pages are themselves boilerplate**. `current-projects.ngs.tsx` has a
+two-string body: the meta description repeated, then a sentence about details being "published on
+this page and updated by the KAPE communications team". **24 of the 26 project routes carry that
+identical sentence**; only `dep` and `iep` differ, and those are parent listing pages.
+
+So the "real copy" J17's contract expected to find mostly does not exist. Nothing to fix here —
+this is a question for KAPE, who will need to write project prose before these 26 pages say
+anything. The deduplication J17 chose is what stops our pages printing the same sentence twice.
