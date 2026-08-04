@@ -52,3 +52,6 @@ sequential — one migration at a time or the snapshots collide.
 - A job that needs a file it does not own stops and reports; it does not reach across.
 - Verification runs in the orchestrator pane, not the worker's. A worker's "done" is a claim.
 - `feedback/` is read-only reference. Never edit it, never import from it, never ship it.
+- Workers do not commit and do not touch git. The orchestrator reviews the working tree and
+  commits. A worker that commits has made its own work unreviewable.
+- Workers do not run `biome --write` outside the files they own, and never with the linter on.
