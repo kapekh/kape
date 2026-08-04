@@ -37,9 +37,7 @@ async function resolveQuery(
 		case "albums":
 			return listAlbums(db, lang);
 		case "publications":
-			return q.category
-				? listPublications(db, lang, q.category)
-				: listPosts(db, "publication", lang, q.limit ?? 24);
+			return listPublications(db, lang, q.category, q.limit ?? 24);
 		case "people": {
 			const all = await listPeople(db, lang);
 			// Optional section filter (board | smt | pm | team) so a page can show
@@ -73,6 +71,7 @@ const POST_LINK_BASE: Record<string, string> = {
 	story: "/stories",
 	person: "/team",
 	album: "/galleries",
+	job: "/careers",
 };
 
 /**

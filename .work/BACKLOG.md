@@ -33,7 +33,7 @@ errors in the files you own**.
 | J06 | Chrome and Khmer identity | D22 D23 D24 | `src/components/Header.tsx`, `src/components/Footer.tsx`, `src/styles.css`, `src/components/KhmerCalendar.tsx` | **done** `37235ad` | — |
 | J02 | Restore the nested IA | D08 D12 | `src/lib/collections.ts`, `src/server/repo/route.ts`, `src/server/schema.ts`, `drizzle/` | **done** `60ac37f` | — |
 | J03 | Renderer visual fidelity | D01 D04 D06 D13 D14 D15 D16 D17 D27 | `src/components/sections/SectionRenderer.tsx`, `src/lib/sections.ts` | **done** `a4542e4` | — |
-| J14 | Content repo follow-ups, from J03 | — | `src/server/repo/content.ts`, `src/server/repo/sections.ts` | ready | most |
+| J14 | Content repo follow-ups, from J03 | — | `src/server/repo/content.ts`, `src/server/repo/sections.ts` | **done**, bar the Type column | most |
 | J13 | Repo hygiene, from J02's findings | — | `src/integrations/tanstack-query/root-provider.tsx`, `README.md` | item 1 done `0784475`; items 2-3 open | most |
 | J04 | Lightbox, share, related | D05 D10 D11 | `src/routes/$.tsx`, `src/components/Lightbox.tsx`, `src/components/ShareButtons.tsx` | in progress | J09 J05 |
 | J05 | Announcement modal + month counter | D09 D25 | `src/components/AnnouncementPopup.tsx`, `src/server/repo/site.ts` | ready | J03 J04 |

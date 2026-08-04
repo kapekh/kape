@@ -157,6 +157,25 @@ export type PostListItem = {
 	image: string | null; // cover image URL (null → renderer supplies a fallback)
 };
 
+async function coverUrls(
+	db: DB,
+	rows: { coverMediaId: number | null }[],
+): Promise<Map<number, string | null>> {
+	const covers = new Map<number, string | null>();
+	const ids = [
+		...new Set(
+			rows.map((r) => r.coverMediaId).filter((v): v is number => v != null),
+		),
+	];
+	if (!ids.length) return covers;
+	for (const m of await db
+		.select({ id: media.id, url: media.url })
+		.from(media)
+		.where(inArray(media.id, ids)))
+		covers.set(m.id, m.url);
+	return covers;
+}
+
 /** Published posts of a given content type, newest first, with title/excerpt resolved. */
 export async function listPosts(
 	db: DB,
@@ -183,19 +202,7 @@ export async function listPosts(
 		rows.map((r) => r.id),
 		lang,
 	);
-	const coverIds = [
-		...new Set(
-			rows.map((r) => r.coverMediaId).filter((v): v is number => v != null),
-		),
-	];
-	const covers = new Map<number, string | null>();
-	if (coverIds.length) {
-		for (const m of await db
-			.select({ id: media.id, url: media.url })
-			.from(media)
-			.where(inArray(media.id, coverIds)))
-			covers.set(m.id, m.url);
-	}
+	const covers = await coverUrls(db, rows);
 
 	return rows.map((r) => ({
 		id: r.id,
@@ -208,20 +215,22 @@ export async function listPosts(
 	}));
 }
 
-export type PublicationItem = {
-	id: number;
-	slug: string;
-	title: string;
+/**
+ * A publication carries everything a post-card needs plus its file and counter,
+ * so the same list renders whether or not a category filter was applied.
+ */
+export type PublicationItem = PostListItem & {
 	year: string;
 	fileUrl: string | null;
 	downloadCount: number;
 };
 
-/** Public publications (type=publication) for a given meta.category, newest first. */
+/** Published publications (type=publication), newest year first, optionally one meta.category. */
 export async function listPublications(
 	db: DB,
 	lang: string,
-	category: string,
+	category?: string,
+	limit = 24,
 ): Promise<PublicationItem[]> {
 	const rows = await db
 		.select()
@@ -232,25 +241,35 @@ export async function listPublications(
 				eq(posts.contentType, "publication"),
 				eq(posts.status, "published"),
 			),
-		);
-	const filtered = rows.filter(
-		(r) =>
-			String((r.meta as Record<string, unknown> | null)?.category ?? "") ===
-			category,
-	);
+		)
+		.orderBy(desc(posts.publishedAt));
+	const filtered = category
+		? rows.filter(
+				(r) =>
+					String((r.meta as Record<string, unknown> | null)?.category ?? "") ===
+					category,
+			)
+		: rows;
+	const picked = filtered.slice(0, limit);
 	const f = await resolveTranslations(
 		db,
 		"post",
-		filtered.map((r) => r.id),
+		picked.map((r) => r.id),
 		lang,
 	);
-	return filtered
+	const covers = await coverUrls(db, picked);
+	return picked
 		.map((r) => {
 			const m = (r.meta ?? {}) as Record<string, unknown>;
 			return {
 				id: r.id,
 				slug: r.slug,
+				contentType: r.contentType,
+				publishedAt: r.publishedAt,
 				title: f.get(r.id)?.title ?? "",
+				excerpt: f.get(r.id)?.excerpt ?? "",
+				image:
+					r.coverMediaId != null ? (covers.get(r.coverMediaId) ?? null) : null,
 				year: String(m.year ?? ""),
 				fileUrl: m.fileUrl ? String(m.fileUrl) : null,
 				downloadCount: Number(m.downloadCount ?? 0),
@@ -277,6 +296,7 @@ export type JobItem = {
 	slug: string;
 	title: string;
 	location: string;
+	employmentType: string;
 	deadline: string;
 };
 
@@ -310,6 +330,7 @@ export async function listJobs(db: DB, lang: string): Promise<JobItem[]> {
 			slug: r.slug,
 			title: f.get(r.id)?.title ?? "",
 			location: String(m.location ?? ""),
+			employmentType: String(m.employmentType ?? ""),
 			deadline: String(m.deadline ?? ""),
 		};
 	});
