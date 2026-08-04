@@ -24,6 +24,9 @@ Deltas: D05, D10, D11. Runs alongside J03 — disjoint files.
 
 ## Acceptance
 
+**Also gates on `bunx tsc --noEmit` reporting 0 errors.** It passes clean on `main` as of
+`ba0c534`, so any type error during your run is yours.
+
 1. `bun run test` passes, 3 of 3.
 2. Lightbox works by **keyboard alone**: open, arrow through, Esc out. Screenshot it open. Focus
    must be trapped while open and returned to the trigger on close — this is an accessibility

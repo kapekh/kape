@@ -47,20 +47,27 @@ finished, so that file is yours now. Nothing else about its ownership changes.
 4. **D17 — partner marquee.** A `marquee` keyframe already exists unused at `src/styles.css:254`.
    Add a logo-marquee layout to the partners section. You do **not** own `styles.css` — if the
    existing keyframe is insufficient, report it rather than editing that file.
-5. Render any new def J01 added that has no renderer yet — `projectList`, site map, certificate
-   grid, `postList` table layout. Read `.work/jobs/J01-section-catalogue.md` for their shapes.
+5. **D13, D14, D15, D16 — build both halves.** J01 left these entirely to you, so each needs a
+   renderer *and* a catalogue entry: `postList` table layout, `projectList`, site map, certificate
+   grid. Registry key first, then the def — a def without a registry key renders `UnknownSection`.
+6. **D27 — catalogue only.** Add `split.statValue`/`statLabel`, the `stats` band background image
+   and `videoGrid.moreHref`. The renderer already reads all three.
 
 ## Acceptance
+
+**Also gates on `bunx tsc --noEmit` reporting 0 errors.** It passes clean on `main` as of
+`ba0c534`, so any type error during your run is yours.
 
 1. `bun run test` passes, 3 of 3.
 2. Every section you touched renders with real seeded data, screenshotted. An unrendered branch is
    not done.
 3. A person with no photo still renders (initials fallback). Show it.
 4. A publication with no cover still renders. Show it.
-5. No section def from J01 is left without a renderer, or you list exactly which and why.
-6. `bunx biome check src/components/sections/SectionRenderer.tsx`: no new errors. Note that this
-   file already carries `any` usages; do not add more, and do not embark on fixing the existing
-   ones — that is J00's lint pass.
+5. Every def you added has a registry key, and every registry key you added has a def. Name both
+   for each. A def that renders `UnknownSection` is a fail.
+6. Every field you added is read by a renderer line. Cite the line, as J01 did.
+7. `bunx biome check` on your files: no new errors. `SectionRenderer.tsx` already carries `any`
+   usages; do not add more, and do not fix the existing ones — that is J12.
 
 ## Out of scope
 

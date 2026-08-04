@@ -23,6 +23,9 @@ editor can only bury that in prose, so it cannot be listed, sorted or filtered.
 
 ## Acceptance
 
+**Also gates on `bunx tsc --noEmit` reporting 0 errors.** It passes clean on `main` as of
+`ba0c534`, so any type error during your run is yours.
+
 1. `bun run test` passes, 3 of 3.
 2. `bun run db:generate` produces exactly one migration; it is additive — no drop, no rename, no
    type change on an existing column. Paste the SQL.

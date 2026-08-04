@@ -24,6 +24,9 @@ configurable URL (`src/components/Header.tsx:267-271`); theirs submits a query b
 
 ## Acceptance
 
+**Also gates on `bunx tsc --noEmit` reporting 0 errors.** It passes clean on `main` as of
+`ba0c534`, so any type error during your run is yours.
+
 1. `bun run test` passes, 3 of 3.
 2. Searching a term you know exists returns the record containing it. Name the term and paste the
    result.

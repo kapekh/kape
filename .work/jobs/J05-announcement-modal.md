@@ -31,6 +31,9 @@ only the soonest one is ever seen.
 
 ## Acceptance
 
+**Also gates on `bunx tsc --noEmit` reporting 0 errors.** It passes clean on `main` as of
+`ba0c534`, so any type error during your run is yours.
+
 1. `bun run test` passes, 3 of 3.
 2. With three active announcements seeded, all three are reachable and the counter reads `1 / 3`.
    Screenshot.

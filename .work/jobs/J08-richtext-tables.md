@@ -22,6 +22,9 @@ acronym glossary in `who-we-are.leadership.tsx`.
 
 ## Acceptance
 
+**Also gates on `bunx tsc --noEmit` reporting 0 errors.** It passes clean on `main` as of
+`ba0c534`, so any type error during your run is yours.
+
 1. `bun run test` passes, 3 of 3.
 2. Author a table in admin, save, reload, and confirm it round-trips unchanged. Screenshot both
    sides.

@@ -25,6 +25,9 @@ status tag, and a link through to the project.
 
 ## Acceptance
 
+**Also gates on `bunx tsc --noEmit` reporting 0 errors.** It passes clean on `main` as of
+`ba0c534`, so any type error during your run is yours.
+
 1. `bun run test` passes, 3 of 3.
 2. One additive migration, applied clean on a scratch DB copy. Paste the SQL.
 3. Every pin's link resolves to a real project page — click through all of them and report the

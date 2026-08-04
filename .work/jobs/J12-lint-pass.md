@@ -20,6 +20,9 @@ mechanical. Work by rule category, not by file, and stop at each category bounda
 
 ## Acceptance
 
+**Also gates on `bunx tsc --noEmit` reporting 0 errors.** It passes clean on `main` as of
+`ba0c534`, so any type error during your run is yours.
+
 1. `bun run test` passes, 3 of 3, after every category — not only at the end.
 2. `bun run check` error count reaches zero, or you list each remaining finding with the reason it
    cannot be fixed without a behaviour change.

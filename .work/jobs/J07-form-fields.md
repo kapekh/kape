@@ -25,6 +25,9 @@ no grouping.
 
 ## Acceptance
 
+**Also gates on `bunx tsc --noEmit` reporting 0 errors.** It passes clean on `main` as of
+`ba0c534`, so any type error during your run is yours.
+
 1. `bun run test` passes, 3 of 3.
 2. Build the alumni form from `feedback/src/routes/opportunities.alumni.tsx` entirely through the
    admin UI, submit it, and show the stored row. This is the acceptance test — if you cannot build
