@@ -40,7 +40,7 @@ errors in the files you own**.
 | J07 | Form builder field types | D21 | `src/lib/forms.ts`, `src/components/FormRenderer.tsx`, `src/components/admin/FormBuilder*` | ready | most |
 | J08 | Rich text tables | D18 | `src/lib/richtext/extensions.ts`, editor toolbar | **done** | most |
 | J09 | Project metadata | D19 | `src/server/schema.ts`, `src/components/ProjectView.tsx`, `drizzle/`, projects repo + admin editor | **done** `4566c2b` | J04 J14 |
-| J10 | Map pin richness | D20 | `src/components/MapView.tsx`, `src/server/schema.ts`, `drizzle/` | **done** `a67d622` | J04 J14 |
+| J10 | Map pin richness | D20 | `src/components/MapView.tsx`, `src/server/schema.ts`, `drizzle/` | **done** `a67d622`; photo half released `2c30943` | J04 J14 |
 | J11 | Site search | D26 | `src/routes/$lang.search.tsx`, `src/server/repo/search.ts`, `src/lib/header-defaults.ts` | **done** `743146d` | most |
 | J12 | Lint pass | — | repo-wide | after the visual jobs | nothing |
 | J15 | Split the seed by area | — | `src/server/seed.ts` → `src/server/seed/` | **done** | nothing |
