@@ -234,7 +234,7 @@ export function RichTextEditor({
 
 			<EditorContent
 				editor={editor}
-				className="prose-kape px-3 py-2 text-sm [&_.ProseMirror]:min-h-[140px] [&_.ProseMirror]:outline-none"
+				className="prose-body px-3 py-2 text-sm [&_.ProseMirror]:min-h-[140px] [&_.ProseMirror]:outline-none"
 			/>
 
 			<MediaLibraryDialog

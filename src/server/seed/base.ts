@@ -1,7 +1,7 @@
-import { defaultUiStrings } from "#/lib/ui-strings.default";
 import { db } from "../db";
 import { contentTypes, languages, tenants, uiStrings } from "../schema";
 import { TENANT } from "./helpers";
+import { kapeUiStrings } from "./ui-strings.kape";
 
 export async function seedBase() {
 	await db.insert(tenants).values({ id: TENANT, slug: "kape", name: "KAPE" });
@@ -32,7 +32,7 @@ export async function seedBase() {
 		lang: string;
 		value: string;
 	}[] = [];
-	for (const [key, v] of Object.entries(defaultUiStrings)) {
+	for (const [key, v] of Object.entries(kapeUiStrings)) {
 		uiRows.push({ tenantId: TENANT, key, lang: "en", value: v.en });
 		if (v.km) uiRows.push({ tenantId: TENANT, key, lang: "km", value: v.km });
 	}

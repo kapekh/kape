@@ -87,7 +87,7 @@ function Messages() {
 										{fmtDate(r.createdAt)}
 									</span>
 									<a
-										href={`mailto:${r.email}?subject=Re:%20Your%20message%20to%20KAPE`}
+										href={`mailto:${r.email}?subject=Re:%20Your%20message`}
 										className="rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 transition"
 									>
 										Reply

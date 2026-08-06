@@ -20,8 +20,7 @@ export const Route = createFileRoute("/$lang/donate/$campaign")({
 			{ title: loaderData ? `${loaderData.detail.title} — Donate` : "Donate" },
 			{
 				name: "description",
-				content:
-					loaderData?.detail.blurb ?? "Support KAPE's work across Cambodia.",
+				content: loaderData?.detail.blurb ?? "Support this campaign.",
 			},
 		],
 	}),

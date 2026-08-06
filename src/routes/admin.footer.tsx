@@ -21,6 +21,8 @@ export const Route = createFileRoute("/admin/footer")({
 const KEYS = [
 	"site_name_en",
 	"site_name_km",
+	"site_name_short",
+	"site_description",
 	"footer_blurb",
 	"footer_blurb_km",
 	"contact_phone",
@@ -278,6 +280,15 @@ function FooterAdmin() {
 				<div className="space-y-4">
 					<Field k="site_name_en" label="Organisation name (English)" />
 					<Field k="site_name_km" label="Organisation name (Khmer)" km />
+					<Field
+						k="site_name_short"
+						label="Short name (used after every page title)"
+					/>
+					<Field
+						k="site_description"
+						label="One-line description (search results and social cards)"
+						area
+					/>
 					<Field k="footer_blurb" label="Blurb" area />
 					<Field k="footer_blurb_km" label="Blurb (Khmer)" km area />
 				</div>

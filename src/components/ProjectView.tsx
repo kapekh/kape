@@ -89,7 +89,7 @@ export function ProjectView({
 					)}
 				</div>
 			)}
-			<RichBody className="prose-kape" html={project.bodyHtml} />
+			<RichBody className="prose-body" html={project.bodyHtml} />
 			{project.targetAreas.length > 0 && (
 				<Section title="Target areas">
 					<div className="flex flex-wrap gap-2">

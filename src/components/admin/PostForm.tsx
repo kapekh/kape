@@ -377,7 +377,7 @@ export function PostForm({
 										className={input}
 										value={author}
 										onChange={(e) => setAuthor(e.target.value)}
-										placeholder="KAPE Cambodia"
+										placeholder="Author name"
 									/>
 								</div>
 							</div>

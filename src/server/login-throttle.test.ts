@@ -22,13 +22,13 @@ const USER = {
 vi.mock("#/server/db", () => ({ db: {} }));
 
 vi.mock("#/server/auth", () => ({
-	SESSION_COOKIE: "kape_session",
+	SESSION_COOKIE: "cms_session",
 	authenticate: vi.fn(async (_db: unknown, email: string, password: string) =>
 		password === CORRECT ? { ...USER, email } : null,
 	),
 	createSession: vi.fn(async () => ({ id: "sid", token: "tok" })),
-	sessionCookie: () => "kape_session=tok; Path=/",
-	clearSessionCookie: () => "kape_session=; Path=/; Max-Age=0",
+	sessionCookie: () => "cms_session=tok; Path=/",
+	clearSessionCookie: () => "cms_session=; Path=/; Max-Age=0",
 	revokeSession: vi.fn(async () => {}),
 	validateToken: vi.fn(async () => null),
 	parseCookies: () => ({}),

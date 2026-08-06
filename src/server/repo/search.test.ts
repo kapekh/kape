@@ -32,7 +32,7 @@ describe("ranking", () => {
 		const leading = scoreField("title", "Scholarship Program", "scholarship");
 		const buried = scoreField(
 			"title",
-			"The KAPE Scholarship Program",
+			"The National Scholarship Program",
 			"scholarship",
 		);
 		expect(exact).toBeGreaterThan(leading);

@@ -1,26 +1,23 @@
 /**
- * Post-seed transforms that turn the base content into the page-tree + flat-collection
- * model: collection landing pages, migrated static section pages, the section-built
- * home page, the parent/segment tree, and flattened nav targets. Run by `db:seed`
- * (so a fresh DB matches production) and by `scripts/apply-tree.ts` (to re-run on an
- * existing DB). Every step is idempotent (upsert by slug).
+ * KAPE's page-tree transforms: the collection landing pages, the static section
+ * pages extracted from the old site, and the section-built home page. Part of the
+ * KAPE fixture (`bun run seed:kape`), and re-runnable against KAPE's live database
+ * with `scripts/apply-tree.ts`. Every step is idempotent (upsert by slug).
+ *
+ * The structural half — building the parent/segment tree and flattening nav
+ * targets — is content-free and lives in ./page-tree.ts.
  */
 import { PLACEHOLDER_IMAGE } from "#/lib/placeholder";
-import { and, eq } from "drizzle-orm";
 
-import { legacyRedirect } from "#/lib/collections";
 import type { SectionNode } from "#/lib/sections";
 import group1 from "../../scripts/static-pages/group1.json";
 import group2 from "../../scripts/static-pages/group2.json";
 import group3 from "../../scripts/static-pages/group3.json";
 import type { DB } from "./db";
+import { flattenNav, normalizeTree, upsertPage } from "./page-tree";
 import { clearCache } from "./render-cache";
 import { listHeroSlides, listStats } from "./repo/site";
-import { navItems, pages, translations } from "./schema";
 
-const TENANT = 1;
-const humanize = (s: string) =>
-	s.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 const tiptap = (paras: string[]) =>
 	JSON.stringify({
 		type: "doc",
@@ -30,62 +27,6 @@ const tiptap = (paras: string[]) =>
 		})),
 	});
 const doc = (text: string) => tiptap([text]);
-
-async function setTitle(db: DB, id: number, title: string) {
-	await db
-		.delete(translations)
-		.where(
-			and(
-				eq(translations.entityType, "page"),
-				eq(translations.entityId, id),
-				eq(translations.field, "title"),
-			),
-		);
-	await db.insert(translations).values({
-		tenantId: TENANT,
-		entityType: "page",
-		entityId: id,
-		field: "title",
-		lang: "en",
-		value: title,
-	});
-}
-
-/** Upsert a page row by slug, setting its sections + title (segment/parent set later). */
-async function upsertPage(
-	db: DB,
-	slug: string,
-	title: string,
-	sections: SectionNode[],
-) {
-	const [existing] = await db
-		.select({ id: pages.id })
-		.from(pages)
-		.where(and(eq(pages.tenantId, TENANT), eq(pages.slug, slug)))
-		.limit(1);
-	let id: number;
-	if (existing) {
-		id = existing.id;
-		await db
-			.update(pages)
-			.set({ sections, status: "published" })
-			.where(eq(pages.id, id));
-	} else {
-		const [r] = await db
-			.insert(pages)
-			.values({
-				tenantId: TENANT,
-				slug,
-				segment: slug.split("/").pop(),
-				status: "published",
-				sections,
-			})
-			.returning({ id: pages.id });
-		id = r.id;
-	}
-	await setTitle(db, id, title);
-	return id;
-}
 
 /* ---------------- Collection landing pages ---------------- */
 const LANDINGS: { slug: string; title: string; section: SectionNode }[] = [
@@ -392,65 +333,6 @@ async function buildHomePage(db: DB) {
 		"KAPE — Kampuchea Action to Promote Education",
 		sections,
 	);
-}
-
-/* ---------------- Build the parent/segment tree over all pages ---------------- */
-async function normalizeTree(db: DB) {
-	const rows = await db
-		.select({ id: pages.id, slug: pages.slug })
-		.from(pages)
-		.where(eq(pages.tenantId, TENANT));
-	const bySlug = new Map(rows.map((r) => [r.slug, r.id]));
-
-	// Create any missing ancestor pages (e.g. "what-we-do", "media", "opportunities").
-	const needed = new Set<string>();
-	for (const r of rows) {
-		const parts = r.slug.split("/");
-		for (let i = 1; i < parts.length; i++)
-			needed.add(parts.slice(0, i).join("/"));
-	}
-	for (const path of [...needed]
-		.filter((p) => !bySlug.has(p))
-		.sort((a, b) => a.split("/").length - b.split("/").length)) {
-		const segment = path.split("/").pop()!;
-		const [r] = await db
-			.insert(pages)
-			.values({ tenantId: TENANT, slug: path, segment, status: "published" })
-			.returning({ id: pages.id });
-		bySlug.set(path, r.id);
-		await setTitle(db, r.id, humanize(segment));
-	}
-
-	// Set segment + parentId + sortOrder for every page.
-	const counter = new Map<string, number>();
-	for (const slug of [...bySlug.keys()].sort()) {
-		const parts = slug.split("/");
-		const segment = parts.pop()!;
-		const parentSlug = parts.join("/");
-		const parentId = parentSlug ? (bySlug.get(parentSlug) ?? null) : null;
-		const order = counter.get(parentSlug) ?? 0;
-		counter.set(parentSlug, order + 1);
-		await db
-			.update(pages)
-			.set({ segment, parentId, sortOrder: order })
-			.where(eq(pages.id, bySlug.get(slug)!));
-	}
-}
-
-/* ---------------- Flatten nav targets to the canonical flat paths ---------------- */
-async function flattenNav(db: DB) {
-	const items = await db
-		.select({ id: navItems.id, targetRef: navItems.targetRef })
-		.from(navItems)
-		.where(eq(navItems.tenantId, TENANT));
-	for (const it of items) {
-		const flat = legacyRedirect(it.targetRef);
-		if (flat && flat !== it.targetRef)
-			await db
-				.update(navItems)
-				.set({ targetRef: flat })
-				.where(eq(navItems.id, it.id));
-	}
 }
 
 /** Run all transforms in dependency order. Idempotent. */

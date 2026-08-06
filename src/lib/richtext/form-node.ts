@@ -3,10 +3,13 @@ import { mergeAttributes, Node } from "@tiptap/core";
 /**
  * A rich-text node that embeds an admin-built form anywhere prose renders —
  * post bodies, page rich-text sections, etc. It is deliberately decoupled: it
- * serializes to a neutral marker `<div data-kape-form="slug">` (both in the
- * editor and the server renderer), and the public `<FormEmbeds/>` hydrator
- * mounts a live <FormRenderer/> into every marker. Nothing is tied to a host.
+ * serializes to a neutral marker `<div data-form-embed="slug">` (both in the
+ * editor and the server renderer), and `RichBody` splits authored HTML at those
+ * markers to mount a live <FormRenderer/>. Nothing is tied to a host.
  */
+
+export const FORM_ATTR = "data-form-embed";
+
 export const FormEmbed = Node.create({
 	name: "formEmbed",
 	group: "block",
@@ -18,14 +21,14 @@ export const FormEmbed = Node.create({
 		return {
 			slug: {
 				default: "",
-				parseHTML: (el) => el.getAttribute("data-kape-form") || "",
-				renderHTML: (attrs) => ({ "data-kape-form": attrs.slug }),
+				parseHTML: (el) => el.getAttribute(FORM_ATTR) || "",
+				renderHTML: (attrs) => ({ [FORM_ATTR]: attrs.slug }),
 			},
 		};
 	},
 
 	parseHTML() {
-		return [{ tag: "div[data-kape-form]" }];
+		return [{ tag: `div[${FORM_ATTR}]` }];
 	},
 
 	renderHTML({ node, HTMLAttributes }) {
@@ -33,7 +36,7 @@ export const FormEmbed = Node.create({
 		// The text child is a placeholder shown in the editor and before hydration.
 		return [
 			"div",
-			mergeAttributes(HTMLAttributes, { class: "kape-form-embed" }),
+			mergeAttributes(HTMLAttributes, { class: "form-embed" }),
 			`▤ Form: ${slug || "(none selected)"}`,
 		];
 	},

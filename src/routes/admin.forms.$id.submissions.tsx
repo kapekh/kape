@@ -191,7 +191,7 @@ function Submissions() {
 													data[f.key] ? (
 														// biome-ignore lint/security/noDangerouslySetInnerHtml: server-rendered via the restricted allow-list
 														<div
-															className="prose-kape max-w-sm text-sm [&_p]:my-0.5"
+															className="prose-body max-w-sm text-sm [&_p]:my-0.5"
 															dangerouslySetInnerHTML={{ __html: data[f.key] }}
 														/>
 													) : (

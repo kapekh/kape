@@ -7,13 +7,21 @@ import {
 import { useEffect, useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { staffPortalTitle } from "#/lib/site-identity";
 
 export const Route = createFileRoute("/internalsources")({
-	head: () => ({ meta: [{ title: "KAPE Staff Portal" }] }),
+	loader: ({ context }) =>
+		context.queryClient.ensureQueryData(
+			context.trpc.site.settings.queryOptions(),
+		),
+	head: ({ loaderData }) => ({
+		meta: [{ title: staffPortalTitle(loaderData ?? {}) }],
+	}),
 	component: Portal,
 });
 
 function Portal() {
+	const settings = Route.useLoaderData();
 	const navigate = useNavigate();
 	const [ready, setReady] = useState(false);
 	const [name, setName] = useState("");
@@ -56,7 +64,9 @@ function Portal() {
 		<div className="min-h-screen bg-muted/30">
 			<header className="bg-primary text-primary-foreground">
 				<div className="mx-auto max-w-5xl px-6 py-3 flex items-center justify-between">
-					<div className="font-display font-semibold">KAPE Staff Portal</div>
+					<div className="font-display font-semibold">
+						{staffPortalTitle(settings)}
+					</div>
 					<div className="flex items-center gap-4 text-sm">
 						<span className="opacity-80">{name}</span>
 						<button type="button" onClick={logout} className="hover:underline">

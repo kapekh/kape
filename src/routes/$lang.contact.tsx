@@ -5,6 +5,7 @@ import { type MapMarker, MapView } from "@/components/MapView";
 import { Card, Grid, SubPage } from "@/components/SubPage";
 import { useLang } from "@/lib/i18n";
 import { DEFAULT_LANG, LANGS } from "@/lib/i18n-config";
+import { siteShortName } from "@/lib/site-identity";
 
 export const Route = createFileRoute("/$lang/contact")({
 	loader: ({ context, params, location }) => {
@@ -13,17 +14,21 @@ export const Route = createFileRoute("/$lang/contact")({
 				href: `/${DEFAULT_LANG}${location.pathname}${location.searchStr}`,
 				statusCode: 301,
 			});
-		return context.queryClient.ensureQueryData(
-			context.trpc.site.offices.queryOptions(),
-		);
+		return context.queryClient
+			.ensureQueryData(context.trpc.site.offices.queryOptions())
+			.then(async (offices) => ({
+				offices,
+				settings: await context.queryClient.ensureQueryData(
+					context.trpc.site.settings.queryOptions(),
+				),
+			}));
 	},
-	head: () => ({
+	head: ({ loaderData }) => ({
 		meta: [
-			{ title: "Contact KAPE" },
+			{ title: `Contact ${siteShortName(loaderData?.settings ?? {})}` },
 			{
 				name: "description",
-				content:
-					"Reach KAPE's head office in Kampong Cham and provincial teams across Cambodia.",
+				content: "Reach our head office and regional teams.",
 			},
 		],
 	}),
@@ -31,7 +36,7 @@ export const Route = createFileRoute("/$lang/contact")({
 });
 
 function ContactPage() {
-	const offices = Route.useLoaderData();
+	const { offices, settings } = Route.useLoaderData();
 	const { t } = useLang();
 	const hq = offices.find((o) => o.isHq) ?? offices[0];
 	const provincial = offices.filter((o) => o.id !== hq?.id);
@@ -47,7 +52,7 @@ function ContactPage() {
 			wide
 			section={t("nav.contact")}
 			title="Contact Us"
-			lead="Get in touch with KAPE's head office or any of our provincial teams."
+			lead={`Get in touch with ${siteShortName(settings)} at our head office or any of our regional teams.`}
 			badge="Say hello"
 		>
 			{/* Top: message form ‹› head office + map */}

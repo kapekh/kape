@@ -14,7 +14,7 @@ import { sessions, users } from "./schema";
  */
 
 const SECRET = new TextEncoder().encode(env.AUTH_SECRET);
-export const SESSION_COOKIE = "kape_session";
+export const SESSION_COOKIE = "cms_session";
 const MAX_AGE_S = 60 * 60 * 24 * 30; // 30 days
 
 export type AuthUser = {

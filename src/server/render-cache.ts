@@ -13,8 +13,13 @@ import { renderCache } from "./schema";
 const ENABLED = process.env.SSG_CACHE !== "off";
 const TTL_SECONDS = 7 * 24 * 60 * 60; // backstop; precise invalidation is the primary mechanism
 
+// Entries hold rendered HTML, so a change to how rich text serialises makes
+// every existing entry wrong. Bump this when that happens; old rows are then
+// unreachable and age out on the TTL.
+const FORMAT = "v2";
+
 export const cacheKey = (path: string, lang: string) =>
-	`${lang || "en"}::${path.replace(/^\/+|\/+$/g, "")}`;
+	`${FORMAT}::${lang || "en"}::${path.replace(/^\/+|\/+$/g, "")}`;
 
 /** Read a cached value (within the TTL backstop), or null on miss/disabled. */
 export async function cacheGet<T>(db: DB, key: string): Promise<T | null> {

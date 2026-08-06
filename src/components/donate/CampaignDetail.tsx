@@ -96,8 +96,7 @@ export function CampaignDetail({
 									This campaign has ended
 								</h2>
 								<p className="mt-2 text-muted-foreground">
-									Thank you to everyone who gave. Explore other ways to support
-									KAPE.
+									Thank you to everyone who gave. Explore other ways to give.
 								</p>
 								<NavLink
 									href={localizedHref("/donate", lang)}

@@ -45,7 +45,7 @@ function OfficesList() {
 						Offices
 					</h1>
 					<p className="mt-1 text-sm text-muted-foreground">
-						KAPE office locations — {rows.length} total.
+						Office locations — {rows.length} total.
 					</p>
 				</div>
 				<Link

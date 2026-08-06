@@ -459,7 +459,7 @@ export function FormBuilder({
 										className={fieldInput}
 										value={notifyEmail}
 										onChange={(e) => setNotifyEmail(e.target.value)}
-										placeholder="team@kapekh.org"
+										placeholder="team@example.org"
 									/>
 								</div>
 							</div>

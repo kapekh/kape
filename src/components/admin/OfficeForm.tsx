@@ -116,7 +116,7 @@ export function OfficeForm({
 					<div className="space-y-5">
 						<FormSection
 							title="Office details"
-							description="A KAPE office location shown on the public Contact page and map."
+							description="An office location shown on the public Contact page and map."
 						>
 							<div className="space-y-4">
 								<div>
@@ -154,7 +154,7 @@ export function OfficeForm({
 											Headquarters (HQ)
 										</span>
 										<span className="block text-xs text-muted-foreground">
-											KAPE's main office. Only one office should be the HQ.
+											The main office. Only one office should be the HQ.
 										</span>
 									</span>
 								</label>
@@ -181,7 +181,7 @@ export function OfficeForm({
 										className={fieldInput}
 										value={email}
 										onChange={(e) => setEmail(e.target.value)}
-										placeholder="office@kapekh.org"
+										placeholder="office@example.org"
 									/>
 								</div>
 							</div>

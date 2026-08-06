@@ -1,10 +1,14 @@
+import { FORM_ATTR } from "#/lib/richtext/form-node";
 import { FormRenderer } from "./FormRenderer";
 
 // Matches the neutral marker emitted by the FormEmbed rich-text node:
-// <div data-kape-form="slug" class="kape-form-embed">▤ Form: slug</div>
+// <div data-form-embed="slug" class="form-embed">▤ Form: slug</div>
 // The node is an atom (no nested divs), so a non-greedy match to the first
 // </div> is safe.
-const FORM_RE = /<div[^>]*\bdata-kape-form="([^"]*)"[^>]*>[\s\S]*?<\/div>/g;
+const FORM_RE = new RegExp(
+	`<div[^>]*\\b${FORM_ATTR}="([^"]*)"[^>]*>[\\s\\S]*?<\\/div>`,
+	"g",
+);
 
 /**
  * Renders authored rich-text HTML, but turns embedded form markers into real
@@ -20,7 +24,7 @@ export function RichBody({
 	className?: string;
 }) {
 	if (!html) return null;
-	if (!html.includes("data-kape-form")) {
+	if (!html.includes(FORM_ATTR)) {
 		// biome-ignore lint/security/noDangerouslySetInnerHtml: trusted, server-rendered
 		return (
 			<div className={className} dangerouslySetInnerHTML={{ __html: html }} />

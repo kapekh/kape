@@ -163,7 +163,7 @@ export function FormRenderer({ slug }: { slug: string }) {
 						// biome-ignore lint/security/noDangerouslySetInnerHtml: server-rendered, trusted author content
 						<div
 							key={rk}
-							className="prose-kape text-sm text-foreground/80"
+							className="prose-body text-sm text-foreground/80"
 							dangerouslySetInnerHTML={{ __html: f.contentHtml }}
 						/>
 					) : null;

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { NavNode } from "#/server/repo/nav";
 import { LanguageSwitcher, useLang } from "@/lib/i18n";
 import { localizedHref } from "@/lib/i18n-config";
+import { siteName, siteShortName } from "@/lib/site-identity";
 import { NavLink } from "./NavLink";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -28,8 +29,8 @@ function MegaLink({
 }) {
 	const href = withLang(item.href, lang);
 	const cls = "group block break-inside-avoid py-1.5";
-	// "CLASS — a KAPE current project." under the label CLASS says nothing the label
-	// did not. Only a brief that opens on new words earns its line.
+	// A brief that just restates the label ("CLASS — the CLASS project") says
+	// nothing new. Only one that opens on new words earns its line.
 	const brief = item.description
 		?.toLowerCase()
 		.startsWith(item.label.toLowerCase())
@@ -331,9 +332,7 @@ export function Header({
 				style={{ viewTransitionName: "site-topbar" }}
 			>
 				<div className="mx-auto max-w-7xl px-6 py-2 flex items-center justify-between">
-					<span className="hidden opacity-80 sm:inline">
-						{contact || t("top.contact")}
-					</span>
+					<span className="hidden opacity-80 sm:inline">{contact}</span>
 					<div className="flex items-center gap-3 opacity-80 sm:gap-4">
 						{showSearch && (
 							<a
@@ -405,15 +404,17 @@ export function Header({
 						>
 							<img
 								src="/logo.png"
-								alt="KAPE"
+								alt={siteShortName(settings)}
 								className="h-12 w-12 shrink-0 rounded-full object-cover shadow-[var(--shadow-lift)] ring-1 ring-border"
 							/>
 							<div className="leading-tight">
-								<div className="font-khmer text-[13px] text-primary">
-									អង្គការសកម្មភាពសម្រាប់ការអប់រំនៅកម្ពុជា
-								</div>
+								{settings.site_name_km && (
+									<div className="font-khmer text-[13px] text-primary">
+										{settings.site_name_km}
+									</div>
+								)}
 								<div className="font-display font-semibold text-primary text-[15px]">
-									Kampuchea Action to Promote Education
+									{siteName(settings)}
 								</div>
 							</div>
 						</NavLink>

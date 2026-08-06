@@ -8,7 +8,7 @@ type Announcement = Awaited<
 	ReturnType<typeof trpcClient.site.announcement.query>
 >[number];
 
-const DISMISSED_KEY = "kape:announcements-dismissed";
+const DISMISSED_KEY = "announcements-dismissed";
 
 function readDismissed(): number[] {
 	try {
@@ -20,7 +20,7 @@ function readDismissed(): number[] {
 }
 
 /**
- * Announcement modal. KAPE runs several job and bidding deadlines at once, so
+ * Announcement modal. Several deadlines can run at once, so
  * every open notice is reachable here, not just the soonest. Client-only
  * (fetched on mount) so prerendered/cached static HTML never freezes a
  * deadline-driven notice. Built on the native `<dialog>` so the focus trap,

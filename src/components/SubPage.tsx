@@ -93,7 +93,7 @@ export function SubPage({
 						// Caller supplies its own cards/columns across the full frame.
 						children
 					) : (
-						// Caller supplies its own `prose-kape` wrapper for rich text; we don't
+						// Caller supplies its own `prose-body` wrapper for rich text; we don't
 						// force it here so non-prose children (e.g. the album photo grid) stay clean.
 						<div className="rounded-3xl bg-card border border-border shadow-[var(--shadow-soft)] p-8 md:p-12">
 							{children}

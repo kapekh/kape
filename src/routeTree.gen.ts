@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
+import { Route as ManifestDotjsonRouteImport } from './routes/manifest[.]json'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as InternalsourcesRouteImport } from './routes/internalsources'
@@ -96,6 +97,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
   id: '/robots.txt',
   path: '/robots.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ManifestDotjsonRoute = ManifestDotjsonRouteImport.update({
+  id: '/manifest.json',
+  path: '/manifest.json',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -490,6 +496,7 @@ export interface FileRoutesByFullPath {
   '/internalsources': typeof InternalsourcesRouteWithChildren
   '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
+  '/manifest.json': typeof ManifestDotjsonRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/$lang/contact': typeof LangContactRoute
@@ -568,6 +575,7 @@ export interface FileRoutesByTo {
   '/$': typeof SplatRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
+  '/manifest.json': typeof ManifestDotjsonRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/$lang/contact': typeof LangContactRoute
@@ -646,6 +654,7 @@ export interface FileRoutesById {
   '/internalsources': typeof InternalsourcesRouteWithChildren
   '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
+  '/manifest.json': typeof ManifestDotjsonRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/$lang/contact': typeof LangContactRoute
@@ -728,6 +737,7 @@ export interface FileRouteTypes {
     | '/internalsources'
     | '/llms.txt'
     | '/login'
+    | '/manifest.json'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/$lang/contact'
@@ -806,6 +816,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/llms.txt'
     | '/login'
+    | '/manifest.json'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/$lang/contact'
@@ -883,6 +894,7 @@ export interface FileRouteTypes {
     | '/internalsources'
     | '/llms.txt'
     | '/login'
+    | '/manifest.json'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/$lang/contact'
@@ -964,6 +976,7 @@ export interface RootRouteChildren {
   InternalsourcesRoute: typeof InternalsourcesRouteWithChildren
   LlmsDottxtRoute: typeof LlmsDottxtRoute
   LoginRoute: typeof LoginRoute
+  ManifestDotjsonRoute: typeof ManifestDotjsonRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   LangContactRoute: typeof LangContactRoute
@@ -991,6 +1004,13 @@ declare module '@tanstack/react-router' {
       path: '/robots.txt'
       fullPath: '/robots.txt'
       preLoaderRoute: typeof RobotsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/manifest.json': {
+      id: '/manifest.json'
+      path: '/manifest.json'
+      fullPath: '/manifest.json'
+      preLoaderRoute: typeof ManifestDotjsonRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -1704,6 +1724,7 @@ const rootRouteChildren: RootRouteChildren = {
   InternalsourcesRoute: InternalsourcesRouteWithChildren,
   LlmsDottxtRoute: LlmsDottxtRoute,
   LoginRoute: LoginRoute,
+  ManifestDotjsonRoute: ManifestDotjsonRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   LangContactRoute: LangContactRoute,

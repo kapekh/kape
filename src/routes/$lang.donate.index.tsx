@@ -6,6 +6,7 @@ import { NavLink } from "@/components/NavLink";
 import { DONATE_DEFAULTS } from "@/lib/donate-defaults";
 import { useLang } from "@/lib/i18n";
 import { detectLang, localizedHref } from "@/lib/i18n-config";
+import { siteShortName } from "@/lib/site-identity";
 
 export const Route = createFileRoute("/$lang/donate/")({
 	loader: async ({ context, location }) => {
@@ -20,16 +21,19 @@ export const Route = createFileRoute("/$lang/donate/")({
 		]);
 		return { campaigns, settings };
 	},
-	head: () => ({
-		meta: [
-			{ title: "Donate to KAPE" },
-			{
-				name: "description",
-				content:
-					"Support equitable, transformative education for children across Cambodia. Choose a campaign and give.",
-			},
-		],
-	}),
+	head: ({ loaderData }) => {
+		const settings = loaderData?.settings ?? {};
+		return {
+			meta: [
+				{ title: `Donate to ${siteShortName(settings)}` },
+				{
+					name: "description",
+					content:
+						settings.donate_intro?.trim() || DONATE_DEFAULTS.donate_intro,
+				},
+			],
+		};
+	},
 	component: DonatePage,
 });
 

@@ -58,7 +58,7 @@ vi.mock("@/lib/i18n", () => ({
 
 const { AnnouncementPopup } = await import("./AnnouncementPopup");
 
-const KEY = "kape:announcements-dismissed";
+const KEY = "announcements-dismissed";
 const dismissed = () => JSON.parse(localStorage.getItem(KEY) ?? "[]");
 
 async function mount() {

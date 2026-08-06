@@ -15,6 +15,7 @@ import { AdminHeaderProvider } from "#/components/admin/AdminHeader";
 import { AdminIcon } from "#/components/admin/AdminIcon";
 import { ThemeToggle } from "#/components/ThemeToggle";
 import { NAV_AREA } from "#/lib/permissions";
+import { adminTitle, siteShortName } from "#/lib/site-identity";
 import { SESSION_COOKIE, validateToken } from "#/server/auth";
 import { db } from "#/server/db";
 import { resolvePermissions } from "#/server/repo/roles";
@@ -38,12 +39,18 @@ const resolveAdminAccess = createServerFn({ method: "GET" }).handler(
 );
 
 export const Route = createFileRoute("/admin")({
-	head: () => ({ meta: [{ title: "KAPE Admin" }] }),
 	beforeLoad: async () => {
 		const access = await resolveAdminAccess();
 		if (!access) throw redirect({ to: "/login" });
 		return { access };
 	},
+	loader: ({ context }) =>
+		context.queryClient.ensureQueryData(
+			context.trpc.site.settings.queryOptions(),
+		),
+	head: ({ loaderData }) => ({
+		meta: [{ title: adminTitle(loaderData ?? {}) }],
+	}),
 	component: AdminLayout,
 });
 
@@ -175,6 +182,7 @@ const NAV: NavGroup[] = [
 function AdminLayout() {
 	const navigate = useNavigate();
 	const { access } = Route.useRouteContext();
+	const settings = Route.useLoaderData();
 	const email = access.email;
 	const isSuper = access.isSuperAdmin;
 	const roleLabel = isSuper ? "Administrator" : access.role.replace(/_/g, " ");
@@ -200,7 +208,7 @@ function AdminLayout() {
 	const [folded, setFolded] = useState<Record<string, boolean>>(() => {
 		if (typeof window === "undefined") return {};
 		try {
-			return JSON.parse(localStorage.getItem("kape-nav-folded") || "{}");
+			return JSON.parse(localStorage.getItem("admin-nav-folded") || "{}");
 		} catch {
 			return {};
 		}
@@ -209,7 +217,7 @@ function AdminLayout() {
 		setFolded((f) => {
 			const next = { ...f, [g]: !f[g] };
 			try {
-				localStorage.setItem("kape-nav-folded", JSON.stringify(next));
+				localStorage.setItem("admin-nav-folded", JSON.stringify(next));
 			} catch {}
 			return next;
 		});
@@ -244,11 +252,13 @@ function AdminLayout() {
 				<div className="flex items-center gap-2.5 px-5 h-16 border-b border-border shrink-0">
 					<img
 						src="/logo.png"
-						alt="KAPE"
+						alt={siteShortName(settings)}
 						className="h-9 w-9 shrink-0 rounded-lg object-cover ring-1 ring-border"
 					/>
 					<div className="leading-tight">
-						<div className="font-display font-semibold text-primary">KAPE</div>
+						<div className="font-display font-semibold text-primary">
+							{siteShortName(settings)}
+						</div>
 						<div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
 							Admin
 						</div>

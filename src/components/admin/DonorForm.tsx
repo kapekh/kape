@@ -76,7 +76,7 @@ export function DonorForm({
 				main={
 					<FormSection
 						title="Donor details"
-						description="Organisations that fund KAPE's work."
+						description="Organisations that fund the work."
 					>
 						<div className="space-y-4">
 							<div>

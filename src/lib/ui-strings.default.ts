@@ -7,10 +7,6 @@
  */
 export const defaultUiStrings: Record<string, { en: string; km?: string }> = {
 	// top bar
-	"top.contact": {
-		en: "Tel: 042-941-481 · kape@kapekh.org",
-		km: "ទូរស័ព្ទ: 042-941-481 · kape@kapekh.org",
-	},
 	"top.search": { en: "Search", km: "ស្វែងរក" },
 	"top.sitemap": { en: "Site Map", km: "ផែនទីគេហទំព័រ" },
 	"lang.english": { en: "English", km: "English" },
@@ -31,7 +27,7 @@ export const defaultUiStrings: Record<string, { en: string; km?: string }> = {
 	"forms.sending": { en: "Sending…", km: "កំពុងផ្ញើ…" },
 
 	// who we are submenu
-	"nav.who.about": { en: "About KAPE", km: "អំពី KAPE" },
+	"nav.who.about": { en: "About us", km: "អំពីយើង" },
 	"nav.who.news": { en: "News and Events", km: "ព័ត៌មាន និងព្រឹត្តិការណ៍" },
 	"nav.who.fact": { en: "Fact Sheet", km: "ឯកសារពិត" },
 	"nav.who.vision": {
@@ -73,11 +69,11 @@ export const defaultUiStrings: Record<string, { en: string; km?: string }> = {
 	},
 
 	// opportunities
-	"nav.opps.partner": { en: "Partner with KAPE", km: "ភាពជាដៃគូជាមួយ KAPE" },
+	"nav.opps.partner": { en: "Partner with us", km: "ភាពជាដៃគូជាមួយយើង" },
 	"nav.opps.careers": { en: "Job Vacancies & Careers", km: "មុខតំណែងការងារ" },
 	"nav.opps.alumni": { en: "Alumni Network", km: "បណ្តាញនិស្សិតចាស់" },
 	"nav.opps.scholarship": { en: "Scholarship Program", km: "កម្មវិធីអាហារូបករណ៍" },
-	"nav.opps.volunteer": { en: "Volunteer with KAPE", km: "ស្ម័គ្រចិត្តជាមួយ KAPE" },
+	"nav.opps.volunteer": { en: "Volunteer with us", km: "ស្ម័គ្រចិត្តជាមួយយើង" },
 
 	// homepage hero
 	"home.badge": {
@@ -92,8 +88,8 @@ export const defaultUiStrings: Record<string, { en: string; km?: string }> = {
 	"home.hero.dreams": { en: "dreams,", km: "សុបិន," },
 	"home.hero.rises": { en: "and rises.", km: "និងរីកចម្រើន។" },
 	"home.hero.lead": {
-		en: "For more than thirty years, KAPE has walked alongside teachers, children and communities across 15 provinces of Cambodia — turning classrooms into places of hope, equity and transformation.",
-		km: "ជាង៣០ឆ្នាំមកហើយ KAPE បានដើររួមជាមួយគ្រូបង្រៀន កុមារ និងសហគមន៍នៅ១៥ខេត្តក្នុងប្រទេសកម្ពុជា — បំប្លែងថ្នាក់រៀនទៅជាកន្លែងនៃក្តីសង្ឃឹម សមធម៌ និងការផ្លាស់ប្តូរ។",
+		en: "A sentence or two about the work you do and who it reaches. Edit this in Languages → UI strings.",
+		km: "",
 	},
 	"home.cta.stories": { en: "Read Impact Stories →", km: "អានរឿងរ៉ាវផលប៉ះពាល់ →" },
 	"home.cta.who": { en: "Who we are", km: "យើងជានរណា" },
@@ -130,14 +126,14 @@ export const defaultUiStrings: Record<string, { en: string; km?: string }> = {
 		km: "ការចាប់ផ្តើមរាប់មិនអស់។",
 	},
 
-	"home.about.kicker": { en: "About KAPE", km: "អំពី KAPE" },
+	"home.about.kicker": { en: "About us", km: "អំពីយើង" },
 	"home.about.title": {
 		en: "A local NGO with a national heartbeat for education.",
 		km: "អង្គការមិនរកប្រាក់ចំណេញក្នុងស្រុក ដែលមានចង្វាក់បេះដូងថ្នាក់ជាតិសម្រាប់ការអប់រំ។",
 	},
 	"home.about.p1": {
-		en: "KAPE is a local non-profit working primarily in the formal education sector across 15 provinces in Cambodia. We implement projects at every level of the learning journey — from preschools and primary classrooms to secondary schools, tertiary programs and a Master's Degree in Mentoring.",
-		km: "KAPE គឺជាអង្គការមិនរកប្រាក់ចំណេញក្នុងស្រុក ដែលធ្វើការសំខាន់ក្នុងវិស័យអប់រំផ្លូវការនៅ១៥ខេត្តក្នុងប្រទេសកម្ពុជា។ យើងអនុវត្តគម្រោងនៅគ្រប់កម្រិតនៃដំណើរសិក្សា — ពីសាលាមត្តេយ្យ និងបឋមសិក្សា ដល់មធ្យមសិក្សា កម្មវិធីឧត្តមសិក្សា និងបរិញ្ញាបត្រអនុបណ្ឌិតផ្នែកការណែនាំ។",
+		en: "A paragraph introducing the organisation. Edit this in Languages → UI strings.",
+		km: "",
 	},
 	"home.about.p2.pre": {
 		en: "Direct beneficiaries number well over",
@@ -160,12 +156,12 @@ export const defaultUiStrings: Record<string, { en: string; km?: string }> = {
 		km: "អំណោយរបស់អ្នកក្លាយជាសៀវភៅសិក្សា វគ្គបណ្តុះបណ្តាលគ្រូ អាហារូបករណ៍ក្មេងស្រី បណ្ណាល័យសហគមន៍។ រាល់ការរួមចំណែកសរសេរអនាគត។",
 	},
 	"home.donate.now": { en: "♡ Donate now", km: "♡ បរិច្ចាគឥឡូវ" },
-	"home.donate.partner": { en: "Partner with KAPE", km: "ភាពជាដៃគូជាមួយ KAPE" },
+	"home.donate.partner": { en: "Partner with us", km: "ភាពជាដៃគូជាមួយយើង" },
 
 	// footer
 	"footer.about": {
-		en: "KAPE works at every level of formal education across 15 provinces in Cambodia — from preschools to Master's programs in Mentoring.",
-		km: "KAPE ធ្វើការនៅគ្រប់កម្រិតនៃការអប់រំផ្លូវការនៅ១៥ខេត្តក្នុងប្រទេសកម្ពុជា — ពីសាលាមត្តេយ្យដល់កម្មវិធីអនុបណ្ឌិតផ្នែកការណែនាំ។",
+		en: "A short line about the organisation, shown under the footer logo.",
+		km: "",
 	},
 	"footer.explore": { en: "Explore", km: "រុករក" },
 	"footer.newsletter": { en: "Newsletter", km: "ព្រឹត្តិបត្រ" },

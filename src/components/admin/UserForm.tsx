@@ -92,7 +92,7 @@ export function UserForm({
 									type="email"
 									value={email}
 									onChange={(e) => setEmail(e.target.value)}
-									placeholder="person@kapekh.org"
+									placeholder="person@example.org"
 									required
 								/>
 							</div>

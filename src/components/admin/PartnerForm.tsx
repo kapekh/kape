@@ -84,7 +84,7 @@ export function PartnerForm({
 				main={
 					<FormSection
 						title="Partner details"
-						description="Organisations KAPE collaborates with, shown on the Partners page."
+						description="Organisations you collaborate with, shown on the Partners page."
 					>
 						<div className="space-y-4">
 							<div>

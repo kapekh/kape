@@ -241,7 +241,7 @@ export function PeopleForm({
 										type="email"
 										value={email}
 										onChange={(e) => setEmail(e.target.value)}
-										placeholder="name@kapekh.org"
+										placeholder="name@example.org"
 									/>
 								</div>
 								<div className="sm:col-span-2">

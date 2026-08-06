@@ -6,8 +6,13 @@ import { deleteUpload } from "./storage";
 
 const KEY = "uploads/00000000-0000-4000-8000-00000000test.png";
 const PATH = `public/${KEY}`;
+// A file the traversal attempt aims at, so the assertion proves the refusal
+// rather than depending on whatever happens to sit in the repo root.
+const OUTSIDE = "traversal-target.tmp";
 
-afterAll(() => rm(PATH, { force: true }));
+afterAll(() =>
+	Promise.all([rm(PATH, { force: true }), rm(OUTSIDE, { force: true })]),
+);
 
 describe("deleteUpload", () => {
 	it("removes the file behind an upload key", async () => {
@@ -22,12 +27,11 @@ describe("deleteUpload", () => {
 	});
 
 	it("ignores keys that are not our own uploads", async () => {
+		await writeFile(OUTSIDE, "x");
+		await expect(deleteUpload("seed/nav-who.jpg")).resolves.toBeUndefined();
 		await expect(
-			deleteUpload("seed/nav-kape-who.jpg"),
+			deleteUpload(`uploads/../../${OUTSIDE}`),
 		).resolves.toBeUndefined();
-		await expect(
-			deleteUpload("uploads/../../kape.db"),
-		).resolves.toBeUndefined();
-		expect(existsSync("kape.db")).toBe(true);
+		expect(existsSync(OUTSIDE)).toBe(true);
 	});
 });

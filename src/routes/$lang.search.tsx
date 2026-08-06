@@ -5,6 +5,7 @@ import { NavLink } from "@/components/NavLink";
 import { SubPage } from "@/components/SubPage";
 import { useLang } from "@/lib/i18n";
 import { DEFAULT_LANG, LANGS, localizedHref } from "@/lib/i18n-config";
+import { pageTitle, siteShortName } from "@/lib/site-identity";
 import { db } from "@/server/db";
 import { searchSite } from "@/server/repo/search";
 
@@ -25,7 +26,7 @@ export const Route = createFileRoute("/$lang/search")({
 	validateSearch: (s: Record<string, unknown>): { q?: string } =>
 		typeof s.q === "string" && s.q ? { q: s.q } : {},
 	loaderDeps: ({ search }) => ({ q: search.q ?? "" }),
-	loader: ({ params, location, deps }) => {
+	loader: async ({ context, params, location, deps }) => {
 		// `/$lang/search` also matches `/foo/search`; a non-language first segment
 		// is content, not a language, so send it to the default-language URL.
 		if (!LANGS.includes(params.lang))
@@ -33,14 +34,21 @@ export const Route = createFileRoute("/$lang/search")({
 				href: `/${DEFAULT_LANG}${location.pathname}${location.searchStr}`,
 				statusCode: 301,
 			});
-		return runSearch({ data: { q: deps.q, lang: params.lang } });
+		const [result, settings] = await Promise.all([
+			runSearch({ data: { q: deps.q, lang: params.lang } }),
+			context.queryClient.ensureQueryData(
+				context.trpc.site.settings.queryOptions(),
+			),
+		]);
+		return { ...result, settings };
 	},
 	head: ({ loaderData }) => ({
 		meta: [
 			{
-				title: loaderData?.query
-					? `${loaderData.query} — KAPE`
-					: "Search — KAPE",
+				title: pageTitle(
+					loaderData?.query || "Search",
+					loaderData?.settings ?? {},
+				),
 			},
 			// a results page is not content; keep it out of the index
 			{ name: "robots", content: "noindex" },
@@ -50,7 +58,7 @@ export const Route = createFileRoute("/$lang/search")({
 });
 
 function SearchPage() {
-	const { query, results, total, limit } = Route.useLoaderData();
+	const { query, results, total, limit, settings } = Route.useLoaderData();
 	const { lang, t } = useLang();
 	const label = t("top.search", "Search");
 
@@ -72,7 +80,10 @@ function SearchPage() {
 						defaultValue={query}
 						// biome-ignore lint/a11y/noAutofocus: the whole page is this one field
 						autoFocus
-						placeholder={t("search.placeholder", "Search KAPE")}
+						placeholder={t(
+							"search.placeholder",
+							`Search ${siteShortName(settings)}`,
+						)}
 						className="min-w-0 flex-1 rounded-full border border-border bg-card px-5 py-3 text-base shadow-[var(--shadow-soft)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
 					/>
 					<button

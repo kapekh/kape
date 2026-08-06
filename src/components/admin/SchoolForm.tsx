@@ -129,7 +129,7 @@ export function SchoolForm({
 					<>
 						<FormSection
 							title="School details"
-							description="The school's name and where it sits in KAPE's work."
+							description="The school's name and where it sits in the programme."
 						>
 							<div className="space-y-4">
 								<div>

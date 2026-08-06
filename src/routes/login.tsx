@@ -1,12 +1,21 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
+import { adminTitle, siteInitial } from "#/lib/site-identity";
+
 export const Route = createFileRoute("/login")({
-	head: () => ({ meta: [{ title: "Sign in — KAPE Admin" }] }),
+	loader: ({ context }) =>
+		context.queryClient.ensureQueryData(
+			context.trpc.site.settings.queryOptions(),
+		),
+	head: ({ loaderData }) => ({
+		meta: [{ title: `Sign in — ${adminTitle(loaderData ?? {})}` }],
+	}),
 	component: LoginPage,
 });
 
 function LoginPage() {
+	const settings = Route.useLoaderData();
 	const navigate = useNavigate();
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
@@ -46,10 +55,10 @@ function LoginPage() {
 			<div className="w-full max-w-sm">
 				<div className="flex flex-col items-center text-center mb-6">
 					<span className="h-12 w-12 rounded-2xl bg-[var(--gold)] text-primary grid place-items-center font-display font-bold text-2xl shadow-[var(--shadow-soft)]">
-						K
+						{siteInitial(settings)}
 					</span>
 					<div className="mt-3 font-display font-semibold text-xl text-primary">
-						KAPE Admin
+						{adminTitle(settings)}
 					</div>
 					<p className="text-sm text-muted-foreground mt-0.5">
 						Sign in to manage the website.
@@ -74,7 +83,7 @@ function LoginPage() {
 								className={input}
 								type="email"
 								autoComplete="username"
-								placeholder="you@kapekh.org"
+								placeholder="you@example.org"
 								value={email}
 								onChange={(e) => setEmail(e.target.value)}
 								required
@@ -106,7 +115,7 @@ function LoginPage() {
 				</form>
 				<p className="mt-5 text-center text-xs text-muted-foreground">
 					<a href="/" className="hover:text-foreground transition">
-						← Back to kapekh.org
+						← Back to the site
 					</a>
 				</p>
 			</div>

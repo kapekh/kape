@@ -92,7 +92,7 @@ async function startDonation(request: Request): Promise<Response> {
 				? customName || null
 				: null;
 
-	const orderId = `KAPE-${crypto.randomUUID()}`;
+	const orderId = `ORD-${crypto.randomUUID()}`;
 	const amount = formatAmount(value, currency);
 
 	await createDonation(db, {

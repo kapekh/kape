@@ -64,7 +64,7 @@ function SchoolsList() {
 						Schools
 					</h1>
 					<p className="mt-1 text-sm text-muted-foreground">
-						Schools KAPE supports — {rows.length} total.
+						Schools supported — {rows.length} total.
 					</p>
 				</div>
 				<Link

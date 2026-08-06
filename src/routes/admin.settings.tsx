@@ -67,7 +67,7 @@ function SettingsAdmin() {
 
 			<FormSection
 				title="Add setting"
-				description="A key/value pair, e.g. contact_email → kape@kapekh.org."
+				description="A key/value pair, e.g. contact_email → hello@example.org."
 			>
 				<div className="flex flex-wrap items-end gap-3">
 					<div className="min-w-[180px]">
@@ -83,7 +83,7 @@ function SettingsAdmin() {
 						<label className={fieldLabel}>Value</label>
 						<input
 							className={fieldInput}
-							placeholder="kape@kapekh.org"
+							placeholder="hello@example.org"
 							value={add.value}
 							onChange={(e) => setAdd({ ...add, value: e.target.value })}
 							onKeyDown={(e) => e.key === "Enter" && create()}

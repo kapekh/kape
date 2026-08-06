@@ -28,8 +28,8 @@ describe("localizedHref", () => {
 	});
 
 	it("leaves externals and anchors alone", () => {
-		expect(localizedHref("https://kapekh.org", "km")).toBe(
-			"https://kapekh.org",
+		expect(localizedHref("https://example.org", "km")).toBe(
+			"https://example.org",
 		);
 		expect(localizedHref("#donate", "km")).toBe("#donate");
 	});

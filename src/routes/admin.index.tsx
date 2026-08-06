@@ -63,7 +63,7 @@ function Dashboard() {
 						Overview
 					</h1>
 					<p className="mt-1 text-sm text-muted-foreground">
-						What's happening across the KAPE website.
+						What's happening across the website.
 					</p>
 				</div>
 				<div className="flex gap-2">

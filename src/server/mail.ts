@@ -1,6 +1,9 @@
 import nodemailer from "nodemailer";
 
 import { env } from "#/env";
+import { siteName } from "#/lib/site-identity";
+import { db } from "./db";
+import { getSettings } from "./repo/site";
 
 /**
  * Sends mail via SMTP (e.g. Gmail) when configured. In dev without SMTP creds,
@@ -26,13 +29,15 @@ export async function sendContactEmail(msg: {
 	// Strip CR/LF from anything that lands in a header (subject, replyTo) so a
 	// crafted name/email can't inject extra SMTP headers (BCC, etc.).
 	const header = (s: string) => s.replace(/[\r\n]+/g, " ").trim();
-	const subject = header(`KAPE website contact — ${msg.name}`);
+	const subject = header(
+		`${siteName(await getSettings(db))} website contact — ${msg.name}`,
+	);
 	const replyTo = header(msg.email);
 	const text = `Name: ${msg.name}\nEmail: ${msg.email}\nPhone: ${msg.phone ?? "-"}\n\n${msg.message}`;
 
-	if (!transport) {
+	if (!transport || !env.MAIL_TO) {
 		console.log(
-			`[mail] (SMTP not configured) would send to ${env.MAIL_TO}:\n${subject}\n${text}`,
+			`[mail] (${transport ? "MAIL_TO unset" : "SMTP not configured"}) would send to ${env.MAIL_TO || "nobody"}:\n${subject}\n${text}`,
 		);
 		return;
 	}

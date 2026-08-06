@@ -9,7 +9,7 @@ import { and, eq } from "drizzle-orm";
 
 import { db } from "../src/server/db";
 import { media, navItems, translations } from "../src/server/schema";
-import { NAV_META } from "../src/server/seed";
+import { NAV_META } from "../src/server/seed/nav";
 
 const TENANT = 1;
 

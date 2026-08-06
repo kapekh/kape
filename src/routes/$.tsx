@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, notFound, redirect } from "@tanstack/react-router";
 
-import students from "@/assets/students.jpg.asset.json";
 import { AnnouncementPopup } from "@/components/AnnouncementPopup";
 import { JsonLd } from "@/components/JsonLd";
 import { PhotoGrid } from "@/components/Lightbox";
@@ -21,6 +20,12 @@ import {
 	localizedHref,
 	stripLang,
 } from "@/lib/i18n-config";
+import {
+	pageTitle,
+	siteDescription,
+	siteShortName,
+	siteTitle,
+} from "@/lib/site-identity";
 import { articleLd } from "@/lib/structured-data";
 
 // pool, not display count — the current article is filtered out of it
@@ -75,40 +80,47 @@ export const Route = createFileRoute("/$")({
 				}),
 			);
 		}
-		return resolved;
+		const settings = await context.queryClient.ensureQueryData(
+			context.trpc.site.settings.queryOptions(),
+		);
+		return { route: resolved, settings };
 	},
 	head: ({ loaderData, params }) => {
-		const r = loaderData;
-		let title = "KAPE";
-		let description =
-			"KAPE — access, quality and equity in education across Cambodia.";
+		const settings = loaderData?.settings ?? {};
+		const r = loaderData?.route;
+		let title = siteShortName(settings);
+		let description = siteDescription(settings);
 		let image: string | null = null;
 		if (r?.kind === "page" && r.page.slug === "home") {
-			title = "KAPE — Kampuchea Action to Promote Education";
-			description =
-				"For more than three decades, KAPE has championed equitable, transformative education for Cambodian children — across 385+ schools, 15 provinces, and over 160,000 lives.";
-			image = students.url;
+			// The home page IS the site, so it carries the site title unsuffixed.
+			title = siteTitle(settings);
+			description = r.page.excerpt || description;
+			image = r.page.coverUrl;
 		} else if (r?.kind === "page") {
-			title = `${r.page.title} — KAPE`;
+			title = pageTitle(r.page.title, settings);
 			description = r.page.excerpt || description;
 			image = r.page.coverUrl;
 		} else if (r?.kind === "article") {
-			title = `${r.post.title} — KAPE`;
+			title = pageTitle(r.post.title, settings);
 			description = r.post.excerpt || description;
 		} else if (r?.kind === "album") {
-			title = `${r.album.title} — KAPE`;
+			title = pageTitle(r.album.title, settings);
 		} else if (r?.kind === "project") {
-			title = `${r.project.name} — KAPE`;
+			title = pageTitle(r.project.name, settings);
 		} else if (r?.kind === "person") {
-			title = `${r.person.name} — KAPE`;
+			title = pageTitle(r.person.name, settings);
 			description = r.person.position || description;
 			image = r.person.photoUrl;
 		}
 		const meta: Array<Record<string, string>> = [
 			{ title },
-			{ name: "description", content: description },
 			{ property: "og:title", content: title },
-			{ property: "og:description", content: description },
+			...(description
+				? [
+						{ name: "description", content: description },
+						{ property: "og:description", content: description },
+					]
+				: []),
 		];
 
 		// Canonical + hreflang alternates (only when a site URL is configured —
@@ -217,7 +229,7 @@ function RelatedPosts({
 }
 
 function ResolvedRoute() {
-	const r = Route.useLoaderData();
+	const { route: r, settings } = Route.useLoaderData();
 	const { lang } = useLang();
 
 	if (r.kind === "page") {
@@ -237,7 +249,7 @@ function ResolvedRoute() {
 			return (
 				<SubPage
 					wide
-					section={page.parentTitle ?? "KAPE"}
+					section={page.parentTitle ?? siteShortName(settings)}
 					title={page.title}
 					lead={page.excerpt || undefined}
 					heroImage={page.coverUrl || undefined}
@@ -279,14 +291,14 @@ function ResolvedRoute() {
 		}
 		return (
 			<SubPage
-				section={page.parentTitle ?? "KAPE"}
+				section={page.parentTitle ?? siteShortName(settings)}
 				title={page.title}
 				lead={page.excerpt || undefined}
 				heroImage={page.coverUrl || undefined}
 			>
 				{hasBody ? (
 					<div
-						className="prose-kape"
+						className="prose-body"
 						// biome-ignore lint/security/noDangerouslySetInnerHtml: trusted, server-rendered
 						dangerouslySetInnerHTML={{ __html: page.bodyHtml }}
 					/>
@@ -317,20 +329,23 @@ function ResolvedRoute() {
 				heroImage={post.coverUrl || undefined}
 			>
 				<JsonLd
-					data={articleLd({
-						title: post.title,
-						description: post.excerpt,
-						image: post.coverUrl,
-						datePublished: post.publishedAt,
-						author: post.author,
-					})}
+					data={articleLd(
+						{
+							title: post.title,
+							description: post.excerpt,
+							image: post.coverUrl,
+							datePublished: post.publishedAt,
+							author: post.author,
+						},
+						settings,
+					)}
 				/>
 				{post.publishedAt && (
 					<div className="text-xs text-[var(--accent)] font-semibold uppercase tracking-wider mb-6">
-						{post.publishedAt} · {post.author ?? "KAPE Cambodia"}
+						{post.publishedAt} · {post.author ?? siteShortName(settings)}
 					</div>
 				)}
-				<RichBody className="prose-kape" html={post.bodyHtml} />
+				<RichBody className="prose-body" html={post.bodyHtml} />
 				{post.gallery.length > 0 && (
 					<div className="mt-10">
 						<PhotoGrid photos={post.gallery} />
@@ -384,7 +399,7 @@ function ResolvedRoute() {
 					/>
 				)}
 				{p.bodyHtml ? (
-					<RichBody className="prose-kape" html={p.bodyHtml} />
+					<RichBody className="prose-body" html={p.bodyHtml} />
 				) : (
 					<p className="text-muted-foreground">{p.position}</p>
 				)}

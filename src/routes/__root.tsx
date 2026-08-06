@@ -13,10 +13,14 @@ import type { TRPCRouter } from "#/integrations/trpc/router";
 import { DialogHost } from "../components/Dialogs";
 import { Footer } from "../components/Footer";
 import { Header } from "../components/Header";
-import { JsonLd } from "../components/JsonLd";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import { LanguageProvider } from "../lib/i18n";
 import { detectLang } from "../lib/i18n-config";
+import {
+	siteDescription,
+	siteShortName,
+	siteTitle,
+} from "../lib/site-identity";
 import { organizationLd } from "../lib/structured-data";
 import appCss from "../styles.css?url";
 
@@ -44,39 +48,44 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 		);
 		return { ...boot, nav, settings };
 	},
-	head: () => ({
-		meta: [
-			{ charSet: "utf-8" },
-			{ name: "viewport", content: "width=device-width, initial-scale=1" },
-			{ title: "KAPE — Kampuchea Action to Promote Education" },
-			{
-				name: "description",
-				content:
-					"Kampuchea Action to Promote Education (KAPE) advances equitable, transformative education for children across Cambodia.",
-			},
-			{ name: "theme-color", content: "#1f4e79" },
-			// Social sharing defaults (per-route head() can override title/description/image).
-			{ property: "og:type", content: "website" },
-			{ property: "og:site_name", content: "KAPE Cambodia" },
-			{
-				property: "og:title",
-				content: "KAPE — Kampuchea Action to Promote Education",
-			},
-			{
-				property: "og:description",
-				content:
-					"Advancing equitable, transformative education for children across Cambodia.",
-			},
-			{ property: "og:image", content: "/logo.png" },
-			{ name: "twitter:card", content: "summary" },
-		],
-		links: [
-			{ rel: "stylesheet", href: appCss },
-			{ rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
-			{ rel: "apple-touch-icon", href: "/logo.png" },
-			{ rel: "manifest", href: "/manifest.json" },
-		],
-	}),
+	head: ({ loaderData }) => {
+		const settings = loaderData?.settings ?? {};
+		const title = siteTitle(settings);
+		const description = siteDescription(settings);
+		return {
+			meta: [
+				{ charSet: "utf-8" },
+				{ name: "viewport", content: "width=device-width, initial-scale=1" },
+				{ title },
+				...(description ? [{ name: "description", content: description }] : []),
+				{ name: "theme-color", content: "#1f4e79" },
+				// Social sharing defaults (per-route head() can override title/description/image).
+				{ property: "og:type", content: "website" },
+				{ property: "og:site_name", content: siteShortName(settings) },
+				{ property: "og:title", content: title },
+				...(description
+					? [{ property: "og:description", content: description }]
+					: []),
+				{ property: "og:image", content: "/logo.png" },
+				{ name: "twitter:card", content: "summary" },
+			],
+			links: [
+				{ rel: "stylesheet", href: appCss },
+				{ rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
+				{ rel: "apple-touch-icon", href: "/logo.png" },
+				{ rel: "manifest", href: "/manifest.json" },
+			],
+			scripts: [
+				{
+					type: "application/ld+json",
+					children: JSON.stringify(organizationLd(settings)).replace(
+						/</g,
+						"\\u003c",
+					),
+				},
+			],
+		};
+	},
 	errorComponent: RootError,
 	notFoundComponent: RootNotFound,
 	shellComponent: RootDocument,
@@ -166,7 +175,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 					}}
 				/>
 				<HeadContent />
-				<JsonLd data={organizationLd()} />
 			</head>
 			<body>
 				{children}

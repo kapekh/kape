@@ -4,6 +4,7 @@ import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { FOOTER_DEFAULTS } from "@/lib/footer-defaults";
 import { useLang } from "@/lib/i18n";
 import { DEFAULT_LANG, localizedHref } from "@/lib/i18n-config";
+import { siteName, siteShortName } from "@/lib/site-identity";
 
 import { KhmerCalendar } from "./KhmerCalendar";
 import { NavLink } from "./NavLink";
@@ -139,7 +140,7 @@ export function Footer({ settings }: { settings: Record<string, string> }) {
 					<div className="flex items-center gap-3">
 						<img
 							src="/logo.png"
-							alt="KAPE"
+							alt={siteShortName(settings)}
 							className="h-12 w-12 shrink-0 rounded-full object-cover bg-white ring-1 ring-white/20"
 						/>
 						<div>
@@ -283,7 +284,7 @@ export function Footer({ settings }: { settings: Record<string, string> }) {
 				</div>
 			</div>
 			<div className="mx-auto max-w-7xl px-6 mt-16 pt-6 border-t border-primary-foreground/15 flex flex-wrap justify-between gap-4 text-xs opacity-70">
-				<div>{s("copyright") || "© Kampuchea Action to Promote Education"}</div>
+				<div>{s("copyright") || `© ${siteName(settings)}`}</div>
 				{visits && (
 					<div>
 						Today: {visits.today.toLocaleString()} · Total visits:{" "}

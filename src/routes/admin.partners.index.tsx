@@ -45,7 +45,7 @@ function PartnersList() {
 						Partners
 					</h1>
 					<p className="mt-1 text-sm text-muted-foreground">
-						Organisations KAPE collaborates with — {rows.length} total.
+						Partner organisations — {rows.length} total.
 					</p>
 				</div>
 				<Link

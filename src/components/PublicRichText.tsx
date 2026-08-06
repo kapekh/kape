@@ -96,7 +96,7 @@ export function PublicRichText({
 			)}
 			<EditorContent
 				editor={editor}
-				className={`prose-kape px-3 py-2 text-sm [&_.ProseMirror]:min-h-[120px] [&_.ProseMirror]:outline-none ${km ? "font-khmer" : ""}`}
+				className={`prose-body px-3 py-2 text-sm [&_.ProseMirror]:min-h-[120px] [&_.ProseMirror]:outline-none ${km ? "font-khmer" : ""}`}
 			/>
 		</div>
 	);

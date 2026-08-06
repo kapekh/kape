@@ -44,7 +44,7 @@ function NewsFeed() {
 							</h2>
 							{/* biome-ignore lint/security/noDangerouslySetInnerHtml: trusted, server-rendered */}
 							<div
-								className="prose-kape mt-2 text-sm"
+								className="prose-body mt-2 text-sm"
 								dangerouslySetInnerHTML={{ __html: n.bodyHtml }}
 							/>
 						</article>

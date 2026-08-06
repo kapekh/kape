@@ -120,7 +120,7 @@
   --card-foreground: oklch(0.22 0.04 40);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.22 0.04 40);
-  /* Deep navy blue — KAPE trust */
+  /* Deep navy blue */
   --primary: oklch(0.30 0.10 255);
   --primary-foreground: oklch(0.985 0.012 80);
   /* Saffron/terracotta — Cambodia warmth */
@@ -270,25 +270,25 @@
   }
 
   /* Rich-text body styling (articles, richtext sections, project descriptions). */
-  .prose-kape {
+  .prose-body {
     color: color-mix(in oklch, var(--foreground) 88%, transparent);
     line-height: 1.75;
     font-size: 1.05rem;
   }
-  .prose-kape > :first-child { margin-top: 0; }
-  .prose-kape > * + * { margin-top: 1.1em; }
-  .prose-kape h1, .prose-kape h2, .prose-kape h3, .prose-kape h4 {
+  .prose-body > :first-child { margin-top: 0; }
+  .prose-body > * + * { margin-top: 1.1em; }
+  .prose-body h1, .prose-body h2, .prose-body h3, .prose-body h4 {
     font-family: var(--font-display);
     font-weight: 600;
     color: var(--primary);
     letter-spacing: -0.02em;
     line-height: 1.25;
   }
-  .prose-kape h2 { font-size: 1.6rem; margin-top: 2em; margin-bottom: 0.1em; }
-  .prose-kape h3 { font-size: 1.3rem; margin-top: 1.6em; margin-bottom: 0.1em; }
-  .prose-kape h4 { font-size: 1.1rem; margin-top: 1.4em; margin-bottom: 0.1em; }
-  .prose-kape p { margin-bottom: 0; }
-  .prose-kape a {
+  .prose-body h2 { font-size: 1.6rem; margin-top: 2em; margin-bottom: 0.1em; }
+  .prose-body h3 { font-size: 1.3rem; margin-top: 1.6em; margin-bottom: 0.1em; }
+  .prose-body h4 { font-size: 1.1rem; margin-top: 1.4em; margin-bottom: 0.1em; }
+  .prose-body p { margin-bottom: 0; }
+  .prose-body a {
     color: var(--accent);
     font-weight: 500;
     text-decoration: underline;
@@ -296,22 +296,22 @@
     text-underline-offset: 3px;
     transition: color 0.15s;
   }
-  .prose-kape a:hover { color: color-mix(in oklch, var(--accent) 75%, black); }
-  .prose-kape strong { color: var(--primary); font-weight: 600; }
-  .prose-kape ul, .prose-kape ol { padding-left: 1.4em; }
-  .prose-kape ul { list-style: disc; }
-  .prose-kape ol { list-style: decimal; }
-  .prose-kape li { margin-top: 0.4em; padding-left: 0.2em; }
-  .prose-kape li::marker { color: var(--accent); }
-  .prose-kape blockquote {
+  .prose-body a:hover { color: color-mix(in oklch, var(--accent) 75%, black); }
+  .prose-body strong { color: var(--primary); font-weight: 600; }
+  .prose-body ul, .prose-body ol { padding-left: 1.4em; }
+  .prose-body ul { list-style: disc; }
+  .prose-body ol { list-style: decimal; }
+  .prose-body li { margin-top: 0.4em; padding-left: 0.2em; }
+  .prose-body li::marker { color: var(--accent); }
+  .prose-body blockquote {
     border-left: 3px solid var(--secondary);
     padding: 0.2em 0 0.2em 1.2em;
     font-style: italic;
     color: var(--muted-foreground);
   }
-  .prose-kape img { border-radius: 1rem; margin: 1.6em 0; box-shadow: var(--shadow-soft); }
-  .prose-kape hr { border: 0; border-top: 1px solid var(--border); margin: 2.2em 0; }
-  .prose-kape code {
+  .prose-body img { border-radius: 1rem; margin: 1.6em 0; box-shadow: var(--shadow-soft); }
+  .prose-body hr { border: 0; border-top: 1px solid var(--border); margin: 2.2em 0; }
+  .prose-body code {
     font-size: 0.9em;
     background: var(--muted);
     padding: 0.15em 0.4em;
@@ -403,7 +403,7 @@
 .org-tree .org-title { font-size: 0.72rem; color: var(--muted-foreground); line-height: 1.2; }
 
 /* Rich-text embedded-form placeholder (shown in the editor + before hydration). */
-.kape-form-embed {
+.form-embed {
 	display: block;
 	margin: 1rem 0;
 	border: 1px dashed var(--border);

@@ -14,7 +14,7 @@ import type { FormField } from "#/lib/forms";
 import type { SectionNode } from "#/lib/sections";
 
 /**
- * KAPE CMS schema — single source of truth (Drizzle / SQLite).
+ * CMS schema — single source of truth (Drizzle / SQLite).
  *
  * Model: blog **posts** (one table, `content_type` + `meta` JSON) + rich-text **pages** +
  * an admin-built **nav_items** tree. All translatable TEXT lives in `translations` so languages
@@ -739,7 +739,7 @@ export const offices = sqliteTable("offices", {
 	sort: integer("sort").notNull().default(0),
 });
 
-/** Schools KAPE supports. Belongs to a project; province via `location` term. */
+/** Supported schools. Belongs to a project; province via `location` term. */
 export const schools = sqliteTable("schools", {
 	id: integer("id").primaryKey({ autoIncrement: true }),
 	tenantId: integer("tenant_id")

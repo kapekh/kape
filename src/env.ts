@@ -11,7 +11,7 @@ const INSECURE_DEFAULT_SECRET = "dev-insecure-secret-change-me-please-32b";
 
 const envSchema = z.object({
 	// Local SQLite file used by Bun's built-in SQL engine.
-	DATABASE_PATH: z.string().min(1).default("./kape.db"),
+	DATABASE_PATH: z.string().min(1).default("./cms.db"),
 
 	// Secret used to sign session JWTs. MUST be overridden in production and kept
 	// constant across restarts — otherwise existing logins are invalidated.
@@ -46,7 +46,7 @@ const envSchema = z.object({
 	SMTP_USER: z.string().optional(),
 	SMTP_PASS: z.string().optional(),
 	MAIL_FROM: z.string().optional(),
-	MAIL_TO: z.string().default("kape@kapekh.org"),
+	MAIL_TO: z.string().default(""),
 
 	// Baray payment gateway (https://baray.io) for donations. All three of
 	// API_KEY/SK/IV are required to accept payments; when unset the donate flow

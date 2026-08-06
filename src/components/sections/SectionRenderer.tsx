@@ -404,7 +404,7 @@ function RichText(p: P) {
 		<section className={`${PAD} ${toneBg(p.tone)}`}>
 			<Container className={p.layout === "narrow" ? "max-w-3xl" : "max-w-4xl"}>
 				<Heading eyebrow={p.eyebrow} title={p.title} />
-				<RichBody className="prose-kape" html={p.bodyHtml ?? ""} />
+				<RichBody className="prose-body" html={p.bodyHtml ?? ""} />
 			</Container>
 		</section>
 	);
@@ -786,7 +786,7 @@ function Split(p: P) {
 					{renderTitle(p.title, "italic text-primary")}
 				</h2>
 			)}
-			<RichBody className="prose-kape mt-6" html={p.bodyHtml ?? ""} />
+			<RichBody className="prose-body mt-6" html={p.bodyHtml ?? ""} />
 		</div>
 	);
 	return (

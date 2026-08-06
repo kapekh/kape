@@ -32,7 +32,7 @@ function DonateSuccess() {
 
 	return (
 		<SubPage
-			section="Support KAPE"
+			section="Donate"
 			title="Thank you"
 			badge="With gratitude"
 			lead="Your generosity helps Cambodian children learn, dream, and rise."
@@ -43,8 +43,7 @@ function DonateSuccess() {
 				<Card accent>
 					{paid ? (
 						<p className="text-base">
-							🎉 Your donation has been confirmed. Thank you for standing with
-							KAPE — your support reaches classrooms across 15 provinces.
+							🎉 Your donation has been confirmed. Thank you for your support.
 						</p>
 					) : (
 						<p className="text-base">

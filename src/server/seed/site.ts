@@ -1,10 +1,13 @@
-import { FOOTER_DEFAULTS } from "#/lib/footer-defaults";
-import { HEADER_DEFAULTS } from "#/lib/header-defaults";
 import { db } from "../db";
 import { offices, siteSettings, stats } from "../schema";
 import { addTranslations, TENANT } from "./helpers";
 
-/** Site settings (kv). */
+/**
+ * Site settings (kv). Spelt out rather than spread from `#/lib/footer-defaults`
+ * and `#/lib/header-defaults`: those are the product's neutral defaults for a
+ * fresh install, so importing them here would rewrite the client's footer every
+ * time the product's defaults move.
+ */
 export async function seedSiteSettings() {
 	await db.insert(siteSettings).values(
 		Object.entries({
@@ -16,8 +19,35 @@ export async function seedSiteSettings() {
 			copyright: "© 2026 Kampuchea Action to Promote Education",
 			youtube_url: "https://www.youtube.com/@KAPECambodia",
 			social_facebook: "https://facebook.com/KAPECambodia",
-			...FOOTER_DEFAULTS, // editable footer text/links (org name, blurb, Explore links, …)
-			...HEADER_DEFAULTS, // editable header bits (donate button + top-bar links)
+			site_name_km: "អង្គការសកម្មភាពសម្រាប់ការអប់រំនៅកម្ពុជា",
+			site_name_en: "Kampuchea Action to Promote Education",
+			footer_blurb:
+				"KAPE works at every level of formal education across 15 provinces in Cambodia — from preschools to Master's programs in Mentoring.",
+			footer_links_title: "Explore",
+			footer_links:
+				"Annual Report|/media/annual-report, Impact Stories|/stories, Research|/media/paper-research, Program Brochure|/media/program-brochure, Photo Gallery|/galleries, Video Gallery|/videos, Policies|/media/policies",
+			// slugs carry no year, so the label can be rolled forward alone
+			footer_buttons:
+				"Public Holidays in Cambodia 2026|/calendar/public-holidays-cambodia, Public Holidays in KAPE 2026|/calendar/public-holidays-kape, International Days|/calendar/international-days",
+			newsletter_title: "Newsletter",
+			newsletter_text: "Subscribe to receive our e-newsletter.",
+			footer_socials: JSON.stringify([
+				{
+					name: "Facebook",
+					url: "https://facebook.com/KAPECambodia",
+					logoUrl: "",
+				},
+				{
+					name: "YouTube",
+					url: "https://www.youtube.com/@KAPECambodia",
+					logoUrl: "",
+				},
+				{ name: "Telegram", url: "https://t.me/kapemedia", logoUrl: "" },
+			]),
+			header_donate_label: "♡ Donate",
+			header_donate_link: "/donate",
+			header_search_link: "/search",
+			header_sitemap_link: "/sitemap.xml",
 		}).map(([key, value]) => ({ tenantId: TENANT, key, value })),
 	);
 }

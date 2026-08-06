@@ -5,6 +5,8 @@ import { DEFAULT_LANG } from "#/lib/i18n-config";
 import { db } from "#/server/db";
 import { siteOrigin } from "#/server/origin";
 import { listPosts } from "#/server/repo/content";
+import { getSettings } from "#/server/repo/site";
+import { siteDescription, siteTitle } from "#/lib/site-identity";
 
 /**
  * /llms.txt — the llmstxt.org convention: a curated, plain-markdown map of the
@@ -17,14 +19,20 @@ async function handler({ request }: { request: Request }) {
 	const base = siteOrigin(request);
 	const lang = DEFAULT_LANG;
 	const u = (path: string) => `${base}/${lang}${path}`;
+	const settings = await getSettings(db);
+	const description = siteDescription(settings);
 
 	const lines: string[] = [
-		"# KAPE — Kampuchea Action to Promote Education",
+		`# ${siteTitle(settings)}`,
 		"",
-		"> KAPE is a Cambodian NGO advancing equitable, transformative education for children across 15 provinces — from preschool through teacher training. This file helps language models find the key public content.",
-		"",
+		...(description
+			? [
+					`> ${description} This file helps language models find the key public content.`,
+					"",
+				]
+			: []),
 		"## Key pages",
-		`- [Home](${u("")}): overview of KAPE's mission, programs and impact`,
+		`- [Home](${u("")}): overview of the organisation, its programs and impact`,
 	];
 	for (const c of Object.values(COLLECTIONS)) {
 		if (c.contentType && BLOCKED.has(c.contentType)) continue;

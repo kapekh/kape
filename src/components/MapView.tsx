@@ -102,7 +102,7 @@ export function MapView({
 			}).addTo(map);
 
 			const icon = L.divIcon({
-				className: "kape-pin",
+				className: "map-pin",
 				html: PIN_HTML,
 				iconSize: [1, 1],
 				iconAnchor: [0, 0],
