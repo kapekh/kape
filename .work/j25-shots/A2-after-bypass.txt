@@ -1,0 +1,23 @@
+=== A2 AFTER, clean limiter state, TRUSTED_PROXY_HEADER unset (default deployment) ===
+Requests are sent from distinct real loopback source addresses so the socket
+peer and the claimed header can be varied independently.
+
+--- attack 1: one attacker, rotating cf-connecting-ip + x-forwarded-for, 60 wrong passwords ---
+  non-429 responses: 20 / 60   (first 429 at attempt: 21)
+  BEFORE this fix the same loop scored 60/60 non-429.
+
+--- attack 2: stranger tries to lock out admin@kapekh.org ---
+20 wrong passwords from source 127.0.0.20, each claiming the victim's IP in both headers
+  attacker's own bucket is now exhausted:
+    attacker further attempt -> HTTP 429
+
+  the real admin, arriving from their OWN address (127.0.0.21), correct password:
+    -> HTTP 200 in 2104ms
+    200 = the lockout attempt FAILED. Before this fix the same attack returned 429.
+
+--- the declared-proxy path still works: TRUSTED_PROXY_HEADER=cf-connecting-ip (port 3225) ---
+server ready after 1s
+  Two clients behind the SAME proxy socket but different declared client IPs
+  must get separate buckets, or one visitor throttles everyone.
+    client A (198.51.100.5), 22 attempts: 2 were 429  (limit 20, so throttling engaged)
+    client B (198.51.100.6), correct password: HTTP 200   (200 = not collateral-damaged)

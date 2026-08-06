@@ -1,0 +1,20 @@
+=== A3 AFTER: TRUSTED_PROXY_HEADER=x-forwarded-for, RIGHTMOST element wins ===
+Appending proxy shape: 'x-forwarded-for: <caller-supplied>, <real client>'.
+
+--- attack 1: rotate the leftmost element; real client fixed at 198.51.100.99 ---
+  connection errors: 0   (must be 0 for this run to mean anything)
+  non-429: 20 / 40   (first 429 at attempt: 21)
+  BEFORE the fix: 40/40 non-429, never throttled.
+
+--- attack 2: burn a victim's CLAIMED value, then the victim presents it ---
+attacker (real client 198.51.100.99) sends 20 failures claiming leftmost 203.0.113.55
+  victim, real client 198.51.100.7, correct password -> HTTP 200
+  BEFORE the fix this was 429. 200 = the victim is no longer collateral.
+
+--- and the attacker's own real address IS throttled ---
+  attacker (real client 198.51.100.99), new claimed leftmost -> HTTP 429   (429 = bucket follows the real client)
+
+=== regression: DEFAULT mode (TRUSTED_PROXY_HEADER unset) still holds after the rewrite ===
+  connection errors: 0
+  rotating headers: non-429 20 / 40, first 429 at attempt 21  (headers still ignored)
+  a different real peer, correct password -> HTTP 200  (200 = separate bucket, no collateral)

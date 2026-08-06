@@ -1,0 +1,31 @@
+=== C: payment webhook forge attempt ===
+-- env: is Baray configured in this scratch server? --
+BARAY_* lines in .env: 0
+
+-- POST webhook, empty body --
+{"error":"not configured"}
+HTTP 503
+
+-- POST webhook, forged encrypted_order_id (no shared key) --
+{"error":"not configured"}
+HTTP 503
+
+-- flood check: 130 rapid webhook POSTs, show where 429 begins (rate-limit) --
+first 429 at request: 0 (limit 120/min); note 503 short-circuits before rate-limit when Baray unconfigured
+
+=== C (throwaway server, DUMMY Baray key set) ===
+-- (1) forged random encrypted_order_id, WITHOUT the key -> decrypt fails --
+{"error":"invalid payload"}
+HTTP 400
+
+-- (2) ciphertext built WITH the shared key, unknown order -> reaches mark-paid, only the key gated it --
+{"ok":true,"matched":false}
+HTTP 200
+
+   Reading: (2) returns matched:false only because the order id is random.
+   Encrypt a REAL pending order id with the same key and it returns ok:true and flips the
+   donation to paid. The sole authenticator is the symmetric key; there is no signature,
+   no nonce, no replay guard - a captured webhook replays cleanly.
+
+-- (3) rate limit: rapid webhook POSTs, first 429 --
+first 429 at request: 119 (limit 120/60s per IP)

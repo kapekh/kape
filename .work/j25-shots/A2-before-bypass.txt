@@ -1,0 +1,6 @@
+=== A2 BEFORE: attack 1 - rotate cf-connecting-ip per request, 60 wrong passwords ===
+non-429 responses: 60 / 60   (first 429 at: 0; 0 means never)
+
+=== A2 BEFORE: attack 2 - lockout a named admin with 8 spoofed-IP failures ===
+now the real admin, arriving from that same claimed IP, with the CORRECT password:
+  admin correct pw -> HTTP 429

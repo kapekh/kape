@@ -1,0 +1,13 @@
+=== E2: malformed multipart (empty filename) ===
+BEFORE this fix: {"status":500,"unhandled":true,"message":"HTTPError"} / HTTP 500
+AFTER:
+{"error":"No file"}
+  HTTP 400
+
+--- regression: a real PNG still uploads ---
+{"id":138,"url":"/uploads/8206addc-9569-4976-8844-0040e3f69e69.png"}
+  HTTP 200
+
+--- regression: .sh renamed .png still refused ---
+{"error":"File contents do not match \".png\""}
+  HTTP 415

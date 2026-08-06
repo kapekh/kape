@@ -1,0 +1,17 @@
+=== D before: GET /admin, no cookie ===
+200 
+--- bytes returned ---
+43395
+--- admin strings present in the anonymous HTML ---
+--- markers found in anonymous /admin HTML ---
+absent : <title>KAPE Admin</title>
+absent : Checking access
+absent : admin-sidebar
+absent : /admin/users
+absent : /admin/donations
+--- markers in anonymous /admin HTML (no cookie) ---
+PRESENT: <title>KAPE Admin</title>
+PRESENT: Checking access
+absent : admin-sidebar
+absent : /admin/users
+PRESENT: /src/routes/admin.tsx

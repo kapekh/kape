@@ -1,0 +1,13 @@
+=== E before ===
+-- who am I --
+{"result":{"data":{"json":{"id":5,"email":"j25-media@kapekh.org","name":"J25 Media Tester","role":"j25_media","permissions":["media"],"isSuperAdmin":false}}}}
+-- tRPC adminMedia.list (media area, should work) --
+HTTP 200
+-- POST /api/media/upload with a real PNG --
+{"error":"Unauthorized"}
+HTTP 401
+-- same upload as the super-admin, for contrast --
+HTTP 200
+-- .sh renamed .png, as the super-admin (J23's finding) --
+{"id":133,"url":"/uploads/bc15f1dd-20f3-49c5-9cd8-4f2c095d14f5.png"}
+HTTP 200
