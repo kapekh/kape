@@ -247,6 +247,13 @@ const userInput = z.object({
 	role: z.string().min(1),
 });
 async function assertRole(ctx: TRPCContext, role: string) {
+	// Handing out the super-role is not something the `users` area should buy —
+	// otherwise any custom role granted "Users & roles" can mint an admin.
+	if (role === "admin" && !ctx.isSuperAdmin)
+		throw new TRPCError({
+			code: "FORBIDDEN",
+			message: "Only an administrator can grant the Administrator role.",
+		});
 	if (role === "admin" || role === "staff") return; // built-in
 	if (!(await roleExists(ctx.db, role)))
 		throw new TRPCError({
@@ -274,9 +281,19 @@ const adminUsersRouter = {
 		}),
 	resetPassword: adminProcedure
 		.input(z.object({ id: z.number(), password: z.string().min(8) }))
-		.mutation(({ ctx, input }) =>
-			setUserPassword(ctx.db, input.id, input.password),
-		),
+		.mutation(async ({ ctx, input }) => {
+			// Same door as assertRole: resetting an administrator's password is
+			// taking their account, so it stays with administrators.
+			if (!ctx.isSuperAdmin) {
+				const target = await getUserForEdit(ctx.db, input.id);
+				if (target?.role === "admin")
+					throw new TRPCError({
+						code: "FORBIDDEN",
+						message: "Only an administrator can reset an administrator.",
+					});
+			}
+			return setUserPassword(ctx.db, input.id, input.password);
+		}),
 	delete: adminProcedure
 		.input(z.object({ id: z.number() }))
 		.mutation(({ ctx, input }) => deleteUser(ctx.db, input.id, ctx.user.id)),
