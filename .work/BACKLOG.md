@@ -14,10 +14,10 @@ now 204 files. Formatting landed mechanically in `6f4b6b2`.
 
 | command | before | now |
 |---|---|---|
-| `bun run test` | 3 tests pass | **23 tests, 6 files** (J08 +4, J05 +3, J21 +6, J11 +7) |
+| `bun run test` | 3 tests pass | **31 tests, 8 files** (J08 +4, J05 +3, J21 +6, J11 +7, admin fixes +8) |
 | `bun run format` | 185 errors (ours) | **clean** |
-| `bun run lint` | 210 errors, 60 warnings | 216 errors, 67 warnings |
-| `bun run check` | 477 errors (ours) | 216 errors, 67 warnings |
+| `bun run lint` | 210 errors, 60 warnings | 218 errors, 67 warnings |
+| `bun run check` | 477 errors (ours) | 218 errors, 67 warnings |
 | `bunx tsc --noEmit` | 58 errors, all in `feedback/` | **0 errors** |
 
 Formatting is clean, so a formatting regression is now a real signal. Lint is still red, so
@@ -76,9 +76,10 @@ the file is free.
 from that prototype is the copy and the UI/UX, nothing else. The finished product is a CMS and every
 asset will be uploaded and changed through `/admin`, so importing 59 photographs solves a problem
 nobody has — placeholders are the correct state until an editor replaces them. The job ran to
-completion before this was known; its work is described in `.work/j19-report.md` and its artefacts
-are still in the tree, uncommitted (`scripts/import-lovable-assets.ts`, the `src/server/seed/media.ts`
-diff, 24MB in `public/uploads/`, `.work/j19-shots/`). **Do not resurrect it.** One thing it found is
+completion before this was known; its work is described in `.work/j19-report.md`. Its artefacts are
+out of the tree as of 2026-08-06: `scripts/import-lovable-assets.ts`, the `src/server/seed/media.ts`
+diff and `.work/j19-shots/` are parked in the session scratchpad, and the 24MB it wrote to
+`public/uploads/` is still on disk but gitignored. **Do not resurrect it.** One thing it found is
 worth keeping: `hero_slides` is exposed over tRPC as `heroSlides` but no public route renders it —
 the home hero comes from page section props, so the table is dead data.
 
