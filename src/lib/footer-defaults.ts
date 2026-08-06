@@ -11,6 +11,10 @@ export const FOOTER_DEFAULTS: Record<string, string> = {
 	footer_links_title: "Explore",
 	footer_links:
 		"Annual Report|/media/annual-report, Impact Stories|/stories, Research|/media/paper-research, Program Brochure|/media/program-brochure, Photo Gallery|/galleries, Video Gallery|/videos, Policies|/media/policies",
+	// Calendar buttons under the contact block, same "Label|/href" format as
+	// footer_links. Slugs carry no year, so the label can be rolled forward alone.
+	footer_buttons:
+		"Public Holidays in Cambodia 2026|/calendar/public-holidays-cambodia, Public Holidays in KAPE 2026|/calendar/public-holidays-kape, International Days|/calendar/international-days",
 	newsletter_title: "Newsletter",
 	newsletter_text: "Subscribe to receive our e-newsletter.",
 	// Social links as a JSON list of { name, url, logoUrl }. `logoUrl` is optional —

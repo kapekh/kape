@@ -237,7 +237,7 @@ function ResolvedRoute() {
 			return (
 				<SubPage
 					wide
-					section="KAPE"
+					section={page.parentTitle ?? "KAPE"}
 					title={page.title}
 					lead={page.excerpt || undefined}
 					heroImage={page.coverUrl || undefined}
@@ -279,7 +279,7 @@ function ResolvedRoute() {
 		}
 		return (
 			<SubPage
-				section="KAPE"
+				section={page.parentTitle ?? "KAPE"}
 				title={page.title}
 				lead={page.excerpt || undefined}
 				heroImage={page.coverUrl || undefined}

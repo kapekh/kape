@@ -48,6 +48,61 @@ const parseLinks = (raw: string): Link[] =>
 		})
 		.filter((l) => l.label || l.href);
 
+const serializeLinks = (ls: Link[]) =>
+	ls
+		.filter((l) => l.label.trim())
+		.map((l) => `${l.label.trim()}|${l.href.trim()}`)
+		.join(", ");
+
+/** Editable "Label → path" rows, shared by the links column and the buttons. */
+function LinkRows({
+	rows,
+	setRows,
+	addLabel,
+}: {
+	rows: Link[];
+	setRows: React.Dispatch<React.SetStateAction<Link[]>>;
+	addLabel: string;
+}) {
+	const patch = (i: number, p: Partial<Link>) =>
+		setRows((ls) => ls.map((x, j) => (j === i ? { ...x, ...p } : x)));
+	return (
+		<div className="mt-4 space-y-2">
+			{rows.map((l, i) => (
+				<div key={i} className="flex items-center gap-2">
+					<input
+						className={`${fieldInput} flex-1`}
+						placeholder="Label"
+						value={l.label}
+						onChange={(e) => patch(i, { label: e.target.value })}
+					/>
+					<input
+						className={`${fieldInput} flex-1 font-mono text-xs`}
+						placeholder="/path or https://…"
+						value={l.href}
+						onChange={(e) => patch(i, { href: e.target.value })}
+					/>
+					<button
+						type="button"
+						onClick={() => setRows((ls) => ls.filter((_, j) => j !== i))}
+						aria-label="Remove"
+						className="shrink-0 grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40"
+					>
+						✕
+					</button>
+				</div>
+			))}
+			<button
+				type="button"
+				onClick={() => setRows((ls) => [...ls, { label: "", href: "" }])}
+				className="text-sm font-semibold text-[var(--accent)] hover:underline"
+			>
+				{addLabel}
+			</button>
+		</div>
+	);
+}
+
 type Social = { name: string; url: string; logoUrl: string };
 const parseSocials = (raw?: string): Social[] => {
 	if (!raw) return [];
@@ -82,6 +137,7 @@ const legacySocials = (m: Record<string, string>): Social[] => {
 function FooterAdmin() {
 	const [vals, setVals] = useState<Record<string, string>>({});
 	const [links, setLinks] = useState<Link[]>([]);
+	const [buttons, setButtons] = useState<Link[]>([]);
 	const [socials, setSocials] = useState<Social[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
@@ -94,6 +150,9 @@ function FooterAdmin() {
 			for (const k of KEYS) next[k] = map[k] ?? FOOTER_DEFAULTS[k] ?? "";
 			setVals(next);
 			setLinks(parseLinks(map.footer_links ?? FOOTER_DEFAULTS.footer_links));
+			setButtons(
+				parseLinks(map.footer_buttons ?? FOOTER_DEFAULTS.footer_buttons),
+			);
 			const parsed = parseSocials(map.footer_socials);
 			setSocials(parsed.length ? parsed : legacySocials(map));
 			setLoading(false);
@@ -117,10 +176,8 @@ function FooterAdmin() {
 		setSaving(true);
 		const payload: Record<string, string> = {
 			...vals,
-			footer_links: links
-				.filter((l) => l.label.trim())
-				.map((l) => `${l.label.trim()}|${l.href.trim()}`)
-				.join(", "),
+			footer_links: serializeLinks(links),
+			footer_buttons: serializeLinks(buttons),
 			footer_socials: JSON.stringify(
 				socials
 					.filter((s) => s.url.trim() || s.name.trim())
@@ -141,7 +198,7 @@ function FooterAdmin() {
 	}
 
 	const dirty = useDirtyGuard(
-		JSON.stringify({ vals, links, socials }),
+		JSON.stringify({ vals, links, buttons, socials }),
 		savedAt,
 	);
 
@@ -244,51 +301,14 @@ function FooterAdmin() {
 					<Field k="footer_links_title" label="Column title" />
 					<Field k="footer_links_title_km" label="Column title (Khmer)" km />
 				</div>
-				<div className="mt-4 space-y-2">
-					{links.map((l, i) => (
-						<div key={i} className="flex items-center gap-2">
-							<input
-								className={`${fieldInput} flex-1`}
-								placeholder="Label"
-								value={l.label}
-								onChange={(e) =>
-									setLinks((ls) =>
-										ls.map((x, j) =>
-											j === i ? { ...x, label: e.target.value } : x,
-										),
-									)
-								}
-							/>
-							<input
-								className={`${fieldInput} flex-1 font-mono text-xs`}
-								placeholder="/path or https://…"
-								value={l.href}
-								onChange={(e) =>
-									setLinks((ls) =>
-										ls.map((x, j) =>
-											j === i ? { ...x, href: e.target.value } : x,
-										),
-									)
-								}
-							/>
-							<button
-								type="button"
-								onClick={() => setLinks((ls) => ls.filter((_, j) => j !== i))}
-								aria-label="Remove"
-								className="shrink-0 grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40"
-							>
-								✕
-							</button>
-						</div>
-					))}
-					<button
-						type="button"
-						onClick={() => setLinks((ls) => [...ls, { label: "", href: "" }])}
-						className="text-sm font-semibold text-[var(--accent)] hover:underline"
-					>
-						+ Add link
-					</button>
-				</div>
+				<LinkRows rows={links} setRows={setLinks} addLabel="+ Add link" />
+			</FormSection>
+
+			<FormSection
+				title="Calendar buttons"
+				description="The pill buttons under the contact block. The first one is highlighted. Point them at the calendar pages, e.g. /calendar/public-holidays-cambodia."
+			>
+				<LinkRows rows={buttons} setRows={setButtons} addLabel="+ Add button" />
 			</FormSection>
 
 			<FormSection

@@ -1,3 +1,4 @@
+import { PLACEHOLDER_IMAGE } from "#/lib/placeholder";
 import type { SectionNode } from "#/lib/sections";
 import { db } from "../db";
 import { pages } from "../schema";
@@ -12,7 +13,7 @@ const tenSubsectorsSections: SectionNode[] = [
 			eyebrow: "Framework",
 			title: "Ten Subsectors",
 			lead: "A comprehensive framework covering the ten key subsectors that drive education quality and access across Cambodia.",
-			image: "https://picsum.photos/seed/kape-students/1600/1000",
+			image: PLACEHOLDER_IMAGE,
 			i18n: {
 				km: {
 					eyebrow: "ក្របខណ្ឌ",

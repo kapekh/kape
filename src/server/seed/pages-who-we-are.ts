@@ -1,3 +1,4 @@
+import { PLACEHOLDER_IMAGE } from "#/lib/placeholder";
 import type { SectionNode } from "#/lib/sections";
 import { db } from "../db";
 import { pages } from "../schema";
@@ -37,8 +38,8 @@ const table = (pairs: [string, string][]) => ({
 const richDoc = (...blocks: unknown[]) =>
 	JSON.stringify({ type: "doc", content: blocks });
 
-const HERO_CONFERENCE = "https://picsum.photos/seed/kape-conference/1600/1000";
-const HERO_STUDENTS = "https://picsum.photos/seed/kape-students/1600/1000";
+const HERO_CONFERENCE = PLACEHOLDER_IMAGE;
+const HERO_STUDENTS = PLACEHOLDER_IMAGE;
 
 const ACCREDITATIONS_LEAD =
 	"Explore KAPE's official credentials, operational licenses, and letters of appreciation. These honors celebrate our track record of trust, accountability, and meaningful educational achievements recognized by donors, local authorities, and key stakeholders.";

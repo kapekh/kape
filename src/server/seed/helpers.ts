@@ -1,3 +1,4 @@
+import { PLACEHOLDER_IMAGE } from "#/lib/placeholder";
 import { db } from "../db";
 import { languages, media, translations } from "../schema";
 
@@ -50,15 +51,20 @@ export function doc(text: string) {
 	});
 }
 
-/** Create a picsum-backed media row and return its id (used for nav card images). */
-export async function createPicsumMedia(seed: string): Promise<number> {
+/**
+ * Create a placeholder media row and return its id (used for nav card images).
+ * Seeded slots have no client photograph behind them, so they must not be given
+ * one: a picsum url here made every empty slot look like a deliberate, wrong
+ * editorial choice, and hotlinked a third-party host in production.
+ */
+export async function createPlaceholderMedia(seed: string): Promise<number> {
 	const [m] = await db
 		.insert(media)
 		.values({
 			tenantId: TENANT,
-			r2Key: `seed/nav-${seed}.jpg`,
-			url: `https://picsum.photos/seed/${seed}/640/400`,
-			contentType: "image/jpeg",
+			r2Key: `seed/nav-${seed}.svg`,
+			url: PLACEHOLDER_IMAGE,
+			contentType: "image/svg+xml",
 		})
 		.returning({ id: media.id });
 	return m.id;

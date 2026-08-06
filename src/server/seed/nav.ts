@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { navItems } from "../schema";
-import { addTranslations, createPicsumMedia, TENANT } from "./helpers";
+import { addTranslations, createPlaceholderMedia, TENANT } from "./helpers";
 
 type SeedNav = {
 	kind: string; // page | post_list | view | url | none
@@ -286,7 +286,7 @@ async function addNavTree(nodes: SeedNav[], parentId: number | null) {
 	for (let i = 0; i < nodes.length; i++) {
 		const n = nodes[i];
 		const meta = navMetaFor(n);
-		const imageMediaId = meta ? await createPicsumMedia(meta.img) : null;
+		const imageMediaId = meta ? await createPlaceholderMedia(meta.img) : null;
 		const [row] = await db
 			.insert(navItems)
 			.values({

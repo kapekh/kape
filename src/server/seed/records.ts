@@ -1,3 +1,4 @@
+import { PLACEHOLDER_IMAGE } from "#/lib/placeholder";
 import { db } from "../db";
 import { media, partners, people, postMedia, posts, terms } from "../schema";
 import { addTranslations, doc, TENANT } from "./helpers";
@@ -511,7 +512,7 @@ export async function seedAlbums() {
 				.values({
 					tenantId: TENANT,
 					r2Key: `seed/${ph.seed}.jpg`,
-					url: `https://picsum.photos/seed/kape-${ph.seed}/1200/800`,
+					url: PLACEHOLDER_IMAGE,
 					contentType: "image/jpeg",
 				})
 				.returning({ id: media.id });

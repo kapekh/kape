@@ -5,6 +5,7 @@
  * (so a fresh DB matches production) and by `scripts/apply-tree.ts` (to re-run on an
  * existing DB). Every step is idempotent (upsert by slug).
  */
+import { PLACEHOLDER_IMAGE } from "#/lib/placeholder";
 import { and, eq } from "drizzle-orm";
 
 import { legacyRedirect } from "#/lib/collections";
@@ -358,9 +359,7 @@ async function buildHomePage(db: DB) {
 				body: doc(
 					"KAPE is a local non-profit working primarily in the formal education sector across 15 provinces in Cambodia — from preschools and primary classrooms to secondary schools, tertiary programs and a Master's Degree in Mentoring. Direct beneficiaries number well over 160,000 children at more than 385 schools.",
 				),
-				image:
-					hero[1]?.url ??
-					"https://picsum.photos/seed/kape-conference/1600/1000",
+				image: hero[1]?.url ?? PLACEHOLDER_IMAGE,
 				statValue: "15",
 				statLabel: "Provinces of Cambodia",
 			},

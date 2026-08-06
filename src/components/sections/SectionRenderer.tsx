@@ -5,6 +5,7 @@ import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import type { SectionNode } from "#/lib/sections";
 import { useLang } from "@/lib/i18n";
 import { localizedHref } from "@/lib/i18n-config";
+import { PLACEHOLDER_IMAGE } from "@/lib/placeholder";
 
 import { ContactForm } from "../ContactForm";
 import { FormRenderer } from "../FormRenderer";
@@ -104,10 +105,7 @@ const Blob = ({ className }: { className: string }) => (
 	/>
 );
 
-const imgFor = (p: any) =>
-	p.image ||
-	p.cover ||
-	`https://picsum.photos/seed/kape-${encodeURIComponent(String(p.slug || p.id || "x"))}/900/650`;
+const imgFor = (p: any) => p.image || p.cover || PLACEHOLDER_IMAGE;
 
 /** Returns a language-prefixing localizer for internal hrefs (path-based i18n). */
 function useL() {

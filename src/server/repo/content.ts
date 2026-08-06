@@ -51,6 +51,7 @@ export type ResolvedPage = {
 	body: string | null; // ProseMirror JSON (string) or null
 	bodyHtml: string; // server-rendered HTML
 	sections: SectionNode[] | null; // page-builder sections (dynamic ones already resolved)
+	parentTitle: string | null; // breadcrumb: the structural parent's own title
 	// Published child pages — only populated when this page has no content of its
 	// own (no sections, empty body), so a parent/hub page renders a child index
 	// instead of a blank card.
@@ -133,6 +134,10 @@ export async function getPageBySlug(
 	const children = isEmptyPageBody(bodyHtml, sections)
 		? await getChildPages(db, page.id, lang)
 		: undefined;
+	const parentTitle =
+		page.parentId == null
+			? null
+			: ((await resolveOne(db, "page", page.parentId, lang)).title ?? null);
 	return {
 		id: page.id,
 		slug: page.slug,
@@ -143,6 +148,7 @@ export async function getPageBySlug(
 		body: fields.body ?? null,
 		bodyHtml,
 		sections,
+		parentTitle,
 		children,
 	};
 }
@@ -342,6 +348,7 @@ export type VideoItem = {
 	title: string;
 	excerpt: string;
 	youtubeUrl: string;
+	image: string | null; // cover image URL (null → renderer supplies a fallback)
 };
 
 /** Published videos (type=video) with their YouTube URL from meta. */
@@ -363,6 +370,7 @@ export async function listVideos(db: DB, lang: string): Promise<VideoItem[]> {
 		rows.map((r) => r.id),
 		lang,
 	);
+	const covers = await coverUrls(db, rows);
 	return rows.map((r) => {
 		const m = (r.meta ?? {}) as Record<string, unknown>;
 		return {
@@ -371,6 +379,8 @@ export async function listVideos(db: DB, lang: string): Promise<VideoItem[]> {
 			title: f.get(r.id)?.title ?? "",
 			excerpt: f.get(r.id)?.excerpt ?? "",
 			youtubeUrl: String(m.youtube_url ?? ""),
+			image:
+				r.coverMediaId != null ? (covers.get(r.coverMediaId) ?? null) : null,
 		};
 	});
 }

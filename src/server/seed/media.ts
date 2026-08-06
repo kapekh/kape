@@ -1,3 +1,4 @@
+import { PLACEHOLDER_IMAGE } from "#/lib/placeholder";
 import { db } from "../db";
 import { heroSlides, media } from "../schema";
 import { addTranslations, TENANT } from "./helpers";
@@ -9,9 +10,9 @@ export async function seedHeroSlides() {
 			.insert(media)
 			.values({
 				tenantId: TENANT,
-				r2Key: `seed/hero-${i}.jpg`,
-				url: `https://picsum.photos/seed/kape-hero-${i}/1600/1000`,
-				contentType: "image/jpeg",
+				r2Key: `seed/hero-${i}.svg`,
+				url: PLACEHOLDER_IMAGE,
+				contentType: "image/svg+xml",
 			})
 			.returning({ id: media.id });
 		const [s] = await db

@@ -85,6 +85,7 @@ export function Footer({ settings }: { settings: Record<string, string> }) {
 		FOOTER_DEFAULTS[key] ||
 		"";
 	const links = parseLinks(s("footer_links"));
+	const buttons = parseLinks(s("footer_buttons"));
 	// Prefer the editable `footer_socials` list; fall back to the legacy single-key
 	// fields so older installs keep working until the footer is saved once.
 	const parsedSocials = parseSocials(settings.footer_socials);
@@ -172,6 +173,23 @@ export function Footer({ settings }: { settings: Record<string, string> }) {
 							</div>
 						)}
 					</div>
+					{buttons.length > 0 && (
+						<div className="mt-6 flex flex-wrap gap-3">
+							{buttons.map((b, i) => (
+								<NavLink
+									key={b.label}
+									href={localizedHref(b.href, lang)}
+									className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition hover:-translate-y-0.5 ${
+										i === 0
+											? "bg-[var(--secondary)] text-primary hover:bg-[var(--gold)]"
+											: "border border-primary-foreground/30 hover:border-[var(--secondary)] hover:text-[var(--secondary)]"
+									}`}
+								>
+									{b.label} <span aria-hidden="true">→</span>
+								</NavLink>
+							))}
+						</div>
+					)}
 				</div>
 				<div className="md:col-span-3">
 					<h2 className="t-eyebrow text-[var(--gold)] mb-4">
