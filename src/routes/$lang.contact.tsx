@@ -5,7 +5,7 @@ import { type MapMarker, MapView } from "@/components/MapView";
 import { Card, Grid, SubPage } from "@/components/SubPage";
 import { useLang } from "@/lib/i18n";
 import { DEFAULT_LANG, LANGS } from "@/lib/i18n-config";
-import { siteShortName } from "@/lib/site-identity";
+import { siteLogo, siteShortName } from "@/lib/site-identity";
 
 export const Route = createFileRoute("/$lang/contact")({
 	loader: ({ context, params, location }) => {
@@ -100,7 +100,12 @@ function ContactPage() {
 						</div>
 						{markers.length > 0 && (
 							<div className="mt-5 overflow-hidden rounded-2xl border border-border">
-								<MapView markers={markers} center={[12.2, 105.0]} zoom={7} />
+								<MapView
+									markers={markers}
+									center={[12.2, 105.0]}
+									zoom={7}
+									logoUrl={siteLogo(settings)}
+								/>
 							</div>
 						)}
 					</div>

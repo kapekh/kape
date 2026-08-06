@@ -70,8 +70,8 @@ const LOCATION: { key: string; label: string; hint: string }[] = [
 	},
 	{
 		key: "area_served",
-		label: "Area served",
-		hint: "Where the organisation works, e.g. a country or a list of provinces.",
+		label: "Country served",
+		hint: "The country the organisation works in. Search engines read it as a country, so name one.",
 	},
 ];
 

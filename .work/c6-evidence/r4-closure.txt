@@ -1,0 +1,67 @@
+# Closure: areaServed, the doubled province, the byline, and the map pin
+
+KAPE fixture built by `bun run seed:kape` on 3223; main from a read-only git archive on 3224.
+
+## organizationLd, branch on the seeded fixture
+{
+    [1m"@context"[0m: [32m"https://schema.org"[0m,
+    [1m"@type"[0m: [32m"Organization"[0m,
+    [1m"name"[0m: [32m"Kampuchea Action to Promote Education"[0m,
+    [1m"alternateName"[0m: [32m"KAPE"[0m,
+    [1m"description"[0m: [32m"KAPE advances equitable, transformative education for children across Cambodia."[0m,
+    [1m"email"[0m: [32m"kape@kapekh.org"[0m,
+    [1m"telephone"[0m: [32m"+855-42-941-481"[0m,
+    [1m"areaServed"[0m: {
+        [1m"@type"[0m: [32m"Country"[0m,
+        [1m"name"[0m: [32m"Cambodia"[0m
+    },
+    [1m"address"[0m: {
+        [1m"@type"[0m: [32m"PostalAddress"[0m,
+        [1m"streetAddress"[0m: [32m"PTTC, National Road 7, Kampong Cham Town"[0m,
+        [1m"addressRegion"[0m: [32m"Kampong Cham"[0m,
+        [1m"addressCountry"[0m: [32m"KH"[0m
+    }
+}
+
+## main's hardcoded object, for comparison
+export function organizationLd(): Record<string, unknown> {
+	const ld: Record<string, unknown> = {
+		"@context": "https://schema.org",
+		"@type": "Organization",
+		name: "Kampuchea Action to Promote Education",
+		alternateName: "KAPE",
+		description:
+			"KAPE advances equitable, transformative education for children across Cambodia.",
+		email: "kape@kapekh.org",
+		telephone: "+855-42-941-481",
+		areaServed: { "@type": "Country", name: "Cambodia" },
+		address: {
+			"@type": "PostalAddress",
+			streetAddress: "PTTC, National Road 7, Kampong Cham Town",
+			addressRegion: "Kampong Cham",
+			addressCountry: "KH",
+		},
+	};
+
+## the address setting is untouched where it is read by a human
+branch footer:  PTTC, National Road 7, Kampong Cham Town, Kampong Cham Province
+main footer:    PTTC, National Road 7, Kampong Cham Town, Kampong Cham Province
+
+## byline on a post nobody signed (author set to NULL on both scratch databases)
+main   (3224): 2026-05-02 · KAPE Cambodia
+branch (3223): 2026-05-02 · KAPE Cambodia
+
+## map pins on /en/contact, read out of the live DOM
+before: ["/logo.png", "/logo.png", "/logo.png", "/logo.png"]   (the product mark, on KAPE's own offices)
+after:  "[\"/fixture/kape-logo.png\",\"/fixture/kape-logo.png\",\"/fixture/kape-logo.png\",\"/fixture/kape-logo.png\"]"
+
+## /donate, main -> branch (visible text)
+< 042-941-481 / 042-941-918 · kape@kapekh.org
+> +855-42-941-481 / +855-42-941-918 · kape@kapekh.org
+> Search
+< Support KAPE
+> Support our work
+< Choose a campaign below — scholarships, libraries, teacher training, and more. Every gift goes directly to KAPE’s work across 15 provinces of Cambodia.
+> Choose a campaign below. Every gift goes directly to the work it names.
+< 042-941-481 / 042-941-918
+> +855-42-941-481 / +855-42-941-918

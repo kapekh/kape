@@ -13,6 +13,7 @@ import {
 	siteDescription,
 	siteLogo,
 	siteName,
+	socialSiteName,
 } from "./site-identity";
 
 const SITE_URL = (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(
@@ -32,6 +33,32 @@ const firstPhone = (v: string) =>
 const absolute = (url: string) =>
 	url.startsWith("http") ? url : `${SITE_URL}${url}`;
 
+const REGION_WORD = /\s+(province|region|state|prefecture|governorate)$/i;
+const sameArea = (part: string, value: string) =>
+	!!value &&
+	part.replace(REGION_WORD, "").toLowerCase() ===
+		value.replace(REGION_WORD, "").toLowerCase();
+
+/**
+ * The street line alone. One `address` setting holds the whole postal address
+ * because that is what a footer prints, so its last components repeat the
+ * region and country that have fields of their own here. Dropped from the tail
+ * by comparison, never by substring: "Kampong Cham Town" is part of the street
+ * line and "Kampong Cham Province" is the region saying itself twice.
+ */
+function streetLine(address: string, areas: string[]) {
+	const parts = address
+		.split(",")
+		.map((p) => p.trim())
+		.filter(Boolean);
+	while (
+		parts.length > 1 &&
+		areas.some((a) => sameArea(parts[parts.length - 1], a))
+	)
+		parts.pop();
+	return parts.join(", ");
+}
+
 /** Organisation identity — emitted site-wide. */
 export function organizationLd(s: SiteSettings): Record<string, unknown> {
 	const name = siteName(s);
@@ -49,15 +76,21 @@ export function organizationLd(s: SiteSettings): Record<string, unknown> {
 	if (s.contact_email?.trim()) ld.email = s.contact_email.trim();
 	const phone = firstPhone(s.contact_phone ?? "");
 	if (phone) ld.telephone = phone;
-	if (s.area_served?.trim()) ld.areaServed = s.area_served.trim();
+	const areaServed = s.area_served?.trim() ?? "";
+	// schema.org/areaServed takes a place, and a bare string leaves a crawler to
+	// guess what kind. The setting is the country the organisation works in.
+	if (areaServed) ld.areaServed = { "@type": "Country", name: areaServed };
+	const region = s.address_region?.trim() ?? "";
+	const country = s.address_country?.trim() ?? "";
+	const street = streetLine(s.address?.trim() ?? "", [
+		region,
+		country,
+		areaServed,
+	]);
 	const address = {
-		...(s.address?.trim() ? { streetAddress: s.address.trim() } : {}),
-		...(s.address_region?.trim()
-			? { addressRegion: s.address_region.trim() }
-			: {}),
-		...(s.address_country?.trim()
-			? { addressCountry: s.address_country.trim() }
-			: {}),
+		...(street ? { streetAddress: street } : {}),
+		...(region ? { addressRegion: region } : {}),
+		...(country ? { addressCountry: country } : {}),
 	};
 	if (Object.keys(address).length)
 		ld.address = { "@type": "PostalAddress", ...address };
@@ -98,7 +131,9 @@ export function articleLd(
 		...(a.description ? { description: a.description } : {}),
 		...(image ? { image: [image] } : {}),
 		...(a.datePublished ? { datePublished: a.datePublished } : {}),
-		author: { "@type": "Organization", name: a.author || publisherName },
+		// An unsigned piece is bylined to the name the site publishes under, which
+		// is what the page itself shows next to the date.
+		author: { "@type": "Organization", name: a.author || socialSiteName(s) },
 		publisher,
 	};
 }

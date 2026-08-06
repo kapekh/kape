@@ -14,9 +14,16 @@ export type MapMarker = {
 	status?: string | null;
 };
 
-const PIN_HTML = `<div style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%)">
+/**
+ * Pass the site's own logo where a marker *is* the organisation, such as its
+ * offices. On a map of places it merely works in, the plain product mark is the
+ * more honest pin, and that is the default.
+ */
+const pinHtml = (
+	logo: string,
+) => `<div style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%)">
 	<div style="height:38px;width:38px;border-radius:9999px;background:#fff;border:2px solid var(--accent);box-shadow:0 4px 12px rgb(0 0 0 / 0.28);overflow:hidden;display:grid;place-items:center">
-		<img src="/logo.png" alt="" style="height:100%;width:100%;object-fit:contain;padding:3px" />
+		<img src="${logo}" alt="" style="height:100%;width:100%;object-fit:contain;padding:3px" />
 	</div>
 	<div style="width:0;height:0;margin-top:-2px;border-left:6px solid transparent;border-right:6px solid transparent;border-top:9px solid var(--accent)"></div>
 </div>`;
@@ -70,10 +77,12 @@ export function MapView({
 	markers,
 	center,
 	zoom = 7,
+	logoUrl = "/logo.png",
 }: {
 	markers: MapMarker[];
 	center: [number, number];
 	zoom?: number;
+	logoUrl?: string;
 }) {
 	const ref = useRef<HTMLDivElement>(null);
 	const { lang } = useLang();
@@ -103,7 +112,7 @@ export function MapView({
 
 			const icon = L.divIcon({
 				className: "map-pin",
-				html: PIN_HTML,
+				html: pinHtml(logoUrl),
 				iconSize: [1, 1],
 				iconAnchor: [0, 0],
 			});
@@ -122,7 +131,7 @@ export function MapView({
 			cancelled = true;
 			if (map) map.remove();
 		};
-	}, [markers, center, zoom, lang]);
+	}, [markers, center, zoom, lang, logoUrl]);
 
 	return (
 		<div

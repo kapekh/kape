@@ -44,7 +44,36 @@ describe("organizationLd", () => {
 			addressRegion: "Example Province",
 			addressCountry: "KH",
 		});
-		expect(organizationLd(SETTINGS).areaServed).toBe("Example Country");
+	});
+
+	it("says the region once, in the field that is for it", () => {
+		// The one address setting is what the footer prints, so it ends with the
+		// province; the street line here must not repeat it.
+		const ld = organizationLd({
+			...SETTINGS,
+			address: "1 Riverside Road, Example Town, Example Province",
+		});
+		expect((ld.address as Record<string, string>).streetAddress).toBe(
+			"1 Riverside Road, Example Town",
+		);
+	});
+
+	it("keeps a locality that only looks like the region", () => {
+		const ld = organizationLd({
+			...SETTINGS,
+			address_region: "Example",
+			address: "1 Riverside Road, Example Town, Example Province",
+		});
+		expect((ld.address as Record<string, string>).streetAddress).toBe(
+			"1 Riverside Road, Example Town",
+		);
+	});
+
+	it("names the area served as a place, not as a string", () => {
+		expect(organizationLd(SETTINGS).areaServed).toEqual({
+			"@type": "Country",
+			name: "Example Country",
+		});
 	});
 
 	it("omits what is not configured rather than guessing it", () => {
@@ -76,8 +105,10 @@ describe("articleLd", () => {
 
 		const named = articleLd(
 			{ title: "A headline" },
-			{ ...SETTINGS, site_name_short: "TAL" },
+			{ ...SETTINGS, site_name_short: "TAL", og_site_name: "TAL Global" },
 		);
 		expect((named.publisher as Record<string, unknown>).name).toBe("TAL");
+		// the byline the page itself shows next to the date
+		expect((named.author as Record<string, unknown>).name).toBe("TAL Global");
 	});
 });

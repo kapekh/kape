@@ -291,3 +291,76 @@ The fixture needs six settings rows to be exactly the site `main` served. All si
 Two more, unchanged from round two: reword the comment at `src/server/install.ts:4` so the product path stops naming the customer, and consider whether `contact_phone` should carry the international form.
 
 If C5 would rather the crest not ship inside every other customer's container, moving `public/fixture/` into the fixture's own media seeding is theirs to make; the product reads `logo_url` either way.
+
+---
+
+# Closure
+
+C5's nine seeded identity rows are in, so for the first time the fixture can be measured as it will ship.
+Everything below was read off a KAPE database built by `bun run seed:kape` on 3223, a blank install on 3222, and `main` from a read-only `git archive` on 3224.
+Evidence: `.work/c6-evidence/r4-closure.txt`, plus `r4-map-pins-before.png` and `r4-map-pins-after.png`.
+
+## 1. `areaServed` is a place again
+
+It was a bare string, which leaves a crawler to guess whether "Cambodia" is a country, a region or a market.
+It is now `{"@type": "Country", "name": …}`, as `main` had it.
+
+That makes the setting a claim about a country, so the field is now labelled "Country served" in `/admin/settings` and its hint says search engines read it as one.
+Round two emitted text precisely because the key was described as "a country or a list of provinces"; naming the field settles it rather than leaving the type to be inferred from whatever was typed.
+
+## 2. The province is said once
+
+The one `address` setting holds the whole postal address, because that is what the footer prints, so its last component repeated `addressRegion`.
+`streetLine()` drops trailing components that match the region, the country code or the country served, comparing whole components after stripping a trailing "Province", "Region", "State", "Prefecture" or "Governorate".
+
+By comparison, never by substring, and that distinction is the whole fix: "Kampong Cham Town" is the locality and belongs in the street line, while "Kampong Cham Province" is the region saying itself twice.
+Two tests hold the line, one of them the case where the region name is a prefix of the locality.
+
+Result: `streetAddress: "PTTC, National Road 7, Kampong Cham Town"`, field for field identical to `main`, and the footer still prints the full address including the province, on both.
+
+`organizationLd` on the seeded fixture is now identical to `main`'s hardcoded object, key for key and in the same order.
+
+## 3. The byline
+
+`$.tsx` used `siteShortName`, which is derived; it now uses `socialSiteName`, the same operator-set key behind `og:site_name`.
+`articleLd`'s author fallback moved with it, so the structured author and the byline the reader sees are the same string, while `publisher` stays on the declared short name as `main` had it ("KAPE" publishing, "KAPE Cambodia" bylining).
+
+Every fixture post is signed, so this path only shows on a post an operator leaves unsigned.
+Exercised by nulling one post's author on both scratch databases: `main` renders `2026-05-02 · KAPE Cambodia`, and so does the branch.
+
+## 4. The map pin: it did matter, and it is fixed
+
+Asked to confirm rather than fix, I checked, and the answer was worse than my round-three note implied.
+`PIN_HTML` is used for **every** marker, not only photo-less ones, and Leaflet builds it client-side, so no served-HTML check would have caught it: all four of KAPE's office pins on `/en/contact` were rendering the product's plain mark where `main` showed the crest.
+That is a visible regression on a page KAPE uses, so I fixed it rather than writing it down.
+
+`MapView` takes an optional `logoUrl` defaulting to `/logo.png`, and `$lang.contact.tsx` passes `siteLogo(settings)`.
+Confirmed from the live DOM: four pins, `/fixture/kape-logo.png`, and the screenshots before and after.
+
+The map *section* in `SectionRenderer` keeps the default, and that is deliberate rather than a half-fix.
+A contact map marks the organisation's own offices, where its logo is the right pin; a section map marks schools and project sites, where a place the organisation works is not the organisation, and a plain marker is the more honest icon.
+No fixture page uses a map section, so nothing of KAPE's is affected either way.
+
+## 5. `/donate` reads fine for KAPE
+
+Three strings were neutralised on that route, all of them in `src/lib/donate-defaults.ts`, and none reads oddly with KAPE's content behind it:
+
+| | `main` | branch |
+|---|---|---|
+| eyebrow | Support KAPE | Support our work |
+| title | Give to what moves you | unchanged |
+| intro | Choose a campaign below - scholarships, libraries, teacher training, and more. Every gift goes directly to KAPE's work across 15 provinces of Cambodia. | Choose a campaign below. Every gift goes directly to the work it names. |
+
+"Support our work" sits above the page heading on the organisation's own site, so "our" has exactly one possible referent; it is softer than "Support KAPE" and not odd.
+The new intro is arguably truer than the one it replaced: the old sentence promised scholarships, libraries and teacher training on a page that renders whichever campaigns exist, and would have been a false prospectus for a site running one campaign in one province. The new one describes the mechanism, which is what a donor on that page needs.
+The page title is `Donate to KAPE` on both.
+
+One thing worth knowing rather than fixing: these three are `site_settings` keys with defaults, read as `settings[key] ?? DONATE_DEFAULTS[key]`, and the fixture seeds none of them.
+So KAPE can have its old wording back with three rows and no code change, and the `/donate` meta description follows the intro, meaning that search snippet is currently an instruction ("Choose a campaign below…") where `main` had a sentence about the cause.
+That is the only place on the route I would rather the fixture spoke for itself.
+
+## Gates
+
+- `bun run test`: **18 files, 129 tests, all passing** (floor 126).
+- `bunx tsc --noEmit`: silent, exit 0.
+- `bun run format`: exit 0, clean.

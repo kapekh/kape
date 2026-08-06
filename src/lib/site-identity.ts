@@ -119,8 +119,9 @@ export const socialImage = (s: SiteSettings) =>
 	val(s, "og_image") || siteLogo(s);
 
 /**
- * What social cards call the site. Never derived: a scraper quotes this as the
- * publication's name.
+ * The name the site publishes under: `og:site_name`, and the byline on a piece
+ * nobody signed. Never derived, because a scraper and a reader both take it as
+ * the publication's actual name.
  */
 export const socialSiteName = (s: SiteSettings) =>
 	val(s, "og_site_name") || declaredShortName(s) || siteName(s);

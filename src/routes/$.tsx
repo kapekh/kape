@@ -25,6 +25,7 @@ import {
 	pageTitle,
 	siteShortName,
 	siteTitle,
+	socialSiteName,
 } from "@/lib/site-identity";
 import { articleLd } from "@/lib/structured-data";
 
@@ -341,7 +342,7 @@ function ResolvedRoute() {
 				/>
 				{post.publishedAt && (
 					<div className="text-xs text-[var(--accent)] font-semibold uppercase tracking-wider mb-6">
-						{post.publishedAt} · {post.author ?? siteShortName(settings)}
+						{post.publishedAt} · {post.author ?? socialSiteName(settings)}
 					</div>
 				)}
 				<RichBody className="prose-body" html={post.bodyHtml} />
