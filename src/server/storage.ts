@@ -1,3 +1,5 @@
+import { rm } from "node:fs/promises";
+
 import { env } from "#/env";
 
 // Bun's built-in S3 client type. Referenced as the `Bun.S3Client` global at
@@ -75,4 +77,22 @@ export async function saveUpload(
 	const key = `uploads/${id}.${safeExt}`;
 	await Bun.write(`public/${key}`, bytes);
 	return { key, url: `/${key}` };
+}
+
+// what saveUpload writes locally: uploads/<uuid>.<ext>. Seeded rows carry
+// `seed/…` keys with no file behind them, so only our own uploads are unlinked.
+const LOCAL_KEY = /^uploads\/[A-Za-z0-9-]+\.[a-z0-9]{1,8}$/;
+
+/**
+ * Remove a stored object. Idempotent: an already-missing object is not an
+ * error. Without this a deleted media row leaves its bytes on disk, still
+ * served at the original URL.
+ */
+export async function deleteUpload(key: string): Promise<void> {
+	if (r2) {
+		await r2.delete(key).catch(() => {});
+		return;
+	}
+	if (!LOCAL_KEY.test(key)) return;
+	await rm(`public/${key}`, { force: true });
 }

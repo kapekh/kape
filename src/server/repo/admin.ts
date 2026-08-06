@@ -45,6 +45,7 @@ import {
 	uiStrings,
 	visitorDaily,
 } from "../schema";
+import { deleteUpload } from "../storage";
 import { attachMediaUrl } from "./media-util";
 
 /** Dashboard overview counts + visitor totals. */
@@ -1088,9 +1089,11 @@ export async function createMediaRecord(
 }
 
 export async function deleteMedia(db: DB, id: number): Promise<void> {
-	await db
+	const [row] = await db
 		.delete(media)
-		.where(and(eq(media.tenantId, TENANT), eq(media.id, id)));
+		.where(and(eq(media.tenantId, TENANT), eq(media.id, id)))
+		.returning({ r2Key: media.r2Key });
+	if (row?.r2Key) await deleteUpload(row.r2Key);
 }
 
 /* ---------------- Staff directory ---------------- */
