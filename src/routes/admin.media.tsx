@@ -31,6 +31,22 @@ const extOf = (m: MediaRow) =>
 		"file"
 	).toUpperCase();
 
+async function reason(res: Response) {
+	const body = (await res.json().catch(() => null)) as {
+		error?: string;
+	} | null;
+	return body?.error ?? `upload failed (HTTP ${res.status})`;
+}
+
+// the DB refuses to drop media a record still points at, whatever the confirm
+// dialog offered.
+function deleteReason(e: unknown) {
+	const msg = e instanceof Error ? e.message : String(e);
+	return /FOREIGN KEY/i.test(msg)
+		? "it is still attached to a record. Remove it there first."
+		: msg;
+}
+
 function fmtBytes(n: number | null | undefined) {
 	if (!n) return null;
 	if (n < 1024) return `${n} B`;
@@ -186,7 +202,7 @@ function MediaLibrary() {
 		const list = [...files];
 		if (!list.length) return;
 		setUpload({ done: 0, total: list.length });
-		let ok = 0;
+		const failed: string[] = [];
 		for (let i = 0; i < list.length; i++) {
 			const fd = new FormData();
 			fd.append("file", list[i]);
@@ -194,17 +210,13 @@ function MediaLibrary() {
 				method: "POST",
 				body: fd,
 			});
-			if (res.ok) ok++;
+			if (!res.ok) failed.push(`${list[i].name}: ${await reason(res)}`);
 			setUpload({ done: i + 1, total: list.length });
 		}
 		setUpload(null);
 		if (fileRef.current) fileRef.current.value = "";
 		await Promise.all([reset(), fetchStats()]); // new uploads sort to the top
-		if (ok < list.length)
-			toast(
-				`${list.length - ok} of ${list.length} upload(s) failed (type or size).`,
-				"error",
-			);
+		if (failed.length) toast(failed.join("\n"), "error");
 	}
 
 	function onDrop(e: React.DragEvent) {
@@ -250,7 +262,12 @@ function MediaLibrary() {
 			msg = `⚠ This image is still used in ${u.length} place${u.length > 1 ? "s" : ""}:\n\n${lines}${more}\n\nDeleting it will leave ${u.length > 1 ? "those records" : "that record"} with a broken/missing image. Delete anyway?`;
 		}
 		if (!(await confirm(msg))) return;
-		await trpcClient.adminMedia.delete.mutate({ id });
+		try {
+			await trpcClient.adminMedia.delete.mutate({ id });
+		} catch (e) {
+			toast(`Could not delete: ${deleteReason(e)}`, "error");
+			return;
+		}
 		dropLocal([id]);
 		setPreview((p) => (p?.id === id ? null : p));
 	}
@@ -270,10 +287,17 @@ function MediaLibrary() {
 			? `⚠ ${inUse} of these ${ids.length} item${ids.length > 1 ? "s" : ""} ${inUse > 1 ? "are" : "is"} still used by other records and will leave broken images.\n\nDelete all ${ids.length} anyway? This can't be undone.`
 			: `Delete ${plural(ids.length, "selected item")}? This can't be undone.`;
 		if (!(await confirm(msg))) return;
-		await Promise.all(
+		const results = await Promise.allSettled(
 			ids.map((id) => trpcClient.adminMedia.delete.mutate({ id })),
 		);
-		dropLocal(ids);
+		const gone = ids.filter((_, i) => results[i].status === "fulfilled");
+		dropLocal(gone);
+		const stuck = results.length - gone.length;
+		if (stuck)
+			toast(
+				`${plural(stuck, "item")} could not be deleted: still attached to a record.`,
+				"error",
+			);
 	}
 
 	function toggle(id: number) {

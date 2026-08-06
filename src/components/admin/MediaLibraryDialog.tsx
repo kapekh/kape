@@ -156,7 +156,13 @@ export function MediaLibraryDialog({
 		setBusy(false);
 		if (fileRef.current) fileRef.current.value = "";
 		if (!res.ok) {
-			toast("Upload failed", "error");
+			const body = (await res.json().catch(() => null)) as {
+				error?: string;
+			} | null;
+			toast(
+				`${f.name}: ${body?.error ?? `upload failed (HTTP ${res.status})`}`,
+				"error",
+			);
 			return;
 		}
 		const d = (await res.json()) as { id: number; url: string };
