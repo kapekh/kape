@@ -2,24 +2,36 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { parseCookies, SESSION_COOKIE, validateToken } from "#/server/auth";
 import { db } from "#/server/db";
+import { bytesMatchExtension } from "#/server/magic-bytes";
 import { createMediaRecord } from "#/server/repo/admin";
+import { resolvePermissions } from "#/server/repo/roles";
 import { saveUpload } from "#/server/storage";
 
 async function handler({ request }: { request: Request }) {
 	const url = new URL(request.url);
 	const action = url.pathname.replace(/^\/api\/media\/?/, "");
 
-	// Admin only.
+	// Same gate as adminMedia over tRPC: the `media` permission area, not a
+	// literal role string, so any role that can list/delete media can upload too.
 	const cookies = parseCookies(request.headers.get("cookie"));
 	const auth = await validateToken(db, cookies[SESSION_COOKIE]);
-	if (!auth || auth.user.role !== "admin") {
+	if (!auth) {
 		return Response.json({ error: "Unauthorized" }, { status: 401 });
+	}
+	const perms = await resolvePermissions(db, auth.user.role);
+	if (!perms.isSuperAdmin && !perms.permissions.includes("media")) {
+		return Response.json({ error: "Forbidden" }, { status: 403 });
 	}
 
 	if (request.method === "POST" && action === "upload") {
-		const form = await request.formData();
+		// Malformed multipart (an empty filename is enough) makes formData() throw.
+		// The body is attacker-controlled, so that has to be a 400, not a crash.
+		const form = await request.formData().catch(() => null);
+		if (!form) {
+			return Response.json({ error: "Malformed upload" }, { status: 400 });
+		}
 		const file = form.get("file");
-		if (!(file instanceof File))
+		if (!(file instanceof File) || !file.name)
 			return Response.json({ error: "No file" }, { status: 400 });
 
 		// Reject oversized uploads before buffering the bytes into memory.
@@ -61,6 +73,14 @@ async function handler({ request }: { request: Request }) {
 			);
 		}
 		const bytes = new Uint8Array(await file.arrayBuffer());
+		// The allow-list and `file.type` are both client-controlled; verify the
+		// leading bytes actually match the extension before storing.
+		if (!bytesMatchExtension(ext, bytes)) {
+			return Response.json(
+				{ error: `File contents do not match ".${ext}"` },
+				{ status: 415 },
+			);
+		}
 		const stored = await saveUpload(
 			bytes,
 			file.type || "application/octet-stream",
