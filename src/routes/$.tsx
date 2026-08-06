@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, notFound, redirect } from "@tanstack/react-router";
 
 import students from "@/assets/students.jpg.asset.json";
 import { AnnouncementPopup } from "@/components/AnnouncementPopup";
@@ -61,6 +61,10 @@ export const Route = createFileRoute("/$")({
 				statusCode: 301,
 			});
 		}
+		// A miss has to leave the loader as a throw, not as data — rendering a
+		// "not found" body from a resolved loader serves it with HTTP 200 and
+		// search engines index every typo as a real page.
+		if (resolved.kind === "notfound") throw notFound();
 		if (resolved.kind === "article") {
 			// warm the related rail so it is in the SSR html, not a client-side pop-in
 			await context.queryClient.ensureQueryData(
@@ -141,6 +145,7 @@ export const Route = createFileRoute("/$")({
 		return { meta, links };
 	},
 	component: ResolvedRoute,
+	notFoundComponent: PageNotFound,
 });
 
 /** "More news / more stories" rail. Renders nothing when the article has no siblings. */
@@ -391,6 +396,12 @@ function ResolvedRoute() {
 		return <ProjectView project={r.project} section={r.label} />;
 	}
 
+	return <PageNotFound />;
+}
+
+/** Rendered for a thrown notFound(), so the branded body still carries a 404 status. */
+function PageNotFound() {
+	const { lang } = useLang();
 	return (
 		<SubPage section="Not found" title="Page not found">
 			<p className="text-muted-foreground">
