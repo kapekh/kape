@@ -134,6 +134,15 @@ async function handleWebhook(request: Request): Promise<Response> {
 	const cfg = barayConfig();
 	if (!cfg) return Response.json({ error: "not configured" }, { status: 503 });
 
+	// Baray sends no signature (see llm.txt); the only proof of origin is that the
+	// payload decrypts under our shared key. Rate-limit generously so the endpoint
+	// can't be used as a decrypt oracle or flooded, while leaving ample headroom
+	// for legitimate confirmation bursts (Baray retries a throttled call).
+	const ip = clientIp(request);
+	if (!rateLimit(`pay:webhook:${ip}`, 120, 60_000)) {
+		return Response.json({ error: "rate limited" }, { status: 429 });
+	}
+
 	const body = (await request.json().catch(() => ({}))) as {
 		encrypted_order_id?: string;
 		bank?: string;
