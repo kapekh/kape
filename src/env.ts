@@ -40,7 +40,9 @@ const envSchema = z.object({
 	R2_PUBLIC_URL: z.string().url().optional(),
 
 	// SMTP (e.g. Gmail) for the contact form. Optional in dev — when unset,
-	// submissions are stored and the email is logged instead of sent.
+	// submissions are stored and the email is logged with a warning instead of
+	// sent. MAIL_TO is the notification recipient; unset, the site's own
+	// `contact_email` setting is used, and mail.ts warns when there is neither.
 	SMTP_HOST: z.string().optional(),
 	SMTP_PORT: z.coerce.number().optional(),
 	SMTP_USER: z.string().optional(),

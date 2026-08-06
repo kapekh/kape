@@ -1,0 +1,15 @@
+# Acme Foundation
+
+## Key pages
+- [Home](http://localhost:3222/en)
+- [News & Events](http://localhost:3222/en/news)
+- [Impact Stories](http://localhost:3222/en/stories)
+- [Videos](http://localhost:3222/en/videos)
+- [Photo Galleries](http://localhost:3222/en/galleries)
+- [Our Team](http://localhost:3222/en/team)
+- [Publications](http://localhost:3222/en/publications)
+- [Careers](http://localhost:3222/en/careers)
+- [Projects](http://localhost:3222/en/projects)
+
+## Full index
+- [Sitemap](http://localhost:3222/sitemap.xml): every public URL (English + Khmer)

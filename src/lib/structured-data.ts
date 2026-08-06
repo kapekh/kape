@@ -7,17 +7,37 @@
  * Identity comes from `site_settings`; a field an operator has not filled in is
  * omitted rather than guessed.
  */
-import { type SiteSettings, siteDescription, siteName } from "./site-identity";
+import {
+	declaredShortName,
+	type SiteSettings,
+	siteDescription,
+	siteLogo,
+	siteName,
+} from "./site-identity";
 
 const SITE_URL = (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(
 	/\/$/,
 	"",
 );
 
+// schema.org/telephone holds one number; a site that publishes a switchboard and
+// a second line lists both in the same setting, and two in the field is invalid.
+// An entry with no digits in it is not a number, so nothing is emitted at all.
+const firstPhone = (v: string) =>
+	v
+		.split(/[/;,·]/)
+		.map((p) => p.trim())
+		.find((p) => /\d/.test(p)) ?? "";
+
+const absolute = (url: string) =>
+	url.startsWith("http") ? url : `${SITE_URL}${url}`;
+
 /** Organisation identity — emitted site-wide. */
 export function organizationLd(s: SiteSettings): Record<string, unknown> {
 	const name = siteName(s);
-	const short = s.site_name_short?.trim();
+	// Only a name the operator gave: alternateName asserts the organisation is
+	// genuinely known by it, and an acronym we worked out is not evidence of that.
+	const short = declaredShortName(s);
 	const description = siteDescription(s);
 	const ld: Record<string, unknown> = {
 		"@context": "https://schema.org",
@@ -27,15 +47,23 @@ export function organizationLd(s: SiteSettings): Record<string, unknown> {
 	if (short && short !== name) ld.alternateName = short;
 	if (description) ld.description = description;
 	if (s.contact_email?.trim()) ld.email = s.contact_email.trim();
-	if (s.contact_phone?.trim()) ld.telephone = s.contact_phone.trim();
-	if (s.address?.trim())
-		ld.address = {
-			"@type": "PostalAddress",
-			streetAddress: s.address.trim(),
-		};
+	const phone = firstPhone(s.contact_phone ?? "");
+	if (phone) ld.telephone = phone;
+	if (s.area_served?.trim()) ld.areaServed = s.area_served.trim();
+	const address = {
+		...(s.address?.trim() ? { streetAddress: s.address.trim() } : {}),
+		...(s.address_region?.trim()
+			? { addressRegion: s.address_region.trim() }
+			: {}),
+		...(s.address_country?.trim()
+			? { addressCountry: s.address_country.trim() }
+			: {}),
+	};
+	if (Object.keys(address).length)
+		ld.address = { "@type": "PostalAddress", ...address };
 	if (SITE_URL) {
 		ld.url = SITE_URL;
-		ld.logo = `${SITE_URL}/logo.png`;
+		ld.logo = absolute(siteLogo(s));
 	}
 	return ld;
 }
@@ -55,12 +83,14 @@ export function articleLd(
 		a.image && SITE_URL && !a.image.startsWith("http")
 			? `${SITE_URL}${a.image}`
 			: a.image;
+	// The publisher is a named body, so it carries a name the operator gave.
+	const publisherName = declaredShortName(s) || siteName(s);
 	const publisher: Record<string, unknown> = {
 		"@type": "Organization",
-		name: siteName(s),
+		name: publisherName,
 	};
 	if (SITE_URL)
-		publisher.logo = { "@type": "ImageObject", url: `${SITE_URL}/logo.png` };
+		publisher.logo = { "@type": "ImageObject", url: absolute(siteLogo(s)) };
 	return {
 		"@context": "https://schema.org",
 		"@type": "NewsArticle",
@@ -68,7 +98,7 @@ export function articleLd(
 		...(a.description ? { description: a.description } : {}),
 		...(image ? { image: [image] } : {}),
 		...(a.datePublished ? { datePublished: a.datePublished } : {}),
-		author: { "@type": "Organization", name: a.author || siteName(s) },
+		author: { "@type": "Organization", name: a.author || publisherName },
 		publisher,
 	};
 }

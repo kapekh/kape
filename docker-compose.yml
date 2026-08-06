@@ -6,9 +6,14 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - DATABASE_PATH=/data/kape.db
+      # Overridable so an existing deployment can keep pointing at the file it
+      # already has inside the volume. See README, "Upgrading an existing deployment".
+      - DATABASE_PATH=${DATABASE_PATH:-/data/cms.db}
       - VITE_SITE_URL=${VITE_SITE_URL:-}
       - AUTH_SECRET=${AUTH_SECRET:?AUTH_SECRET must be set — see .env.example}
+      # Host header allowlist for the production preview server. Unset means every
+      # request is refused with "Blocked request", so set it to your domain(s).
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-}
       # Empty by default: this compose file publishes the port directly, with no
       # proxy in front, so rate limits must key on the socket peer address.
       # Set it only when a proxy that overwrites the header fronts the app AND
@@ -23,7 +28,9 @@ services:
       - SMTP_USER=${SMTP_USER:-}
       - SMTP_PASS=${SMTP_PASS:-}
       - MAIL_FROM=${MAIL_FROM:-}
-      - MAIL_TO=${MAIL_TO:-kape@kapekh.org}
+      # Where the contact form delivers. Unset means submissions are stored and
+      # logged but not emailed.
+      - MAIL_TO=${MAIL_TO:-}
       - BARAY_API_KEY=${BARAY_API_KEY:-}
       - BARAY_SK=${BARAY_SK:-}
       - BARAY_IV=${BARAY_IV:-}
@@ -34,10 +41,27 @@ services:
       - BARAY_API_URL
       - BARAY_PAY_URL
     volumes:
-      - kape-data:/data
-      - kape-uploads:/app/public/uploads
+      - cms-data:/data
+      - cms-uploads:/app/public/uploads
     restart: unless-stopped
 
+# UPGRADING AN EXISTING DEPLOYMENT - the full procedure is in README, "Upgrading
+# an existing deployment". Read it BEFORE `docker compose up`, whether or not you
+# use this file: three things changed name or became required, and nothing warns
+# you. In short:
+#
+#   - the volumes were kape-data / kape-uploads
+#   - the database file inside was kape.db
+#   - ALLOWED_HOSTS is new and mandatory; unset, every request 403s
+#
+# Compose will not tell you about the first two. It creates the new, empty
+# volumes, the installer sees a first boot, and the site comes back blank while
+# the old data sits untouched where it always was.
+#
+# Nothing here needs editing to keep an existing deployment working: put
+# DATABASE_PATH and ALLOWED_HOSTS in .env and the volume names in an untracked
+# docker-compose.override.yml, as the README shows, so the next `git pull` does
+# not conflict with your deployment.
 volumes:
-  kape-data:
-  kape-uploads:
+  cms-data:
+  cms-uploads:

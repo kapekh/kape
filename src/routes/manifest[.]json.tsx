@@ -1,7 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { DEFAULT_LANG } from "#/lib/i18n-config";
-import { siteDescription, siteShortName, siteTitle } from "#/lib/site-identity";
+import {
+	siteDescription,
+	siteLogo,
+	siteShortName,
+	siteTitle,
+} from "#/lib/site-identity";
 import { db } from "#/server/db";
 import { getSettings } from "#/server/repo/site";
 
@@ -24,7 +29,7 @@ async function handler() {
 				type: "image/x-icon",
 			},
 			{
-				src: "logo.png",
+				src: siteLogo(settings),
 				type: "image/png",
 				sizes: "any",
 				purpose: "any maskable",

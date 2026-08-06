@@ -608,6 +608,29 @@ function pageTranslationRows(entityId: number, input: PageInput) {
 	return rows;
 }
 
+/**
+ * `resolveRoute` serves `/` by looking up this exact slug and has no fallback, so
+ * a page that moves out from under it takes the whole front page with it and
+ * nothing in the admin says so. Editing its content, sections and status is fine;
+ * only its address is fixed.
+ */
+const FRONT_PAGE_SLUG = "home";
+
+const frontPageSlug = async (db: DB, id: number) => {
+	const [row] = await db
+		.select({ slug: pages.slug })
+		.from(pages)
+		.where(and(eq(pages.tenantId, TENANT), eq(pages.id, id)))
+		.limit(1);
+	return row?.slug === FRONT_PAGE_SLUG;
+};
+
+const refuseFrontPage = (what: string) => {
+	throw new Error(
+		`This is the site's front page: / is served from the page at "${FRONT_PAGE_SLUG}", and ${what} would leave / with nothing to answer with. Edit its content freely, or point / somewhere else first by giving another page the "${FRONT_PAGE_SLUG}" address.`,
+	);
+};
+
 export async function createPage(db: DB, input: PageInput): Promise<number> {
 	const segment = (input.segment || input.slug).replace(/^\/+|\/+$/g, "");
 	const slug = await slugFor(db, input.parentId, segment);
@@ -647,6 +670,8 @@ export async function updatePage(
 		? (prev?.parentId ?? null)
 		: input.parentId;
 	const newSlug = await slugFor(db, parentId, segment);
+	if (prev?.slug === FRONT_PAGE_SLUG && newSlug !== FRONT_PAGE_SLUG)
+		refuseFrontPage("renaming or reparenting it");
 	await requireFreeSlug(db, "page", newSlug, id);
 	const reorder =
 		parentId !== (prev?.parentId ?? null)
@@ -705,6 +730,8 @@ export async function movePage(
 	index: number,
 ): Promise<void> {
 	if (await isDescendant(db, parentId, id)) return; // never reparent under self/descendant
+	if (parentId != null && (await frontPageSlug(db, id)))
+		refuseFrontPage("moving it under another page");
 	const [self] = await db
 		.select({ segment: pages.segment })
 		.from(pages)
@@ -737,6 +764,7 @@ export async function movePage(
 }
 
 export async function deletePage(db: DB, id: number): Promise<void> {
+	if (await frontPageSlug(db, id)) refuseFrontPage("deleting it");
 	// Reparent children up to the deleted node's parent so the subtree isn't orphaned,
 	// recomputing their slugs (with 301s) under the new parent.
 	const [self] = await db
@@ -1307,17 +1335,34 @@ export async function deleteStaff(db: DB, id: number): Promise<void> {
 
 /* ---------------- Site settings ---------------- */
 
-export function adminListSettings(db: DB) {
-	return db
+/**
+ * Bookkeeping the installer keeps in this table. Not site configuration, so it is
+ * neither listed for editing nor writable through the admin: the settings screen
+ * is a raw key/value grid with a Delete button on every row, and this is the one
+ * kind of row where that button means something other than what it says.
+ */
+const INTERNAL_SETTINGS = new Set(["install_completed_at"]);
+
+const refuseInternal = (key: string) => {
+	if (INTERNAL_SETTINGS.has(key))
+		throw new Error(
+			`"${key}" is written by the installer, not site configuration, and cannot be changed here.`,
+		);
+};
+
+export async function adminListSettings(db: DB) {
+	const rows = await db
 		.select()
 		.from(siteSettings)
 		.where(eq(siteSettings.tenantId, TENANT));
+	return rows.filter((r) => !INTERNAL_SETTINGS.has(r.key));
 }
 export async function upsertSetting(
 	db: DB,
 	key: string,
 	value: string,
 ): Promise<void> {
+	refuseInternal(key);
 	await db
 		.insert(siteSettings)
 		.values({ tenantId: TENANT, key, value })
@@ -1327,6 +1372,7 @@ export async function upsertSetting(
 		});
 }
 export async function deleteSetting(db: DB, key: string): Promise<void> {
+	refuseInternal(key);
 	await db
 		.delete(siteSettings)
 		.where(and(eq(siteSettings.tenantId, TENANT), eq(siteSettings.key, key)));

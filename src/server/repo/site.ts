@@ -24,7 +24,10 @@ export async function getSettings(db: DB): Promise<Record<string, string>> {
 		.from(siteSettings)
 		.where(eq(siteSettings.tenantId, TENANT));
 	const o: Record<string, string> = {};
-	for (const r of rows) o[r.key] = r.value;
+	// This map is dehydrated into every page's HTML; the installer's own bookkeeping
+	// is not site identity and has no business travelling to the browser.
+	for (const r of rows)
+		if (r.key !== "install_completed_at") o[r.key] = r.value;
 	return o;
 }
 

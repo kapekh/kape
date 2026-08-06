@@ -1,0 +1,23 @@
+     × is free of /kampuchea/i 9ms
+     × is free of /042[-\s]?941[-\s]?\d{3}/ 7ms
+       × are not named after a customer 1ms
+       × are not a copy of an example site's 25ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: expected [ Array(1) ] to deeply equal []
++ Received
++ [
++   "server/install.ts:436: const OWNER_NOTE = \"Kampuchea Action to Promote Education, 042-941-481\";",
++ ]
+     67|       `${f.slice(ROOT.length + 1)}:${n}: ${line.trim()}`,
+AssertionError: expected [ Array(1) ] to deeply equal []
++ Received
++ [
++   "/tmp/claude-1000/-home-userx-workspace-kape/290aa4ce-e65c-4d93-ac32-f42046e35d4c/scratchpad/c6/guard-demo/public/kape-crest.png",
++ ]
+AssertionError: expected [ …(2) ] to deeply equal []
++ Received
++ [
++   "/tmp/claude-1000/-home-userx-workspace-kape/290aa4ce-e65c-4d93-ac32-f42046e35d4c/scratchpad/c6/guard-demo/public/kape-crest.png",
++   "/tmp/claude-1000/-home-userx-workspace-kape/290aa4ce-e65c-4d93-ac32-f42046e35d4c/scratchpad/c6/guard-demo/public/logo.png",
++ ]
+      Tests  4 failed | 4 passed (8)

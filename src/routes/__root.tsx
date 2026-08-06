@@ -17,9 +17,11 @@ import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import { LanguageProvider } from "../lib/i18n";
 import { detectLang } from "../lib/i18n-config";
 import {
-	siteDescription,
-	siteShortName,
+	metaDescription,
+	siteLogo,
 	siteTitle,
+	socialImage,
+	socialSiteName,
 } from "../lib/site-identity";
 import { organizationLd } from "../lib/structured-data";
 import appCss from "../styles.css?url";
@@ -51,28 +53,26 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 	head: ({ loaderData }) => {
 		const settings = loaderData?.settings ?? {};
 		const title = siteTitle(settings);
-		const description = siteDescription(settings);
+		const description = metaDescription(settings);
 		return {
 			meta: [
 				{ charSet: "utf-8" },
 				{ name: "viewport", content: "width=device-width, initial-scale=1" },
 				{ title },
-				...(description ? [{ name: "description", content: description }] : []),
+				{ name: "description", content: description },
 				{ name: "theme-color", content: "#1f4e79" },
 				// Social sharing defaults (per-route head() can override title/description/image).
 				{ property: "og:type", content: "website" },
-				{ property: "og:site_name", content: siteShortName(settings) },
+				{ property: "og:site_name", content: socialSiteName(settings) },
 				{ property: "og:title", content: title },
-				...(description
-					? [{ property: "og:description", content: description }]
-					: []),
-				{ property: "og:image", content: "/logo.png" },
+				{ property: "og:description", content: description },
+				{ property: "og:image", content: socialImage(settings) },
 				{ name: "twitter:card", content: "summary" },
 			],
 			links: [
 				{ rel: "stylesheet", href: appCss },
 				{ rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
-				{ rel: "apple-touch-icon", href: "/logo.png" },
+				{ rel: "apple-touch-icon", href: siteLogo(settings) },
 				{ rel: "manifest", href: "/manifest.json" },
 			],
 			scripts: [

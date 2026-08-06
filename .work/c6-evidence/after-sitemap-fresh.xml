@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>http://localhost:3222/en</loc></url>
+  <url><loc>http://localhost:3222/km</loc></url>
+  <url><loc>http://localhost:3222/en/news</loc></url>
+  <url><loc>http://localhost:3222/km/news</loc></url>
+  <url><loc>http://localhost:3222/en/stories</loc></url>
+  <url><loc>http://localhost:3222/km/stories</loc></url>
+  <url><loc>http://localhost:3222/en/videos</loc></url>
+  <url><loc>http://localhost:3222/km/videos</loc></url>
+  <url><loc>http://localhost:3222/en/galleries</loc></url>
+  <url><loc>http://localhost:3222/km/galleries</loc></url>
+  <url><loc>http://localhost:3222/en/team</loc></url>
+  <url><loc>http://localhost:3222/km/team</loc></url>
+  <url><loc>http://localhost:3222/en/publications</loc></url>
+  <url><loc>http://localhost:3222/km/publications</loc></url>
+  <url><loc>http://localhost:3222/en/careers</loc></url>
+  <url><loc>http://localhost:3222/km/careers</loc></url>
+  <url><loc>http://localhost:3222/en/projects</loc></url>
+  <url><loc>http://localhost:3222/km/projects</loc></url>
+</urlset>

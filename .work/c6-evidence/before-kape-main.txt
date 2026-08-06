@@ -1,0 +1,36 @@
+### /en  [200]
+<title>KAPE — Kampuchea Action to Promote Education</title>
+<meta name="description" content="For more than three decades, KAPE has championed equitable, transformative education for Cambodian children — across 385+ schools, 15 provinces, and over 160,000 lives."
+<meta property="og:type" content="website"
+<meta property="og:site_name" content="KAPE Cambodia"
+<meta property="og:title" content="KAPE — Kampuchea Action to Promote Education"
+<meta property="og:description" content="For more than three decades, KAPE has championed equitable, transformative education for Cambodian children — across 385+ schools, 15 provinces, and over 160,000 lives."
+<meta property="og:image" content="https://picsum.photos/seed/kape-students/1600/1000"
+
+### /en/news  [200]
+<title>News &amp; Events — KAPE</title>
+<meta name="description" content="KAPE — access, quality and equity in education across Cambodia."
+<meta property="og:type" content="website"
+<meta property="og:site_name" content="KAPE Cambodia"
+<meta property="og:image" content="/logo.png"
+<meta property="og:title" content="News &amp; Events — KAPE"
+<meta property="og:description" content="KAPE — access, quality and equity in education across Cambodia."
+
+### /login  [200]
+<title>Sign in — KAPE Admin</title>
+<meta name="description" content="Kampuchea Action to Promote Education (KAPE) advances equitable, transformative education for children across Cambodia."
+<meta property="og:type" content="website"
+<meta property="og:site_name" content="KAPE Cambodia"
+<meta property="og:title" content="KAPE — Kampuchea Action to Promote Education"
+<meta property="og:description" content="Advancing equitable, transformative education for children across Cambodia."
+<meta property="og:image" content="/logo.png"
+
+### /en/nope  [404]
+<title>KAPE</title>
+<meta name="description" content="KAPE — access, quality and equity in education across Cambodia."
+<meta property="og:type" content="website"
+<meta property="og:site_name" content="KAPE Cambodia"
+<meta property="og:image" content="/logo.png"
+<meta property="og:title" content="KAPE"
+<meta property="og:description" content="KAPE — access, quality and equity in education across Cambodia."
+

@@ -21,8 +21,8 @@ import {
 	stripLang,
 } from "@/lib/i18n-config";
 import {
+	metaDescription,
 	pageTitle,
-	siteDescription,
 	siteShortName,
 	siteTitle,
 } from "@/lib/site-identity";
@@ -86,28 +86,31 @@ export const Route = createFileRoute("/$")({
 		return { route: resolved, settings };
 	},
 	head: ({ loaderData, params }) => {
-		const settings = loaderData?.settings ?? {};
-		const r = loaderData?.route;
+		// A thrown notFound() leaves loaderData undefined, settings with it. The
+		// root's head already carries the site's own name and description, so
+		// anything returned here would rename every 404 after a site nobody owns.
+		if (!loaderData) return {};
+		const { settings, route: r } = loaderData;
 		let title = siteShortName(settings);
-		let description = siteDescription(settings);
+		let description = metaDescription(settings);
 		let image: string | null = null;
-		if (r?.kind === "page" && r.page.slug === "home") {
+		if (r.kind === "page" && r.page.slug === "home") {
 			// The home page IS the site, so it carries the site title unsuffixed.
 			title = siteTitle(settings);
 			description = r.page.excerpt || description;
 			image = r.page.coverUrl;
-		} else if (r?.kind === "page") {
+		} else if (r.kind === "page") {
 			title = pageTitle(r.page.title, settings);
 			description = r.page.excerpt || description;
 			image = r.page.coverUrl;
-		} else if (r?.kind === "article") {
+		} else if (r.kind === "article") {
 			title = pageTitle(r.post.title, settings);
 			description = r.post.excerpt || description;
-		} else if (r?.kind === "album") {
+		} else if (r.kind === "album") {
 			title = pageTitle(r.album.title, settings);
-		} else if (r?.kind === "project") {
+		} else if (r.kind === "project") {
 			title = pageTitle(r.project.name, settings);
-		} else if (r?.kind === "person") {
+		} else if (r.kind === "person") {
 			title = pageTitle(r.person.name, settings);
 			description = r.person.position || description;
 			image = r.person.photoUrl;
@@ -115,12 +118,8 @@ export const Route = createFileRoute("/$")({
 		const meta: Array<Record<string, string>> = [
 			{ title },
 			{ property: "og:title", content: title },
-			...(description
-				? [
-						{ name: "description", content: description },
-						{ property: "og:description", content: description },
-					]
-				: []),
+			{ name: "description", content: description },
+			{ property: "og:description", content: description },
 		];
 
 		// Canonical + hreflang alternates (only when a site URL is configured —

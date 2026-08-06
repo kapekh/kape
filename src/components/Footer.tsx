@@ -4,7 +4,7 @@ import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { FOOTER_DEFAULTS } from "@/lib/footer-defaults";
 import { useLang } from "@/lib/i18n";
 import { DEFAULT_LANG, localizedHref } from "@/lib/i18n-config";
-import { siteName, siteShortName } from "@/lib/site-identity";
+import { siteLogo, siteName, siteShortName } from "@/lib/site-identity";
 
 import { KhmerCalendar } from "./KhmerCalendar";
 import { NavLink } from "./NavLink";
@@ -63,7 +63,7 @@ const socialBadge = (name: string) =>
 	(name.trim()[0] || "•").toUpperCase();
 
 export function Footer({ settings }: { settings: Record<string, string> }) {
-	const { lang, t } = useLang();
+	const { lang, languages, t } = useLang();
 	const [email, setEmail] = useState("");
 	const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
 		"idle",
@@ -139,7 +139,7 @@ export function Footer({ settings }: { settings: Record<string, string> }) {
 				<div className="md:col-span-5">
 					<div className="flex items-center gap-3">
 						<img
-							src="/logo.png"
+							src={siteLogo(settings)}
 							alt={siteShortName(settings)}
 							className="h-12 w-12 shrink-0 rounded-full object-cover bg-white ring-1 ring-white/20"
 						/>
@@ -280,7 +280,9 @@ export function Footer({ settings }: { settings: Record<string, string> }) {
 							</a>
 						))}
 					</div>
-					<KhmerCalendar />
+					{/* A Khmer Buddhist-era calendar means something on a site that
+					    publishes in Khmer, and nothing on one that does not. */}
+					{languages.some((l) => l.code === "km") && <KhmerCalendar />}
 				</div>
 			</div>
 			<div className="mx-auto max-w-7xl px-6 mt-16 pt-6 border-t border-primary-foreground/15 flex flex-wrap justify-between gap-4 text-xs opacity-70">

@@ -1,0 +1,8 @@
+POST /api/forms/contact on a fresh install -> {"ok":true}
+
+server log:
+[mail] SMTP is not configured (SMTP_HOST/SMTP_USER/SMTP_PASS). Contact form submissions will be stored and readable at /admin/messages, but nobody will be emailed about them. See .env.example.
+[mail] NOT SENT - SMTP is not configured. The submission is stored and readable at /admin/messages.
+
+stored, and readable at /admin/messages:
+Dara Chan <dara@example.org> Is anyone reading this?

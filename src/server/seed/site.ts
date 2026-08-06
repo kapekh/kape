@@ -11,16 +11,36 @@ import { addTranslations, TENANT } from "./helpers";
 export async function seedSiteSettings() {
 	await db.insert(siteSettings).values(
 		Object.entries({
-			contact_phone: "042-941-481 / 042-941-918",
+			// schema.org/telephone wants a dialable number and the product will not
+			// invent a dialling code, so the fixture carries Cambodia's. The first
+			// entry is the one that reaches JSON-LD.
+			contact_phone: "+855-42-941-481 / +855-42-941-918",
 			contact_email: "kape@kapekh.org",
 			telegram: "t.me/kapemedia",
 			address:
 				"PTTC, National Road 7, Kampong Cham Town, Kampong Cham Province",
+			address_region: "Kampong Cham",
+			address_country: "KH",
+			area_served: "Cambodia",
 			copyright: "© 2026 Kampuchea Action to Promote Education",
 			youtube_url: "https://www.youtube.com/@KAPECambodia",
 			social_facebook: "https://facebook.com/KAPECambodia",
 			site_name_km: "អង្គការសកម្មភាពសម្រាប់ការអប់រំនៅកម្ពុជា",
 			site_name_en: "Kampuchea Action to Promote Education",
+			// Identity the product used to hardcode. site_name_short drives the title
+			// suffix and, being declared rather than derived, the JSON-LD
+			// alternateName and the article publisher.
+			site_name_short: "KAPE",
+			og_site_name: "KAPE Cambodia",
+			// main hardcoded four descriptions for this one idea; the settings model
+			// has one knob. This is the one it used for schema.org, which is the
+			// field a machine quotes, and it reads as a sentence in the others.
+			site_description:
+				"KAPE advances equitable, transformative education for children across Cambodia.",
+			// The client's crest, kept byte for byte at this path; /logo.png is now
+			// the product's own neutral mark and belongs to nobody.
+			logo_url: "/fixture/kape-logo.png",
+			og_image: "/fixture/kape-logo.png",
 			footer_blurb:
 				"KAPE works at every level of formal education across 15 provinces in Cambodia — from preschools to Master's programs in Mentoring.",
 			footer_links_title: "Explore",

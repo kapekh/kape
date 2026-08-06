@@ -1,12 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { eq } from "drizzle-orm";
 
 import { COLLECTIONS } from "#/lib/collections";
 import { DEFAULT_LANG } from "#/lib/i18n-config";
+import { siteDescription, siteTitle } from "#/lib/site-identity";
 import { db } from "#/server/db";
 import { siteOrigin } from "#/server/origin";
 import { listPosts } from "#/server/repo/content";
 import { getSettings } from "#/server/repo/site";
-import { siteDescription, siteTitle } from "#/lib/site-identity";
+import { pages } from "#/server/schema";
 
 /**
  * /llms.txt — the llmstxt.org convention: a curated, plain-markdown map of the
@@ -32,10 +34,21 @@ async function handler({ request }: { request: Request }) {
 				]
 			: []),
 		"## Key pages",
-		`- [Home](${u("")}): overview of the organisation, its programs and impact`,
+		`- [Home](${u("")})`,
 	];
+	// A landing is an ordinary page: list the collections someone has authored one
+	// for, not every prefix the code knows about.
+	const authored = new Set(
+		(
+			await db
+				.select({ slug: pages.slug })
+				.from(pages)
+				.where(eq(pages.status, "published"))
+		).map((p) => p.slug),
+	);
 	for (const c of Object.values(COLLECTIONS)) {
 		if (c.contentType && BLOCKED.has(c.contentType)) continue;
+		if (!authored.has(c.prefix)) continue;
 		lines.push(`- [${c.label}](${u(`/${c.prefix}`)})`);
 	}
 
@@ -64,7 +77,7 @@ async function handler({ request }: { request: Request }) {
 	lines.push(
 		"",
 		"## Full index",
-		`- [Sitemap](${base}/sitemap.xml): every public URL (English + Khmer)`,
+		`- [Sitemap](${base}/sitemap.xml): every public URL, in every language the site publishes`,
 		"",
 	);
 

@@ -1,0 +1,24 @@
+=== _en (main -> branch, router hydration payload excluded)
+3c3
+< {"@context":"https://schema.org","@type":"Organization","name":"Kampuchea Action to Promote Education","alternateName":"KAPE","description":"KAPE advances equitable, transformative education for children across Cambodia.","email":"kape@kapekh.org","telephone":"+855-42-941-481","areaServed":{"@type":"Country","name":"Cambodia"},"address":{"@type":"PostalAddress","streetAddress":"PTTC, National Road 7, Kampong Cham Town","addressRegion":"Kampong Cham","addressCountry":"KH"}}
+---
+> {"@context":"https://schema.org","@type":"Organization","name":"Kampuchea Action to Promote Education","alternateName":"KAPE","email":"kape@kapekh.org","telephone":"042-941-481","address":{"@type":"PostalAddress","streetAddress":"PTTC, National Road 7, Kampong Cham Town, Kampong Cham Province"}}
+=== _en_news (main -> branch, router hydration payload excluded)
+3c3
+< {"@context":"https://schema.org","@type":"Organization","name":"Kampuchea Action to Promote Education","alternateName":"KAPE","description":"KAPE advances equitable, transformative education for children across Cambodia.","email":"kape@kapekh.org","telephone":"+855-42-941-481","areaServed":{"@type":"Country","name":"Cambodia"},"address":{"@type":"PostalAddress","streetAddress":"PTTC, National Road 7, Kampong Cham Town","addressRegion":"Kampong Cham","addressCountry":"KH"}}
+---
+> {"@context":"https://schema.org","@type":"Organization","name":"Kampuchea Action to Promote Education","alternateName":"KAPE","email":"kape@kapekh.org","telephone":"042-941-481","address":{"@type":"PostalAddress","streetAddress":"PTTC, National Road 7, Kampong Cham Town, Kampong Cham Province"}}
+=== _en_contact (main -> branch, router hydration payload excluded)
+3c3
+< {"@context":"https://schema.org","@type":"Organization","name":"Kampuchea Action to Promote Education","alternateName":"KAPE","description":"KAPE advances equitable, transformative education for children across Cambodia.","email":"kape@kapekh.org","telephone":"+855-42-941-481","areaServed":{"@type":"Country","name":"Cambodia"},"address":{"@type":"PostalAddress","streetAddress":"PTTC, National Road 7, Kampong Cham Town","addressRegion":"Kampong Cham","addressCountry":"KH"}}
+---
+> {"@context":"https://schema.org","@type":"Organization","name":"Kampuchea Action to Promote Education","alternateName":"KAPE","email":"kape@kapekh.org","telephone":"042-941-481","address":{"@type":"PostalAddress","streetAddress":"PTTC, National Road 7, Kampong Cham Town, Kampong Cham Province"}}
+23c23
+< Get in touch with KAPE&#x27;s head office or any of our provincial teams.
+---
+> Get in touch with KAPE at our head office or any of our regional teams.
+=== _en_who-we-are (main -> branch, router hydration payload excluded)
+3c3
+< {"@context":"https://schema.org","@type":"Organization","name":"Kampuchea Action to Promote Education","alternateName":"KAPE","description":"KAPE advances equitable, transformative education for children across Cambodia.","email":"kape@kapekh.org","telephone":"+855-42-941-481","areaServed":{"@type":"Country","name":"Cambodia"},"address":{"@type":"PostalAddress","streetAddress":"PTTC, National Road 7, Kampong Cham Town","addressRegion":"Kampong Cham","addressCountry":"KH"}}
+---
+> {"@context":"https://schema.org","@type":"Organization","name":"Kampuchea Action to Promote Education","alternateName":"KAPE","email":"kape@kapekh.org","telephone":"042-941-481","address":{"@type":"PostalAddress","streetAddress":"PTTC, National Road 7, Kampong Cham Town, Kampong Cham Province"}}

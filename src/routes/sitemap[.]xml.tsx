@@ -20,20 +20,19 @@ const xmlEscape = (s: string) =>
 
 async function handler({ request }: { request: Request }) {
 	// Collect language-agnostic paths, then expand per language below.
+	// Collection landings are ordinary pages, so the pages query below picks up the
+	// ones that exist. Listing every prefix in COLLECTIONS instead advertised a
+	// landing per collection whether or not anyone had authored it.
 	const paths = new Set<string>(["/"]);
-
-	// Public collection landings (skip blocked types like /events).
-	for (const c of Object.values(COLLECTIONS)) {
-		if (c.contentType && BLOCKED.has(c.contentType)) continue;
-		paths.add(`/${c.prefix}`);
-	}
 
 	try {
 		const pubPages = await db
 			.select({ slug: pages.slug })
 			.from(pages)
 			.where(eq(pages.status, "published"));
-		for (const p of pubPages) if (p.slug) paths.add(`/${p.slug}`);
+		// "home" is already listed as "/", and both URLs serve the same page.
+		for (const p of pubPages)
+			if (p.slug && p.slug !== "home") paths.add(`/${p.slug}`);
 	} catch (e) {
 		console.error("[sitemap] pages query failed", e);
 	}

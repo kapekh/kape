@@ -15,7 +15,7 @@ import { AdminHeaderProvider } from "#/components/admin/AdminHeader";
 import { AdminIcon } from "#/components/admin/AdminIcon";
 import { ThemeToggle } from "#/components/ThemeToggle";
 import { NAV_AREA } from "#/lib/permissions";
-import { adminTitle, siteShortName } from "#/lib/site-identity";
+import { adminTitle, siteLogo, siteShortName } from "#/lib/site-identity";
 import { SESSION_COOKIE, validateToken } from "#/server/auth";
 import { db } from "#/server/db";
 import { resolvePermissions } from "#/server/repo/roles";
@@ -251,7 +251,7 @@ function AdminLayout() {
 			>
 				<div className="flex items-center gap-2.5 px-5 h-16 border-b border-border shrink-0">
 					<img
-						src="/logo.png"
+						src={siteLogo(settings)}
 						alt={siteShortName(settings)}
 						className="h-9 w-9 shrink-0 rounded-lg object-cover ring-1 ring-border"
 					/>

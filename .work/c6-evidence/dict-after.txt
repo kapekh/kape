@@ -1,0 +1,8 @@
+forms.send | en | Send message
+forms.sending | en | Sending…
+nav.contact | en | Contact
+nav.donate | en | ♡ Donate
+nav.home | en | Home
+nav.menu | en | Menu
+top.search | en | Search
+top.sitemap | en | Site Map

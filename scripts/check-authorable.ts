@@ -12,7 +12,7 @@ const fieldsFor = new Map(
 	SECTION_DEFS.map((d) => [d.type, new Map(d.fields.map((f) => [f.key, f.kind]))]),
 );
 
-const db = new Database(process.env.DATABASE_PATH ?? "./kape.db", { readonly: true });
+const db = new Database(process.env.DATABASE_PATH ?? "./cms.db", { readonly: true });
 const rows = db.query("select slug, sections from pages order by slug").all() as {
 	slug: string;
 	sections: string | null;

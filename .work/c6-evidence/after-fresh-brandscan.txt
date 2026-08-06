@@ -1,0 +1,5 @@
+/en: 
+/en/news: 
+/en/team: 
+/en/careers: 
+/login: 

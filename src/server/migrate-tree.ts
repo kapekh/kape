@@ -7,6 +7,8 @@
  * The structural half — building the parent/segment tree and flattening nav
  * targets — is content-free and lives in ./page-tree.ts.
  */
+import { and, eq } from "drizzle-orm";
+
 import { PLACEHOLDER_IMAGE } from "#/lib/placeholder";
 
 import type { SectionNode } from "#/lib/sections";
@@ -17,6 +19,7 @@ import type { DB } from "./db";
 import { flattenNav, normalizeTree, upsertPage } from "./page-tree";
 import { clearCache } from "./render-cache";
 import { listHeroSlides, listStats } from "./repo/site";
+import { translations } from "./schema";
 
 const tiptap = (paras: string[]) =>
 	JSON.stringify({
@@ -327,12 +330,32 @@ async function buildHomePage(db: DB) {
 			props: { eyebrow: "Working together", title: "Partners for *change*" },
 		},
 	];
-	await upsertPage(
+	const id = await upsertPage(
 		db,
 		"home",
 		"KAPE — Kampuchea Action to Promote Education",
 		sections,
 	);
+	// The home page's own line, which the product used to hardcode beside the
+	// generic one. Without it the front page shares every other page's description.
+	await db
+		.delete(translations)
+		.where(
+			and(
+				eq(translations.entityType, "page"),
+				eq(translations.entityId, id),
+				eq(translations.field, "excerpt"),
+			),
+		);
+	await db.insert(translations).values({
+		tenantId: 1,
+		entityType: "page",
+		entityId: id,
+		field: "excerpt",
+		lang: "en",
+		value:
+			"For more than three decades, KAPE has championed equitable, transformative education for Cambodian children — across 385+ schools, 15 provinces, and over 160,000 lives.",
+	});
 }
 
 /** Run all transforms in dependency order. Idempotent. */

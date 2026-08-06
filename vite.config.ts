@@ -12,8 +12,14 @@ const config = defineConfig({
 	optimizeDeps: { exclude: ["bun:sqlite"] },
 	ssr: { external: ["bun:sqlite"] },
 	// `vite preview` (our production server, see package.json `start`) rejects
-	// unknown Host headers by default — allow the deployed domain through.
-	preview: { allowedHosts: ["kape.koompi.cloud"] },
+	// unknown Host headers by default — name the deployed domain(s) in
+	// ALLOWED_HOSTS, comma separated, or every request 403s with "Blocked request".
+	preview: {
+		allowedHosts:
+			process.env.ALLOWED_HOSTS?.split(",")
+				.map((h) => h.trim())
+				.filter(Boolean) ?? [],
+	},
 	plugins: [
 		devtools(),
 		tailwindcss(),

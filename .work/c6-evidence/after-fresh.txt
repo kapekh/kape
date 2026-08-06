@@ -1,0 +1,40 @@
+### /en  [200]
+<title>Acme Foundation</title>
+<meta name="description" content="The website of Acme Foundation."
+<meta property="og:type" content="website"
+<meta property="og:site_name" content="Acme Foundation"
+<meta property="og:image" content="/logo.png"
+<meta property="og:title" content="Acme Foundation"
+<meta property="og:description" content="The website of Acme Foundation."
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Acme Foundation"}</script>
+
+### /en/news  [200]
+<title>News &amp; Events — Acme Foundation</title>
+<meta name="description" content="The website of Acme Foundation."
+<meta property="og:type" content="website"
+<meta property="og:site_name" content="Acme Foundation"
+<meta property="og:image" content="/logo.png"
+<meta property="og:title" content="News &amp; Events — Acme Foundation"
+<meta property="og:description" content="The website of Acme Foundation."
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Acme Foundation"}</script>
+
+### /login  [200]
+<title>Sign in — Acme Foundation Admin</title>
+<meta name="description" content="The website of Acme Foundation."
+<meta property="og:type" content="website"
+<meta property="og:site_name" content="Acme Foundation"
+<meta property="og:title" content="Acme Foundation"
+<meta property="og:description" content="The website of Acme Foundation."
+<meta property="og:image" content="/logo.png"
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Acme Foundation"}</script>
+
+### /en/nope  [404]
+<title>Acme Foundation</title>
+<meta name="description" content="The website of Acme Foundation."
+<meta property="og:type" content="website"
+<meta property="og:site_name" content="Acme Foundation"
+<meta property="og:title" content="Acme Foundation"
+<meta property="og:description" content="The website of Acme Foundation."
+<meta property="og:image" content="/logo.png"
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Acme Foundation"}</script>
+

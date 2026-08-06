@@ -1,0 +1,20 @@
+### /en  [200]
+<title>Acme — Acme Foundation</title>
+<meta name="description" content="Acme Foundation funds local libraries."
+<meta property="og:type" content="website"
+<meta property="og:site_name" content="Acme"
+<meta property="og:image" content="/media/acme-cover.jpg"
+<meta property="og:title" content="Acme — Acme Foundation"
+<meta property="og:description" content="Acme Foundation funds local libraries."
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Acme Foundation","alternateName":"Acme","description":"Acme Foundation funds local libraries."}</script>
+
+### /en/news  [200]
+<title>News &amp; Events — Acme</title>
+<meta name="description" content="Acme Foundation funds local libraries."
+<meta property="og:type" content="website"
+<meta property="og:site_name" content="Acme"
+<meta property="og:image" content="/media/acme-cover.jpg"
+<meta property="og:title" content="News &amp; Events — Acme"
+<meta property="og:description" content="Acme Foundation funds local libraries."
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Acme Foundation","alternateName":"Acme","description":"Acme Foundation funds local libraries."}</script>
+

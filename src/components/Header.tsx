@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { NavNode } from "#/server/repo/nav";
 import { LanguageSwitcher, useLang } from "@/lib/i18n";
 import { localizedHref } from "@/lib/i18n-config";
-import { siteName, siteShortName } from "@/lib/site-identity";
+import { siteLogo, siteName, siteShortName } from "@/lib/site-identity";
 import { NavLink } from "./NavLink";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -403,7 +403,7 @@ export function Header({
 							onClick={closeAll}
 						>
 							<img
-								src="/logo.png"
+								src={siteLogo(settings)}
 								alt={siteShortName(settings)}
 								className="h-12 w-12 shrink-0 rounded-full object-cover shadow-[var(--shadow-lift)] ring-1 ring-border"
 							/>

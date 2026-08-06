@@ -1,0 +1,40 @@
+### /en  [200]
+<title>KAPE — Kampuchea Action to Promote Education</title>
+<meta name="description" content="The website of Kampuchea Action to Promote Education."
+<meta property="og:type" content="website"
+<meta property="og:site_name" content="KAPE"
+<meta property="og:image" content="/logo.png"
+<meta property="og:title" content="KAPE — Kampuchea Action to Promote Education"
+<meta property="og:description" content="The website of Kampuchea Action to Promote Education."
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Kampuchea Action to Promote Education","alternateName":"KAPE","email":"kape@kapekh.org","telephone":"042-941-481","address":{"@type":"PostalAddress","streetAddress":"PTTC, National Road 7, Kampong Cham Town, Kampong Cham Province"}}</script>
+
+### /en/news  [200]
+<title>News &amp; Events — KAPE</title>
+<meta name="description" content="The website of Kampuchea Action to Promote Education."
+<meta property="og:type" content="website"
+<meta property="og:site_name" content="KAPE"
+<meta property="og:image" content="/logo.png"
+<meta property="og:title" content="News &amp; Events — KAPE"
+<meta property="og:description" content="The website of Kampuchea Action to Promote Education."
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Kampuchea Action to Promote Education","alternateName":"KAPE","email":"kape@kapekh.org","telephone":"042-941-481","address":{"@type":"PostalAddress","streetAddress":"PTTC, National Road 7, Kampong Cham Town, Kampong Cham Province"}}</script>
+
+### /login  [200]
+<title>Sign in — KAPE Admin</title>
+<meta name="description" content="The website of Kampuchea Action to Promote Education."
+<meta property="og:type" content="website"
+<meta property="og:site_name" content="KAPE"
+<meta property="og:title" content="KAPE — Kampuchea Action to Promote Education"
+<meta property="og:description" content="The website of Kampuchea Action to Promote Education."
+<meta property="og:image" content="/logo.png"
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Kampuchea Action to Promote Education","alternateName":"KAPE","email":"kape@kapekh.org","telephone":"042-941-481","address":{"@type":"PostalAddress","streetAddress":"PTTC, National Road 7, Kampong Cham Town, Kampong Cham Province"}}</script>
+
+### /en/nope  [404]
+<title>KAPE — Kampuchea Action to Promote Education</title>
+<meta name="description" content="The website of Kampuchea Action to Promote Education."
+<meta property="og:type" content="website"
+<meta property="og:site_name" content="KAPE"
+<meta property="og:title" content="KAPE — Kampuchea Action to Promote Education"
+<meta property="og:description" content="The website of Kampuchea Action to Promote Education."
+<meta property="og:image" content="/logo.png"
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Kampuchea Action to Promote Education","alternateName":"KAPE","email":"kape@kapekh.org","telephone":"042-941-481","address":{"@type":"PostalAddress","streetAddress":"PTTC, National Road 7, Kampong Cham Town, Kampong Cham Province"}}</script>
+

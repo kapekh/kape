@@ -1,8 +1,13 @@
-# KAPE Website & CMS
+# Website & CMS
 
-A CMS-driven, bilingual (English + ខ្មែរ) website and internal staff portal for
-**KAPE** — Kampuchea Action to Promote Education (អង្គការសកម្មភាពសម្រាប់ការអប់រំនៅកម្ពុជា),
-the largest local education NGO in Cambodia.
+A CMS-driven, bilingual (English + ខ្មែរ) website and internal staff portal.
+A fresh install carries no organisation's name, logo or copy: `bun run db:seed`
+creates one administrator, one home page and nothing else, and everything the
+site says about itself is edited from `/admin`.
+
+The first deployment is KAPE (Kampuchea Action to Promote Education,
+អង្គការសកម្មភាពសម្រាប់ការអប់រំនៅកម្ពុជា), the largest local education NGO in
+Cambodia; that site's content is a fixture, `bun run seed:kape`, not the product.
 
 The defining goal: **non-technical admins compose the whole site themselves** —
 menus, nested pages, and each page's content from a catalogue of sections (rich
@@ -40,7 +45,9 @@ any deploy:
   changing it invalidates every existing login. In production the app refuses to
   boot with the insecure default.
 - **`DATABASE_PATH`** — use an **absolute** path in production so the DB file (and
-  login sessions) survive restarts.
+  login sessions) survive restarts. Read by the app **and** by drizzle-kit, so a
+  shell where it is unset runs `db:migrate` against a different file.
+- **`ALLOWED_HOSTS`** — required by `bun run start`. See below.
 
 #### Running behind a proxy
 
@@ -61,6 +68,10 @@ Bind the app to localhost or an internal network and let only the proxy reach it
 
 Leave the variable empty for the default `docker compose up` deployment, which publishes the port directly with nothing in front.
 
+`bun run start` is `vite preview`, which refuses any Host header it does not recognise.
+Set `ALLOWED_HOSTS` to your domain, comma separated for more than one, or every request comes back `Blocked request`.
+`bun run dev` ignores it.
+
 Optional integrations, each degrades gracefully when unset:
 
 | Vars | Enables | Fallback when unset |
@@ -70,13 +81,78 @@ Optional integrations, each degrades gracefully when unset:
 | `BARAY_*` ([Baray](https://baray.io)) | Real donation payments | `/donate` shows "not configured" |
 | `VITE_SITE_URL` | Canonical + hreflang + absolute OG URLs | Relative URLs |
 
+## Upgrading an existing deployment
+
+Read this before deploying this version over one that is already running.
+Three things changed, none of them announce themselves, and two of them make a live site look wiped.
+This applies whichever way you run the app: the shipped `docker-compose.yml`, your own compose file, a bare `docker run`, or `bun run start` on a host.
+
+**1. The database file is now `cms.db`, not `kape.db`.**
+`DATABASE_PATH`'s default moved from `/data/kape.db` to `/data/cms.db`, in the app, in the entrypoint and in `drizzle.config.ts`.
+Point `DATABASE_PATH` at the file you already have and nothing moves:
+
+```bash
+# .env
+DATABASE_PATH=/data/kape.db
+```
+
+Do this rather than renaming the file, at least until the upgrade is verified.
+If you do rename it, stop the app first and take its `-wal` and `-shm` companions with it.
+
+**2. The Compose volumes are now `cms-data` and `cms-uploads`.**
+Only relevant if you use the shipped `docker-compose.yml`.
+Compose will not warn you: it creates the new, empty volumes and the site comes back blank while your data sits untouched in the old ones.
+
+Keep the old volumes by name, in an **untracked** `docker-compose.override.yml` beside the compose file, so the next `git pull` has nothing to conflict with:
+
+```yaml
+volumes:
+  cms-data:
+    name: <project>_kape-data
+  cms-uploads:
+    name: <project>_kape-uploads
+```
+
+`<project>` is the Compose project name, which defaults to the directory's name.
+`docker volume ls` shows the full names.
+
+Or copy the data across instead, **with the stack stopped** (`docker compose down`):
+
+```bash
+docker volume create <project>_cms-data
+docker volume create <project>_cms-uploads
+docker run --rm -v <project>_kape-data:/from -v <project>_cms-data:/to \
+  alpine sh -c 'cp -a /from/. /to/'
+docker run --rm -v <project>_kape-uploads:/from -v <project>_cms-uploads:/to \
+  alpine cp -a /from/. /to/
+```
+
+Keep the old volumes until the site is verified.
+
+**3. `ALLOWED_HOSTS` is new and required by `bun run start`.**
+The deployed domain used to be hardcoded in `vite.config.ts`.
+It now comes from the environment, and `vite preview` rejects any Host header it does not recognise, so with the variable unset **every request 403s with `Blocked request`** — including the ones from your health check.
+
+```bash
+# .env
+ALLOWED_HOSTS=www.example.org,example.org
+```
+
+`bun run dev` ignores it.
+
+**Verifying.**
+The installer runs on every boot and is a no-op on a database that is already installed.
+It prints `Already installed - skipping.`, plus a warning for anything an administrator can put back from `/admin` (a missing site name, no page at `home`).
+It exits non-zero, changing nothing, only when the database is missing rows the site cannot run without, such as an administrator; the message names what is missing, what is present, and how much content the file holds.
+It will never tell you to delete a database that holds pages, posts or media.
+
 ## Scripts
 
 ```bash
 bun run dev          # dev server (port 3000)
 bun run build        # generate prerender paths + production build
 bun run prerender    # build, then statically prerender pages (incremental SSG)
-bun run start        # serve the production build
+bun run start        # serve the production build (set ALLOWED_HOSTS to your domain)
 bun run test         # Vitest
 bun run check        # Biome lint + format check
 bun run db:generate  # generate a migration from schema changes

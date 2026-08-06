@@ -22,6 +22,7 @@ import {
 } from "./internal";
 import { seedHeroSlides } from "./media";
 import { seedNav } from "./nav";
+import { seedCalendarPages } from "./pages-calendar";
 import { seedWhatWeDoPages } from "./pages-what-we-do";
 import { seedWhoWeArePages } from "./pages-who-we-are";
 import {
@@ -88,6 +89,11 @@ export async function seedKape() {
 	// landing pages, migrated static section pages, the section-built home page,
 	// the parent/segment tree, and flattened nav targets.
 	await applyTreeMigrations(db);
+
+	// After the tree pass: these pages set their own parent and sibling order, and
+	// normalizeTree would resort them by slug. They also own footer_buttons, which
+	// seedSiteSettings writes earlier and which points at exactly these slugs.
+	await seedCalendarPages();
 
 	return adminEmail;
 }
