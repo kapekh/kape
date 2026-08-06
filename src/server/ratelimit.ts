@@ -56,7 +56,7 @@ function warnIfProxyUndeclared(peer: string): void {
 			"TRUSTED_PROXY_HEADER is unset. If a reverse proxy or CDN sits in front, every visitor " +
 			"now shares ONE rate-limit bucket, and logins and contact-form posts will start failing " +
 			"for everyone at once. Fix: set TRUSTED_PROXY_HEADER to the header your proxy sets " +
-			"(cf-connecting-ip for Cloudflare, x-forwarded-for for nginx/Caddy/Traefik) — see README " +
+			"(cf-connecting-ip for Cloudflare, x-forwarded-for for nginx/Caddy/Traefik). See README " +
 			"'Running behind a proxy'. If nothing is in front of the app (container NAT can also look " +
 			"like this), no action is needed.",
 	);
