@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import { fieldInput, fieldLabel } from "#/components/admin/form-ui";
-import { useDirty } from "#/components/admin/useDirty";
+import { useDirtyGuard } from "#/components/admin/useDirty";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { toast } from "@/components/Dialogs";
 
@@ -51,7 +51,7 @@ function Account() {
 		}
 	}
 
-	const dirty = useDirty(JSON.stringify({ current, next, confirmPw }));
+	const dirty = useDirtyGuard(JSON.stringify({ current, next, confirmPw }));
 
 	return (
 		<div className="mx-auto max-w-2xl">

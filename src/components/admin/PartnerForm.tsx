@@ -11,7 +11,7 @@ import {
 } from "./form-ui";
 import { MediaPicker } from "./MediaPicker";
 import { SearchableSelect } from "./SearchableSelect";
-import { useDirty } from "./useDirty";
+import { useDirtyGuard } from "./useDirty";
 
 export type PartnerFormValue = {
 	name: string;
@@ -62,7 +62,7 @@ export function PartnerForm({
 		});
 	}
 
-	const dirty = useDirty(
+	const dirty = useDirtyGuard(
 		JSON.stringify({ name, category, url, logoMediaId }),
 		savedAt,
 	);

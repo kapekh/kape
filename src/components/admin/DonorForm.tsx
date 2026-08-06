@@ -10,7 +10,7 @@ import {
 	fieldLabel,
 } from "./form-ui";
 import { MediaPicker } from "./MediaPicker";
-import { useDirty } from "./useDirty";
+import { useDirtyGuard } from "./useDirty";
 
 export type DonorFormValue = {
 	name: string;
@@ -54,7 +54,10 @@ export function DonorForm({
 		});
 	}
 
-	const dirty = useDirty(JSON.stringify({ name, url, logoMediaId }), savedAt);
+	const dirty = useDirtyGuard(
+		JSON.stringify({ name, url, logoMediaId }),
+		savedAt,
+	);
 
 	return (
 		<form onSubmit={submit}>

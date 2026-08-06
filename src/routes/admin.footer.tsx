@@ -8,7 +8,7 @@ import {
 	fieldLabel,
 } from "#/components/admin/form-ui";
 import { MediaPicker } from "#/components/admin/MediaPicker";
-import { useDirty } from "#/components/admin/useDirty";
+import { useDirtyGuard } from "#/components/admin/useDirty";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { FOOTER_DEFAULTS } from "#/lib/footer-defaults";
 
@@ -140,7 +140,10 @@ function FooterAdmin() {
 		setSavedAt(new Date().toLocaleTimeString());
 	}
 
-	const dirty = useDirty(JSON.stringify({ vals, links, socials }), savedAt);
+	const dirty = useDirtyGuard(
+		JSON.stringify({ vals, links, socials }),
+		savedAt,
+	);
 
 	if (loading) return <p className="text-sm text-muted-foreground">Loading…</p>;
 

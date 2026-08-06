@@ -8,7 +8,7 @@ import {
 } from "#/components/admin/form-ui";
 import type { LangOpt } from "#/components/admin/PostForm";
 import { SearchableSelect } from "#/components/admin/SearchableSelect";
-import { useDirty } from "#/components/admin/useDirty";
+import { useDirtyGuard } from "#/components/admin/useDirty";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { HEADER_DEFAULTS } from "#/lib/header-defaults";
 import { confirm } from "@/components/Dialogs";
@@ -48,7 +48,7 @@ function HeaderSettings() {
 		setSavedAt(new Date().toLocaleTimeString());
 	}
 
-	const dirty = useDirty(JSON.stringify(vals), savedAt);
+	const dirty = useDirtyGuard(JSON.stringify(vals), savedAt);
 
 	return (
 		<FormSection

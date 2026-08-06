@@ -13,7 +13,7 @@ import { LangTabs } from "./LangTabs";
 import { MediaPicker } from "./MediaPicker";
 import type { LangOpt } from "./PostForm";
 import { RichTextEditor } from "./RichTextEditor";
-import { useDirty } from "./useDirty";
+import { useDirtyGuard } from "./useDirty";
 
 export type PersonFormValue = {
 	nameEn: string;
@@ -112,7 +112,7 @@ export function PeopleForm({
 		});
 	}
 
-	const dirty = useDirty(
+	const dirty = useDirtyGuard(
 		JSON.stringify({
 			nameEn,
 			nameKm,

@@ -19,7 +19,7 @@ import {
 import { MediaPicker } from "./MediaPicker";
 import { RichTextEditor } from "./RichTextEditor";
 import { SearchableSelect } from "./SearchableSelect";
-import { useDirty } from "./useDirty";
+import { useDirtyGuard } from "./useDirty";
 
 export type LangOpt = { code: string; name: string; nativeName: string };
 export type TypeOpt = { key: string; name: string };
@@ -236,7 +236,7 @@ export function PostForm({
 
 	const metaFieldDefs = META_FIELDS[contentType] ?? [];
 
-	const dirty = useDirty(
+	const dirty = useDirtyGuard(
 		JSON.stringify({
 			contentType,
 			slug,

@@ -10,7 +10,7 @@ import {
 	fieldLabel,
 } from "./form-ui";
 import { MediaPicker } from "./MediaPicker";
-import { useDirty } from "./useDirty";
+import { useDirtyGuard } from "./useDirty";
 
 export type CampaignFormValue = {
 	slug: string;
@@ -154,7 +154,7 @@ export function CampaignForm({
 		});
 	}
 
-	const dirty = useDirty(
+	const dirty = useDirtyGuard(
 		JSON.stringify({
 			slug,
 			status,

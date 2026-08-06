@@ -10,7 +10,7 @@ import {
 	fieldInput,
 	fieldLabel,
 } from "./form-ui";
-import { useDirty } from "./useDirty";
+import { useDirtyGuard } from "./useDirty";
 
 export type UserFormValue = {
 	email: string;
@@ -64,7 +64,7 @@ export function UserForm({
 		});
 	}
 
-	const dirty = useDirty(JSON.stringify({ email, name, role, password }));
+	const dirty = useDirtyGuard(JSON.stringify({ email, name, role, password }));
 
 	return (
 		<form onSubmit={submit}>

@@ -17,7 +17,7 @@ import {
 	fieldLabel,
 } from "./form-ui";
 import { RichTextEditor } from "./RichTextEditor";
-import { useDirty } from "./useDirty";
+import { useDirtyGuard } from "./useDirty";
 
 type SlugStatus = "idle" | "checking" | "available" | "taken";
 
@@ -159,7 +159,7 @@ export function FormBuilder({
 		});
 	}
 
-	const dirty = useDirty(
+	const dirty = useDirtyGuard(
 		JSON.stringify({
 			slug,
 			status,

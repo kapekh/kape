@@ -10,7 +10,7 @@ import {
 	fieldInput,
 	fieldLabel,
 } from "./form-ui";
-import { useDirty } from "./useDirty";
+import { useDirtyGuard } from "./useDirty";
 
 export type RoleFormValue = { name: string; permissions: PermissionArea[] };
 
@@ -63,7 +63,7 @@ export function RoleForm({
 		onSubmit({ name: name.trim(), permissions: [...perms] });
 	}
 
-	const dirty = useDirty(JSON.stringify({ name, perms: [...perms] }));
+	const dirty = useDirtyGuard(JSON.stringify({ name, perms: [...perms] }));
 
 	return (
 		<form onSubmit={submit}>

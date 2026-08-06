@@ -12,7 +12,7 @@ import { PagePreview } from "./PagePreview";
 import { PageSwitcher } from "./PageSwitcher";
 import type { LangOpt } from "./PostForm";
 import { SectionsBuilder } from "./SectionsBuilder";
-import { useDirty } from "./useDirty";
+import { useDirtyGuard } from "./useDirty";
 
 export type PageStatus = "draft" | "published";
 export type PageFormValue = {
@@ -146,7 +146,7 @@ export function PageForm({
 		});
 	}
 
-	const dirty = useDirty(
+	const dirty = useDirtyGuard(
 		JSON.stringify({
 			segment,
 			parentId,

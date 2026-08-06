@@ -13,7 +13,7 @@ import { LangTabs } from "./LangTabs";
 import { MapField } from "./MapField";
 import type { LangOpt } from "./PostForm";
 import { RichTextEditor } from "./RichTextEditor";
-import { useDirty } from "./useDirty";
+import { useDirtyGuard } from "./useDirty";
 
 export type DonorOpt = { id: number; name: string };
 export type ProjectStatus = "current" | "past";
@@ -145,7 +145,7 @@ export function ProjectForm({
 		});
 	}
 
-	const dirty = useDirty(
+	const dirty = useDirtyGuard(
 		JSON.stringify({
 			code,
 			slug,

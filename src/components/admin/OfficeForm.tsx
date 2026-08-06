@@ -12,7 +12,7 @@ import {
 import { MapPicker } from "./MapPicker";
 import { MediaPicker } from "./MediaPicker";
 import { SearchableSelect } from "./SearchableSelect";
-import { useDirty } from "./useDirty";
+import { useDirtyGuard } from "./useDirty";
 
 export type OfficeFormValue = {
 	name: string;
@@ -83,7 +83,7 @@ export function OfficeForm({
 		});
 	}
 
-	const dirty = useDirty(
+	const dirty = useDirtyGuard(
 		JSON.stringify({
 			name,
 			province,

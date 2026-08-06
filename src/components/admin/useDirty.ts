@@ -1,4 +1,7 @@
+import { useBlocker } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+
+import { confirm } from "@/components/Dialogs";
 
 /**
  * Tracks whether an admin form has unsaved changes.
@@ -26,4 +29,35 @@ export function useDirty(snapshot: string, savedSignal?: unknown): boolean {
 		}
 	}, [savedSignal, snapshot]);
 	return snapshot !== baseline;
+}
+
+/**
+ * `useDirty` plus a way out that isn't silent: a click on the sidebar, the
+ * browser back button or a tab close while edits are pending asks first
+ * instead of discarding them. Kept separate from `useDirty` because the
+ * blocker needs router context and the plain hook must stay usable without it.
+ *
+ * Only guards forms that report a save (`savedSignal`). A create form has no
+ * such signal, so it is still dirty at the moment its own save navigates to the
+ * new record's editor — guarding it would challenge the editor for work that
+ * was just written.
+ */
+export function useDirtyGuard(
+	snapshot: string,
+	savedSignal?: unknown,
+): boolean {
+	const dirty = useDirty(snapshot, savedSignal);
+	useBlocker({
+		disabled: !dirty || savedSignal === undefined,
+		enableBeforeUnload: dirty,
+		shouldBlockFn: async () =>
+			!(await confirm({
+				title: "Unsaved changes",
+				message: "Leave this page and lose the edits you have not saved?",
+				confirmLabel: "Discard changes",
+				cancelLabel: "Keep editing",
+				danger: true,
+			})),
+	});
+	return dirty;
 }
