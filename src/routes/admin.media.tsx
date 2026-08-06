@@ -19,6 +19,8 @@ type Stats = { total: number; images: number; files: number; bytes: number };
 
 const PAGE = 30;
 
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
 const isImage = (m: MediaRow) => !!m.contentType?.startsWith("image/");
 const nameOf = (m: MediaRow) =>
 	(m.url || m.r2Key || "").split("/").pop()?.split("?")[0] || `media-${m.id}`;
@@ -266,7 +268,7 @@ function MediaLibrary() {
 		const inUse = usages.filter((u) => u.length > 0).length;
 		const msg = inUse
 			? `⚠ ${inUse} of these ${ids.length} item${ids.length > 1 ? "s" : ""} ${inUse > 1 ? "are" : "is"} still used by other records and will leave broken images.\n\nDelete all ${ids.length} anyway? This can't be undone.`
-			: `Delete ${ids.length} selected item(s)? This can't be undone.`;
+			: `Delete ${plural(ids.length, "selected item")}? This can't be undone.`;
 		if (!(await confirm(msg))) return;
 		await Promise.all(
 			ids.map((id) => trpcClient.adminMedia.delete.mutate({ id })),
@@ -306,8 +308,8 @@ function MediaLibrary() {
 					<p className="mt-1 text-sm text-muted-foreground">
 						{stats ? (
 							<>
-								{stats.total} items · {stats.images} images
-								{stats.files ? ` · ${stats.files} files` : ""}
+								{plural(stats.total, "item")} · {plural(stats.images, "image")}
+								{stats.files ? ` · ${plural(stats.files, "file")}` : ""}
 								{stats.bytes ? ` · ${fmtBytes(stats.bytes)}` : ""}
 							</>
 						) : (
