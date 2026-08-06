@@ -11,6 +11,7 @@ import {
 } from "./form-ui";
 import { LangTabs } from "./LangTabs";
 import { MapField } from "./MapField";
+import { MediaPicker } from "./MediaPicker";
 import type { LangOpt } from "./PostForm";
 import { RichTextEditor } from "./RichTextEditor";
 import { useDirtyGuard } from "./useDirty";
@@ -18,6 +19,12 @@ import { useDirtyGuard } from "./useDirty";
 export type DonorOpt = { id: number; name: string };
 export type ProjectStatus = "current" | "past";
 export type Snapshot = { value: string; label: string };
+export type ProjectLocation = {
+	schoolName: string;
+	lat: string;
+	lng: string;
+	photoMediaId: number | null;
+};
 export type ProjectFormValue = {
 	code: string;
 	slug: string;
@@ -29,7 +36,7 @@ export type ProjectFormValue = {
 	snapshots: Snapshot[];
 	translations: { lang: string; name: string; summary: string; body: string }[];
 	donorIds: number[];
-	locations: { schoolName: string; lat: string; lng: string }[];
+	locations: ProjectLocation[];
 };
 
 type Initial = {
@@ -43,7 +50,7 @@ type Initial = {
 	snapshots: Snapshot[];
 	translations: Record<string, Record<string, string>>;
 	donorIds: number[];
-	locations: { schoolName: string; lat: string; lng: string }[];
+	locations: ProjectLocation[];
 } | null;
 
 export function ProjectForm({
@@ -109,10 +116,10 @@ export function ProjectForm({
 			ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id],
 		);
 	}
-	function setLoc(
+	function setLoc<K extends keyof ProjectLocation>(
 		i: number,
-		field: "schoolName" | "lat" | "lng",
-		value: string,
+		field: K,
+		value: ProjectLocation[K],
 	) {
 		setLocations((ls) =>
 			ls.map((l, j) => (j === i ? { ...l, [field]: value } : l)),
@@ -239,6 +246,20 @@ export function ProjectForm({
 												setLoc(i, "lng", ln);
 											}}
 										/>
+										<div className="w-24">
+											<MediaPicker
+												mode="id"
+												kind="image"
+												aspect="square"
+												label="Photo"
+												value={
+													l.photoMediaId != null ? String(l.photoMediaId) : ""
+												}
+												onChange={(v) =>
+													setLoc(i, "photoMediaId", v ? Number(v) : null)
+												}
+											/>
+										</div>
 										<button
 											type="button"
 											onClick={() =>
@@ -255,7 +276,7 @@ export function ProjectForm({
 									onClick={() =>
 										setLocations((ls) => [
 											...ls,
-											{ schoolName: "", lat: "", lng: "" },
+											{ schoolName: "", lat: "", lng: "", photoMediaId: null },
 										])
 									}
 									className="text-xs rounded border border-border px-3 py-1 hover:bg-muted"

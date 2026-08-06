@@ -1570,6 +1570,7 @@ export type ProjectLocationInput = {
 	schoolName: string;
 	lat: string;
 	lng: string;
+	photoMediaId: number | null;
 };
 export type ProjectInput = {
 	code: string;
@@ -1672,6 +1673,14 @@ export async function getProjectForEdit(db: DB, id: number) {
 		.from(projectLocations)
 		.where(eq(projectLocations.projectId, id))
 		.orderBy(asc(projectLocations.sort));
+	// annotated, not inferred: the editor round-trips this straight back into
+	// setProjectRelations, so a column dropped here is a column erased on save
+	const locations: ProjectLocationInput[] = locs.map((l) => ({
+		schoolName: l.schoolName ?? "",
+		lat: l.lat,
+		lng: l.lng,
+		photoMediaId: l.photoMediaId,
+	}));
 	return {
 		id: p.id,
 		code: p.code,
@@ -1684,11 +1693,7 @@ export async function getProjectForEdit(db: DB, id: number) {
 		snapshots: p.snapshots ?? [],
 		translations: byLang,
 		donorIds: dRows.map((d) => d.donorId),
-		locations: locs.map((l) => ({
-			schoolName: l.schoolName ?? "",
-			lat: l.lat,
-			lng: l.lng,
-		})),
+		locations,
 	};
 }
 
@@ -1711,14 +1716,14 @@ async function setProjectRelations(db: DB, id: number, input: ProjectInput) {
 	await db.delete(projectLocations).where(eq(projectLocations.projectId, id));
 	const locs = input.locations.filter((l) => l.lat && l.lng);
 	if (locs.length) {
+		// spread, not a column list: what the editor sent is what gets written,
+		// so a new pin field cannot be silently dropped on the way in
 		await db.insert(projectLocations).values(
 			locs.map((l, i) => ({
 				tenantId: TENANT,
 				projectId: id,
-				schoolName: l.schoolName,
-				lat: l.lat,
-				lng: l.lng,
 				sort: i,
+				...l,
 			})),
 		);
 	}

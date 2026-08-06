@@ -1047,7 +1047,12 @@ const projectInput = z.object({
 	),
 	donorIds: z.array(z.number()),
 	locations: z.array(
-		z.object({ schoolName: z.string(), lat: z.string(), lng: z.string() }),
+		z.object({
+			schoolName: z.string(),
+			lat: z.string(),
+			lng: z.string(),
+			photoMediaId: z.number().nullable(),
+		}),
 	),
 });
 
