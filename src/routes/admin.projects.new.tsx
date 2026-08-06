@@ -8,6 +8,8 @@ import {
 	type ProjectFormValue,
 } from "#/components/admin/ProjectForm";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { saveErrorMessage } from "#/lib/save-error";
+import { toast } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/projects/new")({
 	component: NewProject,
@@ -31,9 +33,14 @@ function NewProject() {
 
 	async function onSubmit(v: ProjectFormValue) {
 		setSaving(true);
-		const id = await trpcClient.adminProjects.create.mutate(v);
-		setSaving(false);
-		navigate({ to: "/admin/projects/$id", params: { id: String(id) } });
+		try {
+			const id = await trpcClient.adminProjects.create.mutate(v);
+			navigate({ to: "/admin/projects/$id", params: { id: String(id) } });
+		} catch (e) {
+			toast(saveErrorMessage(e), "error");
+		} finally {
+			setSaving(false);
+		}
 	}
 
 	if (!langs.length)

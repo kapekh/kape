@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 
 import { DonorForm, type DonorFormValue } from "#/components/admin/DonorForm";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { saveErrorMessage } from "#/lib/save-error";
+import { toast } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/donors/$id")({
 	component: EditDonor,
@@ -29,9 +31,14 @@ function EditDonor() {
 
 	async function onSubmit(v: DonorFormValue) {
 		setSaving(true);
-		await trpcClient.adminDonors.update.mutate({ id: did, ...v });
-		setSaving(false);
-		setSavedAt(new Date().toLocaleTimeString());
+		try {
+			await trpcClient.adminDonors.update.mutate({ id: did, ...v });
+			setSavedAt(new Date().toLocaleTimeString());
+		} catch (e) {
+			toast(saveErrorMessage(e), "error");
+		} finally {
+			setSaving(false);
+		}
 	}
 
 	if (notFound)

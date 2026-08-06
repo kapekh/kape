@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { PageForm, type PageFormValue } from "#/components/admin/PageForm";
 import type { LangOpt } from "#/components/admin/PostForm";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { saveErrorMessage } from "#/lib/save-error";
+import { toast } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/pages/$id")({
 	component: EditPage,
@@ -35,9 +37,14 @@ function EditPage() {
 
 	async function onSubmit(v: PageFormValue) {
 		setSaving(true);
-		await trpcClient.adminPages.update.mutate({ id: pid, ...v });
-		setSaving(false);
-		setSavedAt(new Date().toLocaleTimeString());
+		try {
+			await trpcClient.adminPages.update.mutate({ id: pid, ...v });
+			setSavedAt(new Date().toLocaleTimeString());
+		} catch (e) {
+			toast(saveErrorMessage(e), "error");
+		} finally {
+			setSaving(false);
+		}
 	}
 
 	if (notFound)

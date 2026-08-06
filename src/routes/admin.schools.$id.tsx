@@ -8,6 +8,8 @@ import {
 	type TermOpt,
 } from "#/components/admin/SchoolForm";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { saveErrorMessage } from "#/lib/save-error";
+import { toast } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/schools/$id")({
 	component: EditSchool,
@@ -42,9 +44,14 @@ function EditSchool() {
 
 	async function onSubmit(v: SchoolFormValue) {
 		setSaving(true);
-		await trpcClient.adminSchools.update.mutate({ id: sid, ...v });
-		setSaving(false);
-		setSavedAt(new Date().toLocaleTimeString());
+		try {
+			await trpcClient.adminSchools.update.mutate({ id: sid, ...v });
+			setSavedAt(new Date().toLocaleTimeString());
+		} catch (e) {
+			toast(saveErrorMessage(e), "error");
+		} finally {
+			setSaving(false);
+		}
 	}
 
 	if (notFound)

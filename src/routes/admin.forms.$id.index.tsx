@@ -6,6 +6,7 @@ import {
 	type FormBuilderValue,
 } from "#/components/admin/FormBuilder";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { saveErrorMessage } from "#/lib/save-error";
 import { toast } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/forms/$id/")({
@@ -26,10 +27,15 @@ function EditForm() {
 
 	async function onSubmit(v: FormBuilderValue) {
 		setSaving(true);
-		await trpcClient.adminForms.update.mutate({ id: Number(id), ...v });
-		setSaving(false);
-		toast("Form saved.", "success");
-		navigate({ to: "/admin/forms" });
+		try {
+			await trpcClient.adminForms.update.mutate({ id: Number(id), ...v });
+			toast("Form saved.", "success");
+			navigate({ to: "/admin/forms" });
+		} catch (e) {
+			toast(saveErrorMessage(e), "error");
+		} finally {
+			setSaving(false);
+		}
 	}
 
 	if (!initial)

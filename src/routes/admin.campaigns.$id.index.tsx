@@ -6,6 +6,8 @@ import {
 	type CampaignFormValue,
 } from "#/components/admin/CampaignForm";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { saveErrorMessage } from "#/lib/save-error";
+import { toast } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/campaigns/$id/")({
 	component: EditCampaign,
@@ -25,9 +27,14 @@ function EditCampaign() {
 
 	async function onSubmit(v: CampaignFormValue) {
 		setSaving(true);
-		await trpcClient.adminCampaigns.update.mutate({ id: Number(id), ...v });
-		setSaving(false);
-		navigate({ to: "/admin/campaigns" });
+		try {
+			await trpcClient.adminCampaigns.update.mutate({ id: Number(id), ...v });
+			navigate({ to: "/admin/campaigns" });
+		} catch (e) {
+			toast(saveErrorMessage(e), "error");
+		} finally {
+			setSaving(false);
+		}
 	}
 
 	if (!initial)

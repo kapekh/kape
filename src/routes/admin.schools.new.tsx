@@ -8,6 +8,8 @@ import {
 	type TermOpt,
 } from "#/components/admin/SchoolForm";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { saveErrorMessage } from "#/lib/save-error";
+import { toast } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/schools/new")({
 	component: NewSchool,
@@ -33,9 +35,14 @@ function NewSchool() {
 
 	async function onSubmit(v: SchoolFormValue) {
 		setSaving(true);
-		const id = await trpcClient.adminSchools.create.mutate(v);
-		setSaving(false);
-		navigate({ to: "/admin/schools/$id", params: { id: String(id) } });
+		try {
+			const id = await trpcClient.adminSchools.create.mutate(v);
+			navigate({ to: "/admin/schools/$id", params: { id: String(id) } });
+		} catch (e) {
+			toast(saveErrorMessage(e), "error");
+		} finally {
+			setSaving(false);
+		}
 	}
 
 	if (!ready) return <p className="text-sm text-muted-foreground">Loading…</p>;

@@ -7,6 +7,8 @@ import {
 } from "#/components/admin/PeopleForm";
 import type { LangOpt } from "#/components/admin/PostForm";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { saveErrorMessage } from "#/lib/save-error";
+import { toast } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/people/new")({
 	component: NewPerson,
@@ -23,9 +25,14 @@ function NewPerson() {
 
 	async function onSubmit(v: PersonFormValue) {
 		setSaving(true);
-		const id = await trpcClient.adminPeople.create.mutate(v);
-		setSaving(false);
-		navigate({ to: "/admin/people/$id", params: { id: String(id) } });
+		try {
+			const id = await trpcClient.adminPeople.create.mutate(v);
+			navigate({ to: "/admin/people/$id", params: { id: String(id) } });
+		} catch (e) {
+			toast(saveErrorMessage(e), "error");
+		} finally {
+			setSaving(false);
+		}
 	}
 
 	if (!languages.length)

@@ -7,6 +7,8 @@ import {
 	type TermOpt,
 } from "#/components/admin/OfficeForm";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { saveErrorMessage } from "#/lib/save-error";
+import { toast } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/offices/$id")({
 	component: EditOffice,
@@ -38,9 +40,14 @@ function EditOffice() {
 
 	async function onSubmit(v: OfficeFormValue) {
 		setSaving(true);
-		await trpcClient.adminOffices.update.mutate({ id: oid, ...v });
-		setSaving(false);
-		setSavedAt(new Date().toLocaleTimeString());
+		try {
+			await trpcClient.adminOffices.update.mutate({ id: oid, ...v });
+			setSavedAt(new Date().toLocaleTimeString());
+		} catch (e) {
+			toast(saveErrorMessage(e), "error");
+		} finally {
+			setSaving(false);
+		}
 	}
 
 	if (notFound)

@@ -7,6 +7,8 @@ import {
 } from "#/components/admin/PeopleForm";
 import type { LangOpt } from "#/components/admin/PostForm";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { saveErrorMessage } from "#/lib/save-error";
+import { toast } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/people/$id")({
 	component: EditPerson,
@@ -38,9 +40,14 @@ function EditPerson() {
 
 	async function onSubmit(v: PersonFormValue) {
 		setSaving(true);
-		await trpcClient.adminPeople.update.mutate({ id: pid, ...v });
-		setSaving(false);
-		setSavedAt(new Date().toLocaleTimeString());
+		try {
+			await trpcClient.adminPeople.update.mutate({ id: pid, ...v });
+			setSavedAt(new Date().toLocaleTimeString());
+		} catch (e) {
+			toast(saveErrorMessage(e), "error");
+		} finally {
+			setSaving(false);
+		}
 	}
 
 	if (notFound)

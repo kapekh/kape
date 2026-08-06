@@ -6,6 +6,8 @@ import {
 	type FormBuilderValue,
 } from "#/components/admin/FormBuilder";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { saveErrorMessage } from "#/lib/save-error";
+import { toast } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/forms/new")({
 	component: NewForm,
@@ -16,9 +18,14 @@ function NewForm() {
 	const [saving, setSaving] = useState(false);
 	async function onSubmit(v: FormBuilderValue) {
 		setSaving(true);
-		const id = await trpcClient.adminForms.create.mutate(v);
-		setSaving(false);
-		navigate({ to: "/admin/forms/$id", params: { id: String(id) } });
+		try {
+			const id = await trpcClient.adminForms.create.mutate(v);
+			navigate({ to: "/admin/forms/$id", params: { id: String(id) } });
+		} catch (e) {
+			toast(saveErrorMessage(e), "error");
+		} finally {
+			setSaving(false);
+		}
 	}
 	return (
 		<FormBuilder

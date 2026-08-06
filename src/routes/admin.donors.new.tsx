@@ -3,6 +3,8 @@ import { useState } from "react";
 
 import { DonorForm, type DonorFormValue } from "#/components/admin/DonorForm";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { saveErrorMessage } from "#/lib/save-error";
+import { toast } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/donors/new")({
 	component: NewDonor,
@@ -14,9 +16,14 @@ function NewDonor() {
 
 	async function onSubmit(v: DonorFormValue) {
 		setSaving(true);
-		const id = await trpcClient.adminDonors.create.mutate(v);
-		setSaving(false);
-		navigate({ to: "/admin/donors/$id", params: { id: String(id) } });
+		try {
+			const id = await trpcClient.adminDonors.create.mutate(v);
+			navigate({ to: "/admin/donors/$id", params: { id: String(id) } });
+		} catch (e) {
+			toast(saveErrorMessage(e), "error");
+		} finally {
+			setSaving(false);
+		}
 	}
 
 	return (

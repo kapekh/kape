@@ -8,6 +8,8 @@ import {
 	type ProjectFormValue,
 } from "#/components/admin/ProjectForm";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { saveErrorMessage } from "#/lib/save-error";
+import { toast } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/projects/$id")({
 	component: EditProject,
@@ -42,9 +44,14 @@ function EditProject() {
 
 	async function onSubmit(v: ProjectFormValue) {
 		setSaving(true);
-		await trpcClient.adminProjects.update.mutate({ id: pid, ...v });
-		setSaving(false);
-		setSavedAt(new Date().toLocaleTimeString());
+		try {
+			await trpcClient.adminProjects.update.mutate({ id: pid, ...v });
+			setSavedAt(new Date().toLocaleTimeString());
+		} catch (e) {
+			toast(saveErrorMessage(e), "error");
+		} finally {
+			setSaving(false);
+		}
 	}
 
 	if (notFound)

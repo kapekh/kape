@@ -11,7 +11,8 @@ import { SearchableSelect } from "#/components/admin/SearchableSelect";
 import { useDirtyGuard } from "#/components/admin/useDirty";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { HEADER_DEFAULTS } from "#/lib/header-defaults";
-import { confirm } from "@/components/Dialogs";
+import { saveErrorMessage } from "#/lib/save-error";
+import { confirm, toast } from "@/components/Dialogs";
 
 /** The non-menu header bits (donate button + top-bar links), backed by site_settings. */
 function HeaderSettings() {
@@ -39,13 +40,18 @@ function HeaderSettings() {
 
 	async function save() {
 		setSaving(true);
-		await Promise.all(
-			Object.entries(vals).map(([key, value]) =>
-				trpcClient.adminSettings.set.mutate({ key, value }),
-			),
-		);
-		setSaving(false);
-		setSavedAt(new Date().toLocaleTimeString());
+		try {
+			await Promise.all(
+				Object.entries(vals).map(([key, value]) =>
+					trpcClient.adminSettings.set.mutate({ key, value }),
+				),
+			);
+			setSavedAt(new Date().toLocaleTimeString());
+		} catch (e) {
+			toast(saveErrorMessage(e), "error");
+		} finally {
+			setSaving(false);
+		}
 	}
 
 	const dirty = useDirtyGuard(JSON.stringify(vals), savedAt);

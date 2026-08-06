@@ -7,6 +7,8 @@ import {
 	type TermOpt,
 } from "#/components/admin/PartnerForm";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { saveErrorMessage } from "#/lib/save-error";
+import { toast } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/partners/$id")({
 	component: EditPartner,
@@ -38,9 +40,14 @@ function EditPartner() {
 
 	async function onSubmit(v: PartnerFormValue) {
 		setSaving(true);
-		await trpcClient.adminPartners.update.mutate({ id: pid, ...v });
-		setSaving(false);
-		setSavedAt(new Date().toLocaleTimeString());
+		try {
+			await trpcClient.adminPartners.update.mutate({ id: pid, ...v });
+			setSavedAt(new Date().toLocaleTimeString());
+		} catch (e) {
+			toast(saveErrorMessage(e), "error");
+		} finally {
+			setSaving(false);
+		}
 	}
 
 	if (notFound)

@@ -7,6 +7,8 @@ import {
 	type TermOpt,
 } from "#/components/admin/OfficeForm";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { saveErrorMessage } from "#/lib/save-error";
+import { toast } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/offices/new")({
 	component: NewOffice,
@@ -27,9 +29,14 @@ function NewOffice() {
 
 	async function onSubmit(v: OfficeFormValue) {
 		setSaving(true);
-		const id = await trpcClient.adminOffices.create.mutate(v);
-		setSaving(false);
-		navigate({ to: "/admin/offices/$id", params: { id: String(id) } });
+		try {
+			const id = await trpcClient.adminOffices.create.mutate(v);
+			navigate({ to: "/admin/offices/$id", params: { id: String(id) } });
+		} catch (e) {
+			toast(saveErrorMessage(e), "error");
+		} finally {
+			setSaving(false);
+		}
 	}
 
 	if (!ready) return <p className="text-sm text-muted-foreground">Loading…</p>;

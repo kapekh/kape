@@ -8,6 +8,8 @@ import {
 	type TypeOpt,
 } from "#/components/admin/PostForm";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { saveErrorMessage } from "#/lib/save-error";
+import { toast } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/posts/new")({
 	validateSearch: (s: Record<string, unknown>): { type?: string } => ({
@@ -35,9 +37,14 @@ function NewPost() {
 
 	async function onSubmit(v: PostFormValue) {
 		setSaving(true);
-		const id = await trpcClient.adminPosts.create.mutate(v);
-		setSaving(false);
-		navigate({ to: "/admin/posts/$id", params: { id: String(id) } });
+		try {
+			const id = await trpcClient.adminPosts.create.mutate(v);
+			navigate({ to: "/admin/posts/$id", params: { id: String(id) } });
+		} catch (e) {
+			toast(saveErrorMessage(e), "error");
+		} finally {
+			setSaving(false);
+		}
 	}
 
 	if (!langs.length)
