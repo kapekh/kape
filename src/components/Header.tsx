@@ -13,63 +13,40 @@ const withLang = (href: string | null, lang: string): string | undefined =>
 /* Desktop mega menu                                                   */
 /* ------------------------------------------------------------------ */
 
-/**
- * Bento span for a (leaf) tile, varied by position so the grid reads as a dynamic
- * bento rather than a uniform grid. Deterministic; spans apply at lg+.
- */
-function bentoSpan(i: number, total: number): string {
-	if (i === 0 && total >= 5) return "lg:col-span-2 lg:row-span-2"; // hero
-	if (i >= 3 && (i - 3) % 5 === 0 && i < total - 2) return "lg:col-span-2"; // wide accent
-	return "";
-}
+const HEADING =
+	"text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground";
 
-/** A bento tile: full-bleed image (or brand gradient) with the label + brief overlaid. */
-function MegaBentoCard({
+/** One nav destination: label, and a single line of brief under it. No card, no image. */
+function MegaLink({
 	item,
 	lang,
 	onNavigate,
-	span,
-	feature,
 }: {
 	item: NavNode;
 	lang: string;
 	onNavigate: () => void;
-	span: string;
-	feature: boolean;
 }) {
 	const href = withLang(item.href, lang);
-	const cls = `group relative block overflow-hidden rounded-2xl border border-border bg-primary transition hover:shadow-[var(--shadow-soft)] ${span}`;
+	const cls = "group block break-inside-avoid py-1.5";
+	// "CLASS — a KAPE current project." under the label CLASS says nothing the label
+	// did not. Only a brief that opens on new words earns its line.
+	const brief = item.description
+		?.toLowerCase()
+		.startsWith(item.label.toLowerCase())
+		? null
+		: item.description;
 	const inner = (
 		<>
-			{item.imageUrl ? (
-				<img
-					src={item.imageUrl}
-					alt=""
-					loading="lazy"
-					className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-				/>
-			) : (
-				<span className="absolute inset-0 bg-gradient-to-br from-[var(--primary)] to-[var(--accent)]" />
-			)}
-			{/* Frosted-glass fade: clear at the top, blurred toward the bottom (masked so the
-			    backdrop-blur fades out upward) for legible text on any image. */}
-			<span className="absolute inset-0 backdrop-blur-md [mask-image:linear-gradient(to_top,#000_0%,#000_28%,transparent_72%)] [-webkit-mask-image:linear-gradient(to_top,#000_0%,#000_28%,transparent_72%)]" />
-			{/* Dark gradient: 0% opacity at the top → opaque at the bottom. */}
-			<span className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-transparent" />
-			<span className="absolute inset-x-0 bottom-0 block p-4 [text-shadow:0_1px_3px_rgba(0,0,0,0.55)]">
-				<span
-					className={`block font-display font-semibold text-white ${feature ? "text-lg" : "text-sm"}`}
-				>
-					{item.label}
-				</span>
-				{item.description && (
-					<span
-						className={`mt-1 block text-white/85 ${feature ? "text-sm" : "text-xs"} line-clamp-2`}
-					>
-						{item.description}
-					</span>
-				)}
+			<span className="block text-sm text-foreground/85 transition group-hover:text-[var(--accent)]">
+				{item.label}
 			</span>
+			{/* one line, always: the brief is a hint, not a summary. no `block` here,
+			    it would outrank the display line-clamp needs */}
+			{brief && (
+				<span className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+					{brief}
+				</span>
+			)}
 		</>
 	);
 	return href ? (
@@ -77,46 +54,32 @@ function MegaBentoCard({
 			{inner}
 		</NavLink>
 	) : (
-		<div className={cls}>{inner}</div>
+		<span className={cls}>{inner}</span>
 	);
 }
 
-/** A bento grid of leaf tiles. `fill` makes it stretch to the panel height (flat sections). */
-function MegaBentoGrid({
+/** Links flowing down then across, so a long list stays short instead of stretching the panel. */
+function MegaLinks({
 	items,
 	lang,
 	onNavigate,
-	fill,
+	columns,
 }: {
 	items: NavNode[];
 	lang: string;
 	onNavigate: () => void;
-	fill?: boolean;
+	columns: number;
 }) {
 	return (
-		<div
-			className={`grid grid-flow-row-dense grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-4 ${fill ? "h-full" : ""}`}
-			style={{ gridAutoRows: "minmax(150px, 1fr)" }}
-		>
-			{items.map((c, i) => {
-				const span = bentoSpan(i, items.length);
-				return (
-					<MegaBentoCard
-						key={c.id}
-						item={c}
-						lang={lang}
-						onNavigate={onNavigate}
-						span={span}
-						feature={span.includes("row-span-2")}
-					/>
-				);
-			})}
+		<div style={{ columnCount: columns, columnGap: "2rem" }}>
+			{items.map((c) => (
+				<MegaLink key={c.id} item={c} lang={lang} onNavigate={onNavigate} />
+			))}
 		</div>
 	);
 }
 
-/** A full-width section: an L2 title/brief with its level-3 items, toggleable
- *  between a grid and a horizontally-scrolling row. */
+/** A titled column of level-3 links. */
 function MegaSection({
 	item,
 	lang,
@@ -127,98 +90,28 @@ function MegaSection({
 	onNavigate: () => void;
 }) {
 	const href = withLang(item.href, lang);
-	const [mode, setMode] = useState<"grid" | "scroll">("grid");
-	const modeBtn = (active: boolean) =>
-		`grid h-7 w-7 place-items-center rounded-md transition ${
-			active
-				? "bg-primary text-primary-foreground"
-				: "text-muted-foreground hover:bg-muted"
-		}`;
 	return (
 		<section>
-			<div className="mb-3 flex items-start justify-between gap-4 border-b border-border pb-2">
-				<div className="min-w-0">
-					<h2 className="font-display text-lg font-semibold text-primary">
-						{href ? (
-							<NavLink
-								href={href}
-								onClick={onNavigate}
-								className="hover:text-[var(--accent)] transition"
-							>
-								{item.label}
-							</NavLink>
-						) : (
-							item.label
-						)}
-					</h2>
-					{item.description && (
-						<p className="mt-0.5 text-sm text-muted-foreground">
-							{item.description}
-						</p>
-					)}
-				</div>
-				{/* View-mode toggle: grid ⇆ horizontal scroll. */}
-				<div className="flex flex-none items-center gap-0.5 rounded-lg border border-border p-0.5">
-					<button
-						type="button"
-						aria-pressed={mode === "grid"}
-						aria-label="Grid view"
-						onClick={() => setMode("grid")}
-						className={modeBtn(mode === "grid")}
+			<h2 className="mb-2">
+				{href ? (
+					<NavLink
+						href={href}
+						onClick={onNavigate}
+						className={`${HEADING} transition hover:text-[var(--accent)]`}
 					>
-						<svg className="h-4 w-4" viewBox="0 0 16 16" fill="currentColor">
-							<rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1" />
-							<rect x="9" y="1.5" width="5.5" height="5.5" rx="1" />
-							<rect x="1.5" y="9" width="5.5" height="5.5" rx="1" />
-							<rect x="9" y="9" width="5.5" height="5.5" rx="1" />
-						</svg>
-					</button>
-					<button
-						type="button"
-						aria-pressed={mode === "scroll"}
-						aria-label="Scrolling row view"
-						onClick={() => setMode("scroll")}
-						className={modeBtn(mode === "scroll")}
-					>
-						<svg className="h-4 w-4" viewBox="0 0 16 16" fill="currentColor">
-							<rect x="1.5" y="3.5" width="3.5" height="9" rx="1" />
-							<rect x="6.25" y="3.5" width="3.5" height="9" rx="1" />
-							<rect x="11" y="3.5" width="3.5" height="9" rx="1" />
-						</svg>
-					</button>
-				</div>
-			</div>
-			{/* Level-3: same card style as the L2 tiles, as a grid or a scrolling row. */}
-			{mode === "grid" ? (
-				<div
-					className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4"
-					style={{ gridAutoRows: "minmax(150px, 1fr)" }}
-				>
-					{item.children.map((c) => (
-						<MegaBentoCard
-							key={c.id}
-							item={c}
-							lang={lang}
-							onNavigate={onNavigate}
-							span=""
-							feature={false}
-						/>
-					))}
-				</div>
-			) : (
-				<div className="flex gap-4 overflow-x-auto thin-scroll pb-2">
-					{item.children.map((c) => (
-						<MegaBentoCard
-							key={c.id}
-							item={c}
-							lang={lang}
-							onNavigate={onNavigate}
-							span="h-44 w-60 flex-none"
-							feature={false}
-						/>
-					))}
-				</div>
-			)}
+						{item.label}
+					</NavLink>
+				) : (
+					<span className={HEADING}>{item.label}</span>
+				)}
+			</h2>
+			{/* one column: a brief needs the width to land on one line */}
+			<MegaLinks
+				items={item.children}
+				lang={lang}
+				onNavigate={onNavigate}
+				columns={1}
+			/>
 		</section>
 	);
 }
@@ -336,8 +229,9 @@ export function Header({
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const headerRef = useRef<HTMLElement>(null);
 	// Where the header's bottom edge sits in the viewport — the open mega panel
-	// starts here and fills the rest of the screen (always 100dvh tall total).
+	// hangs from here.
 	const [panelTop, setPanelTop] = useState(0);
+	const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	const contact = [settings.contact_phone, settings.contact_email]
 		.filter(Boolean)
@@ -358,16 +252,21 @@ export function Header({
 		isPageHref(settings.header_search_link);
 	const showSitemap = isPageHref(settings.header_sitemap_link);
 
-	// Close everything on Escape.
+	// Close everything on Escape. A pending hover-open dies with it, or the panel
+	// reappears a fraction of a second after the reader dismissed it.
 	useEffect(() => {
 		function onKey(e: KeyboardEvent) {
 			if (e.key === "Escape") {
+				if (hoverTimer.current) clearTimeout(hoverTimer.current);
 				setOpenId(null);
 				setMobileOpen(false);
 			}
 		}
 		window.addEventListener("keydown", onKey);
-		return () => window.removeEventListener("keydown", onKey);
+		return () => {
+			window.removeEventListener("keydown", onKey);
+			if (hoverTimer.current) clearTimeout(hoverTimer.current);
+		};
 	}, []);
 
 	// Lock body scroll while the mobile drawer OR a desktop mega panel is open.
@@ -399,7 +298,27 @@ export function Header({
 
 	const openNode =
 		openId != null ? (nav.find((n) => n.id === openId) ?? null) : null;
+	const cancelHover = () => {
+		if (hoverTimer.current) clearTimeout(hoverTimer.current);
+		hoverTimer.current = null;
+	};
+	// Hover intent: a cursor crossing the nav on its way to Donate should not flash
+	// three panels open. Only the first open waits; switching between triggers while
+	// a panel is already up is instant, and leaving gets a grace period to come back.
+	const hoverOpen = (id: number | null) => {
+		cancelHover();
+		if (id == null || openId != null) {
+			setOpenId(id);
+			return;
+		}
+		hoverTimer.current = setTimeout(() => setOpenId(id), 200);
+	};
+	const hoverClose = () => {
+		cancelHover();
+		hoverTimer.current = setTimeout(() => setOpenId(null), 300);
+	};
 	const closeAll = () => {
+		cancelHover();
 		setOpenId(null);
 		setMobileOpen(false);
 	};
@@ -468,7 +387,11 @@ export function Header({
 			{/* Header + mega panel share a hover region so moving into the panel doesn't close it.
 			    The sticky lives HERE (not on <header>) because a sticky element only sticks within
 			    its parent's box — this wrapper's parent is <body>, so it stays pinned page-wide. */}
-			<div onMouseLeave={() => setOpenId(null)} className="sticky top-0 z-40">
+			<div
+				onMouseLeave={hoverClose}
+				onMouseEnter={cancelHover}
+				className="sticky top-0 z-40"
+			>
 				<header
 					ref={headerRef}
 					className="relative backdrop-blur-md bg-background/70 border-b border-border/60"
@@ -513,7 +436,7 @@ export function Header({
 										<div key={n.id} className="relative py-2">
 											<NavLink
 												href={href || withLang("/", lang)}
-												onMouseEnter={() => setOpenId(null)}
+												onMouseEnter={() => hoverOpen(null)}
 												className="group relative flex items-center gap-1 hover:text-primary transition"
 											>
 												{n.label}
@@ -528,8 +451,11 @@ export function Header({
 										    keyboard user before they reach its links. Enter/Space opens it. */}
 										<button
 											type="button"
-											onMouseEnter={() => setOpenId(hasChildren ? n.id : null)}
-											onClick={() => setOpenId(active ? null : n.id)}
+											onMouseEnter={() => hoverOpen(hasChildren ? n.id : null)}
+											onClick={() => {
+												cancelHover();
+												setOpenId(active ? null : n.id);
+											}}
 											aria-expanded={active}
 											className={`relative flex items-center gap-1 transition ${active ? "text-primary" : "hover:text-primary"}`}
 										>
@@ -585,43 +511,66 @@ export function Header({
 				</header>
 
 				{/* Mega panel — rendered OUTSIDE the header so its backdrop-filter frosts the PAGE
-				    behind it (not the header's stacking context). Fixed under the header's bottom edge,
-				    filling to the viewport bottom. */}
+				    behind it (not the header's stacking context). Hangs off the header's bottom edge,
+				    same width as the header's own container, only as tall as its contents. */}
 				{openNode && (
 					<div
-						className="hidden lg:block fixed inset-x-0 z-40 overflow-y-auto bg-card/80 backdrop-blur-2xl border-b border-border/60 shadow-[var(--shadow-soft)] thin-scroll animate-[mega-in_0.2s_ease-out] motion-reduce:animate-none"
-						style={{ top: panelTop, height: `calc(100dvh - ${panelTop}px)` }}
+						className="hidden lg:block fixed left-1/2 z-40 w-full max-w-7xl -translate-x-1/2 overflow-y-auto rounded-b-2xl border border-t-0 border-border/60 bg-card/95 backdrop-blur-2xl shadow-[var(--shadow-soft)] thin-scroll animate-[mega-in_0.2s_ease-out] motion-reduce:animate-none"
+						style={{
+							top: panelTop,
+							maxHeight: `calc(100dvh - ${panelTop}px - 1rem)`,
+						}}
 					>
 						<div
 							key={openId}
-							className="mx-auto flex h-full max-w-7xl flex-col px-6 py-8 animate-[mega-content-in_0.28s_ease-out] motion-reduce:animate-none"
+							className="p-6 animate-[mega-content-in_0.28s_ease-out] motion-reduce:animate-none"
 						>
 							{(() => {
 								const kids = openNode.children;
-								const grouped = kids.some((c) => c.children.length > 0);
-								// Flat section: one bento that fills the panel height.
-								if (!grouped) {
-									return (
-										<MegaBentoGrid
-											items={kids}
-											lang={lang}
-											onNavigate={closeAll}
-											fill
-										/>
-									);
-								}
-								// Mixed: leaf L2s (no level-3) shown first as one bento block for clean
-								// separation, then each L2-with-children as a full-width titled section.
-								const leaves = kids.filter((c) => c.children.length === 0);
 								const sections = kids.filter((c) => c.children.length > 0);
-								return (
-									<div className="flex flex-col gap-8">
-										{leaves.length > 0 && (
-											<MegaBentoGrid
-												items={leaves}
+								// Flat menu: no titles to separate, so the links just flow into columns.
+								if (sections.length === 0) {
+									const columns = Math.min(3, Math.ceil(kids.length / 3));
+									return (
+										// bounded, or the columns stretch across the full panel and the
+										// links drift apart into unrelated islands
+										<div
+											style={{
+												maxWidth: `${columns * 22 + (columns - 1) * 2}rem`,
+											}}
+										>
+											<MegaLinks
+												items={kids}
 												lang={lang}
 												onNavigate={closeAll}
+												columns={columns}
 											/>
+										</div>
+									);
+								}
+								// Mixed: leaf L2s get a column of their own, headed by the menu they
+								// belong to, so every column starts on the same line.
+								const leaves = kids.filter((c) => c.children.length === 0);
+								const columns = (leaves.length > 0 ? 1 : 0) + sections.length;
+								return (
+									<div
+										className="grid gap-x-8 gap-y-6"
+										style={{
+											gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+										}}
+									>
+										{leaves.length > 0 && (
+											<section>
+												<h2 className={`${HEADING} mb-2 block`}>
+													{openNode.label}
+												</h2>
+												<MegaLinks
+													items={leaves}
+													lang={lang}
+													onNavigate={closeAll}
+													columns={1}
+												/>
+											</section>
 										)}
 										{sections.map((c) => (
 											<MegaSection
