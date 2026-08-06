@@ -4,13 +4,16 @@ import {
 	count,
 	desc,
 	eq,
+	getTableColumns,
 	inArray,
 	isNull,
 	like,
 	ne,
 	or,
+	type SQL,
 	sql,
 } from "drizzle-orm";
+import type { SQLiteColumn, SQLiteTable } from "drizzle-orm/sqlite-core";
 
 import type { SectionNode } from "#/lib/sections";
 import type { DB } from "../db";
@@ -321,7 +324,30 @@ function translationRows(entityId: number, input: PostInput) {
 	return rows;
 }
 
+/**
+ * The unique index on (tenantId, slug) otherwise surfaces to the editor as
+ * "UNIQUE constraint failed: posts.tenant_id, posts.slug".
+ */
+async function requireFreeSlug(
+	db: DB,
+	entity: "post" | "page" | "project",
+	slug: string,
+	excludeId?: number,
+): Promise<void> {
+	const table = { post: posts, page: pages, project: projects }[entity];
+	const [row] = await db
+		.select({ id: table.id })
+		.from(table)
+		.where(and(eq(table.tenantId, TENANT), eq(table.slug, slug)))
+		.limit(1);
+	if (row && row.id !== excludeId)
+		throw new Error(
+			`A ${entity} already exists at "${slug}". Choose a different URL.`,
+		);
+}
+
 export async function createPost(db: DB, input: PostInput): Promise<number> {
+	await requireFreeSlug(db, "post", input.slug);
 	const [row] = await db
 		.insert(posts)
 		.values({
@@ -346,6 +372,7 @@ export async function updatePost(
 	id: number,
 	input: PostInput,
 ): Promise<void> {
+	await requireFreeSlug(db, "post", input.slug, id);
 	await db
 		.update(posts)
 		.set({
@@ -584,6 +611,7 @@ function pageTranslationRows(entityId: number, input: PageInput) {
 export async function createPage(db: DB, input: PageInput): Promise<number> {
 	const segment = (input.segment || input.slug).replace(/^\/+|\/+$/g, "");
 	const slug = await slugFor(db, input.parentId, segment);
+	await requireFreeSlug(db, "page", slug);
 	const sortOrder = await nextSortOrder(db, input.parentId);
 	const [row] = await db
 		.insert(pages)
@@ -619,6 +647,7 @@ export async function updatePage(
 		? (prev?.parentId ?? null)
 		: input.parentId;
 	const newSlug = await slugFor(db, parentId, segment);
+	await requireFreeSlug(db, "page", newSlug, id);
 	const reorder =
 		parentId !== (prev?.parentId ?? null)
 			? await nextSortOrder(db, parentId)
@@ -967,92 +996,189 @@ export async function adminMediaById(db: DB, id: number) {
 
 export type MediaUsage = { kind: string; label: string; href: string | null };
 
+type MediaRef = {
+	kind: string;
+	table: SQLiteTable;
+	column: SQLiteColumn;
+	rowId: SQLiteColumn;
+	label?: SQLiteColumn;
+	tenant?: SQLiteColumn;
+	join?: { table: SQLiteTable; on: SQL };
+	href?: (rowId: number) => string;
+	/** notNull, so it cannot be cleared - the referring row goes instead. */
+	clearBy?: "row";
+};
+
+/**
+ * Every column that points at media.id. The "Used in" panel and deleteMedia
+ * both walk this, so anything the panel lists is something the delete clears.
+ * media-refs.test.ts fails if the schema grows a reference missing here.
+ */
+export const MEDIA_REFS: MediaRef[] = [
+	{
+		kind: "Post cover",
+		table: posts,
+		column: posts.coverMediaId,
+		rowId: posts.id,
+		label: posts.slug,
+		tenant: posts.tenantId,
+		href: (r) => `/admin/posts/${r}`,
+	},
+	{
+		kind: "Post gallery",
+		table: postMedia,
+		column: postMedia.mediaId,
+		rowId: postMedia.postId,
+		label: posts.slug,
+		// post_media has no tenantId of its own; the join carries the scope
+		tenant: posts.tenantId,
+		join: { table: posts, on: eq(posts.id, postMedia.postId) },
+		href: (r) => `/admin/posts/${r}`,
+		clearBy: "row",
+	},
+	{
+		kind: "Page hero",
+		table: pages,
+		column: pages.heroMediaId,
+		rowId: pages.id,
+		label: pages.slug,
+		tenant: pages.tenantId,
+		href: (r) => `/admin/pages/${r}`,
+	},
+	{
+		kind: "Navigation card",
+		table: navItems,
+		column: navItems.imageMediaId,
+		rowId: navItems.id,
+		label: navItems.targetRef,
+		tenant: navItems.tenantId,
+		href: () => "/admin/nav",
+	},
+	{
+		kind: "Person photo",
+		table: people,
+		column: people.photoMediaId,
+		rowId: people.id,
+		label: people.nameEn,
+		tenant: people.tenantId,
+		href: (r) => `/admin/people/${r}`,
+	},
+	{
+		kind: "Campaign cover",
+		table: campaigns,
+		column: campaigns.coverMediaId,
+		rowId: campaigns.id,
+		label: campaigns.title,
+		tenant: campaigns.tenantId,
+		href: (r) => `/admin/campaigns/${r}`,
+	},
+	{
+		kind: "Partner logo",
+		table: partners,
+		column: partners.logoMediaId,
+		rowId: partners.id,
+		label: partners.name,
+		tenant: partners.tenantId,
+		href: (r) => `/admin/partners/${r}`,
+	},
+	{
+		kind: "Donor logo",
+		table: donors,
+		column: donors.logoMediaId,
+		rowId: donors.id,
+		label: donors.name,
+		tenant: donors.tenantId,
+		href: (r) => `/admin/donors/${r}`,
+	},
+	{
+		kind: "Project logo",
+		table: projects,
+		column: projects.logoMediaId,
+		rowId: projects.id,
+		label: projects.code,
+		tenant: projects.tenantId,
+		href: (r) => `/admin/projects/${r}`,
+	},
+	{
+		kind: "Project map photo",
+		table: projectLocations,
+		column: projectLocations.photoMediaId,
+		rowId: projectLocations.projectId,
+		label: projectLocations.schoolName,
+		tenant: projectLocations.tenantId,
+		href: (r) => `/admin/projects/${r}`,
+	},
+	{
+		kind: "Office photo",
+		table: offices,
+		column: offices.imageMediaId,
+		rowId: offices.id,
+		label: offices.name,
+		tenant: offices.tenantId,
+		href: (r) => `/admin/offices/${r}`,
+	},
+	{
+		kind: "School photo",
+		table: schools,
+		column: schools.coverMediaId,
+		rowId: schools.id,
+		label: schools.name,
+		tenant: schools.tenantId,
+		href: (r) => `/admin/schools/${r}`,
+	},
+	{
+		kind: "Staff photo",
+		table: staff,
+		column: staff.photoMediaId,
+		rowId: staff.id,
+		label: staff.nameEn,
+		tenant: staff.tenantId,
+	},
+	{
+		kind: "Homepage hero",
+		table: heroSlides,
+		column: heroSlides.mediaId,
+		rowId: heroSlides.id,
+		tenant: heroSlides.tenantId,
+	},
+];
+
+async function refUsage(
+	db: DB,
+	ref: MediaRef,
+	id: number,
+): Promise<MediaUsage[]> {
+	const where = ref.tenant
+		? and(eq(ref.tenant, TENANT), eq(ref.column, id))
+		: eq(ref.column, id);
+	let q = db
+		.select({ rowId: ref.rowId, label: ref.label ?? sql<string | null>`null` })
+		.from(ref.table)
+		.$dynamic();
+	if (ref.join) q = q.innerJoin(ref.join.table, ref.join.on);
+
+	const seen = new Set<number>();
+	const out: MediaUsage[] = [];
+	for (const r of await q.where(where)) {
+		const rowId = Number(r.rowId);
+		if (seen.has(rowId)) continue;
+		seen.add(rowId);
+		out.push({
+			kind: ref.kind,
+			label: String(r.label ?? "") || `#${rowId}`,
+			href: ref.href?.(rowId) ?? null,
+		});
+	}
+	return out;
+}
+
 /** Everywhere a media item is referenced — for the "Used in" panel. */
 export async function adminMediaUsage(
 	db: DB,
 	id: number,
 ): Promise<MediaUsage[]> {
 	const out: MediaUsage[] = [];
-	const t = (kind: string, label: string | null, href: string | null) =>
-		out.push({ kind, label: label || "(untitled)", href });
-
-	const postCovers = await db
-		.select({ id: posts.id, slug: posts.slug })
-		.from(posts)
-		.where(and(eq(posts.tenantId, TENANT), eq(posts.coverMediaId, id)));
-	for (const r of postCovers) t("Post cover", r.slug, `/admin/posts/${r.id}`);
-
-	const galRows = await db
-		.select({ postId: postMedia.postId })
-		.from(postMedia)
-		.where(eq(postMedia.mediaId, id));
-	const galIds = [...new Set(galRows.map((r) => r.postId))];
-	if (galIds.length) {
-		for (const r of await db
-			.select({ id: posts.id, slug: posts.slug })
-			.from(posts)
-			.where(inArray(posts.id, galIds)))
-			t("Post gallery", r.slug, `/admin/posts/${r.id}`);
-	}
-
-	for (const r of await db
-		.select({ id: people.id, name: people.nameEn })
-		.from(people)
-		.where(and(eq(people.tenantId, TENANT), eq(people.photoMediaId, id))))
-		t("Person photo", r.name, `/admin/people/${r.id}`);
-	for (const r of await db
-		.select({ id: campaigns.id, title: campaigns.title })
-		.from(campaigns)
-		.where(and(eq(campaigns.tenantId, TENANT), eq(campaigns.coverMediaId, id))))
-		t("Campaign cover", r.title, `/admin/campaigns/${r.id}`);
-	for (const r of await db
-		.select({ id: pages.id, slug: pages.slug })
-		.from(pages)
-		.where(and(eq(pages.tenantId, TENANT), eq(pages.heroMediaId, id))))
-		t("Page hero", r.slug, `/admin/pages/${r.id}`);
-	for (const r of await db
-		.select({ id: projects.id, code: projects.code })
-		.from(projects)
-		.where(and(eq(projects.tenantId, TENANT), eq(projects.logoMediaId, id))))
-		t("Project logo", r.code, `/admin/projects/${r.id}`);
-	for (const r of await db
-		.select({ id: schools.id, name: schools.name })
-		.from(schools)
-		.where(and(eq(schools.tenantId, TENANT), eq(schools.coverMediaId, id))))
-		t("School photo", r.name, `/admin/schools/${r.id}`);
-	for (const r of await db
-		.select({ id: offices.id, name: offices.name })
-		.from(offices)
-		.where(and(eq(offices.tenantId, TENANT), eq(offices.imageMediaId, id))))
-		t("Office photo", r.name, `/admin/offices/${r.id}`);
-	for (const r of await db
-		.select({ id: partners.id, name: partners.name })
-		.from(partners)
-		.where(and(eq(partners.tenantId, TENANT), eq(partners.logoMediaId, id))))
-		t("Partner logo", r.name, `/admin/partners/${r.id}`);
-	for (const r of await db
-		.select({ id: donors.id, name: donors.name })
-		.from(donors)
-		.where(and(eq(donors.tenantId, TENANT), eq(donors.logoMediaId, id))))
-		t("Donor logo", r.name, `/admin/donors/${r.id}`);
-	for (const r of await db
-		.select({ id: navItems.id, ref: navItems.targetRef })
-		.from(navItems)
-		.where(and(eq(navItems.tenantId, TENANT), eq(navItems.imageMediaId, id))))
-		t("Navigation card", r.ref || `item #${r.id}`, "/admin/nav");
-
-	// Tables without a per-row edit route — listed for awareness, no link.
-	for (const r of await db
-		.select({ id: staff.id, name: staff.nameEn })
-		.from(staff)
-		.where(and(eq(staff.tenantId, TENANT), eq(staff.photoMediaId, id))))
-		t("Staff photo", r.name, null);
-	for (const r of await db
-		.select({ id: heroSlides.id })
-		.from(heroSlides)
-		.where(and(eq(heroSlides.tenantId, TENANT), eq(heroSlides.mediaId, id))))
-		t("Homepage hero", `Slide #${r.id}`, null);
-
+	for (const ref of MEDIA_REFS) out.push(...(await refUsage(db, ref, id)));
 	return out;
 }
 
@@ -1089,11 +1215,38 @@ export async function createMediaRecord(
 }
 
 export async function deleteMedia(db: DB, id: number): Promise<void> {
-	const [row] = await db
-		.delete(media)
-		.where(and(eq(media.tenantId, TENANT), eq(media.id, id)))
-		.returning({ r2Key: media.r2Key });
-	if (row?.r2Key) await deleteUpload(row.r2Key);
+	const r2Key = db.transaction((tx) => {
+		// prove the row is ours before clearing anything: the clears below cannot
+		// be tenant-scoped, so a foreign id would blank another tenant's records
+		const [own] = tx
+			.select({ r2Key: media.r2Key })
+			.from(media)
+			.where(and(eq(media.tenantId, TENANT), eq(media.id, id)))
+			.limit(1)
+			.all();
+		if (!own) return null;
+
+		for (const ref of MEDIA_REFS) {
+			if (ref.clearBy === "row") {
+				tx.delete(ref.table).where(eq(ref.column, id)).run();
+				continue;
+			}
+			const key = Object.entries(getTableColumns(ref.table)).find(
+				([, c]) => c === ref.column,
+			)?.[0];
+			if (!key) throw new Error(`Unmapped media reference: ${ref.kind}`);
+			tx.update(ref.table)
+				.set({ [key]: null })
+				.where(eq(ref.column, id))
+				.run();
+		}
+		tx.delete(media)
+			.where(and(eq(media.tenantId, TENANT), eq(media.id, id)))
+			.run();
+		return own.r2Key;
+	});
+	// after commit: unlinking first would orphan the row if the delete rolled back
+	if (r2Key) await deleteUpload(r2Key);
 }
 
 /* ---------------- Staff directory ---------------- */
@@ -1732,6 +1885,7 @@ export async function createProject(
 	db: DB,
 	input: ProjectInput,
 ): Promise<number> {
+	await requireFreeSlug(db, "project", input.slug);
 	const [p] = await db
 		.insert(projects)
 		.values({ tenantId: TENANT, ...projectColumns(input) })
@@ -1744,6 +1898,7 @@ export async function updateProject(
 	id: number,
 	input: ProjectInput,
 ): Promise<void> {
+	await requireFreeSlug(db, "project", input.slug, id);
 	await db
 		.update(projects)
 		.set(projectColumns(input))
