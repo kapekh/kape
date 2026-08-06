@@ -50,7 +50,7 @@ export function FormRenderer({ slug }: { slug: string }) {
 
 	if (isFormClosed(form.deadline)) {
 		return (
-			<div className="rounded-2xl border border-amber-500/40 bg-amber-500/5 p-6 text-sm text-foreground/80">
+			<div className="rounded-2xl border border-[var(--gold)]/40 bg-[var(--gold)]/5 p-6 text-sm text-foreground/80">
 				This form is now closed and no longer accepting responses. Thank you for
 				your interest.
 			</div>

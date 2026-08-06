@@ -34,7 +34,9 @@ export const PERMISSION_AREAS: {
 	{ key: "media", label: "Media library", group: "Content" },
 	{ key: "forms", label: "Forms & submissions", group: "Content" },
 	{ key: "campaigns", label: "Campaigns & donations", group: "Fundraising" },
-	{ key: "people", label: "People & org chart", group: "Records" },
+	// "& org chart" is appended by the orgChart module while it is on — see
+	// visibleAreas in modules.ts. The tick must not promise a screen that is off.
+	{ key: "people", label: "People", group: "Records" },
 	{ key: "partners", label: "Partners & donors", group: "Records" },
 	{ key: "schools", label: "Schools", group: "Records" },
 	{ key: "offices", label: "Offices", group: "Records" },
@@ -97,6 +99,7 @@ export const NAV_AREA: Record<string, PermissionArea> = {
 	"/admin/partner-categories": "lists",
 	"/admin/languages": "settings",
 	"/admin/settings": "settings",
+	"/admin/modules": "settings",
 	"/admin/users": "users",
 	"/admin/roles": "users",
 };

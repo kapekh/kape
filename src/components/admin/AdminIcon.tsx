@@ -1,6 +1,7 @@
 /** Minimal 24×24 stroke icons (currentColor) for the admin sidebar. */
 const PATHS: Record<string, string> = {
 	dashboard: "M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z",
+	modules: "M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5M3 17.5l9 5 9-5",
 	posts: "M4 4h16v16H4zM8 9h8M8 13h8M8 17h5",
 	pages: "M6 3h9l5 5v13H6zM15 3v5h5",
 	projects: "M3 7h6l2 2h10v10H3zM3 7V5h6l2 2",

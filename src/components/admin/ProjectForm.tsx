@@ -15,6 +15,7 @@ import { MediaPicker } from "./MediaPicker";
 import type { LangOpt } from "./PostForm";
 import { RichTextEditor } from "./RichTextEditor";
 import { useDirtyGuard } from "./useDirty";
+import { useModules } from "./useModules";
 
 export type DonorOpt = { id: number; name: string };
 export type ProjectStatus = "current" | "past";
@@ -70,6 +71,7 @@ export function ProjectForm({
 	title: string;
 	savedAt?: string | null;
 }) {
+	const modules = useModules();
 	const [code, setCode] = useState(initial?.code ?? "");
 	const [slug, setSlug] = useState(initial?.slug ?? "");
 	const [status, setStatus] = useState<ProjectStatus>(
@@ -420,7 +422,9 @@ export function ProjectForm({
 							<div className="space-y-2.5">
 								{donors.length === 0 ? (
 									<span className="text-sm text-muted-foreground">
-										No donors yet — add some under Admin → Donors.
+										{modules.has("fundraising")
+											? "No donors yet — add some under Admin → Donors."
+											: "This site does not keep a donor register. Turn on Campaigns, donations and donors under Admin → Modules to credit funders here."}
 									</span>
 								) : (
 									donors.map((d) => (

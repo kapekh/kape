@@ -29,6 +29,7 @@ import { Route as AdminPublicationCategoriesRouteImport } from './routes/admin.p
 import { Route as AdminPartnerCategoriesRouteImport } from './routes/admin.partner-categories'
 import { Route as AdminOrgChartRouteImport } from './routes/admin.org-chart'
 import { Route as AdminNavRouteImport } from './routes/admin.nav'
+import { Route as AdminModulesRouteImport } from './routes/admin.modules'
 import { Route as AdminMessagesRouteImport } from './routes/admin.messages'
 import { Route as AdminMediaRouteImport } from './routes/admin.media'
 import { Route as AdminLocationsRouteImport } from './routes/admin.locations'
@@ -190,6 +191,11 @@ const AdminOrgChartRoute = AdminOrgChartRouteImport.update({
 const AdminNavRoute = AdminNavRouteImport.update({
   id: '/nav',
   path: '/nav',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminModulesRoute = AdminModulesRouteImport.update({
+  id: '/modules',
+  path: '/modules',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminMessagesRoute = AdminMessagesRouteImport.update({
@@ -509,6 +515,7 @@ export interface FileRoutesByFullPath {
   '/admin/locations': typeof AdminLocationsRoute
   '/admin/media': typeof AdminMediaRoute
   '/admin/messages': typeof AdminMessagesRoute
+  '/admin/modules': typeof AdminModulesRoute
   '/admin/nav': typeof AdminNavRoute
   '/admin/org-chart': typeof AdminOrgChartRoute
   '/admin/partner-categories': typeof AdminPartnerCategoriesRoute
@@ -587,6 +594,7 @@ export interface FileRoutesByTo {
   '/admin/locations': typeof AdminLocationsRoute
   '/admin/media': typeof AdminMediaRoute
   '/admin/messages': typeof AdminMessagesRoute
+  '/admin/modules': typeof AdminModulesRoute
   '/admin/nav': typeof AdminNavRoute
   '/admin/org-chart': typeof AdminOrgChartRoute
   '/admin/partner-categories': typeof AdminPartnerCategoriesRoute
@@ -667,6 +675,7 @@ export interface FileRoutesById {
   '/admin/locations': typeof AdminLocationsRoute
   '/admin/media': typeof AdminMediaRoute
   '/admin/messages': typeof AdminMessagesRoute
+  '/admin/modules': typeof AdminModulesRoute
   '/admin/nav': typeof AdminNavRoute
   '/admin/org-chart': typeof AdminOrgChartRoute
   '/admin/partner-categories': typeof AdminPartnerCategoriesRoute
@@ -750,6 +759,7 @@ export interface FileRouteTypes {
     | '/admin/locations'
     | '/admin/media'
     | '/admin/messages'
+    | '/admin/modules'
     | '/admin/nav'
     | '/admin/org-chart'
     | '/admin/partner-categories'
@@ -828,6 +838,7 @@ export interface FileRouteTypes {
     | '/admin/locations'
     | '/admin/media'
     | '/admin/messages'
+    | '/admin/modules'
     | '/admin/nav'
     | '/admin/org-chart'
     | '/admin/partner-categories'
@@ -907,6 +918,7 @@ export interface FileRouteTypes {
     | '/admin/locations'
     | '/admin/media'
     | '/admin/messages'
+    | '/admin/modules'
     | '/admin/nav'
     | '/admin/org-chart'
     | '/admin/partner-categories'
@@ -1130,6 +1142,13 @@ declare module '@tanstack/react-router' {
       path: '/nav'
       fullPath: '/admin/nav'
       preLoaderRoute: typeof AdminNavRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/modules': {
+      id: '/admin/modules'
+      path: '/modules'
+      fullPath: '/admin/modules'
+      preLoaderRoute: typeof AdminModulesRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/messages': {
@@ -1583,6 +1602,7 @@ interface AdminRouteChildren {
   AdminLocationsRoute: typeof AdminLocationsRoute
   AdminMediaRoute: typeof AdminMediaRoute
   AdminMessagesRoute: typeof AdminMessagesRoute
+  AdminModulesRoute: typeof AdminModulesRoute
   AdminNavRoute: typeof AdminNavRoute
   AdminOrgChartRoute: typeof AdminOrgChartRoute
   AdminPartnerCategoriesRoute: typeof AdminPartnerCategoriesRoute
@@ -1636,6 +1656,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminLocationsRoute: AdminLocationsRoute,
   AdminMediaRoute: AdminMediaRoute,
   AdminMessagesRoute: AdminMessagesRoute,
+  AdminModulesRoute: AdminModulesRoute,
   AdminNavRoute: AdminNavRoute,
   AdminOrgChartRoute: AdminOrgChartRoute,
   AdminPartnerCategoriesRoute: AdminPartnerCategoriesRoute,

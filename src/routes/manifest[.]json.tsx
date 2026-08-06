@@ -7,6 +7,7 @@ import {
 	siteShortName,
 	siteTitle,
 } from "#/lib/site-identity";
+import { themeColor } from "#/lib/site-theme";
 import { db } from "#/server/db";
 import { getSettings } from "#/server/repo/site";
 
@@ -38,7 +39,7 @@ async function handler() {
 		start_url: `/${DEFAULT_LANG}/`,
 		scope: "/",
 		display: "standalone",
-		theme_color: "#1f4e79",
+		theme_color: themeColor(settings),
 		background_color: "#ffffff",
 	};
 	return new Response(JSON.stringify(manifest, null, 2), {

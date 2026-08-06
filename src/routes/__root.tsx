@@ -23,6 +23,7 @@ import {
 	socialImage,
 	socialSiteName,
 } from "../lib/site-identity";
+import { themeColor, themeCss, themeFontUrl } from "../lib/site-theme";
 import { organizationLd } from "../lib/structured-data";
 import appCss from "../styles.css?url";
 
@@ -54,13 +55,14 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 		const settings = loaderData?.settings ?? {};
 		const title = siteTitle(settings);
 		const description = metaDescription(settings);
+		const brand = themeCss(settings);
 		return {
 			meta: [
 				{ charSet: "utf-8" },
 				{ name: "viewport", content: "width=device-width, initial-scale=1" },
 				{ title },
 				{ name: "description", content: description },
-				{ name: "theme-color", content: "#1f4e79" },
+				{ name: "theme-color", content: themeColor(settings) },
 				// Social sharing defaults (per-route head() can override title/description/image).
 				{ property: "og:type", content: "website" },
 				{ property: "og:site_name", content: socialSiteName(settings) },
@@ -70,11 +72,21 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 				{ name: "twitter:card", content: "summary" },
 			],
 			links: [
+				{
+					rel: "preconnect",
+					href: "https://fonts.gstatic.com",
+					crossOrigin: "",
+				},
+				{ rel: "stylesheet", href: themeFontUrl(settings) },
 				{ rel: "stylesheet", href: appCss },
 				{ rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
 				{ rel: "apple-touch-icon", href: siteLogo(settings) },
 				{ rel: "manifest", href: "/manifest.json" },
 			],
+			// Server-rendered so the configured palette is in the first painted
+			// frame. Applied by a script after hydration it would flash the default
+			// brand on every hard load.
+			styles: brand ? [{ children: brand }] : [],
 			scripts: [
 				{
 					type: "application/ld+json",
@@ -167,11 +179,13 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
 		<html lang={detectLang(pathname)} suppressHydrationWarning>
 			<head>
-				{/* Set theme before paint to avoid a flash of the wrong mode. */}
+				{/* Set theme before paint to avoid a flash of the wrong mode. Only a
+				    stored choice is written; with none, styles.css follows the
+				    operating system, which is also what happens with no JavaScript. */}
 				<script
 					// biome-ignore lint/security/noDangerouslySetInnerHtml: trusted inline bootstrap
 					dangerouslySetInnerHTML={{
-						__html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(t!=='light'&&matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark');}}catch(e){}})();`,
+						__html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||t==='light'){document.documentElement.classList.add(t);}}catch(e){}})();`,
 					}}
 				/>
 				<HeadContent />

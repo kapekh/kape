@@ -1,13 +1,15 @@
-import { useEffect, useState } from "react";
+import { useLoaderData } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 
 import { DEFAULT_LANG } from "#/lib/i18n-config";
+import { sectionsFor } from "#/lib/modules";
 import {
-	SECTION_DEFS,
 	type SectionField,
 	type SectionNode,
 	sectionDef,
 } from "#/lib/sections";
+import type { SiteSettings } from "#/lib/site-identity";
 import { confirm } from "@/components/Dialogs";
 
 import { fieldInput, fieldLabel } from "./form-ui";
@@ -736,9 +738,15 @@ export function SectionsBuilder({
 	const sections = Array.isArray(value) ? value : [];
 	const [openId, setOpenId] = useState<string | null>(null);
 	const [adding, setAdding] = useState(false);
+	// What this install can place. A section bound to a module nobody turned on is
+	// not offered; one already on a page keeps its editor and keeps rendering.
+	const { settings } = useLoaderData({ from: "__root__" }) as {
+		settings?: SiteSettings;
+	};
+	const catalogue = useMemo(() => sectionsFor(settings ?? {}), [settings]);
 
 	const add = (type: string) => {
-		const def = sectionDef(type)!;
+		const def = catalogue.find((d) => d.type === type)!;
 		const node: SectionNode = {
 			id: uid(),
 			type,
@@ -882,17 +890,19 @@ export function SectionsBuilder({
 								{kind}
 							</div>
 							<div className="flex flex-wrap gap-1.5">
-								{SECTION_DEFS.filter((d) => d.kind === kind).map((d) => (
-									<button
-										key={d.type}
-										type="button"
-										onClick={() => add(d.type)}
-										title={d.description}
-										className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm hover:border-[var(--accent)]/50 hover:text-[var(--accent)] transition"
-									>
-										{d.label}
-									</button>
-								))}
+								{catalogue
+									.filter((d) => d.kind === kind)
+									.map((d) => (
+										<button
+											key={d.type}
+											type="button"
+											onClick={() => add(d.type)}
+											title={d.description}
+											className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm hover:border-[var(--accent)]/50 hover:text-[var(--accent)] transition"
+										>
+											{d.label}
+										</button>
+									))}
 							</div>
 						</div>
 					))}

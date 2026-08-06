@@ -7,6 +7,7 @@ import {
 	ProjectForm,
 	type ProjectFormValue,
 } from "#/components/admin/ProjectForm";
+import { useModules } from "#/components/admin/useModules";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { saveErrorMessage } from "#/lib/save-error";
 import { toast } from "@/components/Dialogs";
@@ -28,19 +29,20 @@ function EditProject() {
 	const [notFound, setNotFound] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [savedAt, setSavedAt] = useState<string | null>(null);
+	const modules = useModules();
 
 	useEffect(() => {
 		Promise.all([
 			trpcClient.adminProjects.get.query({ id: pid }),
 			trpcClient.i18n.languages.query(),
-			trpcClient.adminDonors.list.query(),
+			modules.list("fundraising", () => trpcClient.adminDonors.list.query()),
 		]).then(([d, l, dn]) => {
 			if (!d) setNotFound(true);
 			else setData(d);
 			setLangs(l);
 			setDonors(dn.map((x) => ({ id: x.id, name: x.name })));
 		});
-	}, [pid]);
+	}, [pid, modules.list]);
 
 	async function onSubmit(v: ProjectFormValue) {
 		setSaving(true);

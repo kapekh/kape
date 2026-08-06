@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
+import { useModules } from "#/components/admin/useModules";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { confirm } from "@/components/Dialogs";
 
@@ -26,25 +27,31 @@ function SchoolsList() {
 	const [projects, setProjects] = useState<Record<number, string>>({});
 	const [media, setMedia] = useState<Record<number, string>>({});
 	const [loading, setLoading] = useState(true);
+	const modules = useModules();
 
 	async function refresh() {
-		const [s, prov, proj] = await Promise.all([
-			trpcClient.adminSchools.list.query(),
-			trpcClient.terms.list.query({ taxonomy: "location" }),
-			trpcClient.adminProjects.list.query(),
-		]);
-		setRows(s);
-		setProvinces(Object.fromEntries(prov.map((p) => [p.key, p.label])));
-		setProjects(Object.fromEntries(proj.map((p) => [p.id, p.code])));
-		// Resolve only the cover images actually referenced by the rows.
-		const coverIds = [
-			...new Set(
-				s.map((x) => x.coverMediaId).filter((v): v is number => v != null),
-			),
-		];
-		const m = await trpcClient.adminMedia.byIds.query({ ids: coverIds });
-		setMedia(Object.fromEntries(m.map((x) => [x.id, x.url ?? ""])));
-		setLoading(false);
+		try {
+			const [s, prov, proj] = await Promise.all([
+				trpcClient.adminSchools.list.query(),
+				trpcClient.terms.list.query({ taxonomy: "location" }),
+				modules.list("projects", () => trpcClient.adminProjects.list.query()),
+			]);
+			setRows(s);
+			setProvinces(Object.fromEntries(prov.map((p) => [p.key, p.label])));
+			setProjects(Object.fromEntries(proj.map((p) => [p.id, p.code])));
+			// Resolve only the cover images actually referenced by the rows.
+			const coverIds = [
+				...new Set(
+					s.map((x) => x.coverMediaId).filter((v): v is number => v != null),
+				),
+			];
+			const m = await trpcClient.adminMedia.byIds.query({ ids: coverIds });
+			setMedia(Object.fromEntries(m.map((x) => [x.id, x.url ?? ""])));
+		} finally {
+			// In `finally`: a list that cannot load should say it is empty, not spin
+			// under a count of zero for ever.
+			setLoading(false);
+		}
 	}
 	useEffect(() => {
 		refresh();

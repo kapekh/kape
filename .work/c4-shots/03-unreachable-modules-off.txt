@@ -1,0 +1,35 @@
+# Fresh install (SITE_NAME=Riverside Legal), enabled_modules row absent.
+# Logged in as the super administrator, so nothing below is a permission refusal.
+
+## Domain admin routes
+GET /admin/schools             -> 307 http://localhost:3222/admin
+GET /admin/schools/1           -> 307 http://localhost:3222/admin
+GET /admin/campaigns           -> 307 http://localhost:3222/admin
+GET /admin/donors              -> 307 http://localhost:3222/admin
+GET /admin/offices             -> 307 http://localhost:3222/admin
+GET /admin/org-chart           -> 307 http://localhost:3222/admin
+GET /admin/projects            -> 307 http://localhost:3222/admin
+GET /admin/partner-categories  -> 307 http://localhost:3222/admin
+
+## Core admin routes
+GET /admin                     -> 200 
+GET /admin/pages               -> 200 
+GET /admin/posts               -> 200 
+GET /admin/people              -> 200 
+GET /admin/locations           -> 200 
+GET /admin/modules             -> 200 
+
+## Domain tRPC routers
+adminSchools.list              -> "code":"FORBIDDEN"
+adminOffices.list              -> "code":"FORBIDDEN"
+adminPartners.list             -> "code":"FORBIDDEN"
+adminOrg.list                  -> "code":"FORBIDDEN"
+adminProjects.list             -> "code":"FORBIDDEN"
+adminDonors.list               -> "code":"FORBIDDEN"
+adminCampaigns.list            -> "code":"FORBIDDEN"
+
+## Core tRPC routers
+adminPeople.list               -> {"result":{"data":{"json":[]}}}
+adminPosts.list                -> {"result":{"data":{"json":[]}}}
+adminPages.list                -> {"result":{"data":{"json":[{"id":9,"slug":"p
+adminSettings.list             -> {"result":{"data":{"json":[{"tenantId":1,"ke

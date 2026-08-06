@@ -7,12 +7,18 @@ import { useEffect, useState } from "react";
 export function ThemeToggle({ className = "" }: { className?: string }) {
 	const [dark, setDark] = useState(false);
 	useEffect(() => {
-		setDark(document.documentElement.classList.contains("dark"));
+		const root = document.documentElement;
+		setDark(
+			root.classList.contains("dark") ||
+				(!root.classList.contains("light") &&
+					matchMedia("(prefers-color-scheme: dark)").matches),
+		);
 	}, []);
 
 	function toggle() {
 		const next = !dark;
 		document.documentElement.classList.toggle("dark", next);
+		document.documentElement.classList.toggle("light", !next);
 		try {
 			localStorage.setItem("theme", next ? "dark" : "light");
 		} catch {

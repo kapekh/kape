@@ -1,3 +1,4 @@
+import { MODULES, MODULES_SETTING, serializeModules } from "#/lib/modules";
 import { db } from "../db";
 import { offices, siteSettings, stats } from "../schema";
 import { addTranslations, TENANT } from "./helpers";
@@ -64,10 +65,29 @@ export async function seedSiteSettings() {
 				},
 				{ name: "Telegram", url: "https://t.me/kapemedia", logoUrl: "" },
 			]),
+			// The client's palette. The product's own default is a neutral slate, so
+			// KAPE's navy and saffron live here with the rest of the fixture rather
+			// than in styles.css. Both modes are spelt out: the dark values are the
+			// ones the designer tuned, not the ones the derivation would guess.
+			theme_primary: "oklch(0.30 0.10 255)",
+			theme_primary_dark: "oklch(0.62 0.13 250)",
+			theme_secondary: "oklch(0.72 0.17 55)",
+			theme_secondary_dark: "oklch(0.74 0.17 55)",
+			theme_accent: "oklch(0.68 0.19 35)",
+			theme_accent_dark: "oklch(0.70 0.19 35)",
+			theme_highlight: "oklch(0.78 0.14 80)",
+			theme_highlight_dark: "oklch(0.80 0.14 80)",
+			// Full warmth, unrotated: the cream paper the site was designed on.
+			theme_paper_chroma: "1",
+			theme_paper_hue: "0",
 			header_donate_label: "♡ Donate",
 			header_donate_link: "/donate",
 			header_search_link: "/search",
 			header_sitemap_link: "/sitemap.xml",
+			// KAPE is the organisation the domain features were built for, so the
+			// fixture turns all of them on. A fresh install writes no row and gets a
+			// plain CMS: see src/lib/modules.ts.
+			[MODULES_SETTING]: serializeModules(MODULES.map((m) => m.id)),
 		}).map(([key, value]) => ({ tenantId: TENANT, key, value })),
 	);
 }

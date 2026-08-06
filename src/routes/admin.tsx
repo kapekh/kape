@@ -14,11 +14,13 @@ import { useState } from "react";
 import { AdminHeaderProvider } from "#/components/admin/AdminHeader";
 import { AdminIcon } from "#/components/admin/AdminIcon";
 import { ThemeToggle } from "#/components/ThemeToggle";
+import { adminPathEnabled, MODULES_SETTING } from "#/lib/modules";
 import { NAV_AREA } from "#/lib/permissions";
 import { adminTitle, siteLogo, siteShortName } from "#/lib/site-identity";
 import { SESSION_COOKIE, validateToken } from "#/server/auth";
 import { db } from "#/server/db";
 import { resolvePermissions } from "#/server/repo/roles";
+import { getSettings } from "#/server/repo/site";
 
 // Server-side gate for the admin shell. Runs during SSR so an unauthenticated
 // request is redirected before any admin HTML is generated, instead of shipping
@@ -34,14 +36,23 @@ const resolveAdminAccess = createServerFn({ method: "GET" }).handler(
 			role: auth.user.role,
 			isSuperAdmin: perms.isSuperAdmin,
 			permissions: perms.permissions,
+			// null, not "": a database with no row predates modules and keeps them all,
+			// where an empty row means an install that answered "none".
+			modules: (await getSettings(db))[MODULES_SETTING] ?? null,
 		};
 	},
 );
 
 export const Route = createFileRoute("/admin")({
-	beforeLoad: async () => {
+	beforeLoad: async ({ location }) => {
 		const access = await resolveAdminAccess();
 		if (!access) throw redirect({ to: "/login" });
+		// A module this install has not turned on has no screens: the path stops
+		// answering here, during SSR, rather than rendering and failing on its data.
+		const modules =
+			access.modules === null ? {} : { [MODULES_SETTING]: access.modules };
+		if (!adminPathEnabled(modules, location.pathname))
+			throw redirect({ to: "/admin" });
 		return { access };
 	},
 	loader: ({ context }) =>
@@ -150,6 +161,7 @@ const NAV: NavGroup[] = [
 			{ to: "/admin/users", label: "Users", icon: "staff" },
 			{ to: "/admin/roles", label: "Roles", icon: "staff" },
 			{ to: "/admin/settings", label: "Settings", icon: "settings" },
+			{ to: "/admin/modules", label: "Modules", icon: "modules" },
 		],
 	},
 	{
@@ -227,8 +239,10 @@ function AdminLayout() {
 		navigate({ to: "/login" });
 	}
 
-	// Show an item if it has no area mapping (e.g. Dashboard) or the user holds its area.
+	// Show an item if this install has the module behind it, and it has no area
+	// mapping (e.g. Dashboard) or the user holds that area.
 	const canSee = (it: NavItem) => {
+		if (!adminPathEnabled(settings, it.to)) return false;
 		const area = NAV_AREA[it.to];
 		return !area || isSuper || perms.has(area);
 	};

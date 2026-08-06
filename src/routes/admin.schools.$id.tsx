@@ -7,6 +7,7 @@ import {
 	type SchoolFormValue,
 	type TermOpt,
 } from "#/components/admin/SchoolForm";
+import { useModules } from "#/components/admin/useModules";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { saveErrorMessage } from "#/lib/save-error";
 import { toast } from "@/components/Dialogs";
@@ -28,19 +29,20 @@ function EditSchool() {
 	const [notFound, setNotFound] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [savedAt, setSavedAt] = useState<string | null>(null);
+	const modules = useModules();
 
 	useEffect(() => {
 		Promise.all([
 			trpcClient.adminSchools.get.query({ id: sid }),
 			trpcClient.terms.list.query({ taxonomy: "location" }),
-			trpcClient.adminProjects.list.query(),
+			modules.list("projects", () => trpcClient.adminProjects.list.query()),
 		]).then(([s, prov, proj]) => {
 			if (!s) setNotFound(true);
 			else setData(s);
 			setProvinces(prov);
 			setProjects(proj.map((p) => ({ id: p.id, code: p.code, name: p.name })));
 		});
-	}, [sid]);
+	}, [sid, modules.list]);
 
 	async function onSubmit(v: SchoolFormValue) {
 		setSaving(true);

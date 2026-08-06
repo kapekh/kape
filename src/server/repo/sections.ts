@@ -4,7 +4,7 @@
  * `props.data`, so the client renderer is pure and SSR/SEO stay intact.
  */
 import { NON_PUBLIC_CONTENT_TYPES } from "#/lib/collections";
-import type { SectionNode, SectionQuery } from "#/lib/sections";
+import type { QuerySource, SectionNode, SectionQuery } from "#/lib/sections";
 import type { DB } from "../db";
 import { renderBody } from "../richtext";
 import {
@@ -20,11 +20,22 @@ import { listProjectCards, listProjectLocations } from "./projects";
 import { listOffices, listPartners } from "./site";
 import { staffDirectory, staffDocuments, staffEvents } from "./staff";
 
+/**
+ * `allowSource` is for callers that resolve sections the client just handed them
+ * rather than sections the site has stored — the page-builder preview. Without it
+ * that procedure is a read path into every domain table, module or no module.
+ * Stored pages resolve unfiltered, so a section placed while a module was on keeps
+ * rendering after it goes off.
+ */
+export type ResolveOptions = { allowSource?: (s: QuerySource) => boolean };
+
 async function resolveQuery(
 	db: DB,
 	q: SectionQuery,
 	lang: string,
+	opts?: ResolveOptions,
 ): Promise<unknown> {
+	if (opts?.allowSource && !opts.allowSource(q.source)) return null;
 	switch (q.source) {
 		case "posts": {
 			const ct = q.contentType ?? "news";
@@ -82,6 +93,7 @@ export async function resolveSections(
 	db: DB,
 	sections: SectionNode[],
 	lang: string,
+	opts?: ResolveOptions,
 ): Promise<SectionNode[]> {
 	if (!Array.isArray(sections)) return [];
 	return Promise.all(
@@ -102,7 +114,7 @@ export async function resolveSections(
 				props.bodyHtml = renderBody(props.body);
 			}
 			if (s?.query) {
-				props.data = await resolveQuery(db, s.query, lang);
+				props.data = await resolveQuery(db, s.query, lang, opts);
 				if (s.query.source === "posts") {
 					props.linkBase = POST_LINK_BASE[s.query.contentType ?? "news"] ?? "";
 				}

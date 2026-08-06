@@ -412,7 +412,7 @@ function MediaLibrary() {
 						<button
 							type="button"
 							onClick={bulkDelete}
-							className="rounded-full bg-destructive px-3 py-1 text-xs font-semibold text-white hover:opacity-90"
+							className="rounded-full bg-destructive px-3 py-1 text-xs font-semibold text-destructive-foreground hover:opacity-90"
 						>
 							Delete
 						</button>

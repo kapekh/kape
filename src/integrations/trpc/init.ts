@@ -1,11 +1,13 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 
+import { moduleForRouter, routerEnabled } from "#/lib/modules";
 import { ROUTER_AREA } from "#/lib/permissions";
 import { parseCookies, SESSION_COOKIE, validateToken } from "#/server/auth";
 import { db } from "#/server/db";
 import { clearCache } from "#/server/render-cache";
 import { resolvePermissions } from "#/server/repo/roles";
+import { getSettings } from "#/server/repo/site";
 
 /**
  * Per-request tRPC context. Exposes the database, the authenticated user
@@ -49,9 +51,16 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
  */
 export const adminProcedure = protectedProcedure.use(
 	async ({ ctx, next, type, path }) => {
+		// `path` is "<routerKey>.<proc>".
+		const routerKey = path.split(".")[0];
+		// A domain module this install never turned on has no API at all, whatever
+		// the caller's role. Only a router that belongs to one pays for the lookup.
+		if (moduleForRouter(routerKey)) {
+			if (!routerEnabled(await getSettings(ctx.db), routerKey))
+				throw new TRPCError({ code: "FORBIDDEN" });
+		}
 		if (!ctx.isSuperAdmin) {
-			// `path` is "<routerKey>.<proc>"; the router key maps to a permission area.
-			const routerKey = path.split(".")[0];
+			// The router key maps to a permission area.
 			// The dashboard overview is the shared landing — any admin user may read it.
 			if (routerKey === "admin") {
 				if (ctx.permissions.length === 0)

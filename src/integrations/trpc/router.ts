@@ -2,11 +2,17 @@ import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import {
+	disallowedSections,
+	sourceEnabled,
+	taxonomyEnabled,
+} from "#/lib/modules";
+import {
 	ALL_AREAS,
 	PERMISSION_AREAS,
 	type PermissionArea,
 } from "#/lib/permissions";
 import type { SectionNode } from "#/lib/sections";
+import type { DB } from "#/server/db";
 import { invalidateTags, tagSourceQuery } from "#/server/render-cache";
 import type { PageInput } from "#/server/repo/admin";
 import {
@@ -335,17 +341,39 @@ const termInput = z.object({
 	sort: z.number(),
 });
 
+/**
+ * The terms router is core, because most taxonomies categorise content types every
+ * install has. A taxonomy that only categorises a module's records goes with the
+ * module: otherwise a role holding `lists` still writes partner categories on a
+ * site whose partner register is switched off and unreachable.
+ */
+async function assertTaxonomyAllowed(db: DB, taxonomy: string) {
+	if (!taxonomyEnabled(await getSettings(db), taxonomy))
+		throw new TRPCError({
+			code: "FORBIDDEN",
+			message: `The "${taxonomy}" list belongs to a module this site has not turned on.`,
+		});
+}
+
 const adminTermsRouter = {
 	list: adminProcedure.query(({ ctx }) => adminListTerms(ctx.db)),
-	create: adminProcedure
-		.input(termInput)
-		.mutation(({ ctx, input }) => createTerm(ctx.db, input)),
+	create: adminProcedure.input(termInput).mutation(async ({ ctx, input }) => {
+		await assertTaxonomyAllowed(ctx.db, input.taxonomy);
+		return createTerm(ctx.db, input);
+	}),
 	update: adminProcedure
 		.input(termInput.extend({ id: z.number() }))
-		.mutation(({ ctx, input }) => updateTerm(ctx.db, input.id, input)),
+		.mutation(async ({ ctx, input }) => {
+			await assertTaxonomyAllowed(ctx.db, input.taxonomy);
+			return updateTerm(ctx.db, input.id, input);
+		}),
 	delete: adminProcedure
 		.input(z.object({ id: z.number() }))
-		.mutation(({ ctx, input }) => deleteTerm(ctx.db, input.id)),
+		.mutation(async ({ ctx, input }) => {
+			const row = (await adminListTerms(ctx.db)).find((t) => t.id === input.id);
+			if (row) await assertTaxonomyAllowed(ctx.db, row.taxonomy);
+			return deleteTerm(ctx.db, input.id);
+		}),
 } satisfies TRPCRouterRecord;
 
 const siteRouter = {
@@ -689,6 +717,28 @@ const adminPostsRouter = {
 		.mutation(({ ctx, input }) => deletePost(ctx.db, input.id)),
 } satisfies TRPCRouterRecord;
 
+/**
+ * `sections` is free-form JSON from the client, so the picker filtering the
+ * catalogue is a convenience and this is the boundary. Without it a hand-written
+ * request places a section bound to a disabled module and the public page renders
+ * rows out of a table the operator cannot see.
+ *
+ * Shapes already stored on the page pass regardless, so a page authored while a
+ * module was on stays editable after it goes off.
+ */
+async function assertSectionsAllowed(
+	db: DB,
+	sections: SectionNode[],
+	pageId?: number,
+) {
+	const stored = pageId
+		? (((await getPageForEdit(db, pageId))?.sections ?? []) as SectionNode[])
+		: [];
+	const bad = disallowedSections(await getSettings(db), sections, stored);
+	if (bad.length)
+		throw new TRPCError({ code: "BAD_REQUEST", message: bad.join(" ") });
+}
+
 const adminPagesRouter = {
 	list: adminProcedure.query(({ ctx }) => adminListPages(ctx.db)),
 	get: adminProcedure
@@ -701,21 +751,31 @@ const adminPagesRouter = {
 				lang: z.string().optional(),
 			}),
 		)
-		.query(({ ctx, input }) =>
-			resolveSections(
+		.query(async ({ ctx, input }) => {
+			// The preview runs whatever query it is handed, so it is a read path into
+			// every domain table. It shows what this install can see and no more.
+			const settings = await getSettings(ctx.db);
+			return resolveSections(
 				ctx.db,
 				input.sections as SectionNode[],
 				input.lang ?? "en",
-			),
-		),
-	create: adminProcedure
-		.input(pageInput)
-		.mutation(({ ctx, input }) => createPage(ctx.db, input as PageInput)),
+				{ allowSource: (src) => sourceEnabled(settings, src) },
+			);
+		}),
+	create: adminProcedure.input(pageInput).mutation(async ({ ctx, input }) => {
+		await assertSectionsAllowed(ctx.db, input.sections as SectionNode[]);
+		return createPage(ctx.db, input as PageInput);
+	}),
 	update: adminProcedure
 		.input(pageInput.extend({ id: z.number() }))
-		.mutation(({ ctx, input }) =>
-			updatePage(ctx.db, input.id, input as PageInput),
-		),
+		.mutation(async ({ ctx, input }) => {
+			await assertSectionsAllowed(
+				ctx.db,
+				input.sections as SectionNode[],
+				input.id,
+			);
+			return updatePage(ctx.db, input.id, input as PageInput);
+		}),
 	delete: adminProcedure
 		.input(z.object({ id: z.number() }))
 		.mutation(({ ctx, input }) => deletePage(ctx.db, input.id)),

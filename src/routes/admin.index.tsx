@@ -1,7 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useLoaderData } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { adminPathEnabled, enabledModules } from "#/lib/modules";
+import type { SiteSettings } from "#/lib/site-identity";
 
 export const Route = createFileRoute("/admin/")({ component: Dashboard });
 
@@ -50,6 +52,16 @@ function Dashboard() {
 		}, {}),
 	).sort((a, b) => b[1] - a[1]);
 
+	// The record counters only make sense where the install keeps those records.
+	const { settings } = useLoaderData({ from: "__root__" }) as {
+		settings?: SiteSettings;
+	};
+	const mods = enabledModules(settings ?? {});
+	const records = [
+		mods.has("schools") ? `${o?.schools ?? 0} schools` : "",
+		mods.has("partners") ? `${o?.partners ?? 0} partners` : "",
+	].filter(Boolean);
+
 	const series = o?.visitorSeries ?? [];
 	const maxV = Math.max(1, ...series.map((d) => d.count));
 	const delta = o ? o.visitsToday - o.visitsYesterday : 0;
@@ -92,11 +104,19 @@ function Dashboard() {
 						{drafts.length} in draft
 					</span>
 				</Kpi>
-				<Kpi label="Projects" value={o?.projects}>
-					<span className="text-muted-foreground">
-						{o?.schools ?? 0} schools · {o?.partners ?? 0} partners
-					</span>
-				</Kpi>
+				{mods.has("projects") ? (
+					<Kpi label="Projects" value={o?.projects}>
+						<span className="text-muted-foreground">
+							{records.length ? records.join(" · ") : `${o?.pages ?? 0} pages`}
+						</span>
+					</Kpi>
+				) : (
+					<Kpi label="Media" value={o?.media}>
+						<span className="text-muted-foreground">
+							{records.length ? records.join(" · ") : `${o?.pages ?? 0} pages`}
+						</span>
+					</Kpi>
+				)}
 				<Kpi
 					label="Form submissions"
 					value={o ? o.submissions.contact : undefined}
@@ -288,15 +308,17 @@ function Dashboard() {
 								{ to: "/admin/languages", label: "Languages" },
 								{ to: "/admin/settings", label: "Settings" },
 								{ to: "/admin/projects", label: "Projects" },
-							].map((l) => (
-								<Link
-									key={l.to}
-									to={l.to}
-									className="rounded-lg border border-border px-3 py-2 text-foreground/75 hover:border-[var(--accent)] hover:text-[var(--accent)] transition"
-								>
-									{l.label}
-								</Link>
-							))}
+							]
+								.filter((l) => adminPathEnabled(settings ?? {}, l.to))
+								.map((l) => (
+									<Link
+										key={l.to}
+										to={l.to}
+										className="rounded-lg border border-border px-3 py-2 text-foreground/75 hover:border-[var(--accent)] hover:text-[var(--accent)] transition"
+									>
+										{l.label}
+									</Link>
+								))}
 						</div>
 					</section>
 				</div>

@@ -201,7 +201,7 @@ function Modal({
 					<button
 						type="button"
 						onClick={accept}
-						className={`rounded-full px-5 py-2 text-sm font-semibold text-white transition hover:opacity-90 ${danger ? "bg-destructive" : "bg-primary"}`}
+						className={`rounded-full px-5 py-2 text-sm font-semibold transition hover:opacity-90 ${danger ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}
 					>
 						{o.confirmLabel ?? (isPrompt ? "OK" : "Confirm")}
 					</button>

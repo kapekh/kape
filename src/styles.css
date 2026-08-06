@@ -1,11 +1,28 @@
-/* External @import (Google Fonts) MUST come first — CSS requires all @import
-   rules to precede other statements, and Tailwind expands inline below. */
-@import url("https://fonts.googleapis.com/css2?family=Battambang:wght@400;700;900&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,800&family=Inter:wght@300;400;500;600;700&family=Noto+Serif+Khmer:wght@500;700&display=swap");
 @import "tailwindcss" source(none);
 @import "tw-animate-css";
 @source "../src";
 
-@custom-variant dark (&:is(.dark *));
+/* Dark mode is the `dark` class when the reader has chosen one, and the
+   operating system's preference when they have not. The second half is what
+   makes the site dark with JavaScript switched off, where no class is ever
+   set; `light` is written explicitly so a reader on a dark system can still
+   choose light. */
+@custom-variant dark {
+  &:is(.dark *) { @slot; }
+  @media (prefers-color-scheme: dark) {
+    &:is(:root:not(.light) *) { @slot; }
+  }
+}
+
+/* Tells the browser which way its own furniture goes: date pickers, select
+   menus, checkboxes and scrollbars. Without it a dark page keeps a near-black
+   calendar glyph on a near-black field. */
+:root { color-scheme: light; }
+@media (prefers-color-scheme: dark) {
+  :root { color-scheme: dark; }
+}
+:root.light { color-scheme: light; }
+:root.dark { color-scheme: dark; }
 
 /* Smooth page transitions. `navigation: auto` opts same-origin full-page
    navigations into cross-document View Transitions; TanStack Router's
@@ -54,15 +71,33 @@
 /*
  * Design system definition.
  *
- * The @theme inline block maps CSS custom properties to Tailwind utility
- * classes (e.g. --color-primary -> bg-primary, text-primary).
+ * Three layers, and the order matters:
  *
- * The :root and .dark blocks define the actual color values using oklch.
+ *   1. Brand inputs   --brand-* and --paper-* below. Four colours, a paper
+ *                     tint, a radius and three font stacks. These are the only
+ *                     values an operator sets; site-theme.ts re-declares them
+ *                     in a <style> in the head during SSR, which is why a
+ *                     configured site never paints the default palette first.
+ *   2. Semantic tokens --primary, --muted, --border … derived from layer 1.
+ *                     Components only ever name these.
+ *   3. Utilities      the @theme inline block maps a token to a Tailwind class
+ *                     (--color-primary -> bg-primary, text-primary).
+ *
  * All colors MUST use oklch format.
  *
+ * Every semantic token is declared exactly once. A token that looks different
+ * in the two modes says so in one place with light-dark(); a token derived from
+ * another follows whatever that one resolved to. There is no second block of
+ * dark values to keep in step, which is how the stats and CTA bands came to be
+ * painting light-mode navy on a dark page.
+ *
  * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
+ * 1. Add it to the :root block below, as light-dark(<light>, <dark>) if it
+ *    differs by mode, or in terms of other tokens if it does not
  * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ *
+ * styles.test.ts enforces both halves of that rule, and reads the values rather
+ * than the names.
  */
 
 @theme inline {
@@ -93,110 +128,114 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-ring-offset-background: var(--background);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --font-display: "Fraunces", "Battambang", Georgia, serif;
-  --font-sans: "Inter", "Battambang", system-ui, sans-serif;
-  --font-khmer: "Battambang", "Noto Serif Khmer", serif;
+  --color-warm-foreground: var(--warm-foreground);
+  --color-warm-foreground-muted: var(--warm-foreground-muted);
+  --font-display: var(--brand-font-display);
+  --font-sans: var(--brand-font-body);
+  --font-khmer: var(--brand-font-script);
 }
 
+/* ---- Layer 1: the brand. Everything an operator can set. ---- */
 :root {
+  /* A restrained single-hue slate. Deliberate, and nobody's brand. */
+  --brand-primary: oklch(0.30 0.03 250);
+  --brand-secondary: oklch(0.66 0.06 250);
+  --brand-accent: oklch(0.55 0.13 250);
+  --brand-highlight: oklch(0.75 0.09 250);
+  /* How much colour the neutral ramp carries, and where that colour sits.
+     A multiplier and a rotation rather than absolute values, so the ramp keeps
+     its internal relationships whatever an operator picks. */
+  --paper-chroma: 0.25;
+  --paper-hue: 170;
   --radius: 0.5rem;
-  /* Warm cream paper */
-  --background: oklch(0.985 0.012 80);
-  --foreground: oklch(0.22 0.04 40);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.04 40);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.04 40);
-  /* Deep navy blue */
-  --primary: oklch(0.30 0.10 255);
-  --primary-foreground: oklch(0.985 0.012 80);
-  /* Saffron/terracotta — Cambodia warmth */
-  --secondary: oklch(0.72 0.17 55);
-  --secondary-foreground: oklch(0.22 0.04 40);
-  --muted: oklch(0.94 0.015 75);
-  --muted-foreground: oklch(0.45 0.03 55);
-  --accent: oklch(0.68 0.19 35);
-  --accent-foreground: oklch(0.985 0.012 80);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.88 0.02 70);
-  --input: oklch(0.88 0.02 70);
-  --ring: oklch(0.68 0.19 35);
-  --ink: oklch(0.18 0.03 50);
-  --gold: oklch(0.78 0.14 80);
-  /* Palm green — success / active accents (was referenced but undefined) */
-  --palm: oklch(0.55 0.10 165);
-  --gradient-hero: linear-gradient(135deg, oklch(0.30 0.10 255) 0%, oklch(0.24 0.09 260) 60%, oklch(0.18 0.06 265) 100%);
-  --gradient-warm: linear-gradient(135deg, oklch(0.72 0.17 55) 0%, oklch(0.68 0.19 35) 100%);
-  --shadow-soft: 0 30px 60px -20px oklch(0.22 0.04 40 / 0.25);
-  --shadow-lift: 0 20px 40px -15px oklch(0.30 0.10 255 / 0.35);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --brand-font-display: "Fraunces", "Battambang", Georgia, serif;
+  --brand-font-body: "Inter", "Battambang", system-ui, sans-serif;
+  --brand-font-script: "Battambang", "Noto Serif Khmer", serif;
 }
 
-.dark {
-  /* Warm charcoal paper (keeps the brand's warmth, not a cold blue-gray). */
-  --background: oklch(0.19 0.015 60);
-  --foreground: oklch(0.95 0.012 85);
-  --card: oklch(0.235 0.018 60);
-  --card-foreground: oklch(0.95 0.012 85);
-  --popover: oklch(0.235 0.018 60);
-  --popover-foreground: oklch(0.95 0.012 85);
-  /* Brand blue lifted so it works BOTH as text-primary (headings, readable) and
-     as bg-primary surfaces (footer/buttons) with light primary-foreground. */
-  --primary: oklch(0.62 0.13 250);
-  --primary-foreground: oklch(0.985 0.012 80);
-  /* Saffron / terracotta / gold stay warm — the brand identity. */
-  --secondary: oklch(0.74 0.17 55);
-  --secondary-foreground: oklch(0.20 0.02 60);
-  --muted: oklch(0.27 0.015 60);
-  --muted-foreground: oklch(0.72 0.02 75);
-  --accent: oklch(0.70 0.19 35);
-  --accent-foreground: oklch(0.985 0.012 80);
-  --destructive: oklch(0.70 0.19 22);
-  --destructive-foreground: oklch(0.985 0.012 80);
-  --border: oklch(0.34 0.015 60);
-  --input: oklch(0.34 0.015 60);
-  --ring: oklch(0.70 0.19 35);
-  --gold: oklch(0.80 0.14 80);
-  --palm: oklch(0.62 0.12 165);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+/* ---- Layer 2: semantic tokens. What components are allowed to name. ---- */
+:root {
+  /* Cream paper, and charcoal carrying the same tint. */
+  --background: light-dark(
+    oklch(0.985 calc(0.012 * var(--paper-chroma)) calc(80 + var(--paper-hue))),
+    oklch(0.19 calc(0.015 * var(--paper-chroma)) calc(60 + var(--paper-hue)))
+  );
+  --foreground: light-dark(
+    oklch(0.22 calc(0.04 * var(--paper-chroma)) calc(40 + var(--paper-hue))),
+    oklch(0.95 calc(0.012 * var(--paper-chroma)) calc(85 + var(--paper-hue)))
+  );
+  --card: light-dark(
+    oklch(1 0 0),
+    oklch(0.235 calc(0.018 * var(--paper-chroma)) calc(60 + var(--paper-hue)))
+  );
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+  /* On a dark page the brand colour is lifted until it works both as
+     text-primary on charcoal and as a bg-primary surface. An operator who
+     knows better sets theme_primary_dark. */
+  --primary: light-dark(
+    var(--brand-primary),
+    var(--brand-primary-dark, oklch(from var(--brand-primary) clamp(0.55, calc(l + 0.32), 0.8) c h))
+  );
+  --secondary: light-dark(
+    var(--brand-secondary),
+    var(--brand-secondary-dark, oklch(from var(--brand-secondary) clamp(0.6, calc(l + 0.05), 0.85) c h))
+  );
+  --accent: light-dark(
+    var(--brand-accent),
+    var(--brand-accent-dark, oklch(from var(--brand-accent) clamp(0.55, calc(l + 0.05), 0.82) c h))
+  );
+  --gold: light-dark(
+    var(--brand-highlight),
+    var(--brand-highlight-dark, oklch(from var(--brand-highlight) clamp(0.6, calc(l + 0.04), 0.88) c h))
+  );
+  /* What gets written on a brand colour follows that colour's own lightness:
+     paper on a dark one, ink on a light one. Anything else means a white
+     primary paints white text on itself and the whole site disappears.
+     The crossover is where the two stop being equally legible, measured
+     against WCAG luminance; the chroma term is there because a saturated
+     colour is darker than its lightness suggests. site-theme.ts computes the
+     legibility warning from the same two numbers and reads them back out of
+     this file, so the two cannot drift. */
+  --primary-foreground: oklch(from var(--primary) clamp(0.16, (0.57 + c * 0.1 - l) * 1000, 0.985) calc(0.012 * var(--paper-chroma)) calc(80 + var(--paper-hue)));
+  --secondary-foreground: oklch(from var(--secondary) clamp(0.16, (0.57 + c * 0.1 - l) * 1000, 0.985) calc(0.012 * var(--paper-chroma)) calc(80 + var(--paper-hue)));
+  --accent-foreground: oklch(from var(--accent) clamp(0.16, (0.57 + c * 0.1 - l) * 1000, 0.985) calc(0.012 * var(--paper-chroma)) calc(80 + var(--paper-hue)));
+  --destructive-foreground: oklch(from var(--destructive) clamp(0.16, (0.57 + c * 0.1 - l) * 1000, 0.985) calc(0.012 * var(--paper-chroma)) calc(80 + var(--paper-hue)));
+  --muted: light-dark(
+    oklch(0.94 calc(0.015 * var(--paper-chroma)) calc(75 + var(--paper-hue))),
+    oklch(0.27 calc(0.015 * var(--paper-chroma)) calc(60 + var(--paper-hue)))
+  );
+  --muted-foreground: light-dark(
+    oklch(0.45 calc(0.03 * var(--paper-chroma)) calc(55 + var(--paper-hue))),
+    oklch(0.72 calc(0.02 * var(--paper-chroma)) calc(75 + var(--paper-hue)))
+  );
+  --destructive: light-dark(oklch(0.577 0.245 27.325), oklch(0.70 0.19 22));
+  --border: light-dark(
+    oklch(0.88 calc(0.02 * var(--paper-chroma)) calc(70 + var(--paper-hue))),
+    oklch(0.34 calc(0.015 * var(--paper-chroma)) calc(60 + var(--paper-hue)))
+  );
+  --input: var(--border);
+  --ring: var(--accent);
+  /* Palm green, "this worked". A status colour, not a brand colour, so it is
+     deliberately not one of the knobs: green must keep meaning green. */
+  --palm: light-dark(oklch(0.55 0.10 165), oklch(0.62 0.12 165));
+  /* Ink for the warm band, which stays bright in both modes and so wants the
+     same dark foreground in both. Two steps down from the brand colour, not a
+     second navy. */
+  --warm-foreground: oklch(from var(--primary) 0.24 calc(c - 0.01) h);
+  --warm-foreground-muted: oklch(from var(--primary) 0.30 calc(c - 0.03) h);
+  --gradient-hero: linear-gradient(135deg, var(--primary) 0%, oklch(from var(--primary) calc(l - 0.06) calc(c - 0.01) calc(h + 5)) 60%, oklch(from var(--primary) calc(l - 0.12) calc(c - 0.04) calc(h + 10)) 100%);
+  --gradient-warm: linear-gradient(135deg, var(--secondary) 0%, var(--accent) 100%);
+  /* A light-mode shadow is invisible on a dark page: go near-black and deeper. */
+  --shadow-soft: 0 30px 60px -20px light-dark(
+    oklch(from var(--foreground) l c h / 0.25),
+    oklch(from var(--background) 0.06 c h / 0.7)
+  );
+  --shadow-lift: 0 20px 40px -15px light-dark(
+    oklch(from var(--primary) l c h / 0.35),
+    oklch(from var(--primary) 0.12 c h / 0.65)
+  );
 }
 
 @layer base {
@@ -237,8 +276,8 @@
     content: "";
     position: fixed; inset: 0;
     background-image:
-      radial-gradient(circle at 20% 10%, oklch(0.72 0.17 55 / 0.06), transparent 50%),
-      radial-gradient(circle at 80% 90%, oklch(0.34 0.06 165 / 0.07), transparent 50%);
+      radial-gradient(circle at 20% 10%, oklch(from var(--secondary) l c h / 0.06), transparent 50%),
+      radial-gradient(circle at 80% 90%, oklch(from var(--palm) 0.34 0.06 h / 0.07), transparent 50%);
     pointer-events: none;
     z-index: -1;
   }

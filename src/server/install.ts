@@ -15,6 +15,7 @@ import type { SQLiteTable } from "drizzle-orm/sqlite-core";
 
 import { HEADER_DEFAULTS } from "#/lib/header-defaults";
 import { LANGS } from "#/lib/i18n-config";
+import { moduleDef, MODULES_SETTING } from "#/lib/modules";
 import { defaultUiStrings } from "#/lib/ui-strings.default";
 import { hashPassword } from "./auth";
 import { db } from "./db";
@@ -31,6 +32,7 @@ import {
 	uiStrings,
 	users,
 } from "./schema";
+import { backfillModules } from "./repo/modules";
 import { TENANT } from "./seed/helpers";
 import { LANDINGS } from "./seed/landings";
 import { seedRoles } from "./seed/roles";
@@ -313,11 +315,17 @@ async function writeInstall(config: InstallConfig, passwordHash: string) {
 
 	// The header and footer components fall back to their *-defaults.ts when a key
 	// is unset, so only the site's own identity needs a row here.
+	//
+	// `enabled_modules` is the exception: it is written empty rather than left out.
+	// A missing row means "this database predates modules, keep everything on", so
+	// a fresh install has to answer "none of them" out loud or a law firm comes up
+	// holding a school register.
 	await db.insert(siteSettings).values(
 		Object.entries({
 			...HEADER_DEFAULTS,
 			site_name_en: siteName,
 			copyright: `© ${new Date().getFullYear()} ${siteName}`,
+			[MODULES_SETTING]: "",
 		}).map(([key, value]) => ({ tenantId: TENANT, key, value })),
 	);
 
@@ -406,6 +414,19 @@ if (import.meta.main) {
 	}
 	if (state.state === "complete") {
 		console.log("Already installed - skipping.");
+		// A database from before modules existed answers nothing about them, and the
+		// safe reading of silence is "keep everything". Settle it once, from the rows
+		// the site actually holds, and say so: the operator is about to see an admin
+		// with fewer screens in it than the one they had yesterday.
+		const filled = await backfillModules(db);
+		if (filled.state === "written") {
+			const names = filled.enabled.map((id) => moduleDef(id)?.label ?? id);
+			console.log(
+				names.length
+					? `Modules: this database predates the module setting. Enabled ${names.join(", ")}, because it holds records for them. Change this at /admin/modules.`
+					: "Modules: this database predates the module setting, and holds no records for any of them, so all are off. Turn any on at /admin/modules.",
+			);
+		}
 		// Wrong but reachable: an administrator can log in and put these back, so
 		// say so and start the server rather than holding the whole site down.
 		for (const w of state.warnings) console.warn(`Warning: ${w}`);

@@ -1,7 +1,9 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useLoaderData } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
-import { PERMISSION_AREAS, type PermissionArea } from "#/lib/permissions";
+import { visibleAreas } from "#/lib/modules";
+import type { PermissionArea } from "#/lib/permissions";
+import type { SiteSettings } from "#/lib/site-identity";
 import {
 	cancelButtonClass,
 	EditorGrid,
@@ -38,10 +40,21 @@ export function RoleForm({
 		new Set((initial?.permissions ?? []) as PermissionArea[]),
 	);
 
+	// Only the areas this install can reach: a module nobody turned on has no
+	// screens, so offering to grant access to it would be offering nothing.
+	const { settings } = useLoaderData({ from: "__root__" }) as {
+		settings?: SiteSettings;
+	};
+	const areas = useMemo(() => visibleAreas(settings ?? {}), [settings]);
+	// A role may still hold an area whose module is off. That grant is kept on save,
+	// so turning the module back on restores it, but the counter must only speak for
+	// the boxes on screen.
+	const shown = useMemo(() => new Set(areas.map((a) => a.key)), [areas]);
+
 	const groups = useMemo(() => {
 		const order: string[] = [];
-		const by: Record<string, typeof PERMISSION_AREAS> = {};
-		for (const a of PERMISSION_AREAS) {
+		const by: Record<string, typeof areas> = {};
+		for (const a of areas) {
 			if (!by[a.group]) {
 				by[a.group] = [];
 				order.push(a.group);
@@ -49,7 +62,7 @@ export function RoleForm({
 			by[a.group].push(a);
 		}
 		return order.map((g) => ({ group: g, areas: by[g] }));
-	}, []);
+	}, [areas]);
 
 	const toggle = (k: PermissionArea) =>
 		setPerms((s) => {
@@ -144,7 +157,8 @@ export function RoleForm({
 							)}
 							{!isSuper && (
 								<p className="text-xs text-muted-foreground">
-									{perms.size} of {PERMISSION_AREAS.length} areas selected.
+									{[...perms].filter((p) => shown.has(p)).length} of{" "}
+									{areas.length} areas selected.
 								</p>
 							)}
 						</div>

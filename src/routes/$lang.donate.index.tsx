@@ -59,19 +59,19 @@ function DonatePage() {
 				style={{ background: "var(--gradient-warm)" }}
 			>
 				<div className="mx-auto max-w-4xl text-center">
-					<p className="t-eyebrow text-[oklch(0.3_0.07_255)]/80">
+					<p className="t-eyebrow text-warm-foreground-muted/80">
 						{s("donate_eyebrow")}
 					</p>
-					<h1 className="mt-3 t-page-title text-[oklch(0.24_0.09_255)]">
+					<h1 className="mt-3 t-page-title text-warm-foreground">
 						{s("donate_title")}
 					</h1>
 					{s("donate_intro") && (
-						<p className="mx-auto mt-5 max-w-2xl t-lead text-[oklch(0.3_0.07_255)]/90">
+						<p className="mx-auto mt-5 max-w-2xl t-lead text-warm-foreground-muted/90">
 							{s("donate_intro")}
 						</p>
 					)}
 
-					<div className="mt-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-[oklch(0.24_0.09_255)]">
+					<div className="mt-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-warm-foreground">
 						<Stat
 							value={String(campaigns.length)}
 							label={campaigns.length === 1 ? "campaign" : "campaigns"}
@@ -165,7 +165,7 @@ function FeaturedSpotlight({ campaign }: { campaign: CampaignPublic }) {
 					className="transition-transform duration-500 group-hover:scale-105"
 					iconClass="h-24 w-24"
 				/>
-				<span className="absolute left-4 top-4 rounded-full bg-[var(--gold)] px-3 py-1 text-xs font-bold uppercase tracking-wide text-[oklch(0.24_0.09_255)]">
+				<span className="absolute left-4 top-4 rounded-full bg-[var(--gold)] px-3 py-1 text-xs font-bold uppercase tracking-wide text-warm-foreground">
 					★ Featured
 				</span>
 			</div>

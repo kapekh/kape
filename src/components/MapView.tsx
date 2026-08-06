@@ -42,8 +42,8 @@ function popupCard(m: MapMarker, href: string | undefined): HTMLElement {
 	if (m.status) {
 		const tag = document.createElement("span");
 		tag.textContent = m.status === "past" ? "Past" : "Current";
-		tag.className = `inline-block rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white ${
-			m.status === "past" ? "bg-slate-600" : "bg-emerald-600"
+		tag.className = `inline-block rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-background ${
+			m.status === "past" ? "bg-[var(--muted-foreground)]" : "bg-[var(--palm)]"
 		}`;
 		card.append(tag);
 	}

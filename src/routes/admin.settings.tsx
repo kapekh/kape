@@ -8,6 +8,13 @@ import {
 	fieldLabel,
 } from "#/components/admin/form-ui";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import {
+	checkThemeValue,
+	colourToHex,
+	THEME_FIELDS,
+	themeContrast,
+	type ThemeKind,
+} from "#/lib/site-theme";
 import { confirm } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/settings")({
@@ -15,6 +22,8 @@ export const Route = createFileRoute("/admin/settings")({
 });
 
 type Row = { key: string; value: string };
+type Field = { key: string; label: string; hint: string; kind?: ThemeKind };
+
 const ci =
 	"w-full bg-transparent px-2 py-2 text-sm focus:outline-none focus:bg-[var(--accent)]/5 rounded";
 
@@ -23,7 +32,7 @@ const ci =
  * search-result snippet, the social card and the Organization structured data,
  * and an operator will never find them by guessing at a key/value grid.
  */
-const IDENTITY: { key: string; label: string; hint: string }[] = [
+const IDENTITY: Field[] = [
 	{
 		key: "site_name_en",
 		label: "Organisation name",
@@ -57,7 +66,7 @@ const IDENTITY: { key: string; label: string; hint: string }[] = [
 ];
 
 /** Optional, and only read by the Organization structured data. */
-const LOCATION: { key: string; label: string; hint: string }[] = [
+const LOCATION: Field[] = [
 	{
 		key: "address_region",
 		label: "Region",
@@ -75,20 +84,149 @@ const LOCATION: { key: string; label: string; hint: string }[] = [
 	},
 ];
 
+const BRAND: Field[] = THEME_FIELDS.map(({ key, label, hint, kind }) => ({
+	key,
+	label,
+	hint,
+	kind,
+}));
+const NAMED = [...IDENTITY, ...LOCATION, ...BRAND];
+
+/**
+ * What the operator has typed but not yet saved, keyed on the setting. A
+ * pending value is kept apart from the server's copy rather than overwriting
+ * it: reloading the list then refreshes what is stored without discarding what
+ * is being written, and a field edited to empty stays an edit rather than
+ * reading as "unchanged".
+ */
+type Draft = Record<string, string>;
+
+function Fields({
+	fields,
+	saved,
+	draft,
+	setDraft,
+	onSave,
+	saveLabel,
+	status,
+	loading,
+}: {
+	fields: Field[];
+	saved: Record<string, string>;
+	draft: Draft;
+	setDraft: (f: (d: Draft) => Draft) => void;
+	onSave: () => void;
+	saveLabel: string;
+	status: string;
+	/** Until the stored values arrive the fields are empty, and typing into an
+	 *  empty field that is about to fill itself is how edits went missing. */
+	loading: boolean;
+}) {
+	const pending = fields.filter((f) => f.key in draft).length;
+	return (
+		<div className="space-y-4">
+			{fields.map((f) => {
+				const value = f.key in draft ? draft[f.key] : (saved[f.key] ?? "");
+				const problem = f.kind ? checkThemeValue(f.kind, value) : null;
+				return (
+					<div key={f.key}>
+						<label className={fieldLabel} htmlFor={`set-${f.key}`}>
+							{f.label}
+						</label>
+						<input
+							id={`set-${f.key}`}
+							className={`${fieldInput} ${problem ? "border-destructive" : ""} ${loading ? "opacity-50" : ""}`}
+							aria-invalid={problem ? true : undefined}
+							readOnly={loading}
+							value={value}
+							onChange={(e) => {
+								const typed = e.target.value;
+								setDraft((d) => ({ ...d, [f.key]: typed }));
+							}}
+						/>
+						{problem ? (
+							<p className="mt-1 text-xs font-medium text-destructive">
+								{problem} Saved as it is, this field is ignored and the rest of
+								the theme still applies.
+							</p>
+						) : (
+							<p className="mt-1 text-xs text-muted-foreground">
+								{f.hint} <span className="font-mono">{f.key}</span>
+							</p>
+						)}
+					</div>
+				);
+			})}
+			<div className="flex items-center gap-3">
+				<button
+					type="button"
+					onClick={onSave}
+					disabled={loading || !pending}
+					className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition"
+				>
+					{pending ? `${saveLabel} (${pending})` : saveLabel}
+				</button>
+				<span className="text-xs text-muted-foreground">
+					{loading ? "Reading the stored values…" : status}
+				</span>
+			</div>
+		</div>
+	);
+}
+
+/** What the site will write on each brand colour, and where that will not read. */
+function Contrast({ values }: { values: Record<string, string> }) {
+	const measured = themeContrast(values);
+	const primary = (values.theme_primary ?? "").trim();
+	const unconvertible =
+		primary && !checkThemeValue("colour", primary) && !colourToHex(primary);
+	if (!measured.length && !unconvertible) return null;
+	return (
+		<div className="mt-5 space-y-2 border-t border-border pt-4">
+			<p className={fieldLabel}>Legibility</p>
+			{measured.map((c) => (
+				<p
+					key={`${c.key}-${c.mode}-${c.what}`}
+					className={`text-xs ${c.ratio < 4.5 ? "text-destructive" : "text-muted-foreground"}`}
+				>
+					{c.label}, {c.mode} mode, {c.what}: {c.ratio.toFixed(1)}:1
+					{c.ratio < 3
+						? " - hard to read at any size."
+						: c.ratio < 4.5
+							? " - below the 4.5:1 the guidelines ask for; fine for headings, tight for body text."
+							: ""}
+				</p>
+			))}
+			{unconvertible && (
+				<p className="text-xs text-destructive">
+					The browser's own title bar and the installed-app icon need a hex,
+					oklch(), rgb() or hsl() colour. This one is used on the page, but
+					those two fall back to the product's default.
+				</p>
+			)}
+		</div>
+	);
+}
+
 function SettingsAdmin() {
 	const [rows, setRows] = useState<Row[]>([]);
-	const [named, setNamed] = useState<Record<string, string>>({});
-	const [savedNamed, setSavedNamed] = useState<Record<string, string>>({});
+	const [saved, setSaved] = useState<Record<string, string>>({});
+	const [draft, setDraft] = useState<Draft>({});
 	const [loading, setLoading] = useState(true);
+	const [status, setStatus] = useState("");
 	const [add, setAdd] = useState({ key: "", value: "" });
 
+	/**
+	 * Re-read what is stored. Only `saved` moves: a reload must never throw away
+	 * something the operator is halfway through typing, which is how edits used
+	 * to disappear between the page loading and the list arriving.
+	 */
 	async function refresh() {
 		const all = await trpcClient.adminSettings.list.query();
 		const map = Object.fromEntries(all.map((r) => [r.key, r.value]));
 		const known: Record<string, string> = {};
-		for (const f of [...IDENTITY, ...LOCATION]) known[f.key] = map[f.key] ?? "";
-		setNamed(known);
-		setSavedNamed(known);
+		for (const f of NAMED) known[f.key] = map[f.key] ?? "";
+		setSaved(known);
 		setRows(
 			all
 				.filter((r) => !(r.key in known))
@@ -98,11 +236,29 @@ function SettingsAdmin() {
 		setLoading(false);
 	}
 
-	async function saveNamed() {
-		for (const [key, value] of Object.entries(named))
-			if (value !== savedNamed[key])
-				await trpcClient.adminSettings.set.mutate({ key, value });
-		setSavedNamed(named);
+	async function saveDraft(fields: Field[]) {
+		const mine = fields.filter((f) => f.key in draft);
+		const done: string[] = [];
+		try {
+			for (const f of mine) {
+				const value = draft[f.key];
+				await trpcClient.adminSettings.set.mutate({ key: f.key, value });
+				done.push(f.key);
+				setSaved((s) => ({ ...s, [f.key]: value }));
+			}
+			setStatus(
+				`Saved ${done.length} ${done.length === 1 ? "field" : "fields"}.`,
+			);
+		} catch (err) {
+			setStatus(
+				`Saved ${done.length} of ${mine.length}; ${mine.length - done.length} still unsaved. ${err instanceof Error ? err.message : "The server refused the change."}`,
+			);
+		}
+		setDraft((d) => {
+			const rest = { ...d };
+			for (const key of done) delete rest[key];
+			return rest;
+		});
 	}
 	useEffect(() => {
 		refresh();
@@ -126,6 +282,13 @@ function SettingsAdmin() {
 		setRows((rs) => rs.filter((r) => r.key !== key));
 	}
 
+	const brandValues = Object.fromEntries(
+		BRAND.map((f) => [
+			f.key,
+			f.key in draft ? draft[f.key] : (saved[f.key] ?? ""),
+		]),
+	);
+
 	return (
 		<div className="max-w-3xl space-y-5">
 			<div>
@@ -141,33 +304,33 @@ function SettingsAdmin() {
 				title="Site identity"
 				description="Page titles, search results, social cards and the structured data search engines read all come from these."
 			>
-				<div className="space-y-4">
-					{[...IDENTITY, ...LOCATION].map((f) => (
-						<div key={f.key}>
-							<label className={fieldLabel} htmlFor={`set-${f.key}`}>
-								{f.label}
-							</label>
-							<input
-								id={`set-${f.key}`}
-								className={fieldInput}
-								value={named[f.key] ?? ""}
-								onChange={(e) =>
-									setNamed({ ...named, [f.key]: e.target.value })
-								}
-							/>
-							<p className="mt-1 text-xs text-muted-foreground">
-								{f.hint} <span className="font-mono">{f.key}</span>
-							</p>
-						</div>
-					))}
-					<button
-						type="button"
-						onClick={saveNamed}
-						className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:opacity-90 transition"
-					>
-						Save identity
-					</button>
-				</div>
+				<Fields
+					fields={[...IDENTITY, ...LOCATION]}
+					saved={saved}
+					draft={draft}
+					setDraft={setDraft}
+					onSave={() => saveDraft([...IDENTITY, ...LOCATION])}
+					saveLabel="Save identity"
+					status={status}
+					loading={loading}
+				/>
+			</FormSection>
+
+			<FormSection
+				title="Brand"
+				description="The palette, the paper, the corner radius and the typefaces. Every page, section and admin screen follows these, in light and dark mode. Leave a field empty for the product's own default; leave a dark-mode field empty and it is derived from its light counterpart."
+			>
+				<Fields
+					fields={BRAND}
+					saved={saved}
+					draft={draft}
+					setDraft={setDraft}
+					onSave={() => saveDraft(BRAND)}
+					saveLabel="Save brand"
+					status={status}
+					loading={loading}
+				/>
+				<Contrast values={brandValues} />
 			</FormSection>
 
 			<FormSection

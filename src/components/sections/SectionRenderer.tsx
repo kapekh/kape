@@ -673,15 +673,15 @@ function Cta(p: P) {
 			<Blob className="-bottom-20 -right-20 h-80 w-80 bg-primary/30" />
 			<div className="relative mx-auto max-w-4xl px-6 text-center">
 				{p.eyebrow && (
-					<div className="t-eyebrow text-[oklch(0.3_0.07_255)]/80">
+					<div className="t-eyebrow text-warm-foreground-muted/80">
 						{p.eyebrow}
 					</div>
 				)}
-				<h2 className="mt-4 t-band text-[oklch(0.24_0.09_255)]">
+				<h2 className="mt-4 t-band text-warm-foreground">
 					{renderTitle(p.title || "", "italic")}
 				</h2>
 				{p.body && (
-					<p className="mx-auto mt-6 max-w-2xl t-lead text-[oklch(0.3_0.07_255)]/90">
+					<p className="mx-auto mt-6 max-w-2xl t-lead text-warm-foreground-muted/90">
 						{p.body}
 					</p>
 				)}
@@ -689,7 +689,7 @@ function Cta(p: P) {
 					{p.ctaHref && (
 						<NavLink
 							href={L(p.ctaHref)}
-							className="inline-flex items-center gap-2 rounded-full bg-[oklch(0.24_0.09_255)] text-white px-8 py-4 text-base font-semibold shadow-[var(--shadow-lift)] hover:-translate-y-1 transition"
+							className="inline-flex items-center gap-2 rounded-full bg-warm-foreground text-primary-foreground px-8 py-4 text-base font-semibold shadow-[var(--shadow-lift)] hover:-translate-y-1 transition"
 						>
 							{p.ctaLabel || "Donate now"}
 						</NavLink>
@@ -697,7 +697,7 @@ function Cta(p: P) {
 					{p.cta2Href && (
 						<NavLink
 							href={L(p.cta2Href)}
-							className="inline-flex items-center gap-2 rounded-full border-2 border-[oklch(0.24_0.09_255)]/40 text-[oklch(0.24_0.09_255)] px-8 py-4 text-base font-semibold hover:bg-[oklch(0.24_0.09_255)] hover:text-white transition"
+							className="inline-flex items-center gap-2 rounded-full border-2 border-warm-foreground/40 text-warm-foreground px-8 py-4 text-base font-semibold hover:bg-warm-foreground hover:text-primary-foreground transition"
 						>
 							{p.cta2Label || "Learn more"}
 						</NavLink>
