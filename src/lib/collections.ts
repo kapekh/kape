@@ -13,6 +13,9 @@ export type CollectionDef = {
 	kind: CollectionKind; // how the detail is loaded + rendered
 	contentType?: string; // posts content_type this prefix maps to (kind=post)
 	label: string; // breadcrumb / section label on the detail page
+	// extra content types whose detail pages resolve under this prefix without
+	// getting a landing, a listing section or a sitemap entry of their own
+	alsoResolves?: string[];
 };
 
 export const COLLECTIONS: Record<string, CollectionDef> = {
@@ -52,6 +55,7 @@ export const COLLECTIONS: Record<string, CollectionDef> = {
 		kind: "post",
 		contentType: "job",
 		label: "Careers",
+		alsoResolves: ["announcement"],
 	},
 	events: {
 		prefix: "events",
@@ -82,6 +86,12 @@ export const NON_PUBLIC_CONTENT_TYPES = new Set([
 /** Detail permalink for a collection record. */
 export const collectionHref = (prefix: string, slug: string) =>
 	`/${prefix}/${slug}`;
+
+/** Does `/<prefix>/<slug>` serve a detail page for this content type? */
+export const resolvesUnder = (col: CollectionDef, contentType: string) =>
+	col.contentType === contentType
+		? !NON_PUBLIC_CONTENT_TYPES.has(contentType)
+		: Boolean(col.alsoResolves?.includes(contentType));
 
 /**
  * Old nested paths → new flat paths (301). Keys are matched as either an exact

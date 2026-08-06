@@ -974,20 +974,20 @@ export async function seedPartners() {
 
 /**
  * Announcements are posts (contentType=announcement). meta.deadline drives the
- * floating homepage card; meta.link is an optional CTA. One active, one evergreen.
+ * floating homepage card and hides it once past; the card links to the notice's
+ * own detail page under /careers. One active, one evergreen.
  */
 export async function seedAnnouncements() {
 	const announcementPosts: {
 		slug: string;
 		deadline: string | null;
-		link: string | null;
 		title: { en: string; km: string };
 		excerpt: { en: string; km: string };
+		body: { en: string[]; km: string[] };
 	}[] = [
 		{
 			slug: "public-bidding-invitation-2026",
 			deadline: "2026-12-15",
-			link: "/opportunities/careers",
 			title: {
 				en: "Public Bidding Invitation now open",
 				km: "ការអញ្ជើញដេញថ្លៃជាសាធារណៈបើកហើយ",
@@ -996,11 +996,22 @@ export async function seedAnnouncements() {
 				en: "Deadline: 15 December 2026 · Click to read the full notice.",
 				km: "ផុតកំណត់៖ ១៥ ធ្នូ ២០២៦ · ចុចដើម្បីអានសេចក្តីជូនដំណឹងពេញលេញ។",
 			},
+			body: {
+				en: [
+					"KAPE invites qualified suppliers to bid for the supply and delivery of school furniture, library materials and ICT equipment to partner schools in Kampong Cham, Kratie and Siem Reap.",
+					"Bid documents may be collected at the KAPE head office, National Road 7, Kampong Cham Town, during working hours. Sealed bids must reach the office no later than 15 December 2026.",
+					"Enquiries: 042-941-481 / 042-941-918 or kape@kapekh.org.",
+				],
+				km: [
+					"ខេប សូមអញ្ជើញអ្នកផ្គត់ផ្គង់ដែលមានលក្ខណៈសម្បត្តិគ្រប់គ្រាន់ ដេញថ្លៃផ្គត់ផ្គង់គ្រឿងសង្ហារឹមសាលារៀន សម្ភារៈបណ្ណាល័យ និងបរិក្ខារ ICT ជូនសាលាដៃគូនៅកំពង់ចាម ក្រចេះ និងសៀមរាប។",
+					"ឯកសារដេញថ្លៃអាចទទួលយកបាននៅការិយាល័យកណ្តាល ខេប ផ្លូវជាតិលេខ ៧ ក្រុងកំពង់ចាម ក្នុងម៉ោងធ្វើការ។ ការដេញថ្លៃបិទជិតត្រូវដល់ការិយាល័យមិនលើសពីថ្ងៃទី ១៥ ខែធ្នូ ឆ្នាំ ២០២៦។",
+					"ព័ត៌មានបន្ថែម៖ ០៤២-៩៤១-៤៨១ / ០៤២-៩៤១-៩១៨ ឬ kape@kapekh.org។",
+				],
+			},
 		},
 		{
 			slug: "where-every-cambodian-child-learns",
 			deadline: null,
-			link: null,
 			title: {
 				en: "Where every Cambodian child learns",
 				km: "កន្លែងដែលកុមារកម្ពុជាគ្រប់រូបរៀន",
@@ -1008,6 +1019,16 @@ export async function seedAnnouncements() {
 			excerpt: {
 				en: "For more than thirty years, KAPE has walked alongside Cambodia's children.",
 				km: "ជាង៣០ឆ្នាំមកហើយ ខេបបានដើររួមជាមួយកុមារកម្ពុជា។",
+			},
+			body: {
+				en: [
+					"KAPE works at every level of formal education across 15 provinces of Cambodia — from preschools and primary classrooms to secondary schools, tertiary programs and a Master's Degree in Mentoring.",
+					"Direct beneficiaries number well over 160,000 children at more than 385 schools, supported by 1,300 teachers and principals.",
+				],
+				km: [
+					"ខេប ធ្វើការនៅគ្រប់កម្រិតនៃការអប់រំផ្លូវការ នៅទូទាំង ១៥ ខេត្តនៃប្រទេសកម្ពុជា ចាប់ពីសាលាមត្តេយ្យ និងថ្នាក់បឋមសិក្សា រហូតដល់មធ្យមសិក្សា កម្មវិធីឧត្តមសិក្សា និងបរិញ្ញាបត្រជាន់ខ្ពស់ផ្នែកការណែនាំ។",
+					"អ្នកទទួលផលផ្ទាល់មានជាង ១៦០,០០០ នាក់ នៅសាលាជាង ៣៨៥ កន្លែង ដោយមានការគាំទ្រពីគ្រូបង្រៀន និងនាយកសាលាចំនួន ១,៣០០ នាក់។",
+				],
 			},
 		},
 	];
@@ -1020,12 +1041,13 @@ export async function seedAnnouncements() {
 				slug: a.slug,
 				status: "published",
 				publishedAt: "2026-06-01",
-				meta: { deadline: a.deadline, link: a.link },
+				meta: { deadline: a.deadline },
 			})
 			.returning({ id: posts.id });
 		await addTranslations("post", row.id, {
 			title: a.title,
 			excerpt: a.excerpt,
+			body: { en: docParas(a.body.en), km: docParas(a.body.km) },
 		});
 	}
 }

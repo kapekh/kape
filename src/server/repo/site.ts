@@ -1,4 +1,5 @@
 import { and, asc, eq, sql } from "drizzle-orm";
+import { COLLECTIONS, collectionHref } from "#/lib/collections";
 
 import type { DB } from "../db";
 import {
@@ -78,11 +79,17 @@ export async function listHeroSlides(db: DB, lang: string) {
 /**
  * The homepage pop-up: announcements are `posts` of type `announcement`. Every
  * notice still open is returned — deadline ones soonest first, then evergreen
- * ones newest first. Past-deadline announcements are hidden.
+ * ones newest first. Past-deadline announcements are hidden. Each one links to
+ * its own detail page under /careers.
  */
 export async function listActiveAnnouncements(db: DB, lang: string) {
 	const rows = await db
-		.select({ id: posts.id, meta: posts.meta, publishedAt: posts.publishedAt })
+		.select({
+			id: posts.id,
+			slug: posts.slug,
+			meta: posts.meta,
+			publishedAt: posts.publishedAt,
+		})
 		.from(posts)
 		.where(
 			and(
@@ -96,8 +103,8 @@ export async function listActiveAnnouncements(db: DB, lang: string) {
 		const m = (r.meta ?? {}) as Record<string, unknown>;
 		return {
 			id: r.id,
+			slug: r.slug,
 			deadline: String(m.deadline ?? ""),
-			link: String(m.link ?? ""),
 			publishedAt: r.publishedAt ?? "",
 		};
 	});
@@ -118,7 +125,11 @@ export async function listActiveAnnouncements(db: DB, lang: string) {
 		id: r.id,
 		title: f.get(r.id)?.title ?? "",
 		message: f.get(r.id)?.excerpt ?? "",
-		linkUrl: r.link || null,
+		// no body, nothing to read — a read-more onto a bare headline is worse
+		// than no read-more at all
+		linkUrl: f.get(r.id)?.body
+			? collectionHref(COLLECTIONS.careers.prefix, r.slug)
+			: null,
 		deadline: r.deadline || null,
 		hasDeadline: Boolean(r.deadline),
 	}));

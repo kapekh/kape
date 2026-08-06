@@ -114,12 +114,6 @@ const META_FIELDS: Record<string, MetaField[]> = {
 			label: "Deadline (optional — hides the card after this date)",
 			kind: "date",
 		},
-		{
-			key: "link",
-			label: "Link URL (optional)",
-			kind: "url",
-			placeholder: "/opportunities/careers",
-		},
 	],
 };
 

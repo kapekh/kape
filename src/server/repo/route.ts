@@ -11,7 +11,7 @@ import { alias } from "drizzle-orm/sqlite-core";
 import {
 	collectionFor,
 	legacyRedirect,
-	NON_PUBLIC_CONTENT_TYPES,
+	resolvesUnder,
 } from "#/lib/collections";
 
 import type { DB } from "../db";
@@ -109,11 +109,7 @@ export async function resolveRoute(
 				if (person) return { kind: "person", label: col.label, person };
 			} else {
 				const post = await getPostBySlug(db, rest, lang);
-				if (
-					post &&
-					post.contentType === col.contentType &&
-					!NON_PUBLIC_CONTENT_TYPES.has(post.contentType)
-				) {
+				if (post && resolvesUnder(col, post.contentType)) {
 					return { kind: "article", label: col.label, post };
 				}
 			}

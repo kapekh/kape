@@ -7,7 +7,7 @@ const ROWS = [
 		id: 25,
 		title: "Bidding closes Friday",
 		message: "",
-		linkUrl: null,
+		linkUrl: "/careers/public-bidding-invitation-2026",
 		deadline: "2099-01-01",
 		hasDeadline: true,
 	},
@@ -15,7 +15,7 @@ const ROWS = [
 		id: 26,
 		title: "M&E Officer wanted",
 		message: "",
-		linkUrl: null,
+		linkUrl: "/careers/job-me-officer",
 		deadline: "2099-02-01",
 		hasDeadline: true,
 	},
@@ -31,7 +31,7 @@ vi.mock("#/integrations/tanstack-query/root-provider", () => ({
 							id: 25,
 							title: "Bidding closes Friday",
 							message: "",
-							linkUrl: null,
+							linkUrl: "/careers/public-bidding-invitation-2026",
 							deadline: "2099-01-01",
 							hasDeadline: true,
 						},
@@ -39,7 +39,7 @@ vi.mock("#/integrations/tanstack-query/root-provider", () => ({
 							id: 26,
 							title: "M&E Officer wanted",
 							message: "",
-							linkUrl: null,
+							linkUrl: "/careers/job-me-officer",
 							deadline: "2099-02-01",
 							hasDeadline: true,
 						},
@@ -105,6 +105,14 @@ describe("announcement dismissal", () => {
 		});
 
 		expect(dismissed().sort()).toEqual([ROWS[0].id, ROWS[1].id]);
+	});
+
+	it("points read-more at the notice's own detail page", async () => {
+		await mount();
+		const link = screen.getByText(/Read more/).closest("a");
+		expect(link?.getAttribute("href")).toBe(
+			"/en/careers/public-bidding-invitation-2026",
+		);
 	});
 
 	it("shows nothing once every notice is dismissed", async () => {
