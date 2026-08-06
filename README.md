@@ -42,6 +42,25 @@ any deploy:
 - **`DATABASE_PATH`** — use an **absolute** path in production so the DB file (and
   login sessions) survive restarts.
 
+#### Running behind a proxy
+
+Login and form rate limits key on the client address.
+By default that is the socket peer address, which a caller cannot forge, and every proxy header is ignored.
+
+If you put a reverse proxy or CDN in front, set **`TRUSTED_PROXY_HEADER`** to the header it sets (`cf-connecting-ip` for Cloudflare, `x-forwarded-for` for nginx, Caddy or Traefik).
+Otherwise every request looks like it comes from the proxy and your whole user base shares one rate-limit bucket, which shows up as logins and contact-form posts failing for everyone at once.
+In production the app logs a warning when it sees this.
+
+The value is read as the **rightmost** entry in the header.
+`x-forwarded-for` is a chain, and appending proxies - Caddy, Traefik, and nginx's usual `$proxy_add_x_forwarded_for` - produce `<what the caller sent>, <real client>`.
+The rightmost entry is the one your nearest proxy appended and the only one a caller cannot forge; single-value headers like `cf-connecting-ip` are unaffected.
+
+The one condition: the app must not be reachable around the proxy.
+If it is, an attacker can hit it directly and set the header themselves, which buys unlimited password guesses or lets them throttle someone else's address.
+Bind the app to localhost or an internal network and let only the proxy reach it.
+
+Leave the variable empty for the default `docker compose up` deployment, which publishes the port directly with nothing in front.
+
 Optional integrations, each degrades gracefully when unset:
 
 | Vars | Enables | Fallback when unset |

@@ -17,6 +17,20 @@ const envSchema = z.object({
 	// constant across restarts — otherwise existing logins are invalidated.
 	AUTH_SECRET: z.string().min(16).default(INSECURE_DEFAULT_SECRET),
 
+	// Name of the proxy header carrying the real client IP (e.g. "cf-connecting-ip"
+	// or "x-forwarded-for"). Rate limiting keys on the client address, and any such
+	// header is caller-controlled, so it is honoured ONLY when set here — meaning
+	// the operator declares a proxy sits in front and the app is not reachable
+	// directly. Unset (the default) uses the socket peer address and ignores all
+	// proxy headers.
+	TRUSTED_PROXY_HEADER: z
+		.string()
+		.trim()
+		.toLowerCase()
+		.min(1)
+		.optional()
+		.catch(undefined),
+
 	// Cloudflare R2 (S3-compatible). Optional in dev; required to use storage.
 	R2_ACCOUNT_ID: z.string().optional(),
 	R2_ACCESS_KEY_ID: z.string().optional(),
