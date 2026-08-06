@@ -2,20 +2,48 @@ import {
 	createFileRoute,
 	Link,
 	Outlet,
+	redirect,
 	useNavigate,
 	useRouterState,
 } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
+import { getCookie } from "@tanstack/react-start/server";
 import { ChevronDown } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { AdminHeaderProvider } from "#/components/admin/AdminHeader";
 import { AdminIcon } from "#/components/admin/AdminIcon";
 import { ThemeToggle } from "#/components/ThemeToggle";
-import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { NAV_AREA } from "#/lib/permissions";
+import { SESSION_COOKIE, validateToken } from "#/server/auth";
+import { db } from "#/server/db";
+import { resolvePermissions } from "#/server/repo/roles";
+
+// Server-side gate for the admin shell. Runs during SSR so an unauthenticated
+// request is redirected before any admin HTML is generated, instead of shipping
+// the shell and checking in the browser.
+const resolveAdminAccess = createServerFn({ method: "GET" }).handler(
+	async () => {
+		const auth = await validateToken(db, getCookie(SESSION_COOKIE));
+		if (!auth) return null;
+		const perms = await resolvePermissions(db, auth.user.role);
+		if (!perms.isSuperAdmin && perms.permissions.length === 0) return null;
+		return {
+			email: auth.user.email,
+			role: auth.user.role,
+			isSuperAdmin: perms.isSuperAdmin,
+			permissions: perms.permissions,
+		};
+	},
+);
 
 export const Route = createFileRoute("/admin")({
 	head: () => ({ meta: [{ title: "KAPE Admin" }] }),
+	beforeLoad: async () => {
+		const access = await resolveAdminAccess();
+		if (!access) throw redirect({ to: "/login" });
+		return { access };
+	},
 	component: AdminLayout,
 });
 
@@ -141,16 +169,16 @@ const NAV: NavGroup[] = [
 ];
 
 /**
- * Admin layout + client-side auth guard. The admin is client-rendered: it calls
- * tRPC via the browser (cookies sent automatically), so no SSR-auth plumbing.
+ * Admin layout. Access is enforced server-side in the route's `beforeLoad`, so
+ * the identity is already resolved by the time this renders.
  */
 function AdminLayout() {
 	const navigate = useNavigate();
-	const [ready, setReady] = useState(false);
-	const [email, setEmail] = useState("");
-	const [roleLabel, setRoleLabel] = useState("Administrator");
-	const [isSuper, setIsSuper] = useState(false);
-	const [perms, setPerms] = useState<Set<string>>(new Set());
+	const { access } = Route.useRouteContext();
+	const email = access.email;
+	const isSuper = access.isSuperAdmin;
+	const roleLabel = isSuper ? "Administrator" : access.role.replace(/_/g, " ");
+	const perms = new Set(access.permissions);
 	const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
 	// Full-bleed "studio" chrome (no padding / max-width) for the page builder.
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -186,45 +214,9 @@ function AdminLayout() {
 			return next;
 		});
 
-	useEffect(() => {
-		let alive = true;
-		trpcClient.auth.me
-			.query()
-			.then((u) => {
-				if (!alive) return;
-				// Access requires the super-admin role or at least one granted area.
-				if (u && (u.isSuperAdmin || u.permissions.length > 0)) {
-					setEmail(u.email);
-					setIsSuper(u.isSuperAdmin);
-					setPerms(new Set(u.permissions));
-					setRoleLabel(
-						u.isSuperAdmin ? "Administrator" : u.role.replace(/_/g, " "),
-					);
-					setReady(true);
-				} else {
-					navigate({ to: "/login" });
-				}
-			})
-			.catch(() => navigate({ to: "/login" }));
-		return () => {
-			alive = false;
-		};
-	}, [navigate]);
-
 	async function logout() {
 		await fetch("/api/auth/logout", { method: "POST" });
 		navigate({ to: "/login" });
-	}
-
-	if (!ready) {
-		return (
-			<div className="min-h-screen grid place-items-center bg-background text-muted-foreground">
-				<div className="flex items-center gap-3 text-sm">
-					<span className="h-4 w-4 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
-					Checking access…
-				</div>
-			</div>
-		);
 	}
 
 	// Show an item if it has no area mapping (e.g. Dashboard) or the user holds its area.
