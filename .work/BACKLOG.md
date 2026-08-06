@@ -50,9 +50,16 @@ errors in the files you own**.
 | J20 | UX flow audit of the live client site | — | `.work/UX-AUDIT.md`, `.work/ux-shots/` | **done** `8b09f2f` | anything |
 | J21 | Five visitor-visible defects, from J20 | F04 F14 F23 F27 F40 | `src/components/Header.tsx`, `src/integrations/trpc/router.ts`, `src/lib/i18n-config.ts`, `src/routes/$.tsx`, `src/routes/$lang.*` | **done**; F04 rode with J05 `1fdf941` | nothing |
 | J19 | Import the real imagery | — | `scripts/import-lovable-assets.ts`, `src/server/seed/media.ts` | **dropped** — see below | J16 J17 J18 |
+| J22 | Mega menu design | M1-M5 | `src/components/Header.tsx`, `src/components/NavLink.tsx` | ready | J23 |
+| J23 | Upload + admin CRUD, exercised | — | `.work/j23-report.md`, `src/routes/admin.media.tsx`, `src/routes/api.media.$.tsx`, `src/server/storage.ts`, `src/components/admin/Media*.tsx` | ready | J22 |
 
 `src/server/schema.ts` and `drizzle/` are contended by J02, J09, J10. All three are done; the
 migration lane is free at `0016`.
+
+J22 and J23 pair because their file lists are disjoint, but they share one thing neither owns:
+`kape.db`. J23 writes to it and J22's mega tiles read from it, so **neither job may reseed**. Both
+job files say so under stop conditions. Baseline re-verified 2026-08-06 16:45 — 31 tests over 8
+files, `tsc` silent, `format` clean.
 
 **Acceptance B is now done for all three content jobs.** J18's worker ran its own; J16's and J17's
 were run by the orchestrator on 2026-08-04 after the permission classifier denied both workers the
