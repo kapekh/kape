@@ -40,6 +40,7 @@ import {
 	seedVideos,
 } from "./seed/records";
 import { seedOffices, seedSiteSettings, seedStats } from "./seed/site";
+import { seedRoles } from "./seed/roles";
 import { seedAdminUser, seedStaffUser } from "./seed/users";
 
 export { MEDIA_GROUPS, NAV_META } from "./seed/nav";
@@ -69,6 +70,8 @@ async function main() {
 	await seedEvents();
 	await seedDocuments();
 	await seedStaffRoster();
+	// Roles before users: a user's `role` column points at a role key.
+	await seedRoles(db);
 	await seedStaffUser();
 
 	// ---- Structured entities (replace hardcoded UI content) ----
