@@ -29,16 +29,38 @@ needs no component edit. Domain features are modules an install enables.
 | C7-critic | subagent | verified | 9 defects, `.work/c7-critic-r1.md`. Every finding re-run here; all confirmed. 2 fixed in C7, the rest are C8 |
 | C8 settings-page-truth | pane | **verified, committed `029bc26`** | all seven clauses re-run here. 256 tests / 22 files, `tsc` silent, format clean over 247. KAPE byte-identical over its real fixture. Mutation-tested here, not taken on trust |
 | J22 mega-menu-design | pane | **verified no-op, spent** | contract was stale. Re-checked here in the source and the pixels: none of M1-M5 exist any more. Zero source lines changed. `.work/j22-report.md` |
-| J23 upload-crud-check | pane | **live** | - |
+| J23 upload-crud-check | pane | **verified, committed `29a23ab`** | its one fix is four lines in a file it owned. Gates re-run here: 256 tests / 22 files, `tsc` silent, format clean. Repo `kape.db` untouched, checked through a connection. Its standing finding confirmed here in the code |
 | C9 debrand-leftovers | - | ready, queued | - |
 | J12 lint-pass | - | queued, runs alone | - |
 
 ## Live now
 
-One pane. **J23**, `.work/jobs/J23-upload-crud-check.md`. Owns `src/routes/admin.media.tsx`,
-`src/routes/api.media.$.tsx`, `src/server/storage.ts`, `src/components/admin/Media*.tsx`. Told
-explicitly that `router.ts` is C8's, so a media defect in a tRPC procedure is a finding for its
-report rather than a fix. Must not reseed `kape.db`.
+Nothing dispatched. C9 is next; its contract is re-checked against current source and still accurate,
+but it opens with a question only Rithy can answer.
+
+## J23's finding, confirmed here in the code
+
+**Deleting a media item that a rich text body or a page section embeds is silent data loss.**
+`adminMediaUsage` (`server/repo/admin.ts:1204`) iterates `MEDIA_REFS` and nothing else, and
+`MEDIA_REFS` is a list of foreign-key columns: post cover, post gallery, page hero and the rest.
+An image referenced only as a URL inside `pages.sections` JSON or a rich text body is invisible to
+it. So the confirm dialog reports no usage, `deleteMedia` clears the refs, drops the row and
+unlinks the file, and the live page keeps a URL that now 404s.
+
+Confirmed by reading the query rather than by trusting the screenshots, and J23's own control
+proves the boundary: the same image as a post cover produced the full "still used in 1 place"
+warning from the same dialog.
+
+**The fix belongs in `adminMediaUsage`, which J23 did not own.** It needs to scan rich text and
+section JSON for the URL, not only follow foreign keys.
+
+**J23 retracted its own second finding** after failing to reproduce it three ways, and traced its
+error to a fix that landed in `e54d5b6` on 2026-08-06. A worker correcting itself before the lead
+does is the loop working.
+
+**Unsubmitted text was sitting in J23's pane input: "hand the rich-text usage scan to C8".** Not
+typed by this lead and not confirmed by Rithy, so it was left unsent and is recorded here rather
+than acted on. C8's pane is finished in any case.
 
 ## How C8 was verified
 
@@ -138,8 +160,10 @@ Two things C8 carries that were nobody's job before:
 
 ## Open, owned by nobody yet
 
+- **Media usage does not see rich text or section JSON**, so deleting an embedded image breaks the
+  live page with no warning and unlinks the bytes. Data loss. Highest severity open.
 - **No regression gate on the server-side settings check.** Needs an in-process tRPC caller in a
-  test. Highest-value item on this list, because it guards the trust boundary.
+  test. Both this and the item above live in files a single job should own together.
 - **The grid's row Save has no error path.** `save(key, value)` in `admin.settings.tsx` awaits the
   mutation with nothing around it; C8 measured an unhandled rejection and nothing on screen. Same
   defect it just fixed one section higher up the same page.
