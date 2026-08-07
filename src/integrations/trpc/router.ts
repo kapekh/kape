@@ -12,6 +12,7 @@ import {
 	type PermissionArea,
 } from "#/lib/permissions";
 import type { SectionNode } from "#/lib/sections";
+import { checkSettingValue } from "#/lib/site-theme";
 import type { DB } from "#/server/db";
 import { invalidateTags, tagSourceQuery } from "#/server/render-cache";
 import type { PageInput } from "#/server/repo/admin";
@@ -918,9 +919,15 @@ const adminSettingsRouter = {
 	list: adminProcedure.query(({ ctx }) => adminListSettings(ctx.db)),
 	set: adminProcedure
 		.input(z.object({ key: z.string(), value: z.string() }))
-		.mutation(({ ctx, input }) =>
-			upsertSetting(ctx.db, input.key, input.value),
-		),
+		.mutation(({ ctx, input }) => {
+			// A theme value that CSS cannot parse blanks the token derived from it
+			// and everything derived from that, so it is refused rather than stored
+			// and stepped over on the way out.
+			const problem = checkSettingValue(input.key, input.value);
+			if (problem)
+				throw new TRPCError({ code: "BAD_REQUEST", message: problem });
+			return upsertSetting(ctx.db, input.key, input.value);
+		}),
 	delete: adminProcedure
 		.input(z.object({ key: z.string() }))
 		.mutation(({ ctx, input }) => deleteSetting(ctx.db, input.key)),

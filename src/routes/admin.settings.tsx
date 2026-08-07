@@ -10,7 +10,8 @@ import {
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import {
 	checkThemeValue,
-	colourToHex,
+	type ColourReach,
+	colourReach,
 	THEME_FIELDS,
 	themeContrast,
 	type ThemeKind,
@@ -146,8 +147,8 @@ function Fields({
 						/>
 						{problem ? (
 							<p className="mt-1 text-xs font-medium text-destructive">
-								{problem} Saved as it is, this field is ignored and the rest of
-								the theme still applies.
+								{problem} Until that is fixed, or the field is cleared, this one
+								is not sent and not saved.
 							</p>
 						) : (
 							<p className="mt-1 text-xs text-muted-foreground">
@@ -174,13 +175,31 @@ function Fields({
 	);
 }
 
+/**
+ * What each accepted colour actually does, for the three groups that need
+ * saying differently. Only `theme_primary` reaches browser chrome, so only it
+ * gets that clause.
+ */
+const REACH: Record<ColourReach, string> = {
+	invisible:
+		"paints nothing at all. Every heading, button and panel drawn in it comes out invisible. Clear the field to fall back to the product's own colour.",
+	inherited:
+		"has no colour of its own here. A :root custom property has nothing to inherit from, so it lands as whatever text colour happens to be in force rather than as a brand colour.",
+	unconvertible:
+		"paints, but has no one sRGB value, so there is no legibility figure for it above.",
+};
+const CHROME_FALLBACK =
+	"The browser's own title bar and the installed-app icon need a hex, oklch(), rgb() or hsl() colour, so both fall back to the product's default.";
+
 /** What the site will write on each brand colour, and where that will not read. */
 function Contrast({ values }: { values: Record<string, string> }) {
 	const measured = themeContrast(values);
-	const primary = (values.theme_primary ?? "").trim();
-	const unconvertible =
-		primary && !checkThemeValue("colour", primary) && !colourToHex(primary);
-	if (!measured.length && !unconvertible) return null;
+	const caveats = BRAND.flatMap((field) => {
+		const value = (values[field.key] ?? "").trim();
+		const reach = field.kind === "colour" ? colourReach(value) : null;
+		return reach ? [{ field, value, reach }] : [];
+	});
+	if (!measured.length && !caveats.length) return null;
 	return (
 		<div className="mt-5 space-y-2 border-t border-border pt-4">
 			<p className={fieldLabel}>Legibility</p>
@@ -197,12 +216,79 @@ function Contrast({ values }: { values: Record<string, string> }) {
 							: ""}
 				</p>
 			))}
-			{unconvertible && (
-				<p className="text-xs text-destructive">
-					The browser's own title bar and the installed-app icon need a hex,
-					oklch(), rgb() or hsl() colour. This one is used on the page, but
-					those two fall back to the product's default.
+			{caveats.map(({ field, value, reach }) => (
+				<p
+					key={field.key}
+					className={`text-xs ${reach === "invisible" ? "text-destructive" : "text-muted-foreground"}`}
+				>
+					{field.label}: <span className="font-mono">{value}</span>{" "}
+					{REACH[reach]}
+					{field.key === "theme_primary" ? ` ${CHROME_FALLBACK}` : ""}
 				</p>
+			))}
+		</div>
+	);
+}
+
+/**
+ * tRPC sends the code as the whole message when the throw site gives no text,
+ * so a session that ended after the admin shell let the page through arrives
+ * here as the bare word. Try again re-issues the same unauthenticated request
+ * for ever, which is the dead button this screen used to offer.
+ */
+const SESSION_OVER = "UNAUTHORIZED";
+
+function readFailureSentence(error: string, firstLoad: boolean) {
+	if (error === SESSION_OVER)
+		return firstLoad
+			? "Your session has ended, so this site's settings could not be read. Sign in again to load them."
+			: "Your session has ended, so the stored values could not be re-read. Everything on screen is still here, but nothing will save until you sign in again.";
+	return firstLoad
+		? `This site's settings could not be read, so nothing here can be changed yet: ${error}`
+		: `The stored values could not be re-read, so what is on screen may be out of date: ${error}`;
+}
+
+/**
+ * A failed read of the settings list. On the first one there is genuinely
+ * nothing to show and nothing to type into, so it stands in for the page. Once
+ * the page has loaded it is a banner over the form instead: the drafts are
+ * still in React state, and replacing the form with a message saying the
+ * settings could not be read is how an operator loses an edit to the reload
+ * that message invites.
+ */
+function ReadError({
+	error,
+	firstLoad,
+	onRetry,
+}: {
+	error: string;
+	firstLoad: boolean;
+	onRetry: () => void;
+}) {
+	const signedOut = error === SESSION_OVER;
+	const button =
+		"rounded-full border border-border px-4 py-2 text-sm font-semibold hover:bg-muted transition";
+	return (
+		<div
+			className={`space-y-3 ${firstLoad ? "rounded-xl border border-border bg-card p-5" : "rounded-xl border border-destructive/40 bg-destructive/5 p-4"}`}
+		>
+			<p className="text-sm text-destructive">
+				{readFailureSentence(error, firstLoad)}
+			</p>
+			{!firstLoad && !signedOut && (
+				<p className="text-sm text-muted-foreground">
+					Nothing you have typed has been lost. Try again to reload the stored
+					values, or carry on editing and save.
+				</p>
+			)}
+			{signedOut ? (
+				<a href="/login" className={`inline-block ${button}`}>
+					Sign in again
+				</a>
+			) : (
+				<button type="button" onClick={onRetry} className={button}>
+					Try again
+				</button>
 			)}
 		</div>
 	);
@@ -216,8 +302,12 @@ function SettingsAdmin() {
 	const [saved, setSaved] = useState<Record<string, string> | null>(null);
 	const [draft, setDraft] = useState<Draft>({});
 	const [error, setError] = useState<string | null>(null);
-	const [status, setStatus] = useState("");
+	// Which section the outcome belongs to. Both sections used to read one string,
+	// so saving Brand put "1 not sent: fix what is marked above" under Save
+	// identity as well, pointing at fields that were never touched.
+	const [status, setStatus] = useState({ of: "", text: "" });
 	const [add, setAdd] = useState({ key: "", value: "" });
+	const [addError, setAddError] = useState<string | null>(null);
 	const loading = !saved;
 
 	/**
@@ -250,22 +340,33 @@ function SettingsAdmin() {
 			);
 	}, []);
 
-	async function saveDraft(fields: Field[]) {
+	async function saveDraft(fields: Field[], section: string) {
+		const say = (text: string) => setStatus({ of: section, text });
 		const mine = fields.filter((f) => f.key in draft);
+		// A value the field has already marked wrong is never sent. The procedure
+		// refuses it as well, so the round trip could only come back saying what is
+		// already on screen, in the server's words rather than the field's.
+		const send = mine.filter(
+			(f) => !f.kind || !checkThemeValue(f.kind, draft[f.key]),
+		);
+		const held = mine.length - send.length;
+		const marked = held
+			? ` ${held} not sent: fix what is marked above, or clear the field.`
+			: "";
 		const done: string[] = [];
 		try {
-			for (const f of mine) {
+			for (const f of send) {
 				const value = draft[f.key];
 				await trpcClient.adminSettings.set.mutate({ key: f.key, value });
 				done.push(f.key);
 				setSaved((s) => ({ ...s, [f.key]: value }));
 			}
-			setStatus(
-				`Saved ${done.length} ${done.length === 1 ? "field" : "fields"}.`,
+			say(
+				`Saved ${done.length} ${done.length === 1 ? "field" : "fields"}.${marked}`,
 			);
 		} catch (err) {
-			setStatus(
-				`Saved ${done.length} of ${mine.length}; ${mine.length - done.length} still unsaved. ${err instanceof Error ? err.message : "The server refused the change."}`,
+			say(
+				`Saved ${done.length} of ${send.length}; ${send.length - done.length} still unsaved. ${err instanceof Error ? err.message : "The server refused the change."}${marked}`,
 			);
 		}
 		setDraft((d) => {
@@ -283,10 +384,18 @@ function SettingsAdmin() {
 	}
 	async function create() {
 		if (!add.key.trim()) return;
-		await trpcClient.adminSettings.set.mutate({
-			key: add.key.trim(),
-			value: add.value,
-		});
+		setAddError(null);
+		try {
+			await trpcClient.adminSettings.set.mutate({
+				key: add.key.trim(),
+				value: add.value,
+			});
+		} catch (err) {
+			setAddError(
+				err instanceof Error ? err.message : "The server refused the change.",
+			);
+			return;
+		}
 		setAdd({ key: "", value: "" });
 		refresh();
 	}
@@ -314,37 +423,21 @@ function SettingsAdmin() {
 		</div>
 	);
 
-	// Every section on this page reads the same one query, so a failure leaves
-	// nothing to show and nothing to type into. Keeping the form up with its
+	// Every section reads the same one query, so until it has answered once there
+	// is nothing to show and nothing to type into. Keeping the form up with its
 	// fields readOnly is how this screen used to sit there looking busy for ever.
-	if (error)
+	if (error && !saved)
 		return (
 			<div className="max-w-3xl space-y-5">
 				{heading}
-				<FormSection
-					title="Site identity"
-					description="Page titles, search results, social cards and the structured data search engines read all come from these."
-				>
-					<div className="space-y-3">
-						<p className="text-sm text-destructive">
-							This site's settings could not be read, so nothing here can be
-							changed yet: {error}
-						</p>
-						<button
-							type="button"
-							onClick={refresh}
-							className="rounded-full border border-border px-4 py-2 text-sm font-semibold hover:bg-muted transition"
-						>
-							Try again
-						</button>
-					</div>
-				</FormSection>
+				<ReadError error={error} firstLoad onRetry={refresh} />
 			</div>
 		);
 
 	return (
 		<div className="max-w-3xl space-y-5">
 			{heading}
+			{error && <ReadError error={error} firstLoad={false} onRetry={refresh} />}
 
 			<FormSection
 				title="Site identity"
@@ -355,9 +448,9 @@ function SettingsAdmin() {
 					saved={saved ?? {}}
 					draft={draft}
 					setDraft={setDraft}
-					onSave={() => saveDraft([...IDENTITY, ...LOCATION])}
+					onSave={() => saveDraft([...IDENTITY, ...LOCATION], "identity")}
 					saveLabel="Save identity"
-					status={status}
+					status={status.of === "identity" ? status.text : ""}
 					loading={loading}
 				/>
 			</FormSection>
@@ -371,9 +464,9 @@ function SettingsAdmin() {
 					saved={saved ?? {}}
 					draft={draft}
 					setDraft={setDraft}
-					onSave={() => saveDraft(BRAND)}
+					onSave={() => saveDraft(BRAND, "brand")}
 					saveLabel="Save brand"
-					status={status}
+					status={status.of === "brand" ? status.text : ""}
 					loading={loading}
 				/>
 				<Contrast values={brandValues} />
@@ -411,6 +504,13 @@ function SettingsAdmin() {
 						Add
 					</button>
 				</div>
+				{addError && (
+					<p className="mt-3 text-sm text-destructive">
+						{addError === SESSION_OVER
+							? "Your session has ended, so this setting was not added. Sign in again, then add it."
+							: `This setting was not added: ${addError}`}
+					</p>
+				)}
 			</FormSection>
 
 			<div className="overflow-hidden rounded-xl border border-border bg-card">

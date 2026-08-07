@@ -3,7 +3,9 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import {
+	checkSettingValue,
 	checkThemeValue,
+	colourReach,
 	colourToHex,
 	contrastRatio,
 	DARK_LIFT,
@@ -29,6 +31,23 @@ const NAMED_TABLE = (() => {
 	const block = /const NAMED_COLOURS = new Map\(\n\t`([^`]+)`/.exec(src);
 	if (!block) throw new Error("the named-colour table moved");
 	return block[1].split("\n").map((l) => l.split(" ") as [string, string]);
+})();
+
+/**
+ * The example site's palette, read out of the seed rather than copied into the
+ * test, so a re-skin of the fixture cannot quietly stop being covered by the
+ * check that now runs on the way into the database.
+ */
+const FIXTURE: Record<string, string> = (() => {
+	const src = readFileSync(
+		new URL("../server/seed/site.ts", import.meta.url),
+		"utf8",
+	);
+	const found = Object.fromEntries(
+		[...src.matchAll(/\b(theme_[a-z_]+): "([^"]*)"/g)].map((m) => [m[1], m[2]]),
+	);
+	if (Object.keys(found).length < 10) throw new Error("the seed palette moved");
+	return found;
 })();
 
 describe("the named-colour table", () => {
@@ -347,11 +366,54 @@ describe("colourToHex", () => {
 	});
 
 	// The alpha used to be read as the lightness, so a half-transparent brand
-	// colour came out near-black.
-	it("ignores a percentage alpha", () => {
-		expect(colourToHex("oklch(0.3 0.1 255 / 50%)")).toBe(
+	// colour came out near-black. It is not read as a colour either: what a
+	// translucent brand paints depends on what is behind it, so there is no one
+	// hex to report and the panel says that rather than measuring the opaque
+	// colour and calling the number a legibility ratio.
+	it("refuses to reduce a translucent colour to one hex", () => {
+		expect(colourToHex("oklch(0.3 0.1 255 / 50%)")).toBeNull();
+		expect(colourToHex("rgba(31, 78, 121, 0.5)")).toBeNull();
+		expect(colourToHex("rgb(31 78 121 / 50%)")).toBeNull();
+		expect(colourToHex("oklch(0.3 0.1 255 / 100%)")).toBe(
 			colourToHex("oklch(0.3 0.1 255)"),
 		);
+	});
+
+	// Diffed against Chrome's own parser through a canvas pixel: 28 accepted
+	// forms, every channel exact. These pin the four corners of that sweep, which
+	// is the only thing that can settle whether a colour-space transform is right.
+	it("reads the spaces the validator accepts but the panel used to skip", () => {
+		expect(colourToHex("lab(50% 20 -30)")).toBe("#856caa");
+		expect(colourToHex("lab(62% -35 45)")).toBe("#66a53f");
+		expect(colourToHex("lch(50% 40 30)")).toBe("#b25d57");
+		expect(colourToHex("lch(70% 50 200deg)")).toBe("#00c2c9");
+		expect(colourToHex("hwb(207 12% 40%)")).toBe("#1f6299");
+		expect(colourToHex("hwb(0deg 0% 0%)")).toBe("#ff0000");
+	});
+
+	// White and black wherever the two edges add up, rather than a hue.
+	it("reads an hwb whose white and black leave no room for the hue", () => {
+		expect(colourToHex("hwb(30 60% 60%)")).toBe("#808080");
+		expect(colourToHex("hwb(120 100% 0%)")).toBe("#ffffff");
+	});
+
+	// A chroma or an a/b written as a percentage used to produce "#NaNNaNNaN",
+	// which then went into <meta name="theme-color"> verbatim.
+	it("reads a chroma written as a percentage of its own scale", () => {
+		expect(colourToHex("oklch(0.5 50% 120)")).toBe(
+			colourToHex("oklch(0.5 0.2 120)"),
+		);
+		expect(colourToHex("oklab(0.5 25% -25%)")).toBe(
+			colourToHex("oklab(0.5 0.1 -0.1)"),
+		);
+		expect(colourToHex("lch(50% 26.6% 30)")).toBe("#b25d57");
+		expect(colourToHex("lab(50% 16% 24%)")).toBe(colourToHex("lab(50 20 30)"));
+		for (const v of [
+			"oklch(0.5 50% 120)",
+			"oklab(0.5 25% -25%)",
+			"lab(50% 16% 24%)",
+		])
+			expect(colourToHex(v), v).toMatch(/^#[0-9a-f]{6}$/);
 	});
 
 	it("reads the colour forms the field's own hint invites", () => {
@@ -364,8 +426,8 @@ describe("colourToHex", () => {
 
 	// A name the validator accepts has to be a name this can read, or theme-color
 	// and the legibility panel silently say nothing about a colour the page is
-	// painting. `transparent` and `currentColor` are the only two accepted
-	// colours with no fixed hex, and the form reports exactly those.
+	// painting. What is left with no fixed hex is exactly what `colourReach`
+	// classifies, and the form prints a different sentence for each group.
 	it("reads a colour typed by name", () => {
 		expect(colourToHex("rebeccapurple")).toBe("#663399");
 		expect(colourToHex("RebeccaPurple")).toBe("#663399");
@@ -379,6 +441,72 @@ describe("colourToHex", () => {
 
 	it("clips an out-of-gamut colour into sRGB", () => {
 		expect(colourToHex("oklch(0.7 0.4 140)")).toMatch(/^#[0-9a-f]{6}$/);
+	});
+});
+
+describe("colourReach", () => {
+	it("separates a colour that paints nothing from one that paints", () => {
+		expect(colourReach("transparent")).toBe("invisible");
+		expect(colourReach("TRANSPARENT")).toBe("invisible");
+		expect(colourReach("currentColor")).toBe("inherited");
+		expect(colourReach("currentcolor")).toBe("inherited");
+	});
+
+	it("marks a colour that paints but has no one sRGB value", () => {
+		for (const v of [
+			"color-mix(in oklab, red, blue)",
+			"light-dark(red, blue)",
+			"color(display-p3 1 0 0)",
+			"rgba(31, 78, 121, 0.5)",
+		])
+			expect(colourReach(v), v).toBe("unconvertible");
+	});
+
+	it("says nothing about a colour that needs no caveat", () => {
+		for (const v of [
+			"#1f4e79",
+			"navy",
+			"oklch(0.30 0.10 255)",
+			"lab(50% 20 -30)",
+			"lch(50% 40 30)",
+			"hwb(207 12% 40%)",
+			"hsl(207deg 59% 30%)",
+		])
+			expect(colourReach(v), v).toBeNull();
+	});
+
+	it("says nothing about a value the field has already rejected", () => {
+		expect(colourReach("banana")).toBeNull();
+		expect(colourReach("unset")).toBeNull();
+		expect(colourReach("  ")).toBeNull();
+	});
+});
+
+describe("checkSettingValue", () => {
+	it("refuses over the wire what the form refuses in the browser", () => {
+		expect(checkSettingValue("theme_primary", "banana")).toMatch(
+			/not one of the CSS colour names/,
+		);
+		expect(checkSettingValue("theme_paper_hue", "blue")).toMatch(
+			/Not a plain number/,
+		);
+		expect(checkSettingValue("theme_radius", "12")).toMatch(/Not a length/);
+		expect(checkSettingValue("theme_font_url", "http://x.test/f.css")).toMatch(
+			/https/,
+		);
+	});
+
+	it("passes every theme value the seed fixture stores", () => {
+		for (const [key, value] of Object.entries(FIXTURE))
+			expect(checkSettingValue(key, value), key).toBeNull();
+	});
+
+	// A settings grid is open-ended on purpose: contact_email and whatever else an
+	// install invents have no kind, and refusing them would break the page that
+	// creates them.
+	it("leaves a key with no theme kind alone", () => {
+		expect(checkSettingValue("contact_email", "hello@example.org")).toBeNull();
+		expect(checkSettingValue("site_name_en", "<script>")).toBeNull();
 	});
 });
 

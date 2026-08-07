@@ -514,6 +514,19 @@ export function checkThemeValue(kind: ThemeKind, raw: string): string | null {
 	return HTTPS_URL.test(v) ? null : "Must be an https:// stylesheet address.";
 }
 
+/**
+ * The same check, addressed by setting key instead of by kind, for the one
+ * caller that has only a key: the tRPC procedure. The form's copy of this runs
+ * in the browser and is what makes the error appear as you type, but a caller
+ * with a session and no browser reaches the database directly, so a value that
+ * would blank the site has to be refused here too. Keys with no `kind` are
+ * free-form and unconstrained.
+ */
+export function checkSettingValue(key: string, value: string): string | null {
+	const field = THEME_FIELDS.find((f) => f.key === key);
+	return field ? checkThemeValue(field.kind, value) : null;
+}
+
 const safeCssValue = (raw: string, kind: ThemeKind) =>
 	checkThemeValue(kind, raw) ? "" : raw.trim();
 
@@ -589,15 +602,24 @@ function hexToLab(hex: string): Lab {
 	};
 }
 
-/** The three channels of `fn(a b c)` or `fn(a, b, c)`, alpha dropped. */
+/**
+ * The three channels of `fn(a b c)`, `fn(a, b, c)` or either with a fourth
+ * alpha component. A colour that is not fully opaque returns null: what it
+ * paints depends on whatever is behind it, so there is no one sRGB value to
+ * report, and a ratio measured against the opaque colour would be a number the
+ * page never shows.
+ */
 function channels(colour: string) {
-	const parts = colour
+	const [body, slashed] = colour
 		.slice(colour.indexOf("(") + 1, colour.lastIndexOf(")"))
-		.split("/")[0]
+		.split("/");
+	const parts = body
 		.trim()
 		.split(/[\s,]+/)
 		.filter(Boolean);
-	return parts.length === 3 ? parts : null;
+	const alpha = parts.length === 4 ? parts.pop() : slashed?.trim();
+	if (parts.length !== 3) return null;
+	return alpha === undefined || scaled(alpha, 1) >= 1 ? parts : null;
 }
 
 /** A channel token, honouring its own `%` rather than the whole string's. */
@@ -606,6 +628,39 @@ const scaled = (t: string, full: number) =>
 
 /** A hue in degrees, written with or without the unit the validator allows. */
 const angle = (t: string) => Number(t.replace(/deg$/i, ""));
+
+/**
+ * CIE Lab, which `lab()` and `lch()` are written in, is not the OKLab above: it
+ * is referred to the D50 white point, so the matrix folds in the Bradford
+ * adaptation to D65 that CSS Color 4 specifies. Every constant was diffed
+ * against Chrome's own parser through a canvas pixel.
+ */
+const D50: readonly number[] = [
+	0.3457 / 0.3585,
+	1,
+	(1 - 0.3457 - 0.3585) / 0.3585,
+];
+function cieLabToHex(L: number, a: number, b: number) {
+	const fy = (L + 16) / 116;
+	const cube = (f: number) =>
+		f ** 3 > 216 / 24389 ? f ** 3 : (116 * f - 16) / 24389;
+	const [x, y, z] = [
+		cube(fy + a / 500) * D50[0],
+		(L > 8 ? fy ** 3 : L / (24389 / 27)) * D50[1],
+		cube(fy - b / 200) * D50[2],
+	];
+	return rgbToHex([
+		toGamma(
+			3.1341359569958707 * x - 1.6173863321612538 * y - 0.4906619460083532 * z,
+		),
+		toGamma(
+			-0.978795502912089 * x + 1.9161404718256863 * y + 0.03344273116131949 * z,
+		),
+		toGamma(
+			0.07195537988411677 * x - 0.2289768264158322 * y + 1.405386591160393 * z,
+		),
+	]);
+}
 
 function hslToRgb(h: number, s: number, l: number) {
 	const f = (n: number) => {
@@ -619,9 +674,9 @@ function hslToRgb(h: number, s: number, l: number) {
  * A CSS colour to an sRGB hex. `<meta name="theme-color">` and a web manifest
  * are read by browser chrome and by installers whose colour parsers are older
  * than the page engine's, so this is the one place the brand has to leave the
- * token system. `null` for a colour with no fixed sRGB value - `transparent`,
- * `currentColor` - which the settings form reports rather than silently
- * replacing.
+ * token system. `null` for anything with no one sRGB value - `transparent`,
+ * `currentColor`, a composite, a translucent colour - which the settings form
+ * reports rather than silently replacing. `colourReach` says which it is.
  */
 export function colourToHex(raw: string): string | null {
 	const colour = raw.trim().toLowerCase();
@@ -635,19 +690,58 @@ export function colourToHex(raw: string): string | null {
 	const fn = /^([a-z]+)\(/.exec(colour)?.[1];
 	const ch = fn && channels(colour);
 	if (!fn || !ch) return null;
+	const h = (angle(ch[2]) * Math.PI) / 180;
 	if (fn === "oklch" || fn === "oklab") {
-		const [c, h] = [Number(ch[1]), (angle(ch[2]) * Math.PI) / 180];
+		const c = scaled(ch[1], 0.4);
 		return labToHex({
 			L: scaled(ch[0], 1),
-			a: fn === "oklab" ? Number(ch[1]) : c * Math.cos(h),
-			b: fn === "oklab" ? Number(ch[2]) : c * Math.sin(h),
+			a: fn === "oklab" ? c : c * Math.cos(h),
+			b: fn === "oklab" ? scaled(ch[2], 0.4) : c * Math.sin(h),
 		});
+	}
+	if (fn === "lch" || fn === "lab") {
+		const c = scaled(ch[1], fn === "lab" ? 125 : 150);
+		return cieLabToHex(
+			scaled(ch[0], 100),
+			fn === "lab" ? c : c * Math.cos(h),
+			fn === "lab" ? scaled(ch[2], 125) : c * Math.sin(h),
+		);
 	}
 	if (fn === "rgb" || fn === "rgba")
 		return rgbToHex(ch.map((t) => scaled(t, 255) / 255));
 	if (fn === "hsl" || fn === "hsla")
 		return rgbToHex(hslToRgb(angle(ch[0]), scaled(ch[1], 1), scaled(ch[2], 1)));
+	if (fn === "hwb") {
+		const [w, b] = [scaled(ch[1], 1), scaled(ch[2], 1)];
+		const grey = w / (w + b);
+		return w + b >= 1
+			? rgbToHex([grey, grey, grey])
+			: rgbToHex(
+					hslToRgb(angle(ch[0]), 1, 0.5).map((c) => c * (1 - w - b) + w),
+				);
+	}
 	return null;
+}
+
+/**
+ * How far a valid colour actually gets, for the three cases the settings form
+ * has to describe differently. `null` when the value is empty, invalid, or an
+ * ordinary colour that needs no caveat at all.
+ */
+export type ColourReach =
+	/** Nothing is painted: `transparent`. */
+	| "invisible"
+	/** Painted, but taken from its surroundings: `currentColor` on `:root`. */
+	| "inherited"
+	/** Painted, with no one sRGB value: a composite, or a translucent colour. */
+	| "unconvertible";
+
+export function colourReach(raw: string): ColourReach | null {
+	const v = raw.trim();
+	if (!v || checkThemeValue("colour", v)) return null;
+	if (v.toLowerCase() === "transparent") return "invisible";
+	if (v.toLowerCase() === "currentcolor") return "inherited";
+	return colourToHex(v) ? null : "unconvertible";
 }
 
 /** The browser-chrome colour, derived from the brand rather than kept in step by hand. */
