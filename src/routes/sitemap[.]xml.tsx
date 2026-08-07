@@ -2,10 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { eq } from "drizzle-orm";
 
 import { COLLECTIONS, NON_PUBLIC_CONTENT_TYPES } from "#/lib/collections";
-import { LANGS } from "#/lib/i18n-config";
+import { LANGS, reportUnroutable } from "#/lib/i18n-config";
 import { db } from "#/server/db";
 import { siteOrigin } from "#/server/origin";
-import { pages, posts } from "#/server/schema";
+import { languages, pages, posts } from "#/server/schema";
 
 // Internal-only content types are excluded (shared with the route resolver + section queries).
 const BLOCKED = NON_PUBLIC_CONTENT_TYPES;
@@ -24,6 +24,21 @@ async function handler({ request }: { request: Request }) {
 	// ones that exist. Listing every prefix in COLLECTIONS instead advertised a
 	// landing per collection whether or not anyone had authored it.
 	const paths = new Set<string>(["/"]);
+
+	// The router's prefix list is the fallback, not the source: a site that has
+	// only English should not advertise a /km/ URL for every page it owns.
+	let langs = LANGS;
+	try {
+		const enabled = await db
+			.select({ code: languages.code })
+			.from(languages)
+			.where(eq(languages.enabled, true))
+			.orderBy(languages.sort);
+		if (enabled.length) langs = enabled.map((l) => l.code);
+		reportUnroutable(langs, "sitemap");
+	} catch (e) {
+		console.error("[sitemap] languages query failed", e);
+	}
 
 	try {
 		const pubPages = await db
@@ -54,7 +69,7 @@ async function handler({ request }: { request: Request }) {
 	const base = siteOrigin(request);
 	const urls: string[] = [];
 	for (const p of paths) {
-		for (const lang of LANGS) {
+		for (const lang of langs) {
 			const loc = `${base}/${lang}${p === "/" ? "" : p}`;
 			urls.push(`  <url><loc>${xmlEscape(loc)}</loc></url>`);
 		}

@@ -9,13 +9,26 @@
 import { and, eq } from "drizzle-orm";
 
 import { COLLECTIONS } from "../src/lib/collections";
-import { LANGS } from "../src/lib/i18n-config";
+import { reportUnroutable } from "../src/lib/i18n-config";
 import { db } from "../src/server/db";
-import { pages, posts, projects } from "../src/server/schema";
+import { languages, pages, posts, projects } from "../src/server/schema";
 
 const TENANT = 1;
 
 async function main() {
+	const langs = (
+		await db
+			.select({ code: languages.code })
+			.from(languages)
+			.where(eq(languages.enabled, true))
+			.orderBy(languages.sort)
+	).map((l) => l.code);
+	if (!langs.length)
+		throw new Error(
+			"No enabled language in the languages table; run bun run db:seed first.",
+		);
+	reportUnroutable(langs, "prerender");
+
 	// Language-agnostic content paths ("" = home).
 	const content = new Set<string>([""]);
 	for (const p of await db.select({ slug: pages.slug }).from(pages).where(and(eq(pages.tenantId, TENANT), eq(pages.status, "published")))) {
@@ -30,10 +43,10 @@ async function main() {
 	}
 
 	// Expand under every language prefix.
-	const paths = LANGS.flatMap((lang) => [...content].map((c) => (c ? `/${lang}/${c}` : `/${lang}`)));
+	const paths = langs.flatMap((lang) => [...content].map((c) => (c ? `/${lang}/${c}` : `/${lang}`)));
 	const list = [...new Set(paths)].sort();
 	await Bun.write("prerender-paths.json", JSON.stringify(list, null, 2));
-	console.log(`Wrote prerender-paths.json with ${list.length} paths (${content.size} content × ${LANGS.length} langs).`);
+	console.log(`Wrote prerender-paths.json with ${list.length} paths (${content.size} content × ${langs.length} langs).`);
 }
 
 main().then(() => process.exit(0));

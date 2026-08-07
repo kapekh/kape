@@ -223,11 +223,12 @@ src/
   lib/               shared schema/helpers (sections, forms, i18n, richtext)
 drizzle/             SQL migrations + snapshots
 scripts/             seed + one-off migration/prerender scripts
-docs/                REQUIREMENTS, CONTENT-MODEL, BUILD-PLAN, gap analysis
+docs/                CMS-CORE-REFERENCE, CONTENT-MODEL, BUILD-PLAN
 ```
 
 ## Docs
 
-Deeper specs live in [`docs/`](docs/): [REQUIREMENTS](docs/REQUIREMENTS.md) (the
-source spec), [CONTENT-MODEL](docs/CONTENT-MODEL.md), [BUILD-PLAN](docs/BUILD-PLAN.md),
-and [LOVABLE-GAP-ANALYSIS](docs/LOVABLE-GAP-ANALYSIS.md).
+Deeper specs live in [`docs/`](docs/):
+[CMS-CORE-REFERENCE](docs/CMS-CORE-REFERENCE.md) is the standard the core is graded against,
+[CONTENT-MODEL](docs/CONTENT-MODEL.md) explains the schema,
+and [BUILD-PLAN](docs/BUILD-PLAN.md) is what is left to build.

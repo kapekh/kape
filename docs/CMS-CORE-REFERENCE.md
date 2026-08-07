@@ -49,7 +49,7 @@ Anything that forces a code edit is a finding, and *where* it forced one is the 
 | 2.5 | No organisation's name appears in a CSS class, cookie name, storage key, database marker or order prefix | |
 | 2.6 | Changing the primary colour changes `theme-color` | No independent hex literal |
 
-**Baseline today:** ~105 hardcoded colour literals; the entire `Cta` section painted with 11 inline `oklch()` values that ignore `--primary`; 6 tokens absent from `.dark`; fonts a literal `@import`; `kape_session`, `.prose-kape`, `data-kape-form` structural.
+**Baseline today:** ~105 hardcoded colour literals; the entire `Cta` section painted with 11 inline `oklch()` values that ignore `--primary`; 6 tokens absent from `.dark`; fonts a literal `@import`. 2.5 passes: the session cookie, the prose class and the form marker were all named after the first customer and are now `cms_`-prefixed.
 
 ## 3. Content and the page builder
 
@@ -63,7 +63,7 @@ Anything that forces a code edit is a finding, and *where* it forced one is the 
 | 3.6 | A missing page answers 404, not 200 | |
 | 3.7 | The catalogue contains no organisation-specific section, or such sections are optional and removable | |
 
-**Baseline today:** 3.1, 3.2, 3.3 and 3.6 pass. 3.4 fails - `props` is `z.record(z.string(), z.unknown())`, so nothing about props or layout is checked. 3.7 fails - 10 of 21 section types bind to KAPE tables or content-type keys.
+**Baseline today:** 3.1, 3.2, 3.3 and 3.6 pass. 3.4 fails - `props` is `z.record(z.string(), z.unknown())`, so nothing about props or layout is checked. 3.7 unresolved - 10 of 21 section types bind to a domain table or a content-type key (`projectList`, `partners`, `orgChart`, `map`, `directory`, `people`, `postList`, `videoGrid`, `albumGrid`, `publicationList`). The module registry makes their query sources optional, so what 3.7 now needs is a demonstration that a site with those modules off cannot place them, not another reading of the catalogue.
 
 ## 4. Media
 

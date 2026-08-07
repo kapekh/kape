@@ -1,176 +1,105 @@
-# KAPE CMS — Content Model (design proposal)
+# Content model
 
-Derived from `docs/REQUIREMENTS.md` + customer conversation. Reviewable design; not yet implemented.
+What the schema is and why it is shaped that way.
+`src/server/schema.ts` is the authority; this explains the decisions behind it, which the column list cannot.
 
 ## Guiding decisions
-1. **The CMS is mostly blog posts + rich pages + a custom navigation builder bound to pages.**
-   Page bodies are **rich text (HTML)**, not a JSON block tree — no heavyweight page-builder.
-2. **One `posts` table with a `type` + `meta` JSON** absorbs all listable content kinds
-   (news, stories, announcements, jobs, documents, albums, videos, people/bios, events).
-   Only genuinely tabular data (staff directory) and form submissions get dedicated tables.
-3. **Languages are data, not schema.** New languages must be addable at runtime with **no
-   migration and no redeploy** → language set + all translations are stored as rows.
 
-## i18n model (runtime-extensible)
+1. **A page is an ordered list of sections; a post is a row with a type.**
+   Free-form pages are composed in the builder from a catalogue of section templates.
+   Listable content - news, stories, jobs, documents, albums, videos, events - is one `posts` table keyed by `content_type`, because a list of them is the same query with a different filter.
+2. **Languages are data.**
+   A new language is an INSERT, with no migration and no redeploy.
+   The one exception is the router's prefix list, which is a constant because route definitions are synchronous - see `src/lib/i18n-config.ts` and the note at the end of this file.
+3. **Domain entities are modules.**
+   Projects, schools, partners, offices, fundraising and the org chart are entities some organisations keep and most do not.
+   Their tables ship with every install and an operator turns each one on in `/admin/modules`; turning one off hides its admin, refuses its router and withdraws its query sources, and deletes nothing.
+4. **Every table carries `tenant_id`.**
+   One database can hold more than one site.
 
-```
-languages(
-  code        TEXT PRIMARY KEY,   -- BCP-47: 'en','km','fr','th'
-  name        TEXT NOT NULL,      -- 'English'
-  native_name TEXT NOT NULL,      -- 'ខ្មែរ'
-  is_default  INTEGER NOT NULL,   -- exactly one; the fallback language
-  enabled     INTEGER NOT NULL,   -- show in switcher
-  rtl         INTEGER NOT NULL DEFAULT 0,
-  sort        INTEGER NOT NULL DEFAULT 0
-)
-
--- Every translatable TEXT field of every entity lives here (EAV).
-translations(
-  id          INTEGER PRIMARY KEY,
-  entity_type TEXT NOT NULL,      -- 'post' | 'page' | 'nav_item' | 'media'
-  entity_id   INTEGER NOT NULL,
-  field       TEXT NOT NULL,      -- 'title' | 'body' | 'excerpt' | 'label' | 'caption' | 'slug'
-  lang        TEXT NOT NULL REFERENCES languages(code),
-  value       TEXT NOT NULL,
-  UNIQUE(entity_type, entity_id, field, lang)
-)
--- index (entity_type, entity_id) for one-query hydrate.
-
--- UI chrome strings (replaces hardcoded i18n.tsx dictionary).
-ui_strings(
-  key   TEXT NOT NULL,            -- 'nav.home', 'footer.newsletter'
-  lang  TEXT NOT NULL REFERENCES languages(code),
-  value TEXT NOT NULL,
-  PRIMARY KEY(key, lang)
-)
-```
-
-**Adding a language** = insert into `languages` + provide `translations`/`ui_strings` rows (via the
-admin UI). No schema change, no code change. Untranslated fields fall back to `is_default`.
-
-**Resolver:** a data-layer helper hydrates all translation rows for an entity set in one query and
-resolves `requestedLang → defaultLang`. The language switcher renders from `languages`.
-
-## Core content
+## i18n
 
 ```
-posts(
-  id            INTEGER PRIMARY KEY,
-  type          TEXT NOT NULL,     -- news|story|announcement|job|document|album|video|person|event|internal_news
-  slug          TEXT NOT NULL UNIQUE,   -- language-neutral canonical; localized slug optional via translations.field='slug'
-  status        TEXT NOT NULL,     -- draft|published|archived
-  cover_media_id INTEGER REFERENCES media(id),
-  author        TEXT,
-  published_at  TEXT,
-  deadline      TEXT,              -- nullable; jobs/announcements auto-hide past this
-  meta          TEXT,              -- JSON: type-specific non-text fields
-                                   --   job: {location, employment_type}
-                                   --   document: {pdf_media_id, read_count, download_count}
-                                   --   video: {youtube_url, duration}
-                                   --   person: {section: board|smt|pm, order}
-                                   --   event: {start, end, program}
-  created_at    TEXT, updated_at  TEXT
-)
--- translatable: title, excerpt, body (+ optional slug) -> translations(entity_type='post')
+languages(code PK, name, native_name, is_default, enabled, rtl, sort)
 
-pages(
-  id            INTEGER PRIMARY KEY,
-  slug          TEXT NOT NULL UNIQUE,
-  status        TEXT NOT NULL,     -- draft|published
-  hero_media_id INTEGER REFERENCES media(id),
-  created_at    TEXT, updated_at  TEXT
-)
--- translatable: title, body -> translations(entity_type='page')
+translations(id, tenant_id, entity_type, entity_id, field, lang -> languages.code, value)
+  UNIQUE(entity_type, entity_id, field, lang), INDEX(entity_type, entity_id)
 
-nav_items(
-  id          INTEGER PRIMARY KEY,
-  parent_id   INTEGER REFERENCES nav_items(id),  -- arbitrary nesting
-  sort        INTEGER NOT NULL DEFAULT 0,
-  target_kind TEXT NOT NULL,       -- page | post_list | post | url | view
-  target_ref  TEXT NOT NULL,       -- page slug | post type | post slug | URL | system-view key
-  visible     INTEGER NOT NULL DEFAULT 1,
-  created_at  TEXT, updated_at  TEXT
-)
--- translatable: label -> translations(entity_type='nav_item')
--- "custom navigation bound to pages": each node points at a page, a post-listing, a URL, or a
---    built-in view (gallery, document library, contact form, staff directory...).
-
-media(
-  id           INTEGER PRIMARY KEY,
-  r2_key       TEXT NOT NULL,      -- object key in Cloudflare R2
-  url          TEXT,               -- public URL (if public bucket / custom domain)
-  content_type TEXT, size INTEGER, width INTEGER, height INTEGER,
-  created_at   TEXT
-)
--- translatable: alt, caption -> translations(entity_type='media')
-
-post_media(post_id, media_id, sort)   -- galleries/albums, ordered attachments
+ui_strings(tenant_id, key, lang, value)
 ```
 
-## Structured / non-post tables
+Every translatable TEXT field of every entity is a `translations` row: `title`, `body`, `excerpt`, `label`, `caption`, `alt`, and optionally `slug`.
+No entity gets a per-language column.
+A resolver hydrates an entity set's translations in one query and falls back from the requested language to the `is_default` one.
+
+`ui_strings` is the site chrome - button labels, section headings, form errors - so the words around the content are editable too.
+`src/lib/ui-strings.default.ts` is what a fresh install writes, and `no-brand.test.ts` fails if it seeds a key nothing renders.
+
+**URLs are language-prefixed**, every language including the default: `/en/who-we-are/about`, `/km/who-we-are/about`.
+An unprefixed path redirects to the default language.
+The prefix is read on the server, so SSR emits the right language on the first byte.
+This replaced an earlier `?lang=` search param, which could not be cached per language and gave every language the same URL.
+
+## Content
 
 ```
-staff(            -- Staff Directory (genuinely tabular; bilingual handled by explicit columns per spec)
-  id, staff_no, name_km, name_en, sex, phone, email, program, photo_media_id, sort )
+posts(id, tenant_id, content_type -> content_types.key, slug, status,
+      cover_media_id, author, published_at, deadline, meta JSON)
+  translatable: title, excerpt, body, slug
 
--- Form capture
-contact_submissions(id, name, email, phone, message, created_at)
-newsletter_subscribers(id, email, created_at)
-alumni_registrations(id, ...fields..., created_at)
+pages(id, tenant_id, slug, parent_id, segment, sort_order, status,
+      hero_media_id, sections JSON)
+  translatable: title, body
+  UNIQUE(tenant_id, slug)
 
--- Counters
-page_views(...) / visitor_daily(date, count)   -- visitor stats; doc read/download counts live in posts.meta
+nav_items(id, tenant_id, parent_id, sort, target_kind, target_ref, visible, image_media_id)
+  translatable: label
+
+media(id, tenant_id, r2_key, url, content_type, size, width, height)
+  translatable: alt, caption
+
+post_media(post_id, media_id, sort)
+slug_redirects(id, tenant_id, entity_type, from_slug, to_entity_id)
+render_cache(key, tags, ...)
 ```
 
-## Structured entities vs taxonomies (audited)
+`pages.slug` is the full path and the lookup key; `parent_id` and `segment` are the tree the admin reorders, and the slug is recomputed from them.
+Renaming a page writes the old path into `slug_redirects`, so an existing link 301s instead of 404ing.
 
-Not everything is a post/page. Classification:
+`posts.meta` holds the non-text fields a type needs and nothing else does: a job's location, a document's file and counters, a video's URL, an event's dates.
+Anything with real relationships is an entity table instead, not a JSON blob.
 
-- **Entity tables** (rich attributes + relationships): `projects` (the "programs" — code, status current/past, donors, logo, map locations), `donors` (+ `project_donors` M:N), `partners` (category via term), `offices` (province via term, lat/lng), `project_locations` (About map pins), `hero_slides`, `stats`, `site_settings` (kv: contact/socials/copyright/youtube).
-- **Announcements are NOT a separate table** — they're `posts` of type `announcement` (full title/body/translations/publish state) with `meta.deadline` (hides the floating homepage card after that date) and optional `meta.link`. The public read is `site.announcement` → soonest active, else newest evergreen.
-- **Taxonomies** (flat `terms` rows): `publication_category`, `doc_category`, `partner_category`, `person_section`, `tag`, plus `location` (provinces). NOT `program` — that's the `projects` entity; `event.program`/story should be a **relation to projects**, not a term.
-- **Relations to fix**: document/publication file → `media` FK (not a URL string); post `coverMediaId`.
-- **Existing tables to wire**: `visitor_daily` (page-view tracker), `slug_redirects` (301 on old slug).
+`content_types` is a table rather than an enum so that types can become user-defined without reshaping `posts`.
 
-Seeded: 6 projects, 5 donors, 5 partners, 4 offices, 7 stats, 3 hero slides, 2 announcement posts,
-2 project locations, 7 site settings, terms across 6 taxonomies.
+### Sections
 
-## Auth (separate concern, not designed here)
-Three tiers — public / staff (internal portal) / CMS admin. To be designed next; affects `posts`
-(internal_news), `staff`, and the whole admin surface.
+`pages.sections` is a `SectionNode[]`: an id, a template `type`, a `layout` variant, authored `props`, and for dynamic sections a `query`.
+The route loader resolves each `query` server-side into `props.data`, which is what keeps a data-driven page server-rendered and indexable.
+`src/lib/sections.ts` declares the catalogue - the template list, each one's fields and layouts, and which query sources it accepts.
 
-## Resolved decisions
+Rich text is Tiptap/ProseMirror JSON, stored as the `translations.value` of the `body` field and rendered to HTML on the server with `@tiptap/static-renderer`, which needs no DOM.
+Editor and renderer share one extension list, so what is stored and what is shown cannot drift.
 
-### 1. Language via search query param (`?lang=`)
-Language is a **search/query param** (e.g. `/who-we-are/about?lang=km`), not a path prefix or cookie.
-- Validated at the root route (TanStack Router `validateSearch`, e.g. `{ lang?: string }`); falls
-  back to the `is_default` language when absent or not `enabled`.
-- **Read on the server** so SSR renders the correct language on first byte (replaces the current
-  client-only/localStorage approach in `i18n.tsx`).
-- The `LanguageSwitcher` navigates by updating the `lang` search param (preserving the path), so
-  links are shareable.
+## Entities, taxonomies and the rest
 
-### 2. One canonical, editable slug
-- `posts.slug` / `pages.slug` are single, language-neutral, and **editable** in the admin.
-- Because editing a slug would break existing links, add a redirect table so old URLs keep working:
-  ```
-  slug_redirects(id, entity_type, from_slug, to_entity_id, created_at)
-  ```
-  Public route loader: resolve slug → entity; on miss, check `slug_redirects` → 301 to current slug.
+**Entity tables** have attributes and relationships of their own: `projects` (+ `project_donors`, `project_locations`), `donors`, `partners`, `offices`, `schools`, `people`, `org_nodes`, `campaigns` (+ `donations`), `hero_slides`, `stats`.
+Each belongs to a module.
 
-### 3. Rich text stored as editor JSON, rendered to HTML on the server
-- Editor produces **structured JSON** (ProseMirror/Tiptap document); the JSON is what's saved.
-- The translatable `body` field stores this JSON string in `translations.value`
-  (`field='body'`) — `value` is TEXT, so JSON lives there fine.
-- **Server-side render JSON → HTML** for SSR. Use `@tiptap/static-renderer` (renders a ProseMirror
-  doc to an HTML string from the extension set **without a DOM/jsdom**, so it works under the Bun
-  server) rather than `@tiptap/html`'s `generateHTML` (which needs a DOM polyfill).
-- Editor (client/admin only): `@tiptap/react` + StarterKit + the extensions we enable (image, link,
-  heading, lists, table, etc.). The **same extension list** must be shared between editor and
-  server renderer so JSON ↔ HTML stays consistent.
-- Trusted-admin content + a fixed extension allow-list keeps XSS surface small; still sanitize the
-  rendered HTML output.
+**Taxonomies** are flat `terms` rows with a `taxonomy` column - categories, sections, tags, locations.
+A term is a label to group by.
+When the thing being grouped by has its own attributes, it is an entity, not a term.
 
-> Implication: `posts.body` / `pages.body` are ProseMirror JSON, not HTML. Plain non-rich fields
-> (title, excerpt, nav label) remain plain text.
-```
+**Configuration** is `site_settings`, a key-value table: name, logo, contact details, socials, copyright, theme, enabled modules.
+Nothing the site says about itself is in the source.
+
+**Users** are `users`, `roles` and `sessions`; permissions are areas, not role-string checks.
+
+**Capture** is `forms` + `form_submissions` for admin-built forms, plus the fixed `contact_submissions`, `newsletter_subscribers` and `alumni_registrations`.
+`visitor_daily` is the page-view counter.
+
+## The open edge
+
+Adding a language is a row everywhere except the router.
+`LANGS` in `src/lib/i18n-config.ts` is the set of path prefixes routes match, and TanStack Router builds those definitions synchronously, so it cannot await the table.
+The sitemap and the prerenderer do read the table.
+Until the router can be handed the list from the server context, a new language is one INSERT and one constant.

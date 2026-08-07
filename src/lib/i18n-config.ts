@@ -5,9 +5,22 @@
  * Pure helpers shared by the router, links, and the prerenderer.
  *
  * Adding a language: enable it in the admin AND add its code to LANGS.
+ * The `languages` table decides which languages a site has, and the build steps
+ * that can await a query — the sitemap and the prerenderer — read it. Route
+ * definitions are synchronous, so the router still matches this list; the two
+ * are kept in step by hand and `reportUnroutable` says so when they drift.
  */
 export const DEFAULT_LANG = "en";
-export const LANGS = ["en", "km"]; // all enabled languages, each path-prefixed
+export const LANGS = ["en", "km"]; // language prefixes the router matches
+
+/** Warn about enabled languages the router has no prefix for. */
+export function reportUnroutable(codes: string[], where: string) {
+	const missing = codes.filter((c) => !LANGS.includes(c));
+	if (missing.length)
+		console.warn(
+			`[${where}] ${missing.join(", ")} enabled in the languages table but absent from LANGS in src/lib/i18n-config.ts, so the router will not serve /${missing[0]}/`,
+		);
+}
 
 // Functional routes live at fixed paths and are never language-prefixed: the
 // staff-facing app, the API, and static file routes with an extension
