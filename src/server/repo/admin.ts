@@ -23,6 +23,7 @@ import {
 	contactSubmissions,
 	contentTypes,
 	donors,
+	forms,
 	heroSlides,
 	languages,
 	media,
@@ -1200,6 +1201,165 @@ async function refUsage(
 	return out;
 }
 
+/**
+ * Columns holding authored text or JSON that an editor can drop a media URL
+ * into. Unlike MEDIA_REFS these are not foreign keys: the URL is a substring of
+ * someone's content, so a delete cannot clear it without rewriting that content.
+ */
+type MediaTextRef = {
+	kind: string;
+	table: SQLiteTable;
+	/** searched for the url */
+	column: SQLiteColumn;
+	rowId: SQLiteColumn;
+	label: SQLiteColumn;
+	tenant: SQLiteColumn;
+	href: (rowId: number) => string;
+};
+
+const MEDIA_TEXT_REFS: MediaTextRef[] = [
+	{
+		kind: "Page content",
+		table: pages,
+		column: pages.sections,
+		rowId: pages.id,
+		label: pages.slug,
+		tenant: pages.tenantId,
+		href: (r) => `/admin/pages/${r}`,
+	},
+	{
+		kind: "Form content",
+		table: forms,
+		column: forms.fields,
+		rowId: forms.id,
+		label: forms.title,
+		tenant: forms.tenantId,
+		href: (r) => `/admin/forms/${r}`,
+	},
+];
+
+/** Where a `translations` row's entity lives, for labelling a body-text hit. */
+const TRANSLATED_ENTITIES: Record<
+	string,
+	{
+		kind: string;
+		table: SQLiteTable;
+		id: SQLiteColumn;
+		label: SQLiteColumn;
+		tenant: SQLiteColumn;
+		href: (rowId: number) => string;
+	}
+> = {
+	post: {
+		kind: "Post text",
+		table: posts,
+		id: posts.id,
+		label: posts.slug,
+		tenant: posts.tenantId,
+		href: (r) => `/admin/posts/${r}`,
+	},
+	page: {
+		kind: "Page text",
+		table: pages,
+		id: pages.id,
+		label: pages.slug,
+		tenant: pages.tenantId,
+		href: (r) => `/admin/pages/${r}`,
+	},
+	project: {
+		kind: "Project text",
+		table: projects,
+		id: projects.id,
+		label: projects.code,
+		tenant: projects.tenantId,
+		href: (r) => `/admin/projects/${r}`,
+	},
+	person: {
+		kind: "Person text",
+		table: people,
+		id: people.id,
+		label: people.nameEn,
+		tenant: people.tenantId,
+		href: (r) => `/admin/people/${r}`,
+	},
+};
+
+/**
+ * A LIKE pattern matching `url` anywhere in a column. `%` and `_` inside the url
+ * are escaped, so a stored name containing one cannot widen the match. It is
+ * still a substring test: an image whose url is a prefix of another's is
+ * reported for both. Uploads are uuid-named, which makes that improbable rather
+ * than impossible, and over-reporting only costs a warning the operator can read.
+ */
+const contains = (column: SQLiteColumn, url: string) =>
+	sql`${column} LIKE ${`%${url.replace(/[\\%_]/g, "\\$&")}%`} ESCAPE '\\'`;
+
+/**
+ * Everywhere `url` appears inside stored content. Synchronous because
+ * deleteMedia runs it inside its transaction — checking outside would leave a
+ * window where an editor embeds the image between the check and the unlink.
+ */
+type Queryable = DB | Parameters<Parameters<DB["transaction"]>[0]>[0];
+
+function mediaTextUsage(db: Queryable, url: string): MediaUsage[] {
+	const out: MediaUsage[] = [];
+
+	for (const ref of MEDIA_TEXT_REFS) {
+		for (const r of db
+			.select({ rowId: ref.rowId, label: ref.label })
+			.from(ref.table)
+			.where(and(eq(ref.tenant, TENANT), contains(ref.column, url)))
+			.all()) {
+			const rowId = Number(r.rowId);
+			out.push({
+				kind: ref.kind,
+				label: String(r.label ?? "") || `#${rowId}`,
+				href: ref.href(rowId),
+			});
+		}
+	}
+
+	// One scan of the whole column rather than a list of translated fields, so a
+	// body field added later is covered without being registered anywhere.
+	const hits = db
+		.select({ type: translations.entityType, entityId: translations.entityId })
+		.from(translations)
+		.where(
+			and(eq(translations.tenantId, TENANT), contains(translations.value, url)),
+		)
+		.all();
+
+	const seen = new Set<string>();
+	for (const hit of hits) {
+		const key = `${hit.type}:${hit.entityId}`;
+		if (seen.has(key)) continue; // same body in two languages is one place
+		seen.add(key);
+		const target = TRANSLATED_ENTITIES[hit.type];
+		if (!target) {
+			out.push({
+				kind: "Text",
+				label: `${hit.type} #${hit.entityId}`,
+				href: null,
+			});
+			continue;
+		}
+		const [row] = db
+			.select({ label: target.label })
+			.from(target.table)
+			.where(and(eq(target.tenant, TENANT), eq(target.id, hit.entityId)))
+			.limit(1)
+			.all();
+		if (!row) continue; // translation orphaned by a deleted entity
+		out.push({
+			kind: target.kind,
+			label: String(row.label ?? "") || `#${hit.entityId}`,
+			href: target.href(hit.entityId),
+		});
+	}
+
+	return out;
+}
+
 /** Everywhere a media item is referenced — for the "Used in" panel. */
 export async function adminMediaUsage(
 	db: DB,
@@ -1207,7 +1367,26 @@ export async function adminMediaUsage(
 ): Promise<MediaUsage[]> {
 	const out: MediaUsage[] = [];
 	for (const ref of MEDIA_REFS) out.push(...(await refUsage(db, ref, id)));
+	const row = await adminMediaById(db, id);
+	if (row?.url) out.push(...mediaTextUsage(db, row.url));
 	return out;
+}
+
+/**
+ * Thrown instead of deleting when the file is embedded in stored content.
+ * A foreign key can be cleared; an `<img src>` inside someone's HTML cannot be
+ * removed without rewriting what they wrote, and doing that silently inside a
+ * delete would be a worse defect than the broken image it prevents.
+ */
+export class MediaInUseError extends Error {
+	constructor(readonly usage: MediaUsage[]) {
+		const shown = usage.slice(0, 3).map((u) => `${u.kind}: ${u.label}`);
+		const more = usage.length - shown.length;
+		super(
+			`This file is still in the content of ${usage.length} ${usage.length === 1 ? "place" : "places"} (${shown.join(", ")}${more > 0 ? `, and ${more} more` : ""}). Remove the image there first, then delete the file.`,
+		);
+		this.name = "MediaInUseError";
+	}
 }
 
 /** Aggregate counts for the library header (independent of the current page). */
@@ -1247,12 +1426,15 @@ export async function deleteMedia(db: DB, id: number): Promise<void> {
 		// prove the row is ours before clearing anything: the clears below cannot
 		// be tenant-scoped, so a foreign id would blank another tenant's records
 		const [own] = tx
-			.select({ r2Key: media.r2Key })
+			.select({ r2Key: media.r2Key, url: media.url })
 			.from(media)
 			.where(and(eq(media.tenantId, TENANT), eq(media.id, id)))
 			.limit(1)
 			.all();
 		if (!own) return null;
+
+		const embedded = own.url ? mediaTextUsage(tx, own.url) : [];
+		if (embedded.length) throw new MediaInUseError(embedded);
 
 		for (const ref of MEDIA_REFS) {
 			if (ref.clearBy === "row") {

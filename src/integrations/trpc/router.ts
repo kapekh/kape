@@ -71,6 +71,7 @@ import {
 	getSchool,
 	listAllLanguages,
 	listContentTypes,
+	MediaInUseError,
 	moveNavItem,
 	movePage,
 	updateDonor,
@@ -1189,7 +1190,18 @@ const adminMediaRouter = {
 		.query(({ ctx, input }) => adminMediaUsage(ctx.db, input.id)),
 	delete: adminProcedure
 		.input(z.object({ id: z.number() }))
-		.mutation(({ ctx, input }) => deleteMedia(ctx.db, input.id)),
+		.mutation(async ({ ctx, input }) => {
+			try {
+				await deleteMedia(ctx.db, input.id);
+			} catch (e) {
+				// the repo refuses rather than unlinking bytes a live page still
+				// points at; BAD_REQUEST is the code that reaches the operator as
+				// the message rather than as a generic server failure
+				if (e instanceof MediaInUseError)
+					throw new TRPCError({ code: "BAD_REQUEST", message: e.message });
+				throw e;
+			}
+		}),
 } satisfies TRPCRouterRecord;
 
 const adminLanguagesRouter = {
