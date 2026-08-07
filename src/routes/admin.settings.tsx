@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import {
@@ -209,32 +209,46 @@ function Contrast({ values }: { values: Record<string, string> }) {
 }
 
 function SettingsAdmin() {
-	const [rows, setRows] = useState<Row[]>([]);
-	const [saved, setSaved] = useState<Record<string, string>>({});
+	// null until the stored values have actually been read. An empty map that has
+	// never loaded looks exactly like "every setting is blank", and the screen
+	// would then offer a Save that writes that guess over a live site.
+	const [rows, setRows] = useState<Row[] | null>(null);
+	const [saved, setSaved] = useState<Record<string, string> | null>(null);
 	const [draft, setDraft] = useState<Draft>({});
-	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
 	const [status, setStatus] = useState("");
 	const [add, setAdd] = useState({ key: "", value: "" });
+	const loading = !saved;
 
 	/**
 	 * Re-read what is stored. Only `saved` moves: a reload must never throw away
 	 * something the operator is halfway through typing, which is how edits used
 	 * to disappear between the page loading and the list arriving.
 	 */
-	async function refresh() {
-		const all = await trpcClient.adminSettings.list.query();
-		const map = Object.fromEntries(all.map((r) => [r.key, r.value]));
-		const known: Record<string, string> = {};
-		for (const f of NAMED) known[f.key] = map[f.key] ?? "";
-		setSaved(known);
-		setRows(
-			all
-				.filter((r) => !(r.key in known))
-				.map((r) => ({ key: r.key, value: r.value }))
-				.sort((a, b) => a.key.localeCompare(b.key)),
-		);
-		setLoading(false);
-	}
+	const refresh = useCallback(() => {
+		setError(null);
+		return trpcClient.adminSettings.list
+			.query()
+			.then((all) => {
+				const map = Object.fromEntries(all.map((r) => [r.key, r.value]));
+				const known: Record<string, string> = {};
+				for (const f of NAMED) known[f.key] = map[f.key] ?? "";
+				setSaved(known);
+				setRows(
+					all
+						.filter((r) => !(r.key in known))
+						.map((r) => ({ key: r.key, value: r.value }))
+						.sort((a, b) => a.key.localeCompare(b.key)),
+				);
+			})
+			.catch((err) =>
+				setError(
+					err instanceof Error
+						? err.message
+						: "The settings could not be read.",
+				),
+			);
+	}, []);
 
 	async function saveDraft(fields: Field[]) {
 		const mine = fields.filter((f) => f.key in draft);
@@ -262,7 +276,7 @@ function SettingsAdmin() {
 	}
 	useEffect(() => {
 		refresh();
-	}, []);
+	}, [refresh]);
 
 	async function save(key: string, value: string) {
 		await trpcClient.adminSettings.set.mutate({ key, value });
@@ -279,26 +293,58 @@ function SettingsAdmin() {
 	async function del(key: string) {
 		if (!(await confirm(`Delete setting "${key}"?`))) return;
 		await trpcClient.adminSettings.delete.mutate({ key });
-		setRows((rs) => rs.filter((r) => r.key !== key));
+		setRows((rs) => (rs ?? []).filter((r) => r.key !== key));
 	}
 
 	const brandValues = Object.fromEntries(
 		BRAND.map((f) => [
 			f.key,
-			f.key in draft ? draft[f.key] : (saved[f.key] ?? ""),
+			f.key in draft ? draft[f.key] : (saved?.[f.key] ?? ""),
 		]),
 	);
 
+	const heading = (
+		<div>
+			<h1 className="font-display text-2xl font-semibold text-primary">
+				Site Settings
+			</h1>
+			<p className="mt-1 text-sm text-muted-foreground">
+				Global values used by the header, footer and contact page.
+			</p>
+		</div>
+	);
+
+	// Every section on this page reads the same one query, so a failure leaves
+	// nothing to show and nothing to type into. Keeping the form up with its
+	// fields readOnly is how this screen used to sit there looking busy for ever.
+	if (error)
+		return (
+			<div className="max-w-3xl space-y-5">
+				{heading}
+				<FormSection
+					title="Site identity"
+					description="Page titles, search results, social cards and the structured data search engines read all come from these."
+				>
+					<div className="space-y-3">
+						<p className="text-sm text-destructive">
+							This site's settings could not be read, so nothing here can be
+							changed yet: {error}
+						</p>
+						<button
+							type="button"
+							onClick={refresh}
+							className="rounded-full border border-border px-4 py-2 text-sm font-semibold hover:bg-muted transition"
+						>
+							Try again
+						</button>
+					</div>
+				</FormSection>
+			</div>
+		);
+
 	return (
 		<div className="max-w-3xl space-y-5">
-			<div>
-				<h1 className="font-display text-2xl font-semibold text-primary">
-					Site Settings
-				</h1>
-				<p className="mt-1 text-sm text-muted-foreground">
-					Global values used by the header, footer and contact page.
-				</p>
-			</div>
+			{heading}
 
 			<FormSection
 				title="Site identity"
@@ -306,7 +352,7 @@ function SettingsAdmin() {
 			>
 				<Fields
 					fields={[...IDENTITY, ...LOCATION]}
-					saved={saved}
+					saved={saved ?? {}}
 					draft={draft}
 					setDraft={setDraft}
 					onSave={() => saveDraft([...IDENTITY, ...LOCATION])}
@@ -322,7 +368,7 @@ function SettingsAdmin() {
 			>
 				<Fields
 					fields={BRAND}
-					saved={saved}
+					saved={saved ?? {}}
 					draft={draft}
 					setDraft={setDraft}
 					onSave={() => saveDraft(BRAND)}
@@ -377,7 +423,7 @@ function SettingsAdmin() {
 						</tr>
 					</thead>
 					<tbody className="divide-y divide-border">
-						{loading ? (
+						{!rows ? (
 							<tr>
 								<td colSpan={3} className="px-3 py-4 text-muted-foreground">
 									Loading…
@@ -393,7 +439,7 @@ function SettingsAdmin() {
 											value={r.value}
 											onChange={(e) =>
 												setRows((rs) =>
-													rs.map((x, j) =>
+													(rs ?? []).map((x, j) =>
 														j === i ? { ...x, value: e.target.value } : x,
 													),
 												)

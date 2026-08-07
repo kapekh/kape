@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
@@ -16,6 +17,57 @@ import {
 	themeCss,
 	themeFontUrl,
 } from "./site-theme";
+
+/**
+ * The closed list, read out of the module rather than exported for a test. Every
+ * name and every hex in it was diffed against Chrome's own parser, which is the
+ * only thing that can settle whether the list is right; these assertions keep it
+ * well formed after that.
+ */
+const NAMED_TABLE = (() => {
+	const src = readFileSync(new URL("./site-theme.ts", import.meta.url), "utf8");
+	const block = /const NAMED_COLOURS = new Map\(\n\t`([^`]+)`/.exec(src);
+	if (!block) throw new Error("the named-colour table moved");
+	return block[1].split("\n").map((l) => l.split(" ") as [string, string]);
+})();
+
+describe("the named-colour table", () => {
+	it("holds 148 names, each once, in order, each with a six-digit hex", () => {
+		const names = NAMED_TABLE.map(([n]) => n);
+		expect(names.length).toBe(148);
+		expect(new Set(names).size).toBe(148);
+		expect([...names].sort()).toEqual(names);
+		for (const [name, hex] of NAMED_TABLE) {
+			expect(name, name).toMatch(/^[a-z]+$/);
+			expect(hex, name).toMatch(/^#[0-9a-f]{6}$/);
+		}
+	});
+
+	// A wrong hex on any one of the 148 is invisible to every other assertion
+	// here, because they all read the same table. The table is right because it
+	// was diffed against Chrome's own parser; this pins it to that diff, so an
+	// edit has to be re-checked against a browser rather than reasoned about.
+	it("is the table that was checked against a browser", () => {
+		const src = readFileSync(
+			new URL("./site-theme.ts", import.meta.url),
+			"utf8",
+		);
+		const block = /const NAMED_COLOURS = new Map\(\n\t`([^`]+)`/.exec(src);
+		expect(
+			createHash("sha256")
+				.update(block?.[1] ?? "")
+				.digest("hex"),
+		).toBe("fbfdd5b4964ae55a220f5c26e63398e2be1ca968d83e620a045d1c35e246b66a");
+	});
+
+	it("carries the values a person would check by hand", () => {
+		const table = new Map(NAMED_TABLE);
+		expect(table.get("black")).toBe("#000000");
+		expect(table.get("white")).toBe("#ffffff");
+		expect(table.get("rebeccapurple")).toBe("#663399");
+		expect(table.get("navy")).toBe("#000080");
+	});
+});
 
 describe("themeCss", () => {
 	it("emits nothing when nothing is configured", () => {
@@ -69,6 +121,17 @@ describe("themeCss", () => {
 		expect(themeCss({ theme_radius: "0.5rem" })).toBe(":root{--radius:0.5rem}");
 	});
 
+	// The defect this file exists for: `banana` used to be written straight into
+	// --brand-primary, and every token derived from it then computed to nothing.
+	it("drops a word that is not a colour and keeps one that is", () => {
+		expect(themeCss({ theme_primary: "banana" })).toBe("");
+		expect(themeCss({ theme_primary: "var(--primary)" })).toBe("");
+		expect(themeCss({ theme_primary: "unset" })).toBe("");
+		expect(themeCss({ theme_primary: "rebeccapurple" })).toBe(
+			":root{--brand-primary:rebeccapurple}",
+		);
+	});
+
 	it("keeps a font stack, quotes and commas included", () => {
 		expect(
 			themeCss({ theme_font_display: '"Playfair Display", Georgia, serif' }),
@@ -103,6 +166,141 @@ describe("checkThemeValue", () => {
 	it("refuses a colour that is not one", () => {
 		for (const bad of ["oklch(0.5 0.1)", "notacolour()", "12345"])
 			expect(checkThemeValue("colour", bad)).toMatch(/Not a colour/);
+	});
+
+	// Every one of these passed as a colour while `[a-z]{3,20}` was the whole
+	// check. `theme_primary: banana` reached the browser as an invalid value, so
+	// --primary, --primary-foreground and --warm-foreground all computed to
+	// rgba(0,0,0,0) and the site painted unbranded with no error on the field.
+	// The message has to name what is wrong, not only that something is.
+	it("refuses a word that is not a colour name, and says which word", () => {
+		const cases: [string, RegExp][] = [
+			["banana", /"banana" is not one of the CSS colour names/],
+			["notacolour", /"notacolour" is not one of the CSS colour names/],
+			["lorem", /"lorem" is not one of the CSS colour names/],
+			["none", /"none" is not one of the CSS colour names/],
+			["chartreusy", /"chartreusy" is not one of the CSS colour names/],
+			["unset", /"unset" is a CSS keyword/],
+			["initial", /"initial" is a CSS keyword/],
+			["inherit", /"inherit" is a CSS keyword/],
+			["revert", /"revert" is a CSS keyword/],
+		];
+		for (const [bad, says] of cases)
+			expect(checkThemeValue("colour", bad), bad).toMatch(says);
+	});
+
+	// COMPOSITE was anchored at the prefix only, so anything could trail it, and
+	// var() was accepted outright: `--brand-primary: var(--primary)` is a cycle
+	// that paints nothing and reports nothing.
+	it("refuses var(), and refuses anything trailing a composite colour", () => {
+		const cases: [string, RegExp][] = [
+			["var(--brand-primary)", /var\(\) is not accepted here/],
+			["var(--primary)", /var\(\) is not accepted here/],
+			["var(--x) !important", /var\(\) is not accepted here/],
+			["var(--primary, banana)", /var\(\) is not accepted here/],
+			[
+				"color-mix(in oklab, red, blue) 0 0 0 red",
+				/Nothing may follow the closing bracket of color-mix\(\)/,
+			],
+			[
+				"light-dark(red, blue) trailing",
+				/Nothing may follow the closing bracket of light-dark\(\)/,
+			],
+		];
+		for (const [bad, says] of cases)
+			expect(checkThemeValue("colour", bad), bad).toMatch(says);
+	});
+
+	// A prefix check never looks inside the brackets, so the same typo one level
+	// down was still a blank theme.
+	it("refuses junk nested inside a composite colour", () => {
+		const cases: [string, RegExp][] = [
+			["light-dark(banana, red)", /Inside light-dark\(\).*"banana"/],
+			["color-mix(in oklab, banana, red)", /Inside color-mix\(\).*"banana"/],
+			["light-dark(red)", /light-dark\(\) takes exactly two colours/],
+			["color-mix(oklab, red, blue)", /is not a colour space/],
+			["color(nonsense 1 0 0)", /color\(\) takes a colour space/],
+		];
+		for (const [bad, says] of cases)
+			expect(checkThemeValue("colour", bad), bad).toMatch(says);
+	});
+
+	// The name list was closed while the colour-space list beside it was still
+	// `[a-z0-9-]+`, so the same typo moved one word left: `in banana` and a
+	// `--myprofile` no browser implements both passed and both painted nothing.
+	it("refuses a colour space that is not one", () => {
+		const cases: [string, RegExp][] = [
+			["color-mix(in banana, red, blue)", /"in banana" is not a colour space/],
+			["color-mix(in notaspace, red, blue)", /is not a colour space/],
+			["color(--myprofile 1 0 0)", /color\(\) takes a colour space/],
+			// A hue is only interpolated in a polar space.
+			["color-mix(in srgb shorter hue, red, blue)", /is not a colour space/],
+		];
+		for (const [bad, says] of cases)
+			expect(checkThemeValue("colour", bad), bad).toMatch(says);
+		for (const ok of [
+			"color-mix(in srgb, red, blue)",
+			"color-mix(in oklch longer hue, red, blue)",
+			"color(display-p3 1 0 0)",
+		])
+			expect(checkThemeValue("colour", ok), ok).toBeNull();
+	});
+
+	// Rejected while Chrome painted it and colourToHex already read it, which is
+	// the validator disagreeing with the converter in the direction nobody looked.
+	it("accepts a hue written with deg, and converts it the same way", () => {
+		for (const [withUnit, plain] of [
+			["hsl(207deg 59% 30%)", "hsl(207 59% 30%)"],
+			["oklch(0.30 0.10 255deg)", "oklch(0.30 0.10 255)"],
+			["lch(50% 40 200deg)", "lch(50% 40 200)"],
+			["hwb(200deg 20% 30%)", "hwb(200 20% 30%)"],
+		]) {
+			expect(checkThemeValue("colour", withUnit), withUnit).toBeNull();
+			expect(colourToHex(withUnit), withUnit).toBe(colourToHex(plain));
+		}
+		// The unit belongs to the hue channel alone.
+		expect(checkThemeValue("colour", "rgb(31deg 78 121)")).toMatch(
+			/Not a colour/,
+		);
+		expect(checkThemeValue("colour", "hsl(207% 59% 30%)")).toMatch(
+			/Not a colour/,
+		);
+	});
+
+	// The mirror failure, and the worse one: a closed list that refuses a colour
+	// a real operator would type. All 148 names, in the casings a form receives.
+	it("accepts every CSS colour name, whatever the casing", () => {
+		expect(NAMED_TABLE.length).toBe(148);
+		for (const [name, hex] of NAMED_TABLE) {
+			for (const typed of [
+				name,
+				name.toUpperCase(),
+				`${name[0].toUpperCase()}${name.slice(1)}`,
+				`  ${name}  `,
+			])
+				expect(checkThemeValue("colour", typed), typed).toBeNull();
+			expect(colourToHex(name), name).toBe(hex);
+		}
+	});
+
+	it("accepts transparent and currentColor, which have no hex", () => {
+		for (const v of ["transparent", "currentColor", "currentcolor"]) {
+			expect(checkThemeValue("colour", v), v).toBeNull();
+			expect(colourToHex(v), v).toBeNull();
+		}
+	});
+
+	it("accepts the composite colours that are actually well formed", () => {
+		for (const ok of [
+			"color-mix(in oklab, red 40%, blue)",
+			"color-mix(in srgb, rebeccapurple, white)",
+			"color-mix(in hsl longer hue, red, blue)",
+			"light-dark(red, blue)",
+			"light-dark(color-mix(in oklab, red, blue), #abc)",
+			"color(display-p3 1 0 0)",
+			"color(srgb 0.1 0.2 0.3 / 0.5)",
+		])
+			expect(checkThemeValue("colour", ok), ok).toBeNull();
 	});
 
 	it("passes an empty value, which means unset", () => {
@@ -164,8 +362,19 @@ describe("colourToHex", () => {
 		expect(colourToHex("hsl(207 59% 30%)")).toBe("#1f517a");
 	});
 
-	it("says so rather than guessing at a name it cannot read", () => {
-		expect(colourToHex("rebeccapurple")).toBeNull();
+	// A name the validator accepts has to be a name this can read, or theme-color
+	// and the legibility panel silently say nothing about a colour the page is
+	// painting. `transparent` and `currentColor` are the only two accepted
+	// colours with no fixed hex, and the form reports exactly those.
+	it("reads a colour typed by name", () => {
+		expect(colourToHex("rebeccapurple")).toBe("#663399");
+		expect(colourToHex("RebeccaPurple")).toBe("#663399");
+		expect(colourToHex(" navy ")).toBe("#000080");
+	});
+
+	it("says so rather than guessing at a colour with no fixed hex", () => {
+		expect(colourToHex("transparent")).toBeNull();
+		expect(colourToHex("currentColor")).toBeNull();
 	});
 
 	it("clips an out-of-gamut colour into sRGB", () => {
@@ -242,7 +451,21 @@ describe("themeContrast", () => {
 
 	it("skips a colour it was not given or cannot read", () => {
 		expect(themeContrast({})).toEqual([]);
-		expect(themeContrast({ theme_primary: "rebeccapurple" })).toEqual([]);
+		expect(themeContrast({ theme_primary: "currentColor" })).toEqual([]);
+		expect(themeContrast({ theme_primary: "banana" })).toEqual([]);
+	});
+
+	// It used to report nothing for any named colour, so an operator who typed
+	// one got a Legibility panel that said nothing about the colour in use.
+	it("measures a colour typed by name", () => {
+		const rows = themeContrast({ theme_primary: "rebeccapurple" });
+		expect(rows.map((c) => `${c.mode} ${c.what}`)).toEqual([
+			"light a label on it",
+			"light a heading or link in it",
+			"dark a label on it",
+			"dark a heading or link in it",
+		]);
+		expect(rows[0].ratio).toBeGreaterThan(4.5);
 	});
 });
 

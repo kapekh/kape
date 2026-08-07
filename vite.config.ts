@@ -3,10 +3,12 @@ import tailwindcss from "@tailwindcss/vite";
 import { devtools } from "@tanstack/devtools-vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact, { reactCompilerPreset } from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 
 const config = defineConfig({
 	resolve: { tsconfigPaths: true },
+	// default glob also collects .test.ts copies parked under .work/
+	test: { include: ["src/**/*.test.{ts,tsx}"] },
 	// `bun:sqlite` is a Bun runtime builtin (used by drizzle-orm/bun-sqlite).
 	// Keep it out of bundling/pre-bundling so Bun resolves it at runtime.
 	optimizeDeps: { exclude: ["bun:sqlite"] },
