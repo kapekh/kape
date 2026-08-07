@@ -27,7 +27,7 @@ needs no component edit. Domain features are modules an install enables.
 | C6 neutral-identity | pane | verified | `.work/c6-report.md`, evidence in `.work/c6-evidence/` |
 | C7 validator + settings load | pane | **verified, committed `58a0fe7`** | won the bake-off, scorecard below. Gates re-run here at commit time: 239 tests / 21 files, `tsc` silent, format clean over 246 files |
 | C7-critic | subagent | verified | 9 defects, `.work/c7-critic-r1.md`. Every finding re-run here; all confirmed. 2 fixed in C7, the rest are C8 |
-| C8 settings-page-truth | pane | **live** | - |
+| C8 settings-page-truth | pane | **verified, committed `029bc26`** | all seven clauses re-run here. 256 tests / 22 files, `tsc` silent, format clean over 247. KAPE byte-identical over its real fixture. Mutation-tested here, not taken on trust |
 | J22 mega-menu-design | pane | **verified no-op, spent** | contract was stale. Re-checked here in the source and the pixels: none of M1-M5 exist any more. Zero source lines changed. `.work/j22-report.md` |
 | J23 upload-crud-check | pane | **live** | - |
 | C9 debrand-leftovers | - | ready, queued | - |
@@ -35,21 +35,39 @@ needs no component edit. Domain features are modules an install enables.
 
 ## Live now
 
-Two panes.
+One pane. **J23**, `.work/jobs/J23-upload-crud-check.md`. Owns `src/routes/admin.media.tsx`,
+`src/routes/api.media.$.tsx`, `src/server/storage.ts`, `src/components/admin/Media*.tsx`. Told
+explicitly that `router.ts` is C8's, so a media defect in a tRPC procedure is a finding for its
+report rather than a fix. Must not reseed `kape.db`.
 
-- **C8**, `.work/jobs/C8-settings-page-truth.md`. Owns `src/routes/admin.settings.tsx`,
-  `src/lib/site-theme.ts`, `src/lib/site-theme.test.ts`, the `adminSettings.set` procedure only in
-  `src/integrations/trpc/router.ts`, and `src/routes/-admin.settings.test.tsx`.
-- **J23**, `.work/jobs/J23-upload-crud-check.md`. Owns `src/routes/admin.media.tsx`,
-  `src/routes/api.media.$.tsx`, `src/server/storage.ts`, `src/components/admin/Media*.tsx`.
-  Told explicitly that `router.ts` is C8's, so a media defect in a tRPC procedure is a finding for
-  its report rather than a fix.
+## How C8 was verified
 
-File lists are disjoint. Neither may reseed `kape.db`; both work against a `VACUUM INTO` copy.
+Re-run here, not read. The gates matched its claim exactly: 256 tests / 22 files, `tsc` silent,
+format clean over 247, and `package.json` and `bun.lock` untouched, so the route test really did add
+no dependency.
 
-**While C8 is live, `bun run test` is not a gate for anyone else.** J22 saw
-`site-theme.test.ts > colourToHex > ignores a percentage alpha` go red at 21:12 when C8's edits
-landed mid-run. The clean tree was 239/239 at 20:58. Correct call by J22 to leave it alone.
+**The stop condition, properly.** `kape.db` has 21 `site_settings` rows and **none of them start with
+`theme_`**, so comparing theme output against the database compares defaults and proves nothing. The
+real fixture is `src/server/seed/site.ts:72-82`. Against that, `themeCss`, `themeColor` and
+`themeContrast` are byte-identical to `58a0fe7`, `themeColor` is `#002c5e`, `themeContrast` gives 14
+rows, and 0 KAPE values are rejected. A future round must use the seed, not the database.
+
+**Two conversions checked by hand rather than against the same code that produced them.**
+`hwb(200 20% 30%)` to `#3388b3` and `hsl(207deg 59% 30%)` to `#1f517a` are both exactly right.
+
+**Three mutations run here:**
+
+- Making the `refresh` catch swallow silently fails 4 of the 7 route tests by name and leaves the
+  other 3 passing. A real gate, not a file that merely loads.
+- Removing `transparent`'s `invisible` classification fails exactly one named test. Rithy's decision
+  is gated.
+- **Gutting the server-side check leaves 256/256 green.** C8 declared this itself and it is true.
+  The trust boundary is enforced in the code and demonstrated over curl, but nothing stops the next
+  agent deleting it. Fixing it needs an in-process tRPC caller in a test file C8 did not own.
+
+Browser evidence confirmed in `.work/c8-shots/`: `10-transparent-a-panel.png` shows the panel naming
+`transparent` and saying it paints nothing, and `23-401-t20s.png` shows "Your session has ended" with
+a Sign in again over an intact form holding its values.
 
 ## J22's verdict: the contract was stale, not the header
 
@@ -109,9 +127,24 @@ Two things C8 carries that were nobody's job before:
 - **One lead owns `.work/` at a time.** Two orchestrators ran the C7 contract concurrently and the
   loser found its three owned files rewritten under it mid-job. Check `Live now` is empty before
   dispatching.
+- **A backgrounded dev server needs a bounded log.** `.work/scratch/dev-audit.log` reached **31.7
+  GiB** on 2026-08-06: an edit left `MegaBentoGrid` referenced but deleted in `Header.tsx`, vite hot
+  reloaded into it, and the root route threw `MegaBentoGrid is not defined` about 11 million times
+  between 16:21 and 19:10 before vite was SIGKILLed. Devtools printed each frame twice, raw and
+  source-mapped, which doubled it. Deleted 2026-08-07 with Rithy's agreement, along with the now
+  superseded `.work/c7-deliverable/`; `.work` went from 32G to 133M. Pipe a dev server through
+  `tail -c` or a rotating log, and never leave one running unattended against a module that will not
+  compile. The same edit is what made J22's contract stale, so both defects trace to one afternoon.
 
 ## Open, owned by nobody yet
 
+- **No regression gate on the server-side settings check.** Needs an in-process tRPC caller in a
+  test. Highest-value item on this list, because it guards the trust boundary.
+- **The grid's row Save has no error path.** `save(key, value)` in `admin.settings.tsx` awaits the
+  mutation with nothing around it; C8 measured an unhandled rejection and nothing on screen. Same
+  defect it just fixed one section higher up the same page.
+- **`admin.modules.tsx:47` and `:114` still print `UNAUTHORIZED` with a dead Try again.** C8 was
+  told not to touch it and did not. The settings page now has the better shape to copy.
 - `scripts/import-client-assets.ts` is untracked, 313 lines, and imports the prototype's 59 asset
   stubs. That is J19, which the client dropped with "do not resurrect it". It is uncommitted work so
   it has not been deleted. **Rithy: attribute it or say delete.**
