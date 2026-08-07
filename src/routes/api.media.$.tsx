@@ -31,6 +31,10 @@ async function handler({ request }: { request: Request }) {
 			return Response.json({ error: "Malformed upload" }, { status: 400 });
 		}
 		const file = form.get("file");
+		// a zero-length part arrives with a blank name, so it would otherwise be
+		// reported as no file at all to someone who did pick one.
+		if (file instanceof File && file.size === 0)
+			return Response.json({ error: "That file is empty" }, { status: 400 });
 		if (!(file instanceof File) || !file.name)
 			return Response.json({ error: "No file" }, { status: 400 });
 
