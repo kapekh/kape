@@ -35,8 +35,14 @@ needs no component edit. Domain features are modules an install enables.
 
 ## Live now
 
-Nothing dispatched. C9 is next; its contract is re-checked against current source and still accurate,
-but it opens with a question only Rithy can answer.
+One pane. **C10**, `.work/jobs/C10-media-usage-and-trpc-tests.md`. Owns `src/server/repo/admin.ts`,
+`src/integrations/trpc/router.ts` and its own new test files. Makes media usage see rich text and
+section JSON, and lands the in-process tRPC caller that gates both that fix and C8's server-side
+settings check.
+
+**C9 is written, re-checked against current source and still accurate, but blocked.** Its step 1
+renames `package.json` from `kape` and the contract forbids inventing a name. Rithy said they would
+type it; until then C9 does not go out. Its file list is already reserved against C10.
 
 ## J23's finding, confirmed here in the code
 
