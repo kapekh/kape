@@ -40,9 +40,13 @@ One pane. **C10**, `.work/jobs/C10-media-usage-and-trpc-tests.md`. Owns `src/ser
 section JSON, and lands the in-process tRPC caller that gates both that fix and C8's server-side
 settings check.
 
-**C9 is written, re-checked against current source and still accurate, but blocked.** Its step 1
-renames `package.json` from `kape` and the contract forbids inventing a name. Rithy said they would
-type it; until then C9 does not go out. Its file list is already reserved against C10.
+**C9**, `.work/jobs/C9-debrand-leftovers.md`. Owns `package.json` (name field only), `docs/` in full,
+`src/lib/i18n-config.ts`, `src/server/install.ts`, `src/routes/sitemap[.]xml.tsx`,
+`scripts/gen-prerender-paths.ts`, and the `LANGS` import plus its guard in four `$lang` route files.
+Told its section 3 may end partway: land the build-time half of data-driven languages and cost the
+rest rather than restructure the routing layer.
+
+File lists are disjoint from C10's.
 
 ## J23's finding, confirmed here in the code
 
@@ -136,6 +140,8 @@ Two things C8 carries that were nobody's job before:
 
 ## Decided
 
+- **The product is called `koompi-cms`.** Rithy, 2026-08-07. C9 renames `package.json` to it. No
+  display name was chosen alongside it, so nothing should invent one.
 - **`transparent` and `currentColor` stay accepted, and the page must warn they paint nothing.**
   Rithy, 2026-08-07. This resolves the C7 contract contradicting itself: acceptance 1 listed
   `transparent` as must-reject while the same contract's fix instruction said to allow it. The fix

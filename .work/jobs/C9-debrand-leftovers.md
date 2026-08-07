@@ -28,8 +28,8 @@ procedure in `src/integrations/trpc/router.ts` belong to C8. `src/components/Hea
 
 ## 1. The package is called `kape`
 
-`package.json:2`. Rename it to the product. If nobody has chosen a product name, **stop and ask**
-rather than inventing one - a name is a decision, and a placeholder that ships is a name.
+`package.json:2`. **The product is `koompi-cms`.** Rithy decided it 2026-08-07; use it exactly, do
+not restyle it, and do not invent a display name to go with it.
 
 Grep the whole tree for the old name afterwards, including `README.md`, `bun.lock`, `.env.example`
 and anything under `public/`. Report every hit you leave behind and why.
