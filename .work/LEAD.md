@@ -30,23 +30,51 @@ needs no component edit. Domain features are modules an install enables.
 | C8 settings-page-truth | pane | **verified, committed `029bc26`** | all seven clauses re-run here. 256 tests / 22 files, `tsc` silent, format clean over 247. KAPE byte-identical over its real fixture. Mutation-tested here, not taken on trust |
 | J22 mega-menu-design | pane | **verified no-op, spent** | contract was stale. Re-checked here in the source and the pixels: none of M1-M5 exist any more. Zero source lines changed. `.work/j22-report.md` |
 | J23 upload-crud-check | pane | **verified, committed `29a23ab`** | its one fix is four lines in a file it owned. Gates re-run here: 256 tests / 22 files, `tsc` silent, format clean. Repo `kape.db` untouched, checked through a connection. Its standing finding confirmed here in the code |
-| C9 debrand-leftovers | - | ready, queued | - |
+| C9 debrand-leftovers | pane | **verified, committed `4773690`** | package renamed `koompi-cms`, `docs/` generalised, two client-specific files deleted (both survive on `main`, checked). Language work landed its build-time half and priced the rest |
+| C10 media-usage + trpc-tests | pane | **verified, committed `145d962`** | both contract-named mutations re-run here, each kills its own named test. Refusal confirmed in `.work/c10-shots/05` |
 | J12 lint-pass | - | queued, runs alone | - |
 
 ## Live now
 
-One pane. **C10**, `.work/jobs/C10-media-usage-and-trpc-tests.md`. Owns `src/server/repo/admin.ts`,
-`src/integrations/trpc/router.ts` and its own new test files. Makes media usage see rich text and
-section JSON, and lands the in-process tRPC caller that gates both that fix and C8's server-side
-settings check.
+Nothing dispatched. Tree clean at `4773690` bar `.env.example` and the unattributed script.
 
-**C9**, `.work/jobs/C9-debrand-leftovers.md`. Owns `package.json` (name field only), `docs/` in full,
-`src/lib/i18n-config.ts`, `src/server/install.ts`, `src/routes/sitemap[.]xml.tsx`,
-`scripts/gen-prerender-paths.ts`, and the `LANGS` import plus its guard in four `$lang` route files.
-Told its section 3 may end partway: land the build-time half of data-driven languages and cost the
-rest rather than restructure the routing layer.
+## How C9 and C10 were verified
 
-File lists are disjoint from C10's.
+Gates re-run here for both together: 266 tests / 24 files (from 256/22), `tsc` silent, format clean
+over 250, `bun.lock` untouched so neither added a dependency, and `bun run check` still 219 errors,
+so ~350 new lines introduced no lint regression.
+
+**C10's two contract-named mutations, re-run here.** Replacing `checkSettingValue` with `null` in
+`adminSettings.set` fails "refuses a theme value CSS cannot parse, and stores nothing". Dropping the
+`mediaTextUsage` call from `adminMediaUsage` fails "reports an image embedded in a page section and
+in a post body". Each kills one test and leaves the other six green. **The gap C8 left is closed.**
+
+Refusal confirmed in `.work/c10-shots/05`: "Used in 1 place, Page content, c10-page-section" with a
+link to it, and "Could not delete: this file is still in the content of 1 place. Remove the image
+there first."
+
+**C9's live defect is real and I confirmed the cause.** `install.ts:273` inserts exactly one
+`languages` row, so a blank install has only `en` enabled while `LANGS` is `["en","km"]`. The sitemap
+expanded every path over `LANGS`, advertising a `/km/` URL for every page of a site with no Khmer.
+KAPE is unaffected: its table holds `en` and `km` in the same order as `LANGS`, so its sitemap is
+byte-identical.
+
+**Both deleted docs survive on `main` at `b21751a`**, checked with `git ls-tree` before accepting the
+deletion. Nothing was lost.
+
+## Two things the workers did right, worth keeping
+
+- **C9 refused to make its own acceptance pass.** It was asked to demonstrate a third language and
+  declined to add `fr` to `LANGS` for the demo, because that would have hidden the exact edge it was
+  reporting. It showed `/fr` 301ing to `/en/fr` and dying instead.
+- **C9 declared its own scope violation.** It edited four lines of `README.md`, which it did not own,
+  because deleting two docs broke that file's links. Accepted: leaving the README pointing at deleted
+  files would have been the worse outcome, and it flagged the trade rather than hiding it.
+
+**Unsubmitted text was again sitting in both panes' inputs** ("fix the confirm dialog copy in
+admin.media.tsx", "keep the README paragraph, drop the kapecambodia-main lines"), each matching that
+agent's own suggested next step. Not typed by this lead and not confirmed by Rithy, so left unsent.
+Third occurrence; recorded rather than acted on.
 
 ## J23's finding, confirmed here in the code
 
@@ -172,10 +200,15 @@ Two things C8 carries that were nobody's job before:
 
 ## Open, owned by nobody yet
 
-- **Media usage does not see rich text or section JSON**, so deleting an embedded image breaks the
-  live page with no warning and unlinks the bytes. Data loss. Highest severity open.
-- **No regression gate on the server-side settings check.** Needs an in-process tRPC caller in a
-  test. Both this and the item above live in files a single job should own together.
+- **The media confirm dialog still says "Delete anyway?"**, which is now wrong for a content embed
+  the delete will refuse. Copy lives in `admin.media.tsx`, which C10 did not own. Small, and the
+  last rough edge on that fix.
+- **The router half of data-driven languages**, priced at two to three days in `.work/c9-report.md`.
+  Not a restructure: every route already takes a `$lang` param, so what blocks it is language
+  resolution in three pieces.
+- `scripts/` is not covered by `no-brand.test.ts`: 8 fixture files, 145 hits. Four dead
+  `kapecambodia-main` references. The README's opening paragraph still names the client, which is
+  Rithy's call rather than a defect.
 - **The grid's row Save has no error path.** `save(key, value)` in `admin.settings.tsx` awaits the
   mutation with nothing around it; C8 measured an unhandled rejection and nothing on screen. Same
   defect it just fixed one section higher up the same page.
@@ -209,6 +242,11 @@ Left in `/tmp`: an 11G isolated build tree, reproducible from the patch. Safe to
 
 ## Next action
 
-Read C8's pane and re-run its checks here. Commit C8 and J23 separately, then dispatch C9. J12 runs
-alone, last, after everything else is committed. Before dispatching C9, re-read its contract against
-current source - J22 is what happens when nobody does.
+**J12 is the only job left in the queue and it runs alone**, since the linter conflicts with every
+file. Its baseline table is re-measured and current: 219 errors, and `.work/jobs/J12-lint-pass.md`
+holds the category breakdown. Before dispatching it, confirm the tree is clean of every other
+agent's work.
+
+The confirm-dialog copy and the router half of the language work are the two open jobs worth writing
+after that. Re-read any queued contract against current source before it goes out - J22 is what
+happens when nobody does.
