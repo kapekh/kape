@@ -21,16 +21,23 @@ function NewProject() {
 	const [langs, setLangs] = useState<LangOpt[]>([]);
 	const [donors, setDonors] = useState<DonorOpt[]>([]);
 	const [saving, setSaving] = useState(false);
+	const [ready, setReady] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 	const modules = useModules();
 
 	useEffect(() => {
 		Promise.all([
 			trpcClient.i18n.languages.query(),
 			modules.list("fundraising", () => trpcClient.adminDonors.list.query()),
-		]).then(([l, d]) => {
-			setLangs(l);
-			setDonors(d.map((x) => ({ id: x.id, name: x.name })));
-		});
+		])
+			.then(([l, d]) => {
+				setLangs(l);
+				setDonors(d.map((x) => ({ id: x.id, name: x.name })));
+			})
+			.catch((e) => setError(saveErrorMessage(e)))
+			// In `finally`, so a query that fails leaves a screen that says so rather
+			// than a spinner nobody can get past.
+			.finally(() => setReady(true));
 	}, [modules.list]);
 
 	async function onSubmit(v: ProjectFormValue) {
@@ -45,8 +52,16 @@ function NewProject() {
 		}
 	}
 
-	if (!langs.length)
-		return <p className="text-sm text-muted-foreground">Loading…</p>;
+	if (!ready) return <p className="text-sm text-muted-foreground">Loading…</p>;
+	// No languages means no title can be authored, so offer the reason rather than a
+	// form whose save is guaranteed to fail.
+	if (error || !langs.length)
+		return (
+			<p className="text-sm text-destructive">
+				{error ??
+					"No languages are set up, so a project cannot be created yet."}
+			</p>
+		);
 	return (
 		<ProjectForm
 			initial={null}

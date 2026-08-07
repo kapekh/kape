@@ -6,6 +6,8 @@ import {
 	adminPathEnabled,
 	CORE_NAV_PATHS,
 	CORE_ROUTERS,
+	CORE_SOURCES,
+	CORE_TAXONOMIES,
 	disallowedSections,
 	moduleForAdminPath,
 	MODULES,
@@ -103,6 +105,123 @@ describe("every area key is claimed, by a module or by the core", () => {
 			expect(ROUTER_AREA, `${k} is no longer a router`).toHaveProperty(k);
 		for (const p of CORE_NAV_PATHS)
 			expect(NAV_AREA, `${p} is no longer a screen`).toHaveProperty(p);
+	});
+});
+
+/**
+ * The third axis, and the one that reaches the public site. A router or a nav path
+ * nobody claims costs an operator a screen they should not have; a *source* nobody
+ * claims is a section in the catalogue, placeable on a public page, reading a table
+ * out of a feature this install never asked for.
+ */
+describe("every query source is claimed, by a module or by the core", () => {
+	const claimed = new Set<string>(MODULES.flatMap((m) => m.sources));
+	const offered = [
+		...new Set(
+			SECTION_DEFS.flatMap((d) => d.sources ?? []).map((s) => s.value),
+		),
+	];
+	const orphans = (sources: string[]) =>
+		sources.filter(
+			(s) => !claimed.has(s) && !CORE_SOURCES.includes(s as never),
+		);
+
+	it("every source a section offers is core or owned", () => {
+		expect(orphans(offered), "add to MODULES or to CORE_SOURCES").toEqual([]);
+	});
+
+	it("every source the server will resolve is core or owned", () => {
+		const resolver = readFileSync(
+			join(import.meta.dirname, "..", "server", "repo", "sections.ts"),
+			"utf8",
+		);
+		const cases = [...resolver.matchAll(/case "(\w+)":/g)].map((m) => m[1]);
+		expect(
+			cases.length,
+			"resolveQuery no longer reads like this",
+		).toBeGreaterThan(10);
+		expect(orphans(cases), "add to MODULES or to CORE_SOURCES").toEqual([]);
+	});
+
+	it("nothing is both core and owned", () => {
+		expect(CORE_SOURCES.filter((s) => claimed.has(s))).toEqual([]);
+	});
+
+	it("the core list names nothing no section offers", () => {
+		for (const s of CORE_SOURCES)
+			expect(offered, `${s} is no longer a source`).toContain(s);
+	});
+
+	it("leaves only core sources placeable with every module off", () => {
+		const left = sectionsFor(NONE)
+			.flatMap((d) => d.sources ?? [])
+			.map((s) => s.value);
+		expect(orphans([...new Set(left)])).toEqual([]);
+	});
+});
+
+describe("every taxonomy is claimed, by a module or by the core", () => {
+	const claimed = new Set(MODULES.flatMap((m) => m.taxonomies ?? []));
+	const srcDir = join(import.meta.dirname, "..");
+	const used = new Set<string>();
+	for (const name of readdirSync(srcDir, { recursive: true }) as string[]) {
+		if (!/\.tsx?$/.test(name) || name.includes(".test.")) continue;
+		for (const m of readFileSync(join(srcDir, name), "utf8").matchAll(
+			/taxonomy: "(\w+)"/g,
+		))
+			used.add(m[1]);
+	}
+
+	it("finds the taxonomies the tree uses", () => {
+		expect(used.size).toBeGreaterThan(2);
+	});
+
+	it("every taxonomy the tree writes is core or owned", () => {
+		expect(
+			[...used].filter((t) => !claimed.has(t) && !CORE_TAXONOMIES.includes(t)),
+			"add to MODULES or to CORE_TAXONOMIES",
+		).toEqual([]);
+	});
+
+	it("a module names a taxonomy something actually uses", () => {
+		for (const m of MODULES)
+			for (const t of m.taxonomies ?? [])
+				expect([...used], `${m.id} owns ${t}, which nothing writes`).toContain(
+					t,
+				);
+	});
+
+	it("nothing is both core and owned", () => {
+		expect(CORE_TAXONOMIES.filter((t) => claimed.has(t))).toEqual([]);
+	});
+});
+
+/**
+ * `canSee` in admin.tsx returns true when a path has no NAV_AREA entry, so a new
+ * admin screen nobody mapped is visible to every admin user whatever their role -
+ * and, being outside NAV_AREA, invisible to the partition above as well.
+ */
+describe("every admin screen has a permission area", () => {
+	const routeDir = join(import.meta.dirname, "..", "routes");
+	const files = readdirSync(routeDir).filter(
+		(n) => n.startsWith("admin.") && n.endsWith(".tsx"),
+	);
+	/** The shell, the dashboard, and the account page every signed-in user owns. */
+	const UNMAPPED = ["admin.tsx", "admin.index.tsx", "admin.account.tsx"];
+	const base = (f: string) => `/admin/${f.split(".")[1]}`;
+
+	it("every admin route file maps to an area", () => {
+		const orphans = files
+			.filter((f) => !UNMAPPED.includes(f))
+			.filter((f) => !(base(f) in NAV_AREA));
+		expect(
+			[...new Set(orphans.map(base))],
+			"add to NAV_AREA in permissions.ts, and to MODULES or CORE_NAV_PATHS",
+		).toEqual([]);
+	});
+
+	it("the exempt list names files that exist", () => {
+		for (const f of UNMAPPED) expect(files, f).toContain(f);
 	});
 });
 
@@ -277,6 +396,13 @@ describe("the saved envelope, not just the picker", () => {
 		);
 	});
 
+	it("refuses a disabled module's section that carries no query at all", () => {
+		for (const type of ["projectList", "partners", "orgChart", "map"])
+			expect(disallowedSections(NONE, [node(type)]), type).toHaveLength(1);
+		expect(disallowedSections(ALL, [node("projectList")])).toEqual([]);
+		expect(disallowedSections(set("offices"), [node("map")])).toEqual([]);
+	});
+
 	it("refuses a section type that is not in the catalogue", () => {
 		expect(disallowedSections(ALL, [node("evalScript")])).toHaveLength(1);
 	});
@@ -341,6 +467,16 @@ describe("no admin screen calls another module's router unguarded", () => {
 		expect(files.length).toBeGreaterThan(20);
 	});
 
+	const routersCalled = (text: string) => [
+		...new Set(
+			[...text.matchAll(/trpcClient\.(admin\w+)\./g)].map((m) => m[1]),
+		),
+	];
+
+	/** `modules.list("fundraising", () => trpcClient.adminDonors.list…)`, the guard. */
+	const GUARDED =
+		/\.list\(\s*"(\w+)"\s*,\s*\(\)\s*=>\s*trpcClient\.(admin\w+)\./g;
+
 	for (const file of files) {
 		const src = readFileSync(join(routeDir, file), "utf8");
 		const path = `/admin/${file
@@ -349,22 +485,26 @@ describe("no admin screen calls another module's router unguarded", () => {
 			.replace(/\.(index|new|\$\w+)$/, "")
 			.replace(/\./g, "/")}`;
 		const own = moduleForAdminPath(path)?.id;
-		const cross = [
-			...new Set(
-				[...src.matchAll(/trpcClient\.(admin\w+)\./g)].map((m) => m[1]),
-			),
-		].filter((r) => owner.has(r) && owner.get(r) !== own);
+		const foreign = (rs: string[]) =>
+			rs.filter((r) => owner.has(r) && owner.get(r) !== own);
+		const cross = foreign(routersCalled(src));
 		if (!cross.length) continue;
 
 		it(`${file} guards ${cross.join(", ")}`, () => {
-			expect(
-				src.includes('from "#/components/admin/useModules"'),
-				`${file} calls ${cross.join(", ")}, which belong to ${cross
-					.map((r) => owner.get(r))
-					.join(
-						", ",
-					)}. Wrap the call in useModules().list(...) so the screen still loads when that module is off.`,
-			).toBe(true);
+			// Remove every call that is wrapped, and named after the module that owns
+			// what it calls; a call still standing is one this screen makes whatever
+			// the install has. Checking for the import instead passed on a file that
+			// imported `useModules` and then called the router anyway.
+			const unguarded = src.replace(GUARDED, (whole, id, router) =>
+				owner.get(router) === id ? "" : whole,
+			);
+			const how = `${file} calls ${cross.join(", ")}, which belong to ${[
+				...new Set(cross.map((r) => owner.get(r))),
+			].join(
+				", ",
+			)}. Wrap each call as modules.list("<module>", () => trpcClient.<router>…) so the screen still loads when that module is off.`;
+			expect(foreign(routersCalled(unguarded)), how).toEqual([]);
+			expect(src.includes("useModules()"), how).toBe(true);
 		});
 	}
 });

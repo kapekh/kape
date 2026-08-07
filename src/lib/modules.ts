@@ -84,6 +84,34 @@ export const CORE_ROUTERS = [
 	"adminPeople",
 ];
 
+/**
+ * Query sources no module owns. The third axis, and the only one that reaches the
+ * public site: a section in the catalogue can be placed on a public page, so a
+ * source nobody owns is a table any install can publish rows out of.
+ *
+ * `staff`, `events` and `documents` are the staff portal's, and the portal is out
+ * of this job's scope, so they are core for now and section 7 of the report says
+ * what moving them costs. Naming them here is the point: they are a decision
+ * somebody made, not an omission.
+ */
+export const CORE_SOURCES: QuerySource[] = [
+	"posts",
+	"videos",
+	"albums",
+	"publications",
+	"people",
+	"staff",
+	"events",
+	"documents",
+];
+
+/** Taxonomies no module owns: they categorise content types every install has. */
+export const CORE_TAXONOMIES = [
+	"location",
+	"publication_category",
+	"doc_category",
+];
+
 export const CORE_NAV_PATHS = [
 	"/admin/pages",
 	"/admin/posts",
@@ -321,7 +349,19 @@ export function disallowedSections(
 			continue;
 		}
 		const source = node.query?.source;
-		if (!source) continue;
+		// A dynamic section with no query at all still belongs to whatever offers it:
+		// `{type:"projectList"}` renders nothing but saves, and the gate is supposed to
+		// refuse the binding rather than trust that it looks empty.
+		if (!source) {
+			if (
+				def.sources?.length &&
+				!def.sources.some((o) => sourceEnabled(s, o.value))
+			)
+				out.push(
+					`The ${def.label} section belongs to a module this site has not turned on.`,
+				);
+			continue;
+		}
 		if (!def.sources?.some((o) => o.value === source)) {
 			out.push(`The ${def.label} section cannot read "${source}".`);
 			continue;

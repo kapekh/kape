@@ -331,7 +331,7 @@ Nobody loses a screen for having upgraded.
 That is safe but too generous on its own - a site that never kept a donor list should not inherit a Fundraising group - so two more things settle it:
 
 - **The installer writes the row explicitly**, empty, on a fresh install. On a database this product created, the absence of a row is never ambiguous.
-- **`backfillModules`** runs on the first boot that finds no row, derives the answer from the only evidence that cannot be wrong - whether each module's own tables hold anything - writes it, and says so on the console. The Docker entrypoint runs `db:seed` on every boot, so this is the deploy path, not an extra step. It is idempotent: a database that already answers the question is left alone.
+- **`backfillModules`** derives the answer from the only evidence that cannot be wrong - whether each module's own tables hold anything - writes it, and says so on the console. It is idempotent: a database that already answers the question is left alone. It runs from the installer, and only from the installer; round three says exactly where that is and where it is not, in 6c.8.
 
 `MODULE_TABLES` is typed `Record<ModuleId, SQLiteTable[]>`, so adding a module is a compile error until its tables are named.
 
@@ -419,6 +419,172 @@ Deliberately left for the next job, and the critic's framing of it is right - a 
 Gating these means the module reaching a public route, which is the one thing this design deliberately does not do (section 4, item 6), because withdrawing a public URL is how you 404 something that has content behind it.
 The honest fix is the module owning its URL prefix, which is the same piece of work as item 6 and as making `internalsources` optional.
 They should be one job.
+
+## 6c. Round three
+
+A second independent critic audited round two.
+It confirmed the upgrade path, the toggle preserving all twelve tables, modules-on being byte-identical to `main`, and both gates holding across fourteen configurations.
+It then found eight things.
+Six are fixed below with the failure reproduced first; one is a test that was passing on the wrong evidence; one is a correction to this report.
+
+Evidence for this round is `19-` to `26-` in `.work/c4-shots/`.
+All of it is a dev server on 3222 with `SSG_CACHE=off`, against a `VACUUM INTO` copy of the fixture with the administrator's password reset in the copy.
+The repository's `kape.db` was opened read-only and is unchanged.
+
+### 1. A transient network failure armed a destructive default
+
+The worst of the eight, and the only one that could take a live site down in one click.
+
+`on` started as an empty `Set`, the load was `.catch(() => {})`, and `loading` cleared in `.finally`.
+So a database with every module on, plus one failed read, drew six unchecked boxes, no error, and an enabled Save.
+
+Reproduced, not reasoned about.
+With `enabled_modules` holding all six ids, the browser aborting `adminSettings.list`, and the round-two component in place: `19-modules-blip-before.png` shows the screen reading "0 of 6 on" while the sidebar beside it still carries Projects, Campaigns, Donations, Schools, Partners, Donors, Offices and Org Chart.
+One click on Save, and the setting read `""`.
+That is every module off on a site whose operator only wanted to look at the page.
+
+The fix is that there is no such state to save from.
+`on` is `null` until the setting has actually been read, the failure is caught and shown, and Save does not exist while it is null.
+`20-modules-blip-after.png` is the same abort with the fixed component: the reason, a Try again button, and no checkboxes to mislead anybody.
+`21-modules-retry.png` is Try again with the request unblocked, back to six of six.
+
+C7 was told to match this shape in `/admin/settings`, which has the same defect in `refresh()`.
+Two screens, one failure behaviour.
+
+### 2. The source axis of the partition was open
+
+Round two closed the router and nav axes with `CORE_ROUTERS` and `CORE_NAV_PATHS`, and left the third one open.
+The critic added an `alumni` source and an `alumniList` section, and all 43 tests stayed green while the section sat in the catalogue with every module off.
+That is the axis that reaches the public site: a section in the catalogue can be placed on a public page, so a source nobody owns is a table any install can publish rows out of.
+
+`CORE_SOURCES` now names the sources no module owns, and five tests hold the partition:
+
+- every source a section offers is core or owned
+- every source `resolveQuery` will resolve is core or owned, read out of `src/server/repo/sections.ts`
+- nothing is both
+- the core list names nothing no section offers
+- with every module off, every source still placeable is a core one
+
+The critic's mutation now fails two of them by name, and adding the `case` to the resolver fails a third.
+
+**The honest part.**
+`staff`, `events` and `documents` are in `CORE_SOURCES`.
+They belong to the staff portal, which the contract puts out of scope and section 7 costs out.
+Naming them core is a decision somebody made rather than an omission nobody noticed, and it is the difference between this axis being closed and being quiet.
+`26-envelope-and-terms.txt` section C shows what that means on a running site: with every module off, a `directory` section bound to `staff` still saves.
+That is unchanged from `main` and from round two, and it is the one thing criterion 2 does not cover.
+
+`CORE_TAXONOMIES` closes the fourth axis the same way, which is item 7 below.
+
+### 3. The guard test passed on the import alone
+
+It checked that a file imported `useModules`, not that it used it.
+The critic reverted `admin.schools.new.tsx` to the unguarded call, kept the import, and all 43 tests passed.
+
+It now strips every call that is both wrapped and named after the module that owns what it calls, then fails on anything still standing.
+The same mutation fails it: `25-mutation-log.txt`, block A.
+
+### 4. A domain section with no `query` bypassed the gate
+
+`if (!source) continue;` meant `{"type":"projectList"}` with no query at all saved freely with every module off.
+It rendered empty, so nothing leaked, but a gate that only validates the shapes it expects is not a gate.
+
+A dynamic section with no source is now refused when every source it could offer belongs to a module that is off.
+`26-envelope-and-terms.txt` block A, run against the API as the super administrator: with the fix reverted in the running app, `projectList`, `map`, `orgChart` and `partners` all SAVED; with it in place all four are refused by name, while `richtext` and `postList` still save.
+
+### 5. `adminTerms.update` gated on the incoming taxonomy, not the stored one
+
+`delete` looked the stored row up; `update` did not.
+So with partners off, stored `partner_category` term 23 could be moved into `location` and edited there, and turning the module back on no longer returned what it had.
+That breaks the one promise the whole design rests on.
+
+`assertTaxonomiesAllowed` now takes both, on one settings read, and `delete` uses the same call.
+`26-envelope-and-terms.txt` block B: with the fix reverted, the move SAVED and the row came back as `location/government`; with it in place, the move is refused, the stored row is untouched, and relabelling a core `location` row still works.
+
+### 6. Two files still carried the failure class round two fixed
+
+`admin.projects.new.tsx` and `admin.projects.$id.tsx` had a bare `Promise.all(...).then(...)`, no `.catch`, no `.finally`, gating the render on `!langs.length`.
+Unreachable through modules, because `modules.list` already stops the donor query being made, and one bad response away from the hang that was root-caused.
+
+Reproduced by making `adminDonors.list` throw on the server with fundraising **on**.
+`22-projects-hang-before.png`: both screens read "Loading…" and were still reading it after thirty seconds.
+`23-projects-error-after.png`: the same fault with the fix in place, both screens saying what went wrong.
+`24-projects-fundraising-off.png`: the fault removed and fundraising off, the form rendering with round two's "This site does not keep a donor register" message intact.
+
+These two say the reason and refuse the form rather than rendering it, because with no languages there is no title to author and the save is guaranteed to fail.
+That is deliberately stricter than `admin.schools.*`, where the neighbouring data is decoration and the form is worth rendering without it.
+
+### 7. The two smaller ones
+
+**An admin route with no permission area.**
+`canSee` returns `!area`, so a screen nobody mapped is visible to every admin user, and being outside `NAV_AREA` it is invisible to round two's partition as well.
+A test now walks every `src/routes/admin.*.tsx` and fails on one whose base path is not in `NAV_AREA`, with three named exemptions: the shell, the dashboard, and the account page every signed-in user owns.
+Dropping in an `admin.alumni.tsx` fails it.
+
+**A module's `taxonomies` was validated against nothing**, unlike `routers`, `navPaths` and `sources`.
+`CORE_TAXONOMIES` plus three tests: every `taxonomy: "…"` literal in the tree is core or owned, a module names one something actually writes, and nothing is both.
+Both directions are in `25-mutation-log.txt`, blocks C1 and C2.
+
+### 8. The correction: where `backfillModules` actually runs
+
+Round two wrote that it "runs on the first boot that finds no row".
+That was loose, and the critic is right to pin it down.
+
+Its only call site is inside `import.meta.main` in `src/server/install.ts`.
+`bun run dev` and `bun run start` are vite, and neither imports it.
+What does run it is `docker-entrypoint.sh`, which calls `bun src/server/install.ts` on every container start before `exec "$@"`.
+
+So the accurate statement is: **narrowing happens through the installer, and the installer is the container's entrypoint.**
+An operator who deploys the shipped image gets it on the next boot with no extra step.
+An operator who runs `bun run start` by hand, or upgrades without re-running `bun run db:seed`, stays on legacy-everything until they run it or use `/admin/modules`.
+Both are safe, because legacy means everything stays on.
+
+Verified rather than read: a fixture copy with the `enabled_modules` row deleted, then `DATABASE_PATH=… bun src/server/install.ts`, printed
+
+```
+Already installed - skipping.
+Modules: this database predates the module setting. Enabled Projects, Schools,
+Campaigns, donations and donors, Partners, Offices, because it holds records for
+them. Change this at /admin/modules.
+```
+
+I did not wire it anywhere else.
+A settings write on the first request of a vite server is a boot-time side effect racing across workers, to replace a default that is already safe.
+
+### The pattern, and what I did about it
+
+Three times before this round a test passed on exactly the bug it was written to catch.
+So every assertion added or changed here was mutation-tested: break the thing, watch the named test fail, put it back.
+
+`25-mutation-log.txt` is the whole run, eight mutations, each restored:
+
+| # | mutation | test that failed |
+|---|---|---|
+| A | unguarded `adminProjects.list` in `admin.schools.new.tsx`, import kept | `admin.schools.new.tsx guards adminProjects` |
+| B1 | an `alumni` source offered by the `directory` section | every source a section offers is core or owned; leaves only core sources placeable |
+| B2 | a `case "alumni"` in `resolveQuery` | every source the server will resolve is core or owned |
+| C1 | a file writing `taxonomy: "alumni_year"` | every taxonomy the tree writes is core or owned |
+| C2 | the partners module owning `partner_categories` | a module names a taxonomy something actually uses |
+| D | an `admin.alumni.tsx` with no `NAV_AREA` entry | every admin route file maps to an area |
+| E | `if (!source) continue;` back in `disallowedSections` | refuses a disabled module's section that carries no query at all |
+| F | `staff` removed from the `directory` section | the core list names nothing no section offers |
+
+### What round three did not do
+
+- **The public procedures.** `site.partners`, `site.offices`, `site.projectLocations`, `projects.options` and `admin.overview` still return a disabled module's rows. Recorded above and scoped elsewhere, together with `/donate`, `payments` and `internalsources`.
+- **`directory` and the staff sources.** Declared core, not gated. Section 7 has the cost.
+- **`admin.schools.*` was left as it is.** Its three screens already end their loading state in `finally`, and rendering the list without the projects column is the right failure. The projects pair are stricter for the reason in 6c.6, so the two are deliberately not identical.
+- **No screenshot of the section picker with the new core list**, because nothing about the picker changed; what changed is which sources are declared, and that is asserted five ways and mutation-tested.
+
+### Gates
+
+| gate | floor | observed |
+|---|---|---|
+| `bun run test` | 213 tests, 21 files | **225 tests, 21 files**, all passing |
+| `bunx tsc --noEmit` | silent | **silent** |
+| `bun run format` | clean | **clean, whole tree** |
+
+Twelve new tests, all in `src/lib/modules.test.ts`, which is now 55 cases, up from 43.
 
 ## 7. Making `internalsources` optional
 

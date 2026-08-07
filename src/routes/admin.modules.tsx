@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { FormSection } from "#/components/admin/form-ui";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
@@ -27,11 +27,15 @@ function ModulesAdmin() {
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
 	const router = useRouter();
-	const [on, setOn] = useState<Set<ModuleId>>(new Set());
-	const [loading, setLoading] = useState(true);
+	// null until the current setting has actually been read. An empty Set that has
+	// never been loaded looks exactly like "no modules", and one click on Save would
+	// then write that guess over a live site's configuration.
+	const [on, setOn] = useState<Set<ModuleId> | null>(null);
+	const [error, setError] = useState<string | null>(null);
 	const [saving, setSaving] = useState(false);
 
-	useEffect(() => {
+	const load = useCallback(() => {
+		setError(null);
 		trpcClient.adminSettings.list
 			.query()
 			.then((rows) => {
@@ -40,18 +44,27 @@ function ModulesAdmin() {
 				const row = rows.find((r) => r.key === MODULES_SETTING);
 				setOn(enabledModules(row ? { [MODULES_SETTING]: row.value } : {}));
 			})
-			.catch(() => {})
-			.finally(() => setLoading(false));
+			.catch((err) =>
+				setError(
+					err instanceof Error
+						? err.message
+						: "The settings could not be read.",
+				),
+			);
 	}, []);
+
+	useEffect(load, [load]);
 
 	const toggle = (id: ModuleId) =>
 		setOn((s) => {
+			if (!s) return s;
 			const next = new Set(s);
 			next.has(id) ? next.delete(id) : next.add(id);
 			return next;
 		});
 
 	async function save() {
+		if (!on) return;
 		setSaving(true);
 		try {
 			await trpcClient.adminSettings.set.mutate({
@@ -87,7 +100,21 @@ function ModulesAdmin() {
 				title="Optional features"
 				description="Switching one off hides its admin screens, its page sections and its permission area. Nothing is deleted, and switching it back on returns every record."
 			>
-				{loading ? (
+				{error ? (
+					<div className="space-y-3">
+						<p className="text-sm text-destructive">
+							This site's modules could not be read, so nothing here can be
+							changed yet: {error}
+						</p>
+						<button
+							type="button"
+							onClick={load}
+							className="rounded-full border border-border px-4 py-2 text-sm font-semibold hover:bg-muted transition"
+						>
+							Try again
+						</button>
+					</div>
+				) : !on ? (
 					<p className="text-sm text-muted-foreground">Loading…</p>
 				) : (
 					<div className="space-y-3">

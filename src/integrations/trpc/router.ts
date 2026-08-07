@@ -347,31 +347,40 @@ const termInput = z.object({
  * module: otherwise a role holding `lists` still writes partner categories on a
  * site whose partner register is switched off and unreachable.
  */
-async function assertTaxonomyAllowed(db: DB, taxonomy: string) {
-	if (!taxonomyEnabled(await getSettings(db), taxonomy))
-		throw new TRPCError({
-			code: "FORBIDDEN",
-			message: `The "${taxonomy}" list belongs to a module this site has not turned on.`,
-		});
+async function assertTaxonomiesAllowed(
+	db: DB,
+	...taxonomies: (string | undefined)[]
+) {
+	const settings = await getSettings(db);
+	for (const taxonomy of taxonomies)
+		if (taxonomy && !taxonomyEnabled(settings, taxonomy))
+			throw new TRPCError({
+				code: "FORBIDDEN",
+				message: `The "${taxonomy}" list belongs to a module this site has not turned on.`,
+			});
 }
 
 const adminTermsRouter = {
 	list: adminProcedure.query(({ ctx }) => adminListTerms(ctx.db)),
 	create: adminProcedure.input(termInput).mutation(async ({ ctx, input }) => {
-		await assertTaxonomyAllowed(ctx.db, input.taxonomy);
+		await assertTaxonomiesAllowed(ctx.db, input.taxonomy);
 		return createTerm(ctx.db, input);
 	}),
 	update: adminProcedure
 		.input(termInput.extend({ id: z.number() }))
 		.mutation(async ({ ctx, input }) => {
-			await assertTaxonomyAllowed(ctx.db, input.taxonomy);
+			// Both taxonomies: the stored one, or a disabled module's row can be moved
+			// out of it and edited, and turning the module back on no longer returns
+			// what it had; and the incoming one, or a row can be moved into it.
+			const row = (await adminListTerms(ctx.db)).find((t) => t.id === input.id);
+			await assertTaxonomiesAllowed(ctx.db, row?.taxonomy, input.taxonomy);
 			return updateTerm(ctx.db, input.id, input);
 		}),
 	delete: adminProcedure
 		.input(z.object({ id: z.number() }))
 		.mutation(async ({ ctx, input }) => {
 			const row = (await adminListTerms(ctx.db)).find((t) => t.id === input.id);
-			if (row) await assertTaxonomyAllowed(ctx.db, row.taxonomy);
+			await assertTaxonomiesAllowed(ctx.db, row?.taxonomy);
 			return deleteTerm(ctx.db, input.id);
 		}),
 } satisfies TRPCRouterRecord;

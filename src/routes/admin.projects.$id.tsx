@@ -29,6 +29,8 @@ function EditProject() {
 	const [notFound, setNotFound] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [savedAt, setSavedAt] = useState<string | null>(null);
+	const [ready, setReady] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 	const modules = useModules();
 
 	useEffect(() => {
@@ -36,12 +38,17 @@ function EditProject() {
 			trpcClient.adminProjects.get.query({ id: pid }),
 			trpcClient.i18n.languages.query(),
 			modules.list("fundraising", () => trpcClient.adminDonors.list.query()),
-		]).then(([d, l, dn]) => {
-			if (!d) setNotFound(true);
-			else setData(d);
-			setLangs(l);
-			setDonors(dn.map((x) => ({ id: x.id, name: x.name })));
-		});
+		])
+			.then(([d, l, dn]) => {
+				if (!d) setNotFound(true);
+				else setData(d);
+				setLangs(l);
+				setDonors(dn.map((x) => ({ id: x.id, name: x.name })));
+			})
+			.catch((e) => setError(saveErrorMessage(e)))
+			// In `finally`, so a query that fails leaves a screen that says so rather
+			// than a spinner nobody can get past.
+			.finally(() => setReady(true));
 	}, [pid, modules.list]);
 
 	async function onSubmit(v: ProjectFormValue) {
@@ -58,8 +65,13 @@ function EditProject() {
 
 	if (notFound)
 		return <p className="text-sm text-muted-foreground">Project not found.</p>;
-	if (!data || !langs.length)
-		return <p className="text-sm text-muted-foreground">Loading…</p>;
+	if (!ready) return <p className="text-sm text-muted-foreground">Loading…</p>;
+	if (error || !data || !langs.length)
+		return (
+			<p className="text-sm text-destructive">
+				{error ?? "This project could not be loaded."}
+			</p>
+		);
 
 	return (
 		<ProjectForm
