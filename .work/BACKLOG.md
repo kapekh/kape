@@ -212,3 +212,14 @@ the public page. Nothing errors. Nobody finds out until an editor tries to chang
 So every content job owes the inverse of what J01 and J03 proved. They showed every field is read
 by a renderer; content jobs must show **every prop they seed is declared as a field**, and that a
 real edit in `/admin` round-trips to the public page.
+
+## Carried over from the worklog, 2026-08-07
+
+Small, real, and nobody's job yet.
+
+- `package.json` name is still `kape` and `docs/` is still KAPE's spec, on a branch whose whole point
+  is that the product is not KAPE.
+- `.work/km-review.md` needs a native Khmer speaker: 208 machine-translated rows, 112 of them with no
+  Khmer at all.
+- `LANGS = ["en", "km"]` is hardcoded at `lib/i18n-config.ts:10`, so a third language gets no URLs.
+  A client who wants French cannot have one without a code change.
