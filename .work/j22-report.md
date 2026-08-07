@@ -1,165 +1,130 @@
-# J22 report - Mega menu design
+# J22 report - Mega menu design (cms-core re-verification)
 
-Presentation only, in `src/components/Header.tsx`.
-`src/components/NavLink.tsx` needed no change.
-92 insertions, 196 deletions, one file.
+**No code changed. `Header.tsx` and `NavLink.tsx` are byte-identical to `58a0fe7`.**
 
-## Direction changes mid-job
+J22 was already built and committed on this branch's history, at `fd43cdf` "Make a mega menu the visitor
+can see all of at once". That commit deleted the tile grid, `bentoSpan` and the grid/scroll toggle, and
+shipped its own `.work/j22-report.md`. This file replaces that one. The build narrative for the original
+run is in `fd43cdf`'s commit body and in the version of this file at that commit.
 
-Five instructions arrived while the work was running, and they moved the target four times:
+What I did instead was run J22's acceptance against `cms-core` at `58a0fe7`, because the branch has moved
+since: the theme became configuration, and a de-branding pass changed the data the menu renders. The old
+evidence was captured on a different tree, so it no longer proves anything about this one.
 
-1. keep the mega menu full screen, no scroll
-2. keep it simple, no background image
-3. take back full screen: top-aligned, attached to the navbar, same width as the nav container
-4. items are messy, too much text, less is more, no bento grid
-5. a short description for each item
-
-What shipped follows (2) through (5). The panel is a dropdown hanging off the header's bottom edge,
-`left-1/2 -translate-x-1/2 w-full max-w-7xl`, so its box matches the header's own `mx-auto max-w-7xl`
-container exactly. Rounded bottom corners, no top border, so it reads as attached rather than floating.
-Height is whatever the contents need.
-
-The contents are link columns. No cards, no borders, no images. A destination is a label with one line of
-brief under it, and the only structure is the section heading above each column.
-
-The briefs came out and went back in, and both moves were right. Out, because they were rendered as
-two- and three-line blocks inside bordered cards, which is what made the panel read as noise. Back in as a
-single clamped line, because without them the project entries were eighteen bare acronyms - NGS, NGPRC,
-HCC, CLASS - and "New Generation Schools" appeared nowhere in the menu at all. The brief is the only place
-that expansion exists.
-
-One rule keeps the noise out: a brief that opens with its own label is not rendered. "CLASS - a KAPE
-current project." under the label CLASS says nothing the label did not, so CLASS, MLDP, EQUAL-i3L, LSLAG,
-SEEK, KYLA and ESCUP show a label alone. The seven that carry a real name keep their line.
+Verdict: every delta M1 to M5 holds on cms-core. M6 changed shape and needs re-stating. Details below.
 
 ## Per delta
 
-| id | before | after |
+Before is `.lavish/audit-shots/pub-megamenu-*.jpg` (1440x950, 2026-08-06).
+After is `.work/j22-shots/*.jpg` (1440x950, captured today against `bun run dev` on this branch).
+
+| id | before | after on cms-core |
 |---|---|---|
-| M1 | Full-bleed photo, backdrop-blur mask, black gradient, white text. Contrast swung with whatever photo the editor picked. | No image and no card. A label is `text-foreground/85` on the panel surface, hover `--accent`; brief and heading are `text-muted-foreground`. Contrast is a fixed set of theme tokens, identical everywhere, in light and dark. Verified in both: `whatwedo.jpg`, `whatwedo-dark.jpg`. |
-| M2 | `bentoSpan` promoted item 0 to a 2x2 hero at 5+ leaves and every 5th item to a wide accent. | `bentoSpan` deleted with the whole tile grid. Every destination is one row of the same size. Nothing can claim emphasis from its position. |
-| M3 | `grid-flow-row-dense` plus varied spans left an empty bottom-right cell in Who We Are. | No grid of boxes to leave a hole. Links flow down then across in CSS columns, so a short last column is just a short column. |
-| M4 | Panel pinned to `100dvh`; What We Do overflowed by 525px with nothing signalling it. | Not pinned to the viewport at all. As tall as its contents: 199, 477, 281, 199px. What We Do went from a 1352px scroll to 477px with nothing hidden. Overflow 0 on all four at 1440x950 and 1280x800, English and Khmer. |
-| M5 | Two unlabelled 28px icon buttons per section header, grid vs scrolling row. | Both buttons, the `mode` state and the horizontal-scroll branch deleted. |
-| M6 | Out of scope. | See below. |
+| M1 | Full-bleed photo per tile, backdrop-blur mask, black gradient, white text. Contrast swung with whatever photo the editor picked. | No image, no card. Measured on the live DOM: all 21 labels sit at exactly **10.89:1**, all 16 briefs and all 3 headings at **7.44:1**. One distinct value each, not a range. Dark theme: **12.87:1** and **5.88:1**, again one value each. Contrast no longer has anything to do with content. |
+| M2 | `bentoSpan` promoted item 0 to a 2x2 hero at 5+ leaves. | Gone with the tile grid. Every destination is one row of the same size, so position cannot claim emphasis. |
+| M3 | `grid-flow-row-dense` plus varied spans left an empty bottom-right cell in Who We Are. | No grid of boxes, so no hole. Links flow down then across in CSS columns; a short last column is just a short column. Visible in `whoweare.jpg`. |
+| M4 | Panel pinned to `100dvh`; What We Do overflowed by 525px with nothing signalling it. | Fits, at both sizes. Table below. |
+| M5 | Two unlabelled 28px icon buttons per section header. | Both buttons and the `mode` state are gone. |
+| M6 | Coffee table for About KAPE, rainbow for Our Partners, dreamcatcher for DEP. | Different problem now, see below. |
 
-Four rules, no exceptions: a brief is one clamped line, never two; a brief that opens with its own label
-is dropped; a titled section is a single column, because a brief needs the width to land on one line; a
-menu with no sections flows into `min(3, ceil(n/3))` columns bounded to 22rem each, so links stay near
-each other instead of drifting to the panel edges. Leaf L2s in a grouped menu get a column of their own,
-headed by the menu they belong to, so every column starts on the same line.
+### M4, measured
 
-The panel keeps `overflow-y-auto` under a `max-height` of `100dvh - panelTop - 1rem` as a safety for
-editor-driven content. It does not trigger on any current panel in either language.
+Panel box against the header container, from the live DOM.
 
-## Hover intent
+| panel | height | top | bottom | overflow | 1440x950 | 1280x800 |
+|---|---|---|---|---|---|---|
+| Who We Are | 199 | 122 | 321 | 0 | fits | fits |
+| What We Do | 477 | 122 | 599 | 0 | fits | fits |
+| Media & Publications | 281 | 122 | 403 | 0 | fits | fits |
+| Opportunities | 181 | 122 | 303 | 0 | fits | fits |
 
-Added after a pass over how comparable organisations build this menu. The panel used to open the instant
-the cursor touched a trigger and close the instant it left, so a cursor crossing the nav on its way to
-Donate flashed three panels open in sequence.
+The tallest panel ends at 599px against a 950px viewport, and against an 800px one. Overflow is 0 on all
+four at both sizes, so nothing is hidden and there is no overflow to signal. The `overflow-y-auto` under
+`max-height: 100dvh - panelTop - 1rem` stays as a safety for editor-driven content and does not trigger.
 
-- First open waits 200ms. Nothing happens on a pass-through.
-- Switching between triggers while a panel is already up is instant, so a reader who is deliberately
-  browsing the menu never waits.
-- Leaving gets a 300ms grace period, so crossing a gap does not close the panel.
-- Escape and the trigger's own click both kill a pending open, or the panel reappears a fraction of a
-  second after the reader dismissed it.
+Load-bearing behaviour, all confirmed working:
 
-Measured from the live DOM: from closed, `aria-expanded` is still false at 60ms and true by 350ms. With a
-panel already open, hovering the next trigger flips it at 60ms. Escape fired during a pending open leaves
-all four false at 400ms.
-
-NN/g's own numbers are 500ms in and 500ms out. 200/300 tested better here because KAPE's nav sits in a
-narrow band with the Donate button immediately to its right, so the pass-through case is common and the
-deliberate case wants to feel immediate.
-
-Escape handling, the shared hover region, the body-scroll lock and the `panelTop` measurement are
-untouched and confirmed working.
+- `panelTop` measures true. Header bottom 122, panel top 122. Panel box left 80 / width 1280 matches the
+  header's own `mx-auto max-w-7xl` container exactly.
+- Shared hover region holds. Moving the pointer off the trigger and down into the panel body at (735, 300)
+  leaves it open.
+- Leaving the region entirely closes it after the grace period.
+- Body-scroll lock: `body.style.overflow` is `hidden` while a panel is open and back to `""` after Escape.
 
 ## Acceptance
 
-1. `bun run test` - all passing. J22's own baseline was 31 tests over 8 files; the tree now runs 37 over 9
-   because the parallel pane added `seed/roles.test.ts`. Nothing in this job touches either count.
-2. `bunx tsc --noEmit` - no output, exit 0.
-3. `bun run format` - "Checked 229 files. No fixes applied."
-4. Shots in `.work/j22-shots/`, 1440x950, against the running dev server:
+1. `bun run test` - **239 passed, 21 files**, on the clean tree at 20:58.
+   Re-run at 21:12 is 238 passed / 1 failed. The failure is
+   `src/lib/site-theme.test.ts > colourToHex > ignores a percentage alpha`, expected `#002c5e`, got `null`.
+   That is c8's file, edited under me mid-run, and it is a stop condition rather than something to fix
+   around. Nothing in J22 touches it.
+2. `bunx tsc --noEmit` - no output, exit 0. Still exit 0 after c8's edits landed.
+3. `bun run format` - "Checked 246 files. No fixes applied.", exit 0. Also clean run directly against
+   `Header.tsx` and `NavLink.tsx`.
+4. Shots in `.work/j22-shots/`, all 1440x950 unless noted:
 
-   | new | original |
+   | after | before |
    |---|---|
    | `whoweare.jpg` | `.lavish/audit-shots/pub-megamenu-whoweare.jpg` |
    | `whatwedo.jpg` | `.lavish/audit-shots/pub-megamenu-whatwedo.jpg` |
    | `media.jpg` | `.lavish/audit-shots/pub-megamenu-media.jpg` |
    | `opportunities.jpg` | `.lavish/audit-shots/pub-megamenu-opportunities.jpg` |
+   | `whatwedo-1280x800.jpg` | smaller viewport |
+   | `whatwedo-dark.jpg` | dark theme |
 
-   Extra: `whatwedo-1280x800.jpg` for the smaller viewport, `whatwedo-dark.jpg` for the dark theme.
+   Panels were opened by a real pointer move to the trigger, not by `click()`. `aria-expanded` was read
+   immediately before each capture and the right one is `true` in every case.
 
-   Panels were opened by clicking the trigger, not by hovering.
-   `agent-browser mouse move` opened a panel only intermittently through this CLI; the trigger's own
-   `onClick` sets the same `openId`, so the captured state is the same state a hover produces.
+5. What We Do against 1440x950: 477px tall, top 122, bottom 599, overflow 0. Every section fits with
+   351px of viewport to spare. Nothing is hidden, so no overflow affordance is needed.
 
-5. Panel box against the header container, measured from the live DOM at 1440x950:
+6. Keyboard, one line each:
+   - **Tab through the header** walks Staff login, language, theme, logo, Home, the four triggers, Contact,
+     Donate, and opens nothing on the way: `aria-expanded` stays `false,false,false,false` throughout.
+   - **Escape closes an open panel** and releases the lock: all four back to `false`, `body.style.overflow`
+     back to `""`.
+   - **The panel does not swap under a tabbing reader**: with What We Do open, four Tabs across the other
+     three triggers out to Donate leave `aria-expanded` unchanged at `false,true,false,false`. Tabbing once
+     more from Donate lands on the open panel's first link, so the panel is reachable rather than a trap.
 
-   | panel | left | width | top | height | overflow | shape |
-   |---|---|---|---|---|---|---|
-   | Who We Are | 80 | 1280 | 122 | 199 | 0 | 7 links, 3 columns |
-   | What We Do | 80 | 1280 | 122 | 477 | 0 | 3 columns: 3 leaves, then 9 and 9 |
-   | Media & Publications | 80 | 1280 | 122 | 281 | 0 | 4 columns of 4 / 2 / 3 / 3 |
-   | Opportunities | 80 | 1280 | 122 | 199 | 0 | 5 links, 2 columns |
+## M6, restated for cms-core
 
-   The header's own `mx-auto max-w-7xl` container is left 80, width 1280, bottom 121. The panel matches it
-   on both edges and starts on its bottom edge.
-   At 1280x800 the container is left 0, width 1280, and the panel tracks it: same widths, same heights,
-   overflow 0. Khmer at 1280x800 is identical: 199 / 477 / 281 / 199, overflow 0 on all four.
-   Nothing is hidden at either size, so there is no overflow to signal.
+Reporting only. Nothing reseeded, `kape.db` never opened by the running app.
 
-6. Keyboard:
-   - Tab moves through the header in order (trigger, trigger, trigger, Contact, Donate) and then into the
-     open panel's links; `document.activeElement.closest('div.fixed')` is true by the sixth Tab.
-   - Escape closes the open panel and releases the body-scroll lock: `aria-expanded` returns to all false
-     and `body.style.overflow` returns to empty.
-   - The panel does not swap under a tabbing reader. With What We Do open, four Tabs across the other two
-     triggers and out to Donate leave `aria-expanded` unchanged at `false,true,false,false`. The triggers
-     still carry no `onFocus`.
+**The mismatched imagery is gone, but not because anyone fixed the mapping.** All 45 nav thumbnails in the
+mobile drawer now resolve to `/placeholder.svg`, and 0 of 39 pages carry a `hero_media_id`. The de-branding
+pass dropped the hero associations, so the coffee table and the dreamcatcher are not on this branch at all.
 
-## M6, the tile imagery
+That turns M6 from "wrong image" into "no image", which is the better failure of the two but is still a
+gap the client's real photography has to close. The desktop mega panel renders no imagery either way, so
+this is only visible in the drawer and on page headers.
 
-Reporting only, as instructed. Nothing reseeded, nothing touched in `nav.ts` or `kape.db`.
+Worth carrying forward from the original run, both still true on cms-core and both outside these two files:
 
-The mismatch is real: a coffee table for About KAPE, a rainbow for Our Partners, a dreamcatcher for DEP, a
-galaxy for IEP. All four are visible in the original audit shots.
-The desktop mega panel no longer renders those images, so the mismatch is not visible there any more.
+- **Project labels are bare acronyms.** CLASS, MLDP, EQUAL-i3L, LSLAG, SEEK, KYLA and ESCUP show a label
+  alone, because their `description` only restates the label and the one-line brief rule drops it. Those
+  rows tell a first-time visitor nothing. The fix is the nav label in `nav.ts` and the seed.
+- **Group headings do not link.** `nav.ts` nulls the href on any node with children, so "Current Projects"
+  is text. The mobile drawer renders an Overview row; desktop cannot.
 
-It has not gone away. The same `image` field still feeds the mobile drawer thumbnails and the public page
-headers, and those were out of scope here. The fix is still the client's real photography.
+## Harness notes for whoever re-runs this
 
-Worth raising alongside it: the nav briefs. `description` on a project node reads "MLDP - a KAPE current
-project." for 18 of the 21 projects. The panel no longer shows them, but the same field renders on the
-project pages, where restating the title as a sentence is the whole of the page's introduction. That is
-the empty-project-pages item already on the backlog, seen from a second angle.
+Four things cost time and will cost it again.
 
-## Open, and not mine to fix
+- **`PORT` must match the vite port.** The SSR tRPC client hardcodes
+  `http://localhost:${process.env.PORT ?? 3000}` in `src/integrations/tanstack-query/root-provider.tsx:12`.
+  Running `vite dev --port 3100` without also setting `PORT=3100` gives every route a 500 and
+  "Unable to connect. Is the computer able to access the url?", which looks exactly like a bad
+  `DATABASE_PATH` and is not.
+- **A parked pointer fires nothing.** `agent-browser mouse move` to the coordinate the pointer already
+  occupies produces no `mouseover`, so the panel never opens and hover looks broken. Move somewhere else
+  first. Hover works fine once you do, and the earlier run's "hover only opens intermittently" was this,
+  not a real defect.
+- **The announcement dialog eats the pointer.** On a fresh load `elementFromPoint(x, 81)` returns the
+  `<dialog>`, not the trigger. Dismiss it before hovering anything.
+- **`agent-browser screenshot` needs an absolute path.** A relative one reports success and writes
+  somewhere else, which is how the previous run's shots survived a re-capture and got read back as if
+  they were new.
 
-**The project labels are bare acronyms.** NGS, NGPRC, HCC, CLASS, IEP, DEP, MLDP, EQUAL-i3L, LLSE, then
-nine more under Past Projects. The brief now carries the expansion for seven of them, so the menu is
-readable, but it is readable by accident: the real name is sitting in the description field because
-nobody put it in the label.
-
-Seven still show nothing but an acronym, because their description only restates it: CLASS, MLDP,
-EQUAL-i3L, LSLAG, SEEK, KYLA, ESCUP. Those rows tell a first-time visitor nothing.
-
-The fix is the nav label, which lives in `nav.ts` and the seed, not in `Header.tsx`, and the parallel pane
-was live against that database. Left alone. It wants a client decision anyway: either the labels become
-"New Generation Schools (NGS)" or those seven stay insider-only.
-
-**Group headings do not link.** Comparable menus put an Overview first in each group. `nav.ts` nulls the
-href on any node with children, so "Current Projects" is text, not a link. The mobile drawer already
-renders an Overview row; desktop cannot. Same file, same reason, left alone.
-
-## One observation outside the deltas
-
-Pressing Enter on a focused nav trigger did not fire a click in the automation harness; Space did, and the
-panel opened normally. The code comment claims Enter and Space both open it. This is untouched behaviour
-and may be a harness artefact rather than a browser one, so it is noted rather than fixed. Worth a real
-keyboard check on a real machine.
-
-Not committed.
+Ran against a `VACUUM INTO` copy at
+`~/.tmp/claude-1000/.../scratchpad/j22.db`, never against `kape.db`. No seed script run. Not committed.

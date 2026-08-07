@@ -1,5 +1,13 @@
 # J22 — Mega menu design
 
+**SPENT, 2026-08-07. Do not dispatch this again.** Every delta below describes a header that no
+longer exists: the photo-tile bento panel was replaced with a text-column layout somewhere in the
+C3/C6 theme-as-data work, before this job ever ran. `bentoSpan`, `grid-flow-row-dense` and the
+grid/scroll toggle are all absent from `src/components/Header.tsx`, and the panel is bounded with
+`overflow-y-auto` rather than pinned to `100dvh`. Verified in the lead pane against the source and
+against `.work/j22-shots/whatwedo.jpg`. Verdict and the one live finding are in `.work/LEAD.md`;
+the run is written up in `.work/j22-report.md`.
+
 The desktop mega panel is the first thing a visitor touches and it currently reads as a stock-photo
 mood board. Structure is sound; presentation is not. This job is presentation only.
 

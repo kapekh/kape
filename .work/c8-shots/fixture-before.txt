@@ -1,0 +1,28 @@
+theme_primary            VALID
+theme_primary_dark       VALID
+theme_secondary          VALID
+theme_secondary_dark     VALID
+theme_accent             VALID
+theme_accent_dark        VALID
+theme_highlight          VALID
+theme_highlight_dark     VALID
+theme_paper_chroma       VALID
+theme_paper_hue          VALID
+themeCss.bytes            353
+themeCss.sha256           46dfe2c614c1d37372d5f9256f71aeb99005477040b7efae5a545b95e12af6c0
+themeCss                  :root{--brand-primary:oklch(0.30 0.10 255);--brand-primary-dark:oklch(0.62 0.13 250);--brand-secondary:oklch(0.72 0.17 55);--brand-secondary-dark:oklch(0.74 0.17 55);--brand-accent:oklch(0.68 0.19 35);--brand-accent-dark:oklch(0.70 0.19 35);--brand-highlight:oklch(0.78 0.14 80);--brand-highlight-dark:oklch(0.80 0.14 80);--paper-chroma:1;--paper-hue:0}
+themeColor                #002c5e
+contrast theme_primary|light|a label on it = 13.2199
+contrast theme_primary|light|a heading or link in it = 13.2199
+contrast theme_primary|dark|a label on it = 5.3502
+contrast theme_primary|dark|a heading or link in it = 5.0713
+contrast theme_secondary|light|a label on it = 7.4241
+contrast theme_secondary|light|a heading or link in it = 2.5081
+contrast theme_secondary|dark|a label on it = 8.0263
+contrast theme_secondary|dark|a heading or link in it = 7.6079
+contrast theme_accent|light|a label on it = 6.2314
+contrast theme_accent|light|a heading or link in it = 2.9882
+contrast theme_accent|dark|a label on it = 6.7008
+contrast theme_accent|dark|a heading or link in it = 6.3515
+contrast theme_highlight|light|a mark on the primary colour = 6.7895
+contrast theme_highlight|dark|a mark on the primary colour = 1.9262
