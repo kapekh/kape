@@ -6,7 +6,7 @@
     "#/*": "./src/*"
   },
   "scripts": {
-    "dev": "bun --bun vite dev --port 3000",
+    "dev": "PORT=${PORT:-3000} bun --bun vite dev --port ${PORT:-3000}",
     "generate-routes": "tsr generate",
     "build": "bun scripts/gen-prerender-paths.ts && NODE_ENV=production bun --bun vite build",
     "prerender": "bun run build && bun scripts/prerender-static.ts",
