@@ -36,7 +36,13 @@ needs no component edit. Domain features are modules an install enables.
 
 ## Live now
 
-Nothing dispatched. Tree clean at `4773690` bar `.env.example` and the unattributed script.
+Two, at the concurrency limit. Tree at `5ed6e11` bar `.env.example` and the unattributed script.
+
+- **J12** in `w1:tF`, lint, owns every source file. Re-measured its own baseline at 215 and is
+  through category 2 at 210.
+- **K1** in `w1:tG`, lifts the 8 unlifted project bodies off the client's prototype. Writes only
+  under `.work/kape-copy/`, so it does not collide with J12. Applying its JSON to
+  `src/server/seed/projects.ts` is a follow-up job that waits for J12 to land.
 
 ## How C9 and C10 were verified
 
@@ -240,13 +246,37 @@ to `ac927de`.
 Left in `/tmp`: an 11G isolated build tree, reproducible from the patch. Safe to delete.
 `git worktree prune` is still needed before `main` can be checked out here.
 
+## What finishing KAPE actually needs, measured 2026-08-09
+
+**Audit the seed, never the repo's `kape.db`.** That file is stale by a wide margin: it has 39 pages
+to the seed's 40, no `accreditations` and no `ten-subsectors`, a leftover `j03-preview`, and zero
+sections on the four Who We Are pages the seed fills with 2,200 to 7,800 characters each. An audit
+against it reports a content crisis that does not exist. Seed a scratch copy and query that.
+
+Against a fresh `db:seed` + `seed:kape`:
+
+- **Pages are in good shape.** `fact-sheet` 7801, `director-speech` 7364, `about` 5699, `home` 3288,
+  `accreditations` 2256, `vision-mission` 2244, `ten-subsectors` 1864. The eight zero-section pages
+  are hubs, and `$.tsx:245` renders a childless hub as an index of its children.
+- **Projects are the gap: 24 of 26 bodies are the 152-character `TAIL` placeholder**, and only DEP
+  and IEP carry real copy. The worklog was right about this and the stale database hid it.
+- **8 of those 24 are recoverable now.** The client's prototype has full structured copy - objective,
+  activities, results, target groups, outcomes - for the DEP and IEP children, and the seed lifted
+  only their summary. K1 owns that.
+- **The other 16 have no source anywhere.** Their prototype route serves the same `TAIL` sentence, so
+  nobody has ever written them. That needs KAPE, not an agent.
+- **Khmer is ~80 short strings from complete**: 49 `nav_item.description`, 30 `page.title`, 1
+  excerpt. Every body field is fully translated and `ui_strings` is 91/91 both languages. Do not
+  spend the Khmer budget on project bodies while they are still placeholder.
+
+The prototype is a client-rendered SPA; page HTML is a shell and the copy lives in a per-route JS
+chunk listed in `assets/index-Cc67oJRE.js`. Fetch the chunk to find the strings, render the page to
+learn their order.
+
 ## Next action
 
-**J12 is the only job left in the queue and it runs alone**, since the linter conflicts with every
-file. Its baseline table is re-measured and current: 219 errors, and `.work/jobs/J12-lint-pass.md`
-holds the category breakdown. Before dispatching it, confirm the tree is clean of every other
-agent's work.
+When J12 lands, apply K1's `.work/kape-copy/projects.json` to `src/server/seed/projects.ts`. That is
+a source edit and must not overlap the lint pass.
 
-The confirm-dialog copy and the router half of the language work are the two open jobs worth writing
-after that. Re-read any queued contract against current source before it goes out - J22 is what
-happens when nobody does.
+The confirm-dialog copy and the router half of the language work are still open. Re-read any queued
+contract against current source before it goes out - J22 is what happens when nobody does.
