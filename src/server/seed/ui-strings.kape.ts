@@ -180,4 +180,46 @@ export const kapeUiStrings: Record<string, { en: string; km?: string }> = {
 
 	// subpage chrome
 	"sub.home": { en: "Home", km: "ទំព័រដើម" },
+
+	// shared chrome the shipped components render through t(). The Khmer here is
+	// conventional UI vocabulary and wants a native speaker's sign-off before go-live.
+	"top.login": { en: "Staff login", km: "ចូលសម្រាប់បុគ្គលិក" },
+	"forms.submit": { en: "Submit", km: "ដាក់ស្នើ" },
+	"newsletter.email": { en: "Email address", km: "អាសយដ្ឋានអ៊ីមែល" },
+	"newsletter.subscribe": { en: "Subscribe", km: "ជាវ" },
+	"newsletter.thanks": {
+		en: "Thanks for subscribing!",
+		km: "សូមអរគុណសម្រាប់ការជាវ!",
+	},
+	"newsletter.error": {
+		en: "Something went wrong. Please try again.",
+		km: "មានបញ្ហាបានកើតឡើង។ សូមព្យាយាមម្តងទៀត។",
+	},
+	"footer.calendar": { en: "ប្រតិទិនខ្មែរ · Khmer Calendar", km: "ប្រតិទិនខ្មែរ" },
+	"share.label": { en: "Share", km: "ចែករំលែក" },
+	"announcement.label": { en: "Announcement", km: "សេចក្តីជូនដំណឹង" },
+	"announcement.more": { en: "Read more", km: "អានបន្ថែម" },
+	"announcement.deadline": { en: "Deadline", km: "ថ្ងៃផុតកំណត់" },
+	"announcement.prev": { en: "Previous", km: "មុន" },
+	"announcement.next": { en: "Next", km: "បន្ទាប់" },
+	"announcement.close": { en: "Close announcement", km: "បិទសេចក្តីជូនដំណឹង" },
+	"announcement.close.label": { en: "Close", km: "បិទ" },
+	"lightbox.title": { en: "Photo viewer", km: "កម្មវិធីមើលរូបភាព" },
+	"lightbox.view": { en: "View photo", km: "មើលរូបភាព" },
+	"lightbox.prev": { en: "Previous photo", km: "រូបភាពមុន" },
+	"lightbox.next": { en: "Next photo", km: "រូបភាពបន្ទាប់" },
+	"lightbox.close": { en: "Close", km: "បិទ" },
+	"pdf.title": { en: "Document viewer", km: "កម្មវិធីមើលឯកសារ" },
+	"pdf.newTab": { en: "Open in new tab", km: "បើកក្នុងផ្ទាំងថ្មី" },
+	"pdf.close": { en: "Close", km: "បិទ" },
+	"calendar.prev": { en: "Previous month", km: "ខែមុន" },
+	"calendar.next": { en: "Next month", km: "ខែបន្ទាប់" },
+	"search.none": { en: "Nothing matched", km: "រកមិនឃើញ" },
+	"search.prompt": {
+		en: "Type a word above to search the site — try a project name, a place, or a title.",
+		km: "សូមវាយបញ្ចូលពាក្យខាងលើដើម្បីស្វែងរក ដូចជាឈ្មោះគម្រោង ទីកន្លែង ឬចំណងជើង។",
+	},
+	"search.results": { en: "results" },
+	"search.showingFirst": { en: "showing the first" },
+	"related.more": { en: "More from" },
 };

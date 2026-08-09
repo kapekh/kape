@@ -8,7 +8,7 @@ import {
 	groupIntoSections,
 	isFormClosed,
 } from "@/lib/forms";
-import { useLang } from "@/lib/i18n";
+import { useLang, useT } from "@/lib/i18n";
 import { PublicRichText } from "./PublicRichText";
 
 type FormData = NonNullable<
@@ -21,6 +21,7 @@ const field =
 /** Renders an admin-defined form (by slug) on the public site: fields + submit. */
 export function FormRenderer({ slug }: { slug: string }) {
 	const { lang } = useLang();
+	const t = useT();
 	const [form, setForm] = useState<FormData | null | undefined>(undefined); // undefined = loading, null = not found
 	const [values, setValues] = useState<Record<string, string>>({});
 	const [groups, setGroups] = useState<Record<string, string[]>>({});
@@ -352,7 +353,9 @@ export function FormRenderer({ slug }: { slug: string }) {
 					disabled={status === "sending"}
 					className="rounded-full bg-primary text-primary-foreground px-7 py-3 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition"
 				>
-					{status === "sending" ? "Sending…" : form.submitLabel || "Submit"}
+					{status === "sending"
+						? t("forms.sending", "Sending…")
+						: form.submitLabel || t("forms.submit", "Submit")}
 				</button>
 				{deadlineLabel && (
 					<span className="text-xs text-muted-foreground">

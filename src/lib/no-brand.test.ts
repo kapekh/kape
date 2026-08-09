@@ -83,6 +83,26 @@ describe("shipped source carries no customer branding", () => {
 		expect(unused).toEqual([]);
 	});
 
+	// The other direction, and the one that actually bit: a key a component
+	// renders but nobody seeded falls back to its English argument, so a Khmer
+	// install shows English and no test, type or lint notices.
+	it("seeds every UI string the product renders", () => {
+		const dictionary = join(ROOT, "lib", "ui-strings.default.ts");
+		const readers = sourceFiles(ROOT).filter((f) => f !== dictionary);
+		const source = readers.map((f) => readFileSync(f, "utf8")).join("\n");
+		// Seeding this one would replace a default built from the site's own name
+		// ("Search KAPE") with a bare word, so it stays unseeded on purpose.
+		const COMPUTED_DEFAULT = ["search.placeholder"];
+		const rendered = [...source.matchAll(/\bt\(\s*"([a-zA-Z0-9._]+)"/g)].map(
+			(m) => m[1],
+		);
+		const unseeded = [...new Set(rendered)]
+			.filter((key) => !(key in defaultUiStrings))
+			.filter((key) => !COMPUTED_DEFAULT.includes(key))
+			.sort();
+		expect(unseeded).toEqual([]);
+	});
+
 	/**
 	 * `public/logo.png` was the first customer's crest for a year, and no text
 	 * search could see it: the words were in the pixels. These two catch what a

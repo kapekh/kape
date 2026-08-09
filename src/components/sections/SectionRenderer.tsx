@@ -959,6 +959,7 @@ type FormProps = Common & {
 };
 
 function FormSection(p: FormProps) {
+	const t = useT();
 	// A built form carries its own title/intro/submit, so the section's heading
 	// and intro are only used for the quick (contact/subscribe/signup) layouts.
 	const builtForm = !!p.formSlug;
@@ -1001,7 +1002,7 @@ function FormSection(p: FormProps) {
 								type="submit"
 								className="w-full rounded-full bg-primary text-primary-foreground px-6 py-3 text-sm font-semibold hover:opacity-90 transition"
 							>
-								{p.submitLabel || "Submit"}
+								{p.submitLabel || t("forms.submit", "Submit")}
 							</button>
 						</form>
 					)}
