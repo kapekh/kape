@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
+import { usePdfReader } from "#/components/PdfReader";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 
 export const Route = createFileRoute("/internalsources/documents")({
@@ -12,6 +13,7 @@ type Doc = Awaited<ReturnType<typeof trpcClient.staff.documents.query>>[number];
 function Documents() {
 	const [docs, setDocs] = useState<Doc[]>([]);
 	const [loading, setLoading] = useState(true);
+	const { openPdf, reader } = usePdfReader();
 
 	useEffect(() => {
 		trpcClient.staff.documents.query({ lang: "en" }).then((d) => {
@@ -54,9 +56,13 @@ function Documents() {
 										{d.fileUrl ? (
 											<a
 												href={d.fileUrl}
+												onClick={(e) =>
+													d.fileUrl &&
+													openPdf(e, { url: d.fileUrl, title: d.title })
+												}
 												className="text-[var(--accent)] font-semibold hover:underline"
 											>
-												Download
+												Open
 											</a>
 										) : (
 											<span className="text-xs text-muted-foreground">
@@ -70,6 +76,7 @@ function Documents() {
 					))}
 				</div>
 			)}
+			{reader}
 		</div>
 	);
 }

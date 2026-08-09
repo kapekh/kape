@@ -13,6 +13,7 @@ import { ContactForm } from "../ContactForm";
 import { FormRenderer } from "../FormRenderer";
 import { type MapMarker, MapView } from "../MapView";
 import { NavLink } from "../NavLink";
+import { usePdfReader } from "../PdfReader";
 import { PublicOrgChart } from "../PublicOrgChart";
 import { RichBody } from "../RichBody";
 
@@ -800,6 +801,7 @@ type ResourcesProps = Common & { items?: ResourceItem[] };
 function Resources(p: ResourcesProps) {
 	const items: ResourceItem[] = Array.isArray(p.items) ? p.items : [];
 	const cols = p.layout === "cols-2" ? "md:grid-cols-2" : "";
+	const { openPdf, reader } = usePdfReader();
 	return (
 		<section className={`${PAD} ${toneBg(p.tone)}`}>
 			<Container>
@@ -813,6 +815,9 @@ function Resources(p: ResourcesProps) {
 								// biome-ignore lint/suspicious/noArrayIndexKey: server-rendered list, no reorder or delete while mounted
 								key={n}
 								href={it.href || "#"}
+								onClick={(e) =>
+									it.href && openPdf(e, { url: it.href, title: it.title })
+								}
 								className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-[var(--shadow-soft)]"
 							>
 								<div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
@@ -838,6 +843,7 @@ function Resources(p: ResourcesProps) {
 						))}
 					</div>
 				)}
+				{reader}
 			</Container>
 		</section>
 	);
@@ -1360,6 +1366,7 @@ function PublicationList(p: PublicationListProps) {
 		: [];
 	// Optimistic bump so the counter the reader just incremented is visibly theirs.
 	const [bumped, setBumped] = useState<Record<number, number>>({});
+	const { openPdf, reader } = usePdfReader();
 	const track = (id: number) => {
 		setBumped((b) => ({ ...b, [id]: (b[id] ?? 0) + 1 }));
 		trpcClient.posts.trackDownload.mutate({ id }).catch(() => {});
@@ -1385,7 +1392,11 @@ function PublicationList(p: PublicationListProps) {
 									href={it.fileUrl || "#"}
 									target={it.fileUrl ? "_blank" : undefined}
 									rel="noreferrer"
-									onClick={() => it.fileUrl && track(it.id)}
+									onClick={(e) => {
+										if (!it.fileUrl) return;
+										track(it.id);
+										openPdf(e, { url: it.fileUrl, title: it.title });
+									}}
 									className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-[var(--shadow-soft)]"
 								>
 									{it.image ? (
@@ -1424,6 +1435,7 @@ function PublicationList(p: PublicationListProps) {
 						})}
 					</div>
 				)}
+				{reader}
 			</Container>
 		</section>
 	);
@@ -1846,6 +1858,7 @@ type CertificatesProps = Common & {
 
 function Certificates(p: CertificatesProps) {
 	const items: CertificateItem[] = Array.isArray(p.items) ? p.items : [];
+	const { openPdf, reader } = usePdfReader();
 	const cols =
 		p.layout === "cols-2"
 			? "sm:grid-cols-2"
@@ -1902,6 +1915,10 @@ function Certificates(p: CertificatesProps) {
 									href={it.fileUrl}
 									target="_blank"
 									rel="noreferrer"
+									onClick={(e) =>
+										it.fileUrl &&
+										openPdf(e, { url: it.fileUrl, title: it.title })
+									}
 									className="group block"
 								>
 									{body}
@@ -1915,6 +1932,7 @@ function Certificates(p: CertificatesProps) {
 						})}
 					</div>
 				)}
+				{reader}
 			</Container>
 		</section>
 	);
