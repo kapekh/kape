@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { confirm, toast } from "@/components/Dialogs";
@@ -111,14 +111,17 @@ function MediaLibrary() {
 	const hasMoreRef = useRef(true);
 	const sentinelRef = useRef<HTMLDivElement>(null);
 
-	const fetchStats = () =>
-		trpcClient.adminMedia.stats
-			.query()
-			.then(setStats)
-			.catch(() => {});
+	const fetchStats = useCallback(
+		() =>
+			trpcClient.adminMedia.stats
+				.query()
+				.then(setStats)
+				.catch(() => {}),
+		[],
+	);
 
 	// Load page 1 for the current filter/search (replaces the list).
-	async function reset() {
+	const reset = useCallback(async () => {
 		const req = ++reqRef.current;
 		setLoading(true);
 		offsetRef.current = 0;
@@ -135,7 +138,7 @@ function MediaLibrary() {
 		setHasMore(hasMoreRef.current);
 		setLoading(false);
 		busyRef.current = false;
-	}
+	}, [debounced, filter]);
 
 	// Append the next page (infinite scroll).
 	async function loadMore() {
@@ -172,12 +175,11 @@ function MediaLibrary() {
 	// Reset list whenever the filter or (debounced) search changes; also initial load.
 	useEffect(() => {
 		reset();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [debounced, filter]);
+	}, [reset]);
 
 	useEffect(() => {
 		fetchStats();
-	}, []);
+	}, [fetchStats]);
 
 	// Infinite-scroll sentinel.
 	useEffect(() => {
@@ -239,7 +241,7 @@ function MediaLibrary() {
 		offsetRef.current = Math.max(0, offsetRef.current - ids.length);
 		setSelected((s) => {
 			const n = new Set(s);
-			ids.forEach((id) => n.delete(id));
+			for (const id of ids) n.delete(id);
 			return n;
 		});
 		fetchStats();
@@ -307,6 +309,8 @@ function MediaLibrary() {
 			return n;
 		});
 	}
+
+	const previewSize = preview ? fmtBytes(preview.size) : null;
 
 	const tab = (active: boolean) =>
 		`rounded-lg px-3 py-1.5 text-sm font-medium transition ${active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`;
@@ -425,6 +429,7 @@ function MediaLibrary() {
 				<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
 					{Array.from({ length: 10 }).map((_, i) => (
 						<div
+							// biome-ignore lint/suspicious/noArrayIndexKey: fixed-length loading skeleton, no data behind it
 							key={i}
 							className="aspect-square animate-pulse rounded-xl bg-muted"
 						/>
@@ -619,9 +624,7 @@ function MediaLibrary() {
 										value={`${preview.width} × ${preview.height}`}
 									/>
 								) : null}
-								{fmtBytes(preview.size) ? (
-									<Meta label="Size" value={fmtBytes(preview.size)!} />
-								) : null}
+								{previewSize ? <Meta label="Size" value={previewSize} /> : null}
 								<Meta label="Added" value={fmtDate(preview.createdAt)} />
 							</dl>
 							<div className="mt-3">
@@ -662,6 +665,7 @@ function MediaLibrary() {
 									<ul className="max-h-40 space-y-1 overflow-y-auto pr-1 thin-scroll">
 										{usage.map((u, i) => (
 											<li
+												// biome-ignore lint/suspicious/noArrayIndexKey: read-only usage list, no reorder or delete while mounted
 												key={i}
 												className="flex items-center justify-between gap-2 rounded-lg border border-border bg-background/40 px-2.5 py-1.5 text-xs"
 											>

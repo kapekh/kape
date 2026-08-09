@@ -42,9 +42,9 @@ function NewsFeed() {
 							<h2 className="mt-1 font-display text-lg font-semibold text-primary">
 								{n.title}
 							</h2>
-							{/* biome-ignore lint/security/noDangerouslySetInnerHtml: trusted, server-rendered */}
 							<div
 								className="prose-body mt-2 text-sm"
+								// biome-ignore lint/security/noDangerouslySetInnerHtml: admin-authored, server-rendered by renderBody's allow-list
 								dangerouslySetInnerHTML={{ __html: n.bodyHtml }}
 							/>
 						</article>

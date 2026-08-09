@@ -24,6 +24,7 @@ export function MapPicker({
 	onPickRef.current = onPick;
 
 	// Initialise the map once.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: lat/lng seed the initial centre only; re-running would rebuild the map on every keystroke
 	useEffect(() => {
 		if (!ref.current || typeof window === "undefined") return;
 		let cancelled = false;

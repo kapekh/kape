@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
 	DonationStat,
@@ -26,7 +26,7 @@ function CampaignDonations() {
 	const [currency, setCurrency] = useState("USD");
 	const [loading, setLoading] = useState(true);
 
-	async function refresh() {
+	const refresh = useCallback(async () => {
 		const [donations, campaign] = await Promise.all([
 			trpcClient.adminCampaigns.donations.query({ id: cid }),
 			trpcClient.adminCampaigns.get.query({ id: cid }),
@@ -35,11 +35,10 @@ function CampaignDonations() {
 		setTitle(campaign?.title ?? "Campaign");
 		setCurrency(campaign?.currency ?? "USD");
 		setLoading(false);
-	}
+	}, [cid]);
 	useEffect(() => {
 		refresh();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [cid]);
+	}, [refresh]);
 
 	async function markPaid(donationId: number) {
 		if (

@@ -84,7 +84,7 @@ export function PublicRichText({
 								placeholder: "https://…",
 								confirmLabel: "Apply",
 							}).then((url) => {
-								if (url && url.trim())
+								if (url?.trim())
 									editor.chain().focus().setLink({ href: url.trim() }).run();
 								else editor.chain().focus().unsetLink().run();
 							});

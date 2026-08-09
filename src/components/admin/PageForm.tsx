@@ -80,18 +80,24 @@ export function PageForm({
 		if (selfId != null) {
 			blocked.add(selfId);
 			const childrenOf = new Map<number, number[]>();
-			for (const p of allPages)
-				if (p.parentId != null)
-					(
-						childrenOf.get(p.parentId) ??
-						childrenOf.set(p.parentId, []).get(p.parentId)!
-					).push(p.id);
+			for (const p of allPages) {
+				if (p.parentId == null) continue;
+				let kids = childrenOf.get(p.parentId);
+				if (!kids) {
+					kids = [];
+					childrenOf.set(p.parentId, kids);
+				}
+				kids.push(p.id);
+			}
 			const stack = [selfId];
-			while (stack.length)
-				for (const c of childrenOf.get(stack.pop()!) ?? []) {
+			while (stack.length) {
+				const id = stack.pop();
+				if (id === undefined) break;
+				for (const c of childrenOf.get(id) ?? []) {
 					blocked.add(c);
 					stack.push(c);
 				}
+			}
 		}
 		return allPages
 			.filter((p) => !blocked.has(p.id))

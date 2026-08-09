@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
@@ -35,7 +35,7 @@ function Submissions() {
 			.replace(/\s+/g, " ")
 			.trim();
 
-	async function refresh() {
+	const refresh = useCallback(async () => {
 		const [form, subs] = await Promise.all([
 			trpcClient.adminForms.get.query({ id: fid }),
 			trpcClient.adminForms.submissions.query({ formId: fid }),
@@ -44,11 +44,10 @@ function Submissions() {
 		setFields(form?.fields ?? []);
 		setRows(subs);
 		setLoading(false);
-	}
+	}, [fid]);
 	useEffect(() => {
 		refresh();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [fid]);
+	}, [refresh]);
 
 	async function del(sid: number) {
 		if (
@@ -189,9 +188,9 @@ function Submissions() {
 													)
 												) : f.type === "richtext" ? (
 													data[f.key] ? (
-														// biome-ignore lint/security/noDangerouslySetInnerHtml: server-rendered via the restricted allow-list
 														<div
 															className="prose-body max-w-sm text-sm [&_p]:my-0.5"
+															// biome-ignore lint/security/noDangerouslySetInnerHtml: public submission, rendered at write time by renderBasicRichText's restricted allow-list
 															dangerouslySetInnerHTML={{ __html: data[f.key] }}
 														/>
 													) : (

@@ -76,7 +76,7 @@ export function FormRenderer({ slug }: { slug: string }) {
 		);
 	}
 
-	async function submit(e: React.FormEvent) {
+	const submit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		// Friendly client-side guard before uploading megabytes.
 		for (const [, file] of Object.entries(files)) {
@@ -95,7 +95,7 @@ export function FormRenderer({ slug }: { slug: string }) {
 			fd.append("company", company);
 			for (const [k, file] of Object.entries(files))
 				if (file) fd.append(k, file);
-			const res = await fetch(`/api/forms/${form!.slug}`, {
+			const res = await fetch(`/api/forms/${form.slug}`, {
 				method: "POST",
 				body: fd,
 			});
@@ -113,7 +113,7 @@ export function FormRenderer({ slug }: { slug: string }) {
 			setError("Network error. Please check your connection and try again.");
 			setStatus("error");
 		}
-	}
+	};
 
 	// The form's own title + intro (built in /admin/forms) — so an embed shows the
 	// real form content, not section-level copy the editor would have to duplicate.
@@ -160,10 +160,10 @@ export function FormRenderer({ slug }: { slug: string }) {
 					// Author content block — formatted text/instructions, not an input.
 					// Rendered HTML is server-produced from the trusted admin editor.
 					return f.contentHtml ? (
-						// biome-ignore lint/security/noDangerouslySetInnerHtml: server-rendered, trusted author content
 						<div
 							key={rk}
 							className="prose-body text-sm text-foreground/80"
+							// biome-ignore lint/security/noDangerouslySetInnerHtml: admin-authored, server-rendered by renderBody's allow-list
 							dangerouslySetInnerHTML={{ __html: f.contentHtml }}
 						/>
 					) : null;

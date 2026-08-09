@@ -20,8 +20,8 @@ import {
 	ROUTER_AREA,
 } from "./permissions";
 import {
-	SECTION_DEFS,
 	type QuerySource,
+	SECTION_DEFS,
 	type SectionDef,
 	type SectionNode,
 } from "./sections";

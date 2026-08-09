@@ -90,9 +90,10 @@ export async function getOrgTree(db: DB, lang: string): Promise<OrgNode[]> {
 	}
 	const roots: OrgNode[] = [];
 	for (const r of rows) {
-		const node = byId.get(r.id)!;
-		if (r.parentId != null && byId.has(r.parentId))
-			byId.get(r.parentId)!.children.push(node);
+		const node = byId.get(r.id);
+		if (!node) continue;
+		const parent = r.parentId != null ? byId.get(r.parentId) : undefined;
+		if (parent) parent.children.push(node);
 		else roots.push(node);
 	}
 	return roots;

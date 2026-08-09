@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
 	DonationStat,
@@ -23,13 +23,13 @@ function DonationsList() {
 	const [loading, setLoading] = useState(true);
 	const [campaign, setCampaign] = useState("all");
 
-	async function refresh() {
+	const refresh = useCallback(async () => {
 		setRows(await trpcClient.adminDonations.list.query());
 		setLoading(false);
-	}
+	}, []);
 	useEffect(() => {
 		refresh();
-	}, []);
+	}, [refresh]);
 
 	// Distinct campaigns present in the data, for the filter dropdown.
 	const campaignOptions = useMemo(() => {

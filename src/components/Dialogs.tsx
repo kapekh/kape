@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * In-app replacements for the browser's native dialogs — we never use those.
@@ -39,7 +39,9 @@ type Req =
 let counter = 0;
 let queue: Req[] = [];
 const reqListeners = new Set<(r: Req[]) => void>();
-const emit = () => reqListeners.forEach((l) => l([...queue]));
+const emit = () => {
+	for (const l of reqListeners) l([...queue]);
+};
 
 export function confirm(opts: ConfirmOpts | string): Promise<boolean> {
 	const o = typeof opts === "string" ? { message: opts } : opts;
@@ -62,7 +64,9 @@ type ToastKind = "info" | "success" | "error";
 type Toast = { id: number; message: string; kind: ToastKind };
 let toasts: Toast[] = [];
 const toastListeners = new Set<(t: Toast[]) => void>();
-const emitToasts = () => toastListeners.forEach((l) => l([...toasts]));
+const emitToasts = () => {
+	for (const l of toastListeners) l([...toasts]);
+};
 
 export function toast(message: string, kind: ToastKind = "info") {
 	const id = ++counter;
@@ -135,8 +139,14 @@ function Modal({
 		isPrompt ? ((req.opts as PromptOpts).defaultValue ?? "") : "",
 	);
 	const inputRef = useRef<HTMLInputElement>(null);
-	const cancel = () => onFinish(req, isPrompt ? null : false);
-	const accept = () => onFinish(req, isPrompt ? value : true);
+	const cancel = useCallback(
+		() => onFinish(req, isPrompt ? null : false),
+		[onFinish, req, isPrompt],
+	);
+	const accept = useCallback(
+		() => onFinish(req, isPrompt ? value : true),
+		[onFinish, req, isPrompt, value],
+	);
 
 	useEffect(() => {
 		if (isPrompt) inputRef.current?.focus();
@@ -150,8 +160,7 @@ function Modal({
 		};
 		window.addEventListener("keydown", onKey);
 		return () => window.removeEventListener("keydown", onKey);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [value]);
+	}, [isPrompt, cancel, accept]);
 
 	const o = req.opts as ConfirmOpts & PromptOpts;
 	const danger = req.kind === "confirm" && (req.opts as ConfirmOpts).danger;

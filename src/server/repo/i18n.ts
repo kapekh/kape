@@ -63,11 +63,15 @@ export async function resolveTranslations(
 
 	// Default first, then let the requested language override.
 	for (const r of rows) {
-		if (r.lang === defaultLang) out.get(r.entityId)![r.field] = r.value;
+		if (r.lang !== defaultLang) continue;
+		const fields = out.get(r.entityId);
+		if (fields) fields[r.field] = r.value;
 	}
 	if (lang !== defaultLang) {
 		for (const r of rows) {
-			if (r.lang === lang) out.get(r.entityId)![r.field] = r.value;
+			if (r.lang !== lang) continue;
+			const fields = out.get(r.entityId);
+			if (fields) fields[r.field] = r.value;
 		}
 	}
 	return out;

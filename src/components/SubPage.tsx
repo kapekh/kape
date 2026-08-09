@@ -55,6 +55,7 @@ export function SubPage({
 						<span aria-hidden>/</span>
 						<span>{section}</span>
 						{crumbs?.map((c, i) => (
+							// biome-ignore lint/suspicious/noArrayIndexKey: server-rendered list, no reorder or delete while mounted
 							<span key={i} className="flex items-center gap-2">
 								<span aria-hidden>/</span>
 								{c.href ? (

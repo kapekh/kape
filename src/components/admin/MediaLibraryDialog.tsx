@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { toast } from "@/components/Dialogs";
@@ -60,7 +60,7 @@ export function MediaLibraryDialog({
 
 	const type = kind === "image" ? "image" : "all";
 
-	async function reset() {
+	const reset = useCallback(async () => {
 		const req = ++reqRef.current;
 		setLoading(true);
 		offsetRef.current = 0;
@@ -78,7 +78,7 @@ export function MediaLibraryDialog({
 		);
 		setLoading(false);
 		busyRef.current = false;
-	}
+	}, [debounced, type]);
 
 	async function loadMore() {
 		if (busyRef.current || !hasMoreRef.current || loading) return;
@@ -118,8 +118,7 @@ export function MediaLibraryDialog({
 	// (Re)load page 1 when the dialog opens or the filter/search changes.
 	useEffect(() => {
 		if (open) reset();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [open, debounced, type]);
+	}, [open, reset]);
 
 	// Infinite-scroll sentinel — observed within the modal's own scroll container.
 	// Re-runs when `loading` flips so it attaches once the sentinel is mounted
@@ -217,6 +216,7 @@ export function MediaLibraryDialog({
 						<div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
 							{Array.from({ length: 8 }).map((_, i) => (
 								<div
+									// biome-ignore lint/suspicious/noArrayIndexKey: fixed-length loading skeleton, no data behind it
 									key={i}
 									className="aspect-square animate-pulse rounded-lg bg-muted"
 								/>

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
@@ -18,7 +18,7 @@ function PartnersList() {
 	const [cats, setCats] = useState<Record<string, string>>({});
 	const [loading, setLoading] = useState(true);
 
-	async function refresh() {
+	const refresh = useCallback(async () => {
 		const [p, c] = await Promise.all([
 			trpcClient.adminPartners.list.query(),
 			trpcClient.terms.list.query({ taxonomy: "partner_category" }),
@@ -26,10 +26,10 @@ function PartnersList() {
 		setRows(p);
 		setCats(Object.fromEntries(c.map((x) => [x.key, x.label])));
 		setLoading(false);
-	}
+	}, []);
 	useEffect(() => {
 		refresh();
-	}, []);
+	}, [refresh]);
 
 	async function del(id: number) {
 		if (!(await confirm("Delete this partner?"))) return;

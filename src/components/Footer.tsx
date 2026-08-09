@@ -254,6 +254,7 @@ export function Footer({ settings }: { settings: Record<string, string> }) {
 					<div className="mt-6 flex flex-wrap gap-3">
 						{socials.map((sc, i) => (
 							<a
+								// biome-ignore lint/suspicious/noArrayIndexKey: server-rendered list, no reorder or delete while mounted
 								key={`${sc.name}-${i}`}
 								href={sc.url}
 								target="_blank"

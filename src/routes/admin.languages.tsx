@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import {
@@ -28,13 +28,13 @@ function LanguagesAdmin() {
 		rtl: false,
 	});
 
-	async function refresh() {
+	const refresh = useCallback(async () => {
 		setLangs(await trpcClient.adminLanguages.list.query());
 		setLoading(false);
-	}
+	}, []);
 	useEffect(() => {
 		refresh();
-	}, []);
+	}, [refresh]);
 
 	async function create() {
 		if (!add.code.trim() || !add.name.trim()) return;

@@ -522,6 +522,7 @@ function SectionEditor({
 				Unknown section type “{node.type}”.
 			</p>
 		);
+	const sources = def.sources ?? [];
 	const props = node.props ?? {};
 	const setProp = (key: string, v: unknown) =>
 		onChange({ ...node, props: { ...props, [key]: v } });
@@ -636,13 +637,13 @@ function SectionEditor({
 				</div>
 			)}
 
-			{def.kind === "dynamic" && def.sources && (
+			{def.kind === "dynamic" && sources.length > 0 && (
 				<div className="grid grid-cols-2 gap-2">
 					<div className="col-span-2">
 						<label className={fieldLabel}>Data source</label>
 						<select
 							className={fieldInput}
-							value={`${node.query?.source ?? def.sources[0].value}::${node.query?.contentType ?? def.sources[0].contentType ?? ""}`}
+							value={`${node.query?.source ?? sources[0].value}::${node.query?.contentType ?? sources[0].contentType ?? ""}`}
 							onChange={(e) => {
 								const [source, contentType] = e.target.value.split("::");
 								onChange({
@@ -655,7 +656,7 @@ function SectionEditor({
 								});
 							}}
 						>
-							{def.sources.map((s) => (
+							{sources.map((s) => (
 								<option
 									key={`${s.value}:${s.contentType ?? ""}`}
 									value={`${s.value}::${s.contentType ?? ""}`}
@@ -676,7 +677,7 @@ function SectionEditor({
 									...node,
 									query: {
 										...node.query,
-										source: node.query?.source ?? def.sources![0].value,
+										source: node.query?.source ?? sources[0].value,
 										limit: e.target.value ? Number(e.target.value) : undefined,
 									},
 								})
@@ -693,7 +694,7 @@ function SectionEditor({
 									...node,
 									query: {
 										...node.query,
-										source: node.query?.source ?? def.sources![0].value,
+										source: node.query?.source ?? sources[0].value,
 										category: e.target.value || undefined,
 									},
 								})
@@ -746,7 +747,8 @@ export function SectionsBuilder({
 	const catalogue = useMemo(() => sectionsFor(settings ?? {}), [settings]);
 
 	const add = (type: string) => {
-		const def = catalogue.find((d) => d.type === type)!;
+		const def = catalogue.find((d) => d.type === type);
+		if (!def) return;
 		const node: SectionNode = {
 			id: uid(),
 			type,

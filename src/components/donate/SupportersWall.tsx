@@ -51,6 +51,7 @@ export function SupportersWall({ supporters }: { supporters: Supporter[] }) {
 		<ul className="space-y-3">
 			{supporters.map((s, i) => (
 				<li
+					// biome-ignore lint/suspicious/noArrayIndexKey: server-rendered list, no reorder or delete while mounted
 					key={i}
 					className="flex items-start gap-3 rounded-2xl border border-border bg-background/40 p-4"
 				>

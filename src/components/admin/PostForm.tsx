@@ -181,8 +181,10 @@ export function PostForm({
 			.query()
 			.then((all) => {
 				const g: Record<string, { key: string; label: string }[]> = {};
-				for (const t of all)
-					(g[t.taxonomy] ??= []).push({ key: t.key, label: t.label });
+				for (const t of all) {
+					g[t.taxonomy] ??= [];
+					g[t.taxonomy].push({ key: t.key, label: t.label });
+				}
 				setTermsByTax(g);
 			})
 			.catch(() => {});

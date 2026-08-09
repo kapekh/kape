@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
@@ -18,7 +18,7 @@ function OfficesList() {
 	const [provinces, setProvinces] = useState<Record<string, string>>({});
 	const [loading, setLoading] = useState(true);
 
-	async function refresh() {
+	const refresh = useCallback(async () => {
 		const [o, prov] = await Promise.all([
 			trpcClient.adminOffices.list.query(),
 			trpcClient.terms.list.query({ taxonomy: "location" }),
@@ -26,10 +26,10 @@ function OfficesList() {
 		setRows(o);
 		setProvinces(Object.fromEntries(prov.map((p) => [p.key, p.label])));
 		setLoading(false);
-	}
+	}, []);
 	useEffect(() => {
 		refresh();
-	}, []);
+	}, [refresh]);
 
 	async function del(id: number) {
 		if (!(await confirm("Delete this office?"))) return;

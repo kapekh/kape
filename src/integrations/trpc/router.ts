@@ -485,7 +485,7 @@ const formInput = z.object({
 	deadline: z
 		.string()
 		.nullish()
-		.transform((v) => (v && v.trim() ? v.trim() : null)),
+		.transform((v) => (v?.trim() ? v.trim() : null)),
 	submitLabel: z
 		.string()
 		.nullish()
@@ -1061,7 +1061,7 @@ const campaignInput = z.object({
 	goalAmount: z
 		.string()
 		.nullish()
-		.transform((v) => (v && v.trim() ? v.trim() : null)),
+		.transform((v) => (v?.trim() ? v.trim() : null)),
 	coverMediaId: z.number().nullable(),
 	presets: z.array(z.number()),
 	allowCustom: z.boolean(),

@@ -129,9 +129,7 @@ export function FormBuilder({
 			)
 			// Content blocks survive on their content; input fields need a key + label.
 			.filter((f) =>
-				f.type === "content"
-					? !!(f.content && f.content.trim())
-					: f.key && f.label,
+				f.type === "content" ? !!f.content?.trim() : f.key && f.label,
 			);
 
 		// Field keys are submission columns — they MUST be unique, or two fields

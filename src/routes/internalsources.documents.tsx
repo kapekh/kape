@@ -21,7 +21,8 @@ function Documents() {
 	}, []);
 
 	const byCategory = docs.reduce<Record<string, Doc[]>>((acc, d) => {
-		(acc[d.category] ??= []).push(d);
+		acc[d.category] ??= [];
+		acc[d.category].push(d);
 		return acc;
 	}, {});
 

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
@@ -17,13 +17,13 @@ function DonorsList() {
 	const [rows, setRows] = useState<Row[]>([]);
 	const [loading, setLoading] = useState(true);
 
-	async function refresh() {
+	const refresh = useCallback(async () => {
 		setRows(await trpcClient.adminDonors.list.query());
 		setLoading(false);
-	}
+	}, []);
 	useEffect(() => {
 		refresh();
-	}, []);
+	}, [refresh]);
 
 	async function del(id: number) {
 		if (!(await confirm("Delete this donor?"))) return;

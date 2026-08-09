@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
 	FormSection,
@@ -14,14 +14,15 @@ import { HEADER_DEFAULTS } from "#/lib/header-defaults";
 import { saveErrorMessage } from "#/lib/save-error";
 import { confirm, toast } from "@/components/Dialogs";
 
+const FIELDS = [
+	{ key: "header_donate_label", label: "Donate button label" },
+	{ key: "header_donate_link", label: "Donate button link", mono: true },
+	{ key: "header_search_link", label: "Top-bar “Search” link", mono: true },
+	{ key: "header_sitemap_link", label: "Top-bar “Sitemap” link", mono: true },
+];
+
 /** The non-menu header bits (donate button + top-bar links), backed by site_settings. */
 function HeaderSettings() {
-	const FIELDS = [
-		{ key: "header_donate_label", label: "Donate button label" },
-		{ key: "header_donate_link", label: "Donate button link", mono: true },
-		{ key: "header_search_link", label: "Top-bar “Search” link", mono: true },
-		{ key: "header_sitemap_link", label: "Top-bar “Sitemap” link", mono: true },
-	];
 	const [vals, setVals] = useState<Record<string, string>>({});
 	const [loading, setLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
@@ -126,9 +127,10 @@ function buildTree(items: NavRow[]): NavNode[] {
 	for (const i of items) byId.set(i.id, { ...i, children: [] });
 	const roots: NavNode[] = [];
 	for (const i of items) {
-		const node = byId.get(i.id)!;
-		if (i.parentId != null && byId.has(i.parentId))
-			byId.get(i.parentId)!.children.push(node);
+		const node = byId.get(i.id);
+		if (!node) continue;
+		const parent = i.parentId != null ? byId.get(i.parentId) : undefined;
+		if (parent) parent.children.push(node);
 		else roots.push(node);
 	}
 	const sortRec = (ns: NavNode[]) => {
@@ -317,7 +319,7 @@ function NavBuilder() {
 	const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
 	const didInit = useRef(false);
 
-	async function refresh() {
+	const refresh = useCallback(async () => {
 		const [it, l, pg, po] = await Promise.all([
 			trpcClient.adminNav.list.query(),
 			trpcClient.i18n.languages.query(),
@@ -344,7 +346,7 @@ function NavBuilder() {
 			didInit.current = true;
 		}
 		setLoading(false);
-	}
+	}, []);
 
 	const toggle = (id: number) =>
 		setCollapsed((s) => {
@@ -354,7 +356,7 @@ function NavBuilder() {
 		});
 	useEffect(() => {
 		refresh();
-	}, []);
+	}, [refresh]);
 
 	async function create(parentId: number | null, v: FormValue) {
 		await trpcClient.adminNav.create.mutate({ parentId, ...v });

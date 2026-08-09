@@ -163,6 +163,7 @@ const renderTitle = (t: string) =>
 		.split(/(\*[^*]+\*)/g)
 		.map((seg, i) =>
 			seg.startsWith("*") && seg.endsWith("*") ? (
+				// biome-ignore lint/suspicious/noArrayIndexKey: split segments of one string, position is the identity
 				<em key={i} className="not-italic text-[var(--secondary)]">
 					{seg.slice(1, -1)}
 				</em>

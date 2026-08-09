@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import { useModules } from "#/components/admin/useModules";
@@ -29,7 +29,7 @@ function SchoolsList() {
 	const [loading, setLoading] = useState(true);
 	const modules = useModules();
 
-	async function refresh() {
+	const refresh = useCallback(async () => {
 		try {
 			const [s, prov, proj] = await Promise.all([
 				trpcClient.adminSchools.list.query(),
@@ -52,10 +52,10 @@ function SchoolsList() {
 			// under a count of zero for ever.
 			setLoading(false);
 		}
-	}
+	}, [modules]);
 	useEffect(() => {
 		refresh();
-	}, []);
+	}, [refresh]);
 
 	async function del(id: number) {
 		if (!(await confirm("Delete this school?"))) return;

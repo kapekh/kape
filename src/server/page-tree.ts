@@ -90,7 +90,7 @@ export async function normalizeTree(db: DB) {
 	for (const path of [...needed]
 		.filter((p) => !bySlug.has(p))
 		.sort((a, b) => a.split("/").length - b.split("/").length)) {
-		const segment = path.split("/").pop()!;
+		const segment = path.slice(path.lastIndexOf("/") + 1);
 		const [r] = await db
 			.insert(pages)
 			.values({ tenantId: TENANT, slug: path, segment, status: "published" })
@@ -100,17 +100,20 @@ export async function normalizeTree(db: DB) {
 	}
 
 	const counter = new Map<string, number>();
-	for (const slug of [...bySlug.keys()].sort()) {
-		const parts = slug.split("/");
-		const segment = parts.pop()!;
-		const parentSlug = parts.join("/");
+	const sorted = [...bySlug.entries()].sort(([a], [b]) =>
+		a < b ? -1 : a > b ? 1 : 0,
+	);
+	for (const [slug, id] of sorted) {
+		const cut = slug.lastIndexOf("/");
+		const segment = slug.slice(cut + 1);
+		const parentSlug = cut < 0 ? "" : slug.slice(0, cut);
 		const parentId = parentSlug ? (bySlug.get(parentSlug) ?? null) : null;
 		const order = counter.get(parentSlug) ?? 0;
 		counter.set(parentSlug, order + 1);
 		await db
 			.update(pages)
 			.set({ segment, parentId, sortOrder: order })
-			.where(eq(pages.id, bySlug.get(slug)!));
+			.where(eq(pages.id, id));
 	}
 }
 

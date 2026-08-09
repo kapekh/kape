@@ -215,9 +215,11 @@ export async function getNavTree(db: DB, lang: string): Promise<NavNode[]> {
 
 	const roots: NavNode[] = [];
 	for (const it of items) {
-		const node = nodeById.get(it.id)!;
-		if (it.parentId != null && nodeById.has(it.parentId)) {
-			nodeById.get(it.parentId)!.children.push(node);
+		const node = nodeById.get(it.id);
+		if (!node) continue;
+		const parent = it.parentId != null ? nodeById.get(it.parentId) : undefined;
+		if (parent) {
+			parent.children.push(node);
 		} else {
 			roots.push(node);
 		}

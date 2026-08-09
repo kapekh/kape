@@ -25,8 +25,8 @@ export function RichBody({
 }) {
 	if (!html) return null;
 	if (!html.includes(FORM_ATTR)) {
-		// biome-ignore lint/security/noDangerouslySetInnerHtml: trusted, server-rendered
 		return (
+			// biome-ignore lint/security/noDangerouslySetInnerHtml: admin-authored, server-rendered by renderBody's allow-list
 			<div className={className} dangerouslySetInnerHTML={{ __html: html }} />
 		);
 	}
@@ -34,14 +34,12 @@ export function RichBody({
 	const parts: React.ReactNode[] = [];
 	let last = 0;
 	let i = 0;
-	let m: RegExpExecArray | null;
-	FORM_RE.lastIndex = 0;
-	// eslint-disable-next-line no-cond-assign
-	while ((m = FORM_RE.exec(html)) !== null) {
+	// matchAll clones the regex, so the shared global FORM_RE keeps no lastIndex between calls
+	for (const m of html.matchAll(FORM_RE)) {
 		const before = html.slice(last, m.index);
-		// biome-ignore lint/security/noDangerouslySetInnerHtml: trusted, server-rendered
 		if (before.trim())
 			parts.push(
+				// biome-ignore lint/security/noDangerouslySetInnerHtml: admin-authored, server-rendered by renderBody's allow-list
 				<div key={`h${i}`} dangerouslySetInnerHTML={{ __html: before }} />,
 			);
 		parts.push(<FormRenderer key={`f${i}`} slug={m[1]} />);
@@ -49,9 +47,9 @@ export function RichBody({
 		i++;
 	}
 	const after = html.slice(last);
-	// biome-ignore lint/security/noDangerouslySetInnerHtml: trusted, server-rendered
 	if (after.trim())
 		parts.push(
+			// biome-ignore lint/security/noDangerouslySetInnerHtml: admin-authored, server-rendered by renderBody's allow-list
 			<div key={`h${i}`} dangerouslySetInnerHTML={{ __html: after }} />,
 		);
 

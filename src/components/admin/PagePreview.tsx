@@ -14,6 +14,7 @@ export function PagePreview({ sections }: { sections: SectionNode[] }) {
 	const [loading, setLoading] = useState(false);
 	const key = JSON.stringify(sections);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the serialised sections; the array identity changes every render
 	useEffect(() => {
 		if (!sections.length) {
 			setResolved([]);
@@ -28,7 +29,6 @@ export function PagePreview({ sections }: { sections: SectionNode[] }) {
 				.finally(() => setLoading(false));
 		}, 350);
 		return () => clearTimeout(t);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [key]);
 
 	if (!sections.length) {

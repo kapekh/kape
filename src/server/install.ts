@@ -15,11 +15,12 @@ import type { SQLiteTable } from "drizzle-orm/sqlite-core";
 
 import { HEADER_DEFAULTS } from "#/lib/header-defaults";
 import { LANGS } from "#/lib/i18n-config";
-import { moduleDef, MODULES_SETTING } from "#/lib/modules";
+import { MODULES_SETTING, moduleDef } from "#/lib/modules";
 import { defaultUiStrings } from "#/lib/ui-strings.default";
 import { hashPassword } from "./auth";
 import { db } from "./db";
 import { normalizeTree, upsertPage } from "./page-tree";
+import { backfillModules } from "./repo/modules";
 import {
 	contentTypes,
 	languages,
@@ -32,7 +33,6 @@ import {
 	uiStrings,
 	users,
 } from "./schema";
-import { backfillModules } from "./repo/modules";
 import { TENANT } from "./seed/helpers";
 import { LANDINGS } from "./seed/landings";
 import { seedRoles } from "./seed/roles";

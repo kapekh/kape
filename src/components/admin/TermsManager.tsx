@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import {
@@ -29,14 +29,14 @@ export function TermsManager({
 	const [loading, setLoading] = useState(true);
 	const [add, setAdd] = useState({ key: "", label: "" });
 
-	async function refresh() {
+	const refresh = useCallback(async () => {
 		const all = await trpcClient.adminTerms.list.query();
 		setRows(all.filter((t) => t.taxonomy === taxonomy));
 		setLoading(false);
-	}
+	}, [taxonomy]);
 	useEffect(() => {
 		refresh();
-	}, [taxonomy]);
+	}, [refresh]);
 
 	function patch(id: number, field: "key" | "label", value: string) {
 		setRows((rs) =>

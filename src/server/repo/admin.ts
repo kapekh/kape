@@ -488,10 +488,12 @@ async function recomputeSubtree(
 	const childrenOf = new Map<number, typeof all>();
 	for (const p of all) {
 		if (p.parentId == null) continue;
-		(
-			childrenOf.get(p.parentId) ??
-			childrenOf.set(p.parentId, []).get(p.parentId)!
-		).push(p);
+		let kids = childrenOf.get(p.parentId);
+		if (!kids) {
+			kids = [];
+			childrenOf.set(p.parentId, kids);
+		}
+		kids.push(p);
 	}
 	const walk = async (id: number, slug: string, oldSlug: string) => {
 		if (slug !== oldSlug) {

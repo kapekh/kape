@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
@@ -15,15 +15,15 @@ function PagesList() {
 	const [rows, setRows] = useState<Row[]>([]);
 	const [loading, setLoading] = useState(true);
 
-	function refresh() {
+	const refresh = useCallback(() => {
 		return trpcClient.adminPages.list.query().then((r) => {
 			setRows(r);
 			setLoading(false);
 		});
-	}
+	}, []);
 	useEffect(() => {
 		refresh();
-	}, []);
+	}, [refresh]);
 
 	async function del(id: number) {
 		if (
