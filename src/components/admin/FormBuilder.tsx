@@ -47,6 +47,9 @@ const slugify = (s: string) =>
 		.replace(/[^a-z0-9]+/g, "_")
 		.replace(/^_+|_+$/g, "");
 
+/** Keystroke-safe: keeps the separator you just typed, so a slug can be typed out. */
+const slugAsTyped = (s: string) => s.toLowerCase().replace(/[^a-z0-9_]+/g, "_");
+
 export function FormBuilder({
 	initial,
 	onSubmit,
@@ -74,7 +77,7 @@ export function FormBuilder({
 	const [fields, setFields] = useState<FormField[]>(initial?.fields ?? []);
 
 	// Live slug-availability check (the effective slug is what will be saved).
-	const effectiveSlug = slug || slugify(formTitle);
+	const effectiveSlug = slugify(slug) || slugify(formTitle);
 	const [slugStatus, setSlugStatus] = useState<SlugStatus>("idle");
 	useEffect(() => {
 		if (!effectiveSlug) {
@@ -150,7 +153,7 @@ export function FormBuilder({
 			f.key = k;
 		}
 		onSubmit({
-			slug: slug || slugify(formTitle),
+			slug: effectiveSlug,
 			status,
 			title: formTitle,
 			titleKm: titleKm || null,
@@ -225,7 +228,7 @@ export function FormBuilder({
 										<input
 											className={`${fieldInput} font-mono ${slugStatus === "taken" ? "border-destructive focus:border-destructive" : ""}`}
 											value={slug}
-											onChange={(e) => setSlug(slugify(e.target.value))}
+											onChange={(e) => setSlug(slugAsTyped(e.target.value))}
 											placeholder="alumni"
 										/>
 									</label>
