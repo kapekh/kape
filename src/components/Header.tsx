@@ -3,7 +3,6 @@ import type { NavNode } from "#/server/repo/nav";
 import { LanguageSwitcher, useLang } from "@/lib/i18n";
 import { localizedHref } from "@/lib/i18n-config";
 import { siteLogo, siteName, siteShortName } from "@/lib/site-identity";
-import { darkModeAvailable } from "@/lib/site-theme";
 import { NavLink } from "./NavLink";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -379,9 +378,10 @@ export function Header({
 							</span>
 						</a>
 						<LanguageSwitcher />
-						{darkModeAvailable(settings) && (
-							<ThemeToggle className="h-6 w-6 text-primary-foreground/80 hover:bg-white/10" />
-						)}
+						<ThemeToggle
+							settings={settings}
+							className="h-6 w-6 text-primary-foreground/80 hover:bg-white/10"
+						/>
 					</div>
 				</div>
 			</div>

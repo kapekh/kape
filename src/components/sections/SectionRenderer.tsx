@@ -1436,39 +1436,55 @@ type PartnerRow = {
 	logoUrl?: string | null;
 };
 
-function PartnerLogo({ row, linked }: { row: PartnerRow; linked: boolean }) {
-	const badge = (
-		<span className="grid h-28 w-48 place-items-center rounded-xl bg-white px-5 ring-1 ring-border transition hover:ring-[var(--accent)]">
-			{row.logoUrl ? (
-				<img
-					src={row.logoUrl}
-					alt={row.name}
-					className="max-h-16 max-w-full object-contain"
-				/>
-			) : (
-				<span className="text-center text-sm font-medium text-foreground/80">
-					{row.name}
-				</span>
-			)}
-		</span>
-	);
-	const realUrl = row.url && row.url !== "#" ? row.url : null;
-	if (!linked || !realUrl)
+function PartnerLink({
+	row,
+	linked,
+	className,
+	children,
+}: {
+	row: PartnerRow;
+	linked: boolean;
+	className: string;
+	children: React.ReactNode;
+}) {
+	// placeholder url ("#") used to render a dead anchor resolving to /en#
+	const url = row.url && row.url !== "#" ? row.url : null;
+	if (!linked || !url)
 		return (
-			<span title={row.name} className="shrink-0">
-				{badge}
+			<span title={row.name} className={className}>
+				{children}
 			</span>
 		);
 	return (
 		<NavLink
-			href={realUrl}
+			href={url}
 			title={row.name}
 			target="_blank"
 			rel="noreferrer"
-			className="shrink-0"
+			className={className}
 		>
-			{badge}
+			{children}
 		</NavLink>
+	);
+}
+
+function PartnerLogo({ row, linked }: { row: PartnerRow; linked: boolean }) {
+	return (
+		<PartnerLink row={row} linked={linked} className="shrink-0">
+			<span className="grid h-28 w-48 place-items-center rounded-xl bg-white px-5 ring-1 ring-border transition hover:ring-[var(--accent)]">
+				{row.logoUrl ? (
+					<img
+						src={row.logoUrl}
+						alt={row.name}
+						className="max-h-16 max-w-full object-contain"
+					/>
+				) : (
+					<span className="text-center text-sm font-medium text-foreground/80">
+						{row.name}
+					</span>
+				)}
+			</span>
+		</PartnerLink>
 	);
 }
 
@@ -1500,11 +1516,6 @@ function PartnerMarquee({ rows }: { rows: PartnerRow[] }) {
 
 function Partners(p: P) {
 	const rows: any[] = Array.isArray(p.data) ? p.data : [];
-	const byCat = new Map<string, any[]>();
-	for (const r of rows) {
-		const k = r.category || "Partners";
-		byCat.set(k, [...(byCat.get(k) ?? []), r]);
-	}
 	if (p.layout === "marquee") {
 		return (
 			<section className={`${PAD} ${toneBg(p.tone)}`}>
@@ -1520,6 +1531,11 @@ function Partners(p: P) {
 				)}
 			</section>
 		);
+	}
+	const byCat = new Map<string, any[]>();
+	for (const r of rows) {
+		const k = r.category || "Partners";
+		byCat.set(k, [...(byCat.get(k) ?? []), r]);
 	}
 	return (
 		<section className={`${PAD} ${toneBg(p.tone)}`}>
@@ -1540,48 +1556,30 @@ function Partners(p: P) {
 									{cat.replace(/-/g, " ")}
 								</h3>
 								<div className="flex flex-wrap items-center gap-3">
-									{list.map((r) => {
-										const badge = r.logoUrl ? (
-											// biome-ignore lint/correctness/useJsxKeyInIterable: single child of the keyed wrapper below, not an array item
-											<span className="grid h-12 w-28 place-items-center rounded-lg bg-white p-2 ring-1 ring-border transition group-hover:ring-[var(--accent)]">
-												<img
-													src={r.logoUrl}
-													alt={r.name}
-													// max-h-8 not max-h-full: the row is auto-sized, so a
-													// percentage resolves against the image itself and caps nothing
-													className="max-h-8 max-w-full object-contain grayscale opacity-75 transition duration-300 group-hover:grayscale-0 group-hover:opacity-100"
-												/>
-											</span>
-										) : (
-											// biome-ignore lint/correctness/useJsxKeyInIterable: single child of the keyed wrapper below, not an array item
-											<span className="rounded-full border border-border bg-background/60 px-3.5 py-1.5 text-sm font-medium text-foreground/80 transition group-hover:border-[var(--accent)] group-hover:text-[var(--accent)]">
-												{r.name}
-											</span>
-										);
-										// Only link partners that have a real URL — a missing/placeholder
-										// url ("#") used to render a dead anchor that resolved to /en#.
-										const realUrl = r.url && r.url !== "#" ? r.url : null;
-										return realUrl ? (
-											<NavLink
-												key={r.id}
-												href={realUrl}
-												title={r.name}
-												target="_blank"
-												rel="noreferrer"
-												className="group inline-flex"
-											>
-												{badge}
-											</NavLink>
-										) : (
-											<span
-												key={r.id}
-												title={r.name}
-												className="group inline-flex"
-											>
-												{badge}
-											</span>
-										);
-									})}
+									{list.map((r) => (
+										<PartnerLink
+											key={r.id}
+											row={r}
+											linked
+											className="group inline-flex"
+										>
+											{r.logoUrl ? (
+												<span className="grid h-12 w-28 place-items-center rounded-lg bg-white p-2 ring-1 ring-border transition group-hover:ring-[var(--accent)]">
+													<img
+														src={r.logoUrl}
+														alt={r.name}
+														// max-h-8 not max-h-full: the row is auto-sized, so a
+														// percentage resolves against the image itself and caps nothing
+														className="max-h-8 max-w-full object-contain grayscale opacity-75 transition duration-300 group-hover:grayscale-0 group-hover:opacity-100"
+													/>
+												</span>
+											) : (
+												<span className="rounded-full border border-border bg-background/60 px-3.5 py-1.5 text-sm font-medium text-foreground/80 transition group-hover:border-[var(--accent)] group-hover:text-[var(--accent)]">
+													{r.name}
+												</span>
+											)}
+										</PartnerLink>
+									))}
 								</div>
 							</div>
 						))}

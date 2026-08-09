@@ -1,10 +1,20 @@
 import { useEffect, useState } from "react";
+import type { SiteSettings } from "@/lib/site-identity";
+import { darkModeAvailable } from "@/lib/site-theme";
 
 /**
  * Light/dark toggle. The actual class is set pre-paint by the inline script in
  * __root (no flash); this button reflects + flips it and persists the choice.
+ * Renders nothing where the operator turned dark mode off, so no call site has
+ * to remember to ask.
  */
-export function ThemeToggle({ className = "" }: { className?: string }) {
+export function ThemeToggle({
+	settings,
+	className = "",
+}: {
+	settings: SiteSettings;
+	className?: string;
+}) {
 	const [dark, setDark] = useState(false);
 	useEffect(() => {
 		const root = document.documentElement;
@@ -26,6 +36,8 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
 		}
 		setDark(next);
 	}
+
+	if (!darkModeAvailable(settings)) return null;
 
 	return (
 		<button

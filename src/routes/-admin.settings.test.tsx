@@ -112,9 +112,7 @@ describe("when the settings cannot be read at all", () => {
 		// never stopped. There is nothing to type into, so there is no form.
 		expect(document.querySelectorAll("input")).toHaveLength(0);
 		expect(screen.queryByText("Reading the stored values…")).toBeNull();
-		// 15s not the default 5: this mount runs ~5.4s when all 24 files share the
-		// workers, and green in isolation but red under load is a gate nobody trusts
-	}, 15000);
+	});
 
 	it("recovers when the retry works", async () => {
 		server.readFails = "signal is aborted without reason";

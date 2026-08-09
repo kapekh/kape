@@ -16,7 +16,6 @@ import { Header } from "../components/Header";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import { LanguageProvider } from "../lib/i18n";
 import { detectLang } from "../lib/i18n-config";
-import type { SiteSettings } from "../lib/site-identity";
 import {
 	metaDescription,
 	siteLogo,
@@ -180,14 +179,8 @@ function RootComponent() {
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
-	// The shell also renders for an error or a 404, where the root loader may not
-	// have run, so this reads the match defensively rather than through useLoaderData.
-	const settings = useRouterState({
-		select: (s) =>
-			(s.matches[0]?.loaderData as { settings?: SiteSettings } | undefined)
-				?.settings ?? {},
-	});
-	const dark = darkModeAvailable(settings);
+	// the shell renders for an error or a 404 too, where the loader may not have run
+	const dark = darkModeAvailable(Route.useLoaderData()?.settings ?? {});
 	// suppressHydrationWarning: the inline theme script adds class="dark" before
 	// hydration; the server can't know the user's theme, so the mismatch is expected.
 	return (

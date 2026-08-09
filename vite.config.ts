@@ -8,7 +8,9 @@ import { defineConfig } from "vitest/config";
 const config = defineConfig({
 	resolve: { tsconfigPaths: true },
 	// default glob also collects .test.ts copies parked under .work/
-	test: { include: ["src/**/*.test.{ts,tsx}"] },
+	// 15s not 5: a mount-heavy test loses its budget to worker contention, and a
+	// suite that is green alone and red under load is a gate nobody trusts
+	test: { include: ["src/**/*.test.{ts,tsx}"], testTimeout: 15000 },
 	// `bun:sqlite` is a Bun runtime builtin (used by drizzle-orm/bun-sqlite).
 	// Keep it out of bundling/pre-bundling so Bun resolves it at runtime.
 	optimizeDeps: { exclude: ["bun:sqlite"] },

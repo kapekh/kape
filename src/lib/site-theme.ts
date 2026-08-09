@@ -552,14 +552,13 @@ export function themeFontUrl(s: SiteSettings) {
 	return HTTPS_URL.test(v) ? v : DEFAULT_FONT_URL;
 }
 
-/**
- * Whether the site may ever paint dark. Off means light for everyone: the shell
- * writes `class="light"` on the document, which is the one thing that also stops
- * the `dark` variant's `prefers-color-scheme` half from matching, and drops the
- * pre-paint script and the switch. Unset leaves dark mode available.
- */
+/** What a `toggle` reads as. Anything but "off" is on, so an unset key is on. */
+export const toggleOn = (raw: string | undefined) =>
+	(raw ?? "").trim() !== "off";
+
+/** Whether the site may ever paint dark. Off is light for every reader. */
 export const darkModeAvailable = (s: SiteSettings) =>
-	(s.theme_dark_mode ?? "").trim() !== "off";
+	toggleOn(s.theme_dark_mode);
 
 /**
  * The `:root` overrides for this site, or "" when nothing is configured.

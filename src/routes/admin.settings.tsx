@@ -15,6 +15,7 @@ import {
 	THEME_FIELDS,
 	type ThemeKind,
 	themeContrast,
+	toggleOn,
 } from "#/lib/site-theme";
 import { confirm } from "@/components/Dialogs";
 
@@ -140,7 +141,7 @@ function Fields({
 								type="checkbox"
 								className={`mt-1 h-4 w-4 accent-[var(--primary)] ${loading ? "opacity-50" : ""}`}
 								disabled={loading}
-								checked={value !== "off"}
+								checked={toggleOn(value)}
 								onChange={(e) => {
 									const next = e.target.checked ? "on" : "off";
 									setDraft((d) => ({ ...d, [f.key]: next }));
