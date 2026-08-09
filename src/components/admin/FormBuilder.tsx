@@ -115,8 +115,12 @@ export function FormBuilder({
 			return;
 		}
 		const cleaned = fields
-			.map((f, idx) =>
-				f.type === "content"
+			.map((f, idx) => {
+				const options = f.options
+					?.map((o) => o.trim())
+					.filter(Boolean)
+					.filter((o, n, all) => all.indexOf(o) === n);
+				return f.type === "content"
 					? {
 							...f,
 							key: f.key?.trim() || `content_${idx}`,
@@ -124,10 +128,11 @@ export function FormBuilder({
 						}
 					: {
 							...f,
+							...(options ? { options } : {}),
 							key: f.key.trim() || slugify(f.label) || `${f.type}_${idx}`,
 							label: f.label.trim(),
-						},
-			)
+						};
+			})
 			// Content blocks survive on their content; everything else needs a label
 			// (sections carry no key of their own use, but stay keyed for React).
 			.filter((f) =>
@@ -283,12 +288,11 @@ export function FormBuilder({
 															? "Section title (e.g. Personal information)"
 															: "Field label (e.g. Full name)"
 												}
-												onChange={(e) =>
-													setField(i, {
-														label: e.target.value,
-														key: f.key || slugify(e.target.value),
-													})
-												}
+												// The key is derived from the label at save time, not per
+												// keystroke — deriving it here froze it to the first letter
+												// typed. A saved field keeps its key so submissions stay
+												// attached to it when the label is reworded.
+												onChange={(e) => setField(i, { label: e.target.value })}
 											/>
 											<select
 												className={`${fieldInput} basis-36 shrink-0`}
@@ -391,14 +395,15 @@ export function FormBuilder({
 												{(f.type === "select" || f.type === "checkboxes") && (
 													<input
 														className={`${fieldInput} mt-2 text-xs`}
-														value={(f.options ?? []).join(", ")}
+														// split/join on the bare comma round-trips exactly.
+														// Trimming here made the separator you just typed
+														// vanish, so no comma could ever be entered; the
+														// options are cleaned at save time instead.
+														value={(f.options ?? []).join(",")}
 														placeholder="Options, comma-separated"
 														onChange={(e) =>
 															setField(i, {
-																options: e.target.value
-																	.split(",")
-																	.map((o) => o.trim())
-																	.filter(Boolean),
+																options: e.target.value.split(","),
 															})
 														}
 													/>
