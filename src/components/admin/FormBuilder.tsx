@@ -20,10 +20,11 @@ import { RichTextEditor } from "./RichTextEditor";
 import { useDirtyGuard } from "./useDirty";
 
 type SlugStatus = "idle" | "checking" | "available" | "taken";
+type FormStatus = "active" | "draft";
 
 export type FormBuilderValue = {
 	slug: string;
-	status: "active" | "draft";
+	status: FormStatus;
 	title: string;
 	titleKm: string | null;
 	intro: string | null;
@@ -58,8 +59,8 @@ export function FormBuilder({
 	title: string;
 }) {
 	const [slug, setSlug] = useState(initial?.slug ?? "");
-	const [status, setStatus] = useState<"active" | "draft">(
-		(initial?.status as any) ?? "active",
+	const [status, setStatus] = useState<FormStatus>(
+		initial?.status === "draft" ? "draft" : "active",
 	);
 	const [formTitle, setFormTitle] = useState(initial?.title ?? "");
 	const [titleKm, setTitleKm] = useState(initial?.titleKm ?? "");
@@ -123,11 +124,12 @@ export function FormBuilder({
 						}
 					: {
 							...f,
-							key: f.key.trim() || slugify(f.label),
+							key: f.key.trim() || slugify(f.label) || `${f.type}_${idx}`,
 							label: f.label.trim(),
 						},
 			)
-			// Content blocks survive on their content; input fields need a key + label.
+			// Content blocks survive on their content; everything else needs a label
+			// (sections carry no key of their own use, but stay keyed for React).
 			.filter((f) =>
 				f.type === "content" ? !!f.content?.trim() : f.key && f.label,
 			);
@@ -268,7 +270,7 @@ export function FormBuilder({
 								{fields.map((f, i) => (
 									<div
 										key={i}
-										className="rounded-xl border border-border bg-background/40 p-3"
+										className={`rounded-xl border p-3 ${f.type === "section" ? "border-[var(--accent)]/40 bg-[var(--accent)]/5" : "border-border bg-background/40"}`}
 									>
 										<div className="flex items-center gap-2">
 											<input
@@ -277,7 +279,9 @@ export function FormBuilder({
 												placeholder={
 													f.type === "content"
 														? "Block name (internal, optional)"
-														: "Field label (e.g. Full name)"
+														: f.type === "section"
+															? "Section title (e.g. Personal information)"
+															: "Field label (e.g. Full name)"
 												}
 												onChange={(e) =>
 													setField(i, {
@@ -336,6 +340,21 @@ export function FormBuilder({
 													onChange={(json) => setField(i, { content: json })}
 												/>
 											</div>
+										) : f.type === "section" ? (
+											<div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
+												<p className="flex-1 min-w-[200px] text-xs text-muted-foreground">
+													Numbered heading. Fields below it, up to the next
+													section, are grouped under it.
+												</p>
+												<input
+													className={`${fieldInput} h-8 basis-40 shrink-0 font-khmer text-xs`}
+													value={f.labelKm ?? ""}
+													placeholder="Section title (KM)"
+													onChange={(e) =>
+														setField(i, { labelKm: e.target.value })
+													}
+												/>
+											</div>
 										) : (
 											<>
 												<div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -350,7 +369,7 @@ export function FormBuilder({
 														/>{" "}
 														Required
 													</label>
-													{f.type !== "richtext" && (
+													{f.type !== "richtext" && f.type !== "checkboxes" && (
 														<input
 															className={`${fieldInput} h-8 flex-1 min-w-[140px] text-xs`}
 															value={f.placeholder ?? ""}
@@ -369,7 +388,7 @@ export function FormBuilder({
 														}
 													/>
 												</div>
-												{f.type === "select" && (
+												{(f.type === "select" || f.type === "checkboxes") && (
 													<input
 														className={`${fieldInput} mt-2 text-xs`}
 														value={(f.options ?? []).join(", ")}
@@ -408,7 +427,7 @@ export function FormBuilder({
 									<select
 										className={fieldInput}
 										value={status}
-										onChange={(e) => setStatus(e.target.value as any)}
+										onChange={(e) => setStatus(e.target.value as FormStatus)}
 									>
 										<option value="active">Active — accepting responses</option>
 										<option value="draft">Draft — hidden</option>

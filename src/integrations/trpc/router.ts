@@ -1,6 +1,7 @@
 import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { FORM_FIELD_TYPES } from "#/lib/forms";
 import {
 	disallowedSections,
 	sourceEnabled,
@@ -448,18 +449,7 @@ const formFieldSchema = z.object({
 	key: z.string().min(1),
 	label: z.string().min(1),
 	labelKm: z.string().optional(),
-	type: z.enum([
-		"text",
-		"textarea",
-		"email",
-		"tel",
-		"number",
-		"select",
-		"checkbox",
-		"file",
-		"richtext",
-		"content",
-	]),
+	type: z.enum(FORM_FIELD_TYPES),
 	required: z.boolean().optional(),
 	placeholder: z.string().optional(),
 	options: z.array(z.string()).optional(),
