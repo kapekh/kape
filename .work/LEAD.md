@@ -35,13 +35,19 @@ needs no component edit. Domain features are modules an install enables.
 | J12 lint-pass | pane, landed here | **verified, committed `70499a0`** | 219 → 142 errors. The worker was at 164% context and could not verify itself, so its 62-file diff was re-gated in this pane |
 | SEED-COPY | worktree pane | **verified, merged `b0b36ed`** | refuted its own brief and was right: only 8 projects ever had copy, not 24. `.work/seed-copy-report.md` |
 | A11Y | worktree pane | **verified, merged, then finished here `92583d3`** | 134 → 0 a11y errors. Five suppressions, each with a reason, and zero added to reach the number - checked in the diff, not taken on trust |
+| NOANY | worktree pane | **verified, merged** | 28 of 30 `any` sites. Mutation-tested here: drop a field from `listOffices` and `tsc` now fails at the read sites, including inside the template that used to see `any[]` |
+| J07 | worktree pane | **verified, merged** | date, checkbox group and sections through the whole path, no migration. Its array-rejection guard mutation-tested here, and it kills exactly its own named test |
 
 ## Live now
 
-`j07` (w4:p1) and `noany` (w5:p1), round 2, both in worktrees off `cms-core`.
+Nothing. All four worktrees merged and removed, all panes closed.
 
-Tree at `92583d3`. `.env.example` and the unattributed `scripts/import-client-assets.ts` are still
-uncommitted and still need Rithy's call.
+Tree at `2166f7c`. Gates: **292 tests over 27 files**, `tsc` silent, format clean over 250, lint
+**8 errors, 0 warnings** - down from 219 errors and 67 warnings at the start of the round. The 8 are
+the `noArrayIndexKey` sites J12 left standing on purpose.
+
+`.env.example` and the unattributed `scripts/import-client-assets.ts` are still uncommitted and
+still need Rithy's call.
 
 **Three jobs landed here rather than in their own panes**, because a worker's done is a claim.
 J12 could not verify itself at 164% context. SEED-COPY's central finding - that 16 projects have no
@@ -76,17 +82,27 @@ alternate screen, so its rows never reach herdr's scrollback and every read retu
 line. Use `terminal_title_stripped` from `herdr agent get` for liveness, and the worktree's own
 `git log`/`git status` for progress.
 
-## The rounds
+## The rounds, closed
 
-Round 1 is done. Baseline for round 2, measured here at `92583d3`: **8 errors, 30 warnings**, `tsc`
-silent, **274 tests over 26 files**, format clean over 249.
+Both rounds are done. Splitting `noExplicitAny` 28/2 along file ownership worked exactly as
+intended: NOANY left the two `FormBuilder.tsx` sites alone and said so in its report, J07 typed
+them, and the merge of the two branches is what took the count to zero. Neither job had to wait on
+the other and neither touched the other's files.
 
-The 8 errors are the `noArrayIndexKey` sites J12 left standing on purpose. The 30 warnings are
-`noExplicitAny`, and they are exactly what round 2 is for: 28 belong to NOANY, and the 2 in
-`FormBuilder.tsx` belong to J07, which is the only job allowed to open that file.
+Round 2 had to follow round 1, though: A11Y owned every `.tsx` under `src/components/` and
+`src/routes/`, which is where 26 of the 30 `any` sites live.
 
-Round 2 had to follow round 1: A11Y owned every `.tsx` under `src/components/` and `src/routes/`,
-which is where 26 of the 30 `any` sites live.
+### Both workers independently hit the same trap, and it was real
+
+SSR self-fetches tRPC at `http://localhost:${PORT ?? 3000}` while `bun run dev` passed `--port` to
+Vite and never set `PORT`. A worker on 3003 rendered every page against whatever held 3000 - another
+worktree's server and another worktree's database. It does not error: pages in both databases render
+fine, pages only in yours 404, so it reads as a content bug.
+
+Fixed at `2166f7c` by making `PORT` drive both. Two independent reports of the same lost half-hour is
+the signal that promoted this from a note to a commit.
+
+### Why the last twelve labels came back here
 
 ### Why the last twelve labels came back here
 
@@ -335,7 +351,7 @@ learn their order.
 
 ## Next action
 
-Verify J07 and NOANY here when they settle, merge, re-gate, then close both worktrees.
+Nothing is queued. The lint backlog is spent bar the eight deliberate `noArrayIndexKey`.
 
 Two things wait on Rithy and cannot be agent-decided:
 

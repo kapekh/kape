@@ -153,6 +153,24 @@ Two gaps remain, both written up in `.work/a11y-report.md`: the map picker, medi
 
 ---
 
+## 10. Forms and data capture
+
+The organisation test names forms but nothing here graded them until now.
+
+| # | Criterion | How to demonstrate |
+|---|---|---|
+| 10.1 | A staffer builds a real registration form through the admin, with no code | Rebuild an existing paper or prototype form field for field, submit it, show the stored row |
+| 10.2 | Long forms can be broken into labelled groups | |
+| 10.3 | Every field kind survives export in a form a spreadsheet can read | Export CSV, `grep -c "object Object"` returns 0 |
+| 10.4 | Server-side validation rejects what the browser would have caught, with the browser out of the path | `curl` an impossible date and an option outside the declared set; both 400, and a valid control 200 |
+| 10.5 | Adding a field kind needs no migration | |
+
+**Baseline today:** all five pass. `date`, `checkboxes` and `section` were added and the alumni form - 19 fields, 3 numbered sections, a six-way pick group - was rebuilt entirely through `/admin/forms/new` and submitted in a browser. 10.5 holds because a group's picks join into the one string `form_submissions.data` already carries.
+
+Two things worth knowing before extending this. Reading multipart with `getAll` is what lets a group post one entry per pick, and it means a repeated key arrives as an **array** - which slipped past every `typeof v === "string"` guard, so `email` sent twice stored both and never ran the format check. The validator now rejects an array wherever a group is not expected, and a named test holds it.
+
+And three builder defects only surfaced because 10.1 is written as *build it through the UI*. The options box dropped the comma you had just typed, so no dropdown could ever be given more than one option by typing; a field's key froze to the slug of its label's first letter, and those keys are the submission column names. Reading the diff would not have found either.
+
 ## The exit test
 
 Stage B is done when a second organisation is provisioned from nothing - its own tenant, theme, fonts, languages, navigation, users, content and media - **with zero edits to `src/`**.
