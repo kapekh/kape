@@ -5,9 +5,9 @@ import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import type { SectionNode } from "#/lib/sections";
 import type { JobItem, PostListItem } from "#/server/repo/content";
 import type { SourceRow } from "#/server/repo/sections";
-import { useLang } from "@/lib/i18n";
+import { useLang, useT } from "@/lib/i18n";
 import { localizedHref } from "@/lib/i18n-config";
-import { PLACEHOLDER_IMAGE } from "@/lib/placeholder";
+import { isPlaceholder, PLACEHOLDER_IMAGE } from "@/lib/placeholder";
 
 import { ContactForm } from "../ContactForm";
 import { FormRenderer } from "../FormRenderer";
@@ -1031,6 +1031,7 @@ type PostListProps = Common & {
 
 function PostCard({ post, base }: { post: PostRow; base: string }) {
 	const L = useL();
+	const t = useT();
 	const href = base ? L(`${base}/${post.slug}`) : undefined;
 	const body = (
 		<>
@@ -1058,7 +1059,7 @@ function PostCard({ post, base }: { post: PostRow; base: string }) {
 				)}
 				{href && (
 					<span className="mt-4 inline-block text-sm font-semibold text-[var(--accent)]">
-						Read more →
+						{t("home.news.readmore", "Read more →")}
 					</span>
 				)}
 			</div>
@@ -1077,6 +1078,7 @@ function PostCard({ post, base }: { post: PostRow; base: string }) {
 
 function PostList(p: PostListProps) {
 	const L = useL();
+	const t = useT();
 	const posts: PostRow[] = Array.isArray(p.data) ? p.data : [];
 	const base = p.linkBase ?? "";
 	const link = (slug: string) => (base ? L(`${base}/${slug}`) : "#");
@@ -1091,7 +1093,7 @@ function PostList(p: PostListProps) {
 							href={L(p.moreHref) ?? "#"}
 							className="text-sm font-semibold text-primary underline underline-offset-8 hover:text-[var(--accent)]"
 						>
-							See all →
+							{t("home.news.all", "See all →")}
 						</NavLink>
 					)}
 				</div>
@@ -1164,13 +1166,16 @@ function PostList(p: PostListProps) {
 						<article className="group lg:col-span-7">
 							<NavLink
 								href={link(posts[0].slug)}
-								className="relative block h-[420px] overflow-hidden rounded-3xl ring-1 ring-border"
+								className="relative block h-[420px] overflow-hidden rounded-3xl bg-primary ring-1 ring-border"
 							>
-								<img
-									src={imgFor(posts[0])}
-									alt={posts[0].title || ""}
-									className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-								/>
+								{/* the placeholder's icon is centred, so at this height it lands behind the headline */}
+								{!isPlaceholder(imgFor(posts[0])) && (
+									<img
+										src={imgFor(posts[0])}
+										alt={posts[0].title || ""}
+										className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+									/>
+								)}
 								<div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/30 to-transparent" />
 								<div className="absolute bottom-0 p-8 text-primary-foreground">
 									{posts[0].publishedAt && (
@@ -1185,7 +1190,7 @@ function PostList(p: PostListProps) {
 										</p>
 									)}
 									<span className="mt-5 inline-block text-sm font-semibold text-[var(--gold)]">
-										Read more →
+										{t("home.news.readmore", "Read more →")}
 									</span>
 								</div>
 							</NavLink>
@@ -1246,6 +1251,7 @@ type VideoGridProps = Common & {
 
 function VideoGrid(p: VideoGridProps) {
 	const L = useL();
+	const t = useT();
 	const videos: SourceRow["videos"][] = Array.isArray(p.data) ? p.data : [];
 	return (
 		<section className={`${PAD} ${toneBg(p.tone)}`}>
@@ -1257,7 +1263,7 @@ function VideoGrid(p: VideoGridProps) {
 							href={L(p.moreHref) ?? "#"}
 							className="text-sm font-semibold text-primary underline underline-offset-8 hover:text-[var(--accent)]"
 						>
-							All videos →
+							{t("home.video.all", "All videos →")}
 						</NavLink>
 					)}
 				</div>
