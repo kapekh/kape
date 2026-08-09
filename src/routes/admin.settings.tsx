@@ -9,12 +9,12 @@ import {
 } from "#/components/admin/form-ui";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import {
-	checkThemeValue,
 	type ColourReach,
+	checkThemeValue,
 	colourReach,
 	THEME_FIELDS,
-	themeContrast,
 	type ThemeKind,
+	themeContrast,
 } from "#/lib/site-theme";
 import { confirm } from "@/components/Dialogs";
 
@@ -134,17 +134,31 @@ function Fields({
 						<label className={fieldLabel} htmlFor={`set-${f.key}`}>
 							{f.label}
 						</label>
-						<input
-							id={`set-${f.key}`}
-							className={`${fieldInput} ${problem ? "border-destructive" : ""} ${loading ? "opacity-50" : ""}`}
-							aria-invalid={problem ? true : undefined}
-							readOnly={loading}
-							value={value}
-							onChange={(e) => {
-								const typed = e.target.value;
-								setDraft((d) => ({ ...d, [f.key]: typed }));
-							}}
-						/>
+						{f.kind === "toggle" ? (
+							<input
+								id={`set-${f.key}`}
+								type="checkbox"
+								className={`mt-1 h-4 w-4 accent-[var(--primary)] ${loading ? "opacity-50" : ""}`}
+								disabled={loading}
+								checked={value !== "off"}
+								onChange={(e) => {
+									const next = e.target.checked ? "on" : "off";
+									setDraft((d) => ({ ...d, [f.key]: next }));
+								}}
+							/>
+						) : (
+							<input
+								id={`set-${f.key}`}
+								className={`${fieldInput} ${problem ? "border-destructive" : ""} ${loading ? "opacity-50" : ""}`}
+								aria-invalid={problem ? true : undefined}
+								readOnly={loading}
+								value={value}
+								onChange={(e) => {
+									const typed = e.target.value;
+									setDraft((d) => ({ ...d, [f.key]: typed }));
+								}}
+							/>
+						)}
 						{problem ? (
 							<p className="mt-1 text-xs font-medium text-destructive">
 								{problem} Until that is fixed, or the field is cleared, this one

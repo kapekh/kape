@@ -17,6 +17,7 @@ import { ThemeToggle } from "#/components/ThemeToggle";
 import { adminPathEnabled, MODULES_SETTING } from "#/lib/modules";
 import { NAV_AREA } from "#/lib/permissions";
 import { adminTitle, siteLogo, siteShortName } from "#/lib/site-identity";
+import { darkModeAvailable } from "#/lib/site-theme";
 import { SESSION_COOKIE, validateToken } from "#/server/auth";
 import { db } from "#/server/db";
 import { resolvePermissions } from "#/server/repo/roles";
@@ -339,7 +340,9 @@ function AdminLayout() {
 						>
 							View site ↗
 						</a>
-						<ThemeToggle className="h-8 w-8 border border-border text-foreground/70 hover:bg-muted" />
+						{darkModeAvailable(settings) && (
+							<ThemeToggle className="h-8 w-8 border border-border text-foreground/70 hover:bg-muted" />
+						)}
 						<span className="h-5 w-px bg-border" />
 						<div className="flex items-center gap-2.5">
 							<span className="h-8 w-8 rounded-full bg-primary/10 text-primary grid place-items-center text-xs font-semibold uppercase">

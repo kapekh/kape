@@ -325,7 +325,8 @@ async function buildHomePage(db: DB) {
 		{
 			id: "partners",
 			type: "partners",
-			layout: "groups",
+			// one partner per category, so grouped rows come out mostly empty
+			layout: "marquee",
 			query: { source: "partners" },
 			props: { eyebrow: "Working together", title: "Partners for *change*" },
 		},

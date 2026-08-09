@@ -80,6 +80,8 @@ export async function seedSiteSettings() {
 			// Full warmth, unrotated: the cream paper the site was designed on.
 			theme_paper_chroma: "1",
 			theme_paper_hue: "0",
+			// KAPE ships light only, so the dark values above are carried but unused.
+			theme_dark_mode: "off",
 			header_donate_label: "♡ Donate",
 			header_donate_link: "/donate",
 			header_search_link: "/search",

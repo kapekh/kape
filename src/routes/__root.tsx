@@ -16,6 +16,7 @@ import { Header } from "../components/Header";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import { LanguageProvider } from "../lib/i18n";
 import { detectLang } from "../lib/i18n-config";
+import type { SiteSettings } from "../lib/site-identity";
 import {
 	metaDescription,
 	siteLogo,
@@ -23,7 +24,12 @@ import {
 	socialImage,
 	socialSiteName,
 } from "../lib/site-identity";
-import { themeColor, themeCss, themeFontUrl } from "../lib/site-theme";
+import {
+	darkModeAvailable,
+	themeColor,
+	themeCss,
+	themeFontUrl,
+} from "../lib/site-theme";
 import { organizationLd } from "../lib/structured-data";
 import appCss from "../styles.css?url";
 
@@ -174,20 +180,36 @@ function RootComponent() {
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
+	// The shell also renders for an error or a 404, where the root loader may not
+	// have run, so this reads the match defensively rather than through useLoaderData.
+	const settings = useRouterState({
+		select: (s) =>
+			(s.matches[0]?.loaderData as { settings?: SiteSettings } | undefined)
+				?.settings ?? {},
+	});
+	const dark = darkModeAvailable(settings);
 	// suppressHydrationWarning: the inline theme script adds class="dark" before
 	// hydration; the server can't know the user's theme, so the mismatch is expected.
 	return (
-		<html lang={detectLang(pathname)} suppressHydrationWarning>
+		<html
+			lang={detectLang(pathname)}
+			// `light` is what stops the dark variant's prefers-color-scheme half, so
+			// an operator who turned dark off gets a light page on a dark system too.
+			className={dark ? undefined : "light"}
+			suppressHydrationWarning
+		>
 			<head>
 				{/* Set theme before paint to avoid a flash of the wrong mode. Only a
 				    stored choice is written; with none, styles.css follows the
 				    operating system, which is also what happens with no JavaScript. */}
-				<script
-					// biome-ignore lint/security/noDangerouslySetInnerHtml: trusted inline bootstrap
-					dangerouslySetInnerHTML={{
-						__html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||t==='light'){document.documentElement.classList.add(t);}}catch(e){}})();`,
-					}}
-				/>
+				{dark && (
+					<script
+						// biome-ignore lint/security/noDangerouslySetInnerHtml: trusted inline bootstrap
+						dangerouslySetInnerHTML={{
+							__html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||t==='light'){document.documentElement.classList.add(t);}}catch(e){}})();`,
+						}}
+					/>
+				)}
 				<HeadContent />
 			</head>
 			<body>

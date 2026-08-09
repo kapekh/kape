@@ -26,7 +26,13 @@
  */
 import type { SiteSettings } from "./site-identity";
 
-export type ThemeKind = "colour" | "number" | "length" | "fontStack" | "url";
+export type ThemeKind =
+	| "colour"
+	| "number"
+	| "length"
+	| "fontStack"
+	| "url"
+	| "toggle";
 
 export type ThemeField = {
 	key: string;
@@ -93,6 +99,13 @@ export const THEME_FIELDS: ThemeField[] = [
 		label: "Highlight colour (dark mode)",
 		kind: "colour",
 		hint: "Left empty, derived from the highlight colour.",
+	},
+	{
+		key: "theme_dark_mode",
+		cssVar: "",
+		label: "Dark mode",
+		kind: "toggle",
+		hint: "Whether readers can have a dark page. On follows their system and offers a switch. Off renders light for everyone, hides the switch, and makes the four dark colours above unused.",
 	},
 	{
 		key: "theme_paper_chroma",
@@ -506,6 +519,8 @@ export function checkThemeValue(kind: ThemeKind, raw: string): string | null {
 		return /^\d+(\.\d+)?(rem|px|em)$/.test(v)
 			? null
 			: "Not a length, e.g. 0.5rem.";
+	if (kind === "toggle")
+		return v === "on" || v === "off" ? null : "Not a switch: write on or off.";
 	if (kind === "colour") return colourProblem(v);
 	if (kind === "fontStack")
 		return FONT_STACK.test(v)
@@ -536,6 +551,15 @@ export function themeFontUrl(s: SiteSettings) {
 	if (!v) return DEFAULT_FONT_URL;
 	return HTTPS_URL.test(v) ? v : DEFAULT_FONT_URL;
 }
+
+/**
+ * Whether the site may ever paint dark. Off means light for everyone: the shell
+ * writes `class="light"` on the document, which is the one thing that also stops
+ * the `dark` variant's `prefers-color-scheme` half from matching, and drops the
+ * pre-paint script and the switch. Unset leaves dark mode available.
+ */
+export const darkModeAvailable = (s: SiteSettings) =>
+	(s.theme_dark_mode ?? "").trim() !== "off";
 
 /**
  * The `:root` overrides for this site, or "" when nothing is configured.
@@ -830,11 +854,15 @@ function bothModes(values: SiteSettings, key: string) {
 export function themeContrast(values: SiteSettings): ThemeContrast[] {
 	const out: ThemeContrast[] = [];
 	const primary = bothModes(values, "theme_primary");
+	// A dark figure for a site that never paints dark is a warning about nothing.
+	const modes = darkModeAvailable(values)
+		? (["light", "dark"] as const)
+		: (["light"] as const);
 	for (const f of THEME_FIELDS) {
 		const colour = bothModes(values, f.key);
 		if (!colour) continue;
 		const label = f.label.replace(" colour", "");
-		for (const mode of ["light", "dark"] as const) {
+		for (const mode of modes) {
 			const on = colour[mode];
 			const say = (what: string, against: string) =>
 				out.push({

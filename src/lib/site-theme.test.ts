@@ -11,6 +11,7 @@ import {
 	DARK_LIFT,
 	DEFAULT_FONT_URL,
 	DEFAULT_PRIMARY,
+	darkModeAvailable,
 	FOREGROUND_CHROMA_TERM,
 	FOREGROUND_CROSSOVER,
 	THEME_FIELDS,
@@ -583,6 +584,17 @@ describe("themeContrast", () => {
 		expect(themeContrast({ theme_primary: "banana" })).toEqual([]);
 	});
 
+	it("says nothing about dark mode on a site that never paints dark", () => {
+		const rows = themeContrast({
+			theme_primary: "oklch(0.30 0.10 255)",
+			theme_dark_mode: "off",
+		});
+		expect(rows.map((c) => `${c.mode} ${c.what}`)).toEqual([
+			"light a label on it",
+			"light a heading or link in it",
+		]);
+	});
+
 	// It used to report nothing for any named colour, so an operator who typed
 	// one got a Legibility panel that said nothing about the colour in use.
 	it("measures a colour typed by name", () => {
@@ -594,6 +606,25 @@ describe("themeContrast", () => {
 			"dark a heading or link in it",
 		]);
 		expect(rows[0].ratio).toBeGreaterThan(4.5);
+	});
+});
+
+describe("darkModeAvailable", () => {
+	it("is available unless an operator turned it off", () => {
+		expect(darkModeAvailable({})).toBe(true);
+		expect(darkModeAvailable({ theme_dark_mode: "on" })).toBe(true);
+		expect(darkModeAvailable({ theme_dark_mode: "" })).toBe(true);
+		expect(darkModeAvailable({ theme_dark_mode: "off" })).toBe(false);
+		expect(darkModeAvailable({ theme_dark_mode: " off " })).toBe(false);
+	});
+
+	// The switch is a setting like any other, so a value that is neither has to be
+	// refused rather than silently reading as "off" and blanking the toggle.
+	it("only accepts on or off", () => {
+		expect(checkThemeValue("toggle", "on")).toBeNull();
+		expect(checkThemeValue("toggle", "off")).toBeNull();
+		expect(checkThemeValue("toggle", "")).toBeNull();
+		expect(checkThemeValue("toggle", "true")).toMatch(/on or off/);
 	});
 });
 

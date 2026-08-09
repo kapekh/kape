@@ -44,13 +44,16 @@ function renderTitle(title: string, accent = "text-[var(--secondary)]") {
 	return String(title)
 		.split(/(\*[^*]+\*|\n)/g)
 		.map((seg, i) => {
+			// biome-ignore lint/suspicious/noArrayIndexKey: split segments of one string, position is the identity
 			if (seg === "\n") return <br key={i} />;
 			if (seg.startsWith("*") && seg.endsWith("*"))
 				return (
+					// biome-ignore lint/suspicious/noArrayIndexKey: split segments of one string, position is the identity
 					<span key={i} className={`italic ${accent}`}>
 						{seg.slice(1, -1)}
 					</span>
 				);
+			// biome-ignore lint/suspicious/noArrayIndexKey: split segments of one string, position is the identity
 			return <span key={i}>{seg}</span>;
 		});
 }
@@ -163,7 +166,7 @@ function useCount(target: number, run: boolean, duration = 1800) {
 		setN(0);
 		const tick = (now: number) => {
 			const p = Math.min(1, (now - start) / duration);
-			setN(Math.floor(target * (1 - Math.pow(1 - p, 3))));
+			setN(Math.floor(target * (1 - (1 - p) ** 3)));
 			if (p < 1) raf = requestAnimationFrame(tick);
 		};
 		raf = requestAnimationFrame(tick);
@@ -214,6 +217,7 @@ function Slideshow({ slides }: { slides: any[] }) {
 			<div className="group absolute inset-0 overflow-hidden rounded-[2rem] shadow-[var(--shadow-lift)] ring-1 ring-border">
 				{slides.map((s, idx) => (
 					<div
+						// biome-ignore lint/suspicious/noArrayIndexKey: slide index is the identity, compared against the active index
 						key={idx}
 						className={`absolute inset-0 transition-all duration-[1400ms] ease-out ${idx === i ? "opacity-100 scale-100" : "opacity-0 scale-105"}`}
 						aria-hidden={idx !== i}
@@ -246,6 +250,7 @@ function Slideshow({ slides }: { slides: any[] }) {
 				<div className="absolute inset-x-5 top-5 z-10 flex gap-1.5">
 					{slides.map((_, idx) => (
 						<button
+							// biome-ignore lint/suspicious/noArrayIndexKey: slide index is the identity, compared against the active index
 							key={idx}
 							type="button"
 							onClick={() => setI(idx)}
@@ -318,6 +323,7 @@ function Hero(p: P) {
 						{stats.length > 0 && (
 							<div className="mt-12 flex items-center gap-6 text-xs text-muted-foreground">
 								{stats.map((s, n) => (
+									// biome-ignore lint/suspicious/noArrayIndexKey: server-rendered list, no reorder or delete while mounted
 									<div key={n} className="flex items-center gap-6">
 										{n > 0 && <span className="h-10 w-px bg-border" />}
 										<div>
@@ -427,12 +433,13 @@ function Cards(p: P) {
 			: it.href
 				? [{ label: "Learn more", href: it.href }]
 				: [];
-		const valid = btns.filter((b) => b && b.href);
+		const valid = btns.filter((b) => b?.href);
 		if (!valid.length) return null;
 		return (
 			<div className="mt-5 flex flex-wrap gap-2">
 				{valid.map((b, i) => (
 					<NavLink
+						// biome-ignore lint/suspicious/noArrayIndexKey: server-rendered list, no reorder or delete while mounted
 						key={i}
 						href={L(b.href)}
 						className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition ${light ? "bg-white/15 text-white hover:bg-white/25" : "bg-[var(--accent)]/10 text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white"}`}
@@ -454,6 +461,7 @@ function Cards(p: P) {
 						if (it.image && it.imageAsBg) {
 							return (
 								<div
+									// biome-ignore lint/suspicious/noArrayIndexKey: server-rendered list, no reorder or delete while mounted
 									key={n}
 									className="relative flex min-h-[260px] flex-col justify-end overflow-hidden rounded-3xl border border-border p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-[var(--shadow-soft)]"
 								>
@@ -480,6 +488,7 @@ function Cards(p: P) {
 						// Standard card: optional image on top, then title/body/buttons.
 						return (
 							<div
+								// biome-ignore lint/suspicious/noArrayIndexKey: server-rendered list, no reorder or delete while mounted
 								key={n}
 								className="flex flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-sm transition hover:-translate-y-1 hover:border-[var(--accent)] hover:shadow-[var(--shadow-soft)]"
 							>
@@ -597,6 +606,7 @@ function Stats(p: P) {
 					<Heading eyebrow={p.eyebrow} title={p.title} />
 					<div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-x-8 gap-y-10">
 						{items.map((it, n) => (
+							// biome-ignore lint/suspicious/noArrayIndexKey: server-rendered list, no reorder or delete while mounted
 							<div key={n}>
 								{it.icon && (
 									<img
@@ -647,6 +657,7 @@ function Stats(p: P) {
 				<div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-x-10 gap-y-12">
 					{items.map((it, n) => (
 						<StatItem
+							// biome-ignore lint/suspicious/noArrayIndexKey: server-rendered list, no reorder or delete while mounted
 							key={n}
 							value={String(it.value)}
 							label={it.label}
@@ -721,6 +732,7 @@ function Resources(p: P) {
 					<div className={`grid grid-cols-1 ${cols} gap-4`}>
 						{items.map((it, n) => (
 							<NavLink
+								// biome-ignore lint/suspicious/noArrayIndexKey: server-rendered list, no reorder or delete while mounted
 								key={n}
 								href={it.href || "#"}
 								className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-[var(--shadow-soft)]"
@@ -825,6 +837,7 @@ function Pills(p: P) {
 				<Heading eyebrow={p.eyebrow} title={p.title} />
 				<div className="space-y-7">
 					{groups.map((g, n) => (
+						// biome-ignore lint/suspicious/noArrayIndexKey: server-rendered list, no reorder or delete while mounted
 						<div key={n}>
 							{g.heading && (
 								<h3 className="mb-3 font-display text-lg font-semibold text-primary">
@@ -834,6 +847,7 @@ function Pills(p: P) {
 							<div className="flex flex-wrap gap-2.5">
 								{parse(g.links).map((l, m) => (
 									<NavLink
+										// biome-ignore lint/suspicious/noArrayIndexKey: server-rendered list, no reorder or delete while mounted
 										key={m}
 										href={l.href}
 										className="rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-foreground/80 shadow-sm hover:border-[var(--accent)] hover:text-[var(--accent)] hover:-translate-y-0.5 transition"
@@ -1423,15 +1437,19 @@ type PartnerRow = {
 };
 
 function PartnerLogo({ row, linked }: { row: PartnerRow; linked: boolean }) {
-	const badge = row.logoUrl ? (
-		<img
-			src={row.logoUrl}
-			alt={row.name}
-			className="max-h-12 w-auto max-w-[9rem] object-contain grayscale opacity-70 transition duration-300 hover:grayscale-0 hover:opacity-100"
-		/>
-	) : (
-		<span className="whitespace-nowrap text-sm font-medium text-foreground/70">
-			{row.name}
+	const badge = (
+		<span className="grid h-28 w-48 place-items-center rounded-xl bg-white px-5 ring-1 ring-border transition hover:ring-[var(--accent)]">
+			{row.logoUrl ? (
+				<img
+					src={row.logoUrl}
+					alt={row.name}
+					className="max-h-16 max-w-full object-contain"
+				/>
+			) : (
+				<span className="text-center text-sm font-medium text-foreground/80">
+					{row.name}
+				</span>
+			)}
 		</span>
 	);
 	const realUrl = row.url && row.url !== "#" ? row.url : null;
@@ -1524,14 +1542,18 @@ function Partners(p: P) {
 								<div className="flex flex-wrap items-center gap-3">
 									{list.map((r) => {
 										const badge = r.logoUrl ? (
+											// biome-ignore lint/correctness/useJsxKeyInIterable: single child of the keyed wrapper below, not an array item
 											<span className="grid h-12 w-28 place-items-center rounded-lg bg-white p-2 ring-1 ring-border transition group-hover:ring-[var(--accent)]">
 												<img
 													src={r.logoUrl}
 													alt={r.name}
-													className="max-h-full max-w-full object-contain grayscale opacity-75 transition duration-300 group-hover:grayscale-0 group-hover:opacity-100"
+													// max-h-8 not max-h-full: the row is auto-sized, so a
+													// percentage resolves against the image itself and caps nothing
+													className="max-h-8 max-w-full object-contain grayscale opacity-75 transition duration-300 group-hover:grayscale-0 group-hover:opacity-100"
 												/>
 											</span>
 										) : (
+											// biome-ignore lint/correctness/useJsxKeyInIterable: single child of the keyed wrapper below, not an array item
 											<span className="rounded-full border border-border bg-background/60 px-3.5 py-1.5 text-sm font-medium text-foreground/80 transition group-hover:border-[var(--accent)] group-hover:text-[var(--accent)]">
 												{r.name}
 											</span>
@@ -1722,6 +1744,7 @@ function Certificates(p: P) {
 							);
 							return it.fileUrl ? (
 								<a
+									// biome-ignore lint/suspicious/noArrayIndexKey: server-rendered list, no reorder or delete while mounted
 									key={n}
 									href={it.fileUrl}
 									target="_blank"
@@ -1731,6 +1754,7 @@ function Certificates(p: P) {
 									{body}
 								</a>
 							) : (
+								// biome-ignore lint/suspicious/noArrayIndexKey: server-rendered list, no reorder or delete while mounted
 								<div key={n} className="group block">
 									{body}
 								</div>
