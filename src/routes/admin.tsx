@@ -258,6 +258,12 @@ function AdminLayout() {
 
 	return (
 		<div className="min-h-screen flex bg-card text-foreground">
+			<a
+				href="#admin-main"
+				className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:border focus:border-border focus:bg-card focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:shadow-[var(--shadow-lift)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+			>
+				Skip to main content
+			</a>
 			{/* Sidebar rail */}
 			<aside
 				className="w-64 shrink-0 sticky top-0 h-screen bg-card border-r border-border flex flex-col"
@@ -375,11 +381,19 @@ function AdminLayout() {
 
 				<AdminHeaderProvider slot={headerSlot}>
 					{studio ? (
-						<main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden xl:overflow-hidden">
+						<main
+							id="admin-main"
+							tabIndex={-1}
+							className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden xl:overflow-hidden"
+						>
 							<Outlet />
 						</main>
 					) : (
-						<main className="flex-1 p-4 lg:p-5 overflow-x-hidden">
+						<main
+							id="admin-main"
+							tabIndex={-1}
+							className="flex-1 p-4 lg:p-5 overflow-x-hidden"
+						>
 							<div className="mx-auto max-w-[1600px]">
 								<Outlet />
 							</div>
