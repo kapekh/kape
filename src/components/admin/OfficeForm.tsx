@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import {
 	cancelButtonClass,
@@ -55,6 +55,7 @@ export function OfficeForm({
 	title: string;
 	savedAt?: string | null;
 }) {
+	const uid = useId();
 	const [name, setName] = useState(initial?.name ?? "");
 	const [province, setProvince] = useState(initial?.province ?? "");
 	const [address, setAddress] = useState(initial?.address ?? "");
@@ -130,8 +131,11 @@ export function OfficeForm({
 									/>
 								</label>
 								<div>
-									<label className={fieldLabel}>Province</label>
+									<label className={fieldLabel} htmlFor={`${uid}-province`}>
+										Province
+									</label>
 									<SearchableSelect
+										id={`${uid}-province`}
 										value={province}
 										onChange={setProvince}
 										emptyOption="— Select province —"

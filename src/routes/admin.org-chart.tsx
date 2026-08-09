@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 
 import { fieldInput, fieldLabel } from "#/components/admin/form-ui";
 import { OrgCanvas, type OrgRow } from "#/components/admin/OrgCanvas";
@@ -50,6 +50,7 @@ function NodeForm({
 	onSave: (v: FormValue) => void;
 	onCancel: () => void;
 }) {
+	const uid = useId();
 	const [name, setName] = useState(initial?.name ?? "");
 	const [title, setTitle] = useState(initial?.title ?? "");
 	const [personId, setPersonId] = useState(
@@ -109,10 +110,11 @@ function NodeForm({
 					/>
 				</label>
 				<div>
-					<label className={fieldLabel}>
+					<label className={fieldLabel} htmlFor={`${uid}-person`}>
 						Link to team member (optional — photo + profile)
 					</label>
 					<SearchableSelect
+						id={`${uid}-person`}
 						value={personId}
 						onChange={setPersonId}
 						options={people}
@@ -121,8 +123,11 @@ function NodeForm({
 					/>
 				</div>
 				<div>
-					<label className={fieldLabel}>Reports to (parent)</label>
+					<label className={fieldLabel} htmlFor={`${uid}-parent`}>
+						Reports to (parent)
+					</label>
 					<SearchableSelect
+						id={`${uid}-parent`}
 						value={parentId}
 						onChange={setParentId}
 						options={parentOpts}

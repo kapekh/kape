@@ -15,6 +15,7 @@ const IMG_EXT = /\.(png|jpe?g|webp|gif|svg|avif)(\?|$)/i;
  * mode="id"  → emits the media id as a string (e.g. school.coverMediaId)
  */
 export function MediaPicker({
+	id,
 	value,
 	onChange,
 	mode = "url",
@@ -23,6 +24,8 @@ export function MediaPicker({
 	aspect = "video",
 	label,
 }: {
+	/** Lands on the trigger, so a caption's `htmlFor` names this field. */
+	id?: string;
 	value: string;
 	onChange: (next: string) => void;
 	mode?: "url" | "id";
@@ -81,6 +84,7 @@ export function MediaPicker({
 	return (
 		<div className="w-full max-w-sm">
 			<button
+				id={id}
 				type="button"
 				onClick={() => setOpen(true)}
 				className={`group relative ${aspectCls} w-full grid place-items-center overflow-hidden rounded-xl border border-dashed border-border bg-muted/40 transition hover:border-[var(--accent)] hover:bg-muted`}

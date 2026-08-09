@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import {
 	cancelButtonClass,
@@ -66,6 +66,7 @@ export function SchoolForm({
 	title: string;
 	savedAt?: string | null;
 }) {
+	const uid = useId();
 	const [name, setName] = useState(initial?.name ?? "");
 	const [code, setCode] = useState(initial?.code ?? "");
 	const [level, setLevel] = useState(initial?.level ?? "primary");
@@ -167,8 +168,11 @@ export function SchoolForm({
 										</select>
 									</label>
 									<div>
-										<label className={fieldLabel}>Province</label>
+										<label className={fieldLabel} htmlFor={`${uid}-province`}>
+											Province
+										</label>
 										<SearchableSelect
+											id={`${uid}-province`}
 											value={province}
 											onChange={setProvince}
 											emptyOption="— Select province —"
@@ -180,8 +184,11 @@ export function SchoolForm({
 										/>
 									</div>
 									<div>
-										<label className={fieldLabel}>Project</label>
+										<label className={fieldLabel} htmlFor={`${uid}-project`}>
+											Project
+										</label>
 										<SearchableSelect
+											id={`${uid}-project`}
 											value={projectId}
 											onChange={setProjectId}
 											emptyOption="— Not linked —"

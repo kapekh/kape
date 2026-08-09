@@ -1,5 +1,5 @@
 import { useLoaderData } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 
 import { DEFAULT_LANG } from "#/lib/i18n-config";
@@ -19,9 +19,11 @@ import { RichTextEditor } from "./RichTextEditor";
 
 /** Dropdown of admin-built forms (by slug) — lets a Form section embed any form. */
 function FormPicker({
+	id,
 	value,
 	onChange,
 }: {
+	id?: string;
 	value: string;
 	onChange: (v: string) => void;
 }) {
@@ -34,6 +36,7 @@ function FormPicker({
 	}, []);
 	return (
 		<select
+			id={id}
 			className={fieldInput}
 			value={value}
 			onChange={(e) => onChange(e.target.value)}
@@ -252,6 +255,7 @@ function CardsEditor({
 	rows: Record<string, unknown>[];
 	onChange: (v: Record<string, unknown>[]) => void;
 }) {
+	const fieldId = useId();
 	const cards = (Array.isArray(rows) ? rows : []) as Card[];
 	const patch = (i: number, p: Partial<Card>) =>
 		onChange(cards.map((c, n) => (n === i ? { ...c, ...p } : c)));
@@ -309,8 +313,11 @@ function CardsEditor({
 
 						<div className="space-y-3">
 							<div>
-								<label className={fieldLabel}>Image</label>
+								<label className={fieldLabel} htmlFor={`${fieldId}-${i}-image`}>
+									Image
+								</label>
 								<MediaPicker
+									id={`${fieldId}-${i}-image`}
 									value={card.image ?? ""}
 									onChange={(v) => patch(i, { image: v })}
 									mode="url"
@@ -431,6 +438,7 @@ function FieldInput({
 	value: unknown;
 	onChange: (v: unknown) => void;
 }) {
+	const fieldId = useId();
 	if (field.kind === "items") {
 		const rows: Record<string, unknown>[] = Array.isArray(value)
 			? (value as Record<string, unknown>[])
@@ -456,20 +464,36 @@ function FieldInput({
 	}
 
 	const str = typeof value === "string" ? value : "";
+	// richtext renders a contenteditable, which htmlFor resolves to but cannot name
+	const rich = field.kind === "richtext";
 	return (
 		<div>
-			<label className={fieldLabel}>{field.label}</label>
+			{rich ? (
+				<span id={`${fieldId}-label`} className={fieldLabel}>
+					{field.label}
+				</span>
+			) : (
+				<label className={fieldLabel} htmlFor={fieldId}>
+					{field.label}
+				</label>
+			)}
 			{field.kind === "textarea" ? (
 				<textarea
+					id={fieldId}
 					className={`${fieldInput} resize-y`}
 					rows={3}
 					value={str}
 					onChange={(e) => onChange(e.target.value)}
 				/>
 			) : field.kind === "richtext" ? (
-				<RichTextEditor value={str} onChange={onChange} />
+				<RichTextEditor
+					ariaLabelledBy={`${fieldId}-label`}
+					value={str}
+					onChange={onChange}
+				/>
 			) : field.kind === "image" ? (
 				<MediaPicker
+					id={fieldId}
 					value={str}
 					onChange={onChange}
 					mode="url"
@@ -477,9 +501,10 @@ function FieldInput({
 					aspect="video"
 				/>
 			) : field.kind === "form" ? (
-				<FormPicker value={str} onChange={onChange} />
+				<FormPicker id={fieldId} value={str} onChange={onChange} />
 			) : field.kind === "select" ? (
 				<select
+					id={fieldId}
 					className={fieldInput}
 					value={str}
 					onChange={(e) => onChange(e.target.value)}
@@ -493,6 +518,7 @@ function FieldInput({
 				</select>
 			) : (
 				<input
+					id={fieldId}
 					className={fieldInput}
 					value={str}
 					placeholder={field.help}

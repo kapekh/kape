@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import {
 	cancelButtonClass,
@@ -72,6 +72,7 @@ export function ProjectForm({
 	savedAt?: string | null;
 }) {
 	const modules = useModules();
+	const uid = useId();
 	const [code, setCode] = useState(initial?.code ?? "");
 	const [slug, setSlug] = useState(initial?.slug ?? "");
 	const [status, setStatus] = useState<ProjectStatus>(
@@ -215,8 +216,14 @@ export function ProjectForm({
 											/>
 										</label>
 										<div>
-											<label className={fieldLabel}>Body</label>
+											<span
+												id={`${uid}-body-${l.code}-label`}
+												className={fieldLabel}
+											>
+												Body
+											</span>
 											<RichTextEditor
+												ariaLabelledBy={`${uid}-body-${l.code}-label`}
 												value={trans[l.code]?.body ?? ""}
 												onChange={(v) => setField(l.code, "body", v)}
 											/>

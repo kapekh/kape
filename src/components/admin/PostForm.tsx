@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import {
@@ -136,6 +136,7 @@ export function PostForm({
 	title: string;
 	savedAt?: string | null;
 }) {
+	const uid = useId();
 	const [contentType, setContentType] = useState(
 		initial?.contentType ?? defaultType ?? contentTypes[0]?.key ?? "news",
 	);
@@ -292,8 +293,11 @@ export function PostForm({
 										/>
 									</label>
 									<div>
-										<label className={label}>Body</label>
+										<span id={`${uid}-body-${l.code}-label`} className={label}>
+											Body
+										</span>
 										<RichTextEditor
+											ariaLabelledBy={`${uid}-body-${l.code}-label`}
 											value={trans[l.code]?.body ?? ""}
 											onChange={(v) => setField(l.code, "body", v)}
 										/>
@@ -331,8 +335,11 @@ export function PostForm({
 						>
 							<div className="space-y-4">
 								<div>
-									<label className={label}>Content type</label>
+									<label className={label} htmlFor={`${uid}-content-type`}>
+										Content type
+									</label>
 									<SearchableSelect
+										id={`${uid}-content-type`}
 										value={contentType}
 										onChange={setContentType}
 										placeholder="Select type"
@@ -393,9 +400,12 @@ export function PostForm({
 								<div className="space-y-4">
 									{metaFieldDefs.map((f) => (
 										<div key={f.key}>
-											<label className={label}>{f.label}</label>
+											<label className={label} htmlFor={`${uid}-meta-${f.key}`}>
+												{f.label}
+											</label>
 											{f.kind === "media" ? (
 												<MediaPicker
+													id={`${uid}-meta-${f.key}`}
 													mode="url"
 													kind="all"
 													value={metaFields[f.key] ?? ""}
@@ -425,6 +435,7 @@ export function PostForm({
 														opts.unshift({ value: cur, label: cur });
 													return (
 														<SearchableSelect
+															id={`${uid}-meta-${f.key}`}
 															value={cur}
 															onChange={(v) =>
 																setMetaFields((p) => ({ ...p, [f.key]: v }))
@@ -437,6 +448,7 @@ export function PostForm({
 												})()
 											) : (
 												<input
+													id={`${uid}-meta-${f.key}`}
 													className={input}
 													type={
 														f.kind === "date"

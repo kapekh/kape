@@ -8,6 +8,7 @@ export type SelectOption = { value: string; label: string };
  * categories, content types, etc. Value/onChange are plain strings.
  */
 export function SearchableSelect({
+	id,
 	value,
 	onChange,
 	options,
@@ -16,6 +17,8 @@ export function SearchableSelect({
 	disabled,
 	className,
 }: {
+	/** Lands on the trigger, so a caption's `htmlFor` names this field. */
+	id?: string;
 	value: string;
 	onChange: (v: string) => void;
 	options: SelectOption[];
@@ -81,8 +84,11 @@ export function SearchableSelect({
 	return (
 		<div ref={rootRef} className={`relative ${className ?? ""}`}>
 			<button
+				id={id}
 				type="button"
 				disabled={disabled}
+				aria-haspopup="listbox"
+				aria-expanded={open}
 				onClick={() => setOpen((o) => !o)}
 				className="flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-background px-3 py-2 text-left text-sm transition focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/25 disabled:opacity-50"
 			>

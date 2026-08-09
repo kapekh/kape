@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import {
 	cancelButtonClass,
@@ -44,6 +44,7 @@ export function PartnerForm({
 	title: string;
 	savedAt?: string | null;
 }) {
+	const uid = useId();
 	const [name, setName] = useState(initial?.name ?? "");
 	const [category, setCategory] = useState(initial?.category ?? "");
 	const [url, setUrl] = useState(initial?.url ?? "");
@@ -98,8 +99,11 @@ export function PartnerForm({
 								/>
 							</label>
 							<div>
-								<label className={fieldLabel}>Category</label>
+								<label className={fieldLabel} htmlFor={`${uid}-category`}>
+									Category
+								</label>
 								<SearchableSelect
+									id={`${uid}-category`}
 									value={category}
 									onChange={setCategory}
 									emptyOption="— Select category —"

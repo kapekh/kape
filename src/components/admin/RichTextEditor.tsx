@@ -31,9 +31,15 @@ const TABLE_ACTIONS: [string, (c: ChainedCommands) => ChainedCommands][] = [
  * it SSR-safe.
  */
 export function RichTextEditor({
+	ariaLabelledBy,
 	value,
 	onChange,
 }: {
+	/**
+	 * Id of the caption naming this editor. A contenteditable is not a labelable
+	 * element, so `<label for>` resolves to it and still names nothing.
+	 */
+	ariaLabelledBy?: string;
 	value: string;
 	onChange: (json: string) => void;
 }) {
@@ -41,6 +47,13 @@ export function RichTextEditor({
 		immediatelyRender: false,
 		extensions: richTextExtensions,
 		content: parseContent(value),
+		editorProps: {
+			attributes: {
+				role: "textbox",
+				"aria-multiline": "true",
+				...(ariaLabelledBy ? { "aria-labelledby": ariaLabelledBy } : {}),
+			},
+		},
 		onUpdate: ({ editor }) => onChange(JSON.stringify(editor.getJSON())),
 	});
 
