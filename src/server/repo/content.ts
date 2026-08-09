@@ -110,7 +110,13 @@ export async function getPageBySlug(
 	const [page] = await db
 		.select()
 		.from(pages)
-		.where(and(eq(pages.tenantId, TENANT), eq(pages.slug, slug)))
+		.where(
+			and(
+				eq(pages.tenantId, TENANT),
+				eq(pages.slug, slug),
+				eq(pages.status, "published"),
+			),
+		)
 		.limit(1);
 	if (!page) return null;
 
@@ -453,6 +459,7 @@ export async function getAlbum(
 				eq(posts.tenantId, TENANT),
 				eq(posts.slug, slug),
 				eq(posts.contentType, "album"),
+				eq(posts.status, "published"),
 			),
 		)
 		.limit(1);
@@ -531,7 +538,13 @@ export async function getPostBySlug(
 	const [post] = await db
 		.select()
 		.from(posts)
-		.where(and(eq(posts.tenantId, TENANT), eq(posts.slug, slug)))
+		.where(
+			and(
+				eq(posts.tenantId, TENANT),
+				eq(posts.slug, slug),
+				eq(posts.status, "published"),
+			),
+		)
 		.limit(1);
 	if (!post) return null;
 

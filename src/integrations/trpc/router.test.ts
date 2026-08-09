@@ -200,3 +200,53 @@ describe("adminMedia.delete", () => {
 		expect(rowsOf(out[9])).toEqual([{ id: 1, cover_media_id: null }]);
 	});
 });
+
+describe("unpublished content stays off the public API", () => {
+	const draftPage = {
+		call: "adminPages.create",
+		input: {
+			segment: "c10-draft",
+			parentId: null,
+			status: "draft",
+			coverMediaId: null,
+			sections: [],
+			translations: [{ lang: "en", title: "C10 draft", excerpt: "", body: "" }],
+		},
+	};
+	const draftPost = {
+		call: "adminPosts.create",
+		input: {
+			contentType: "news",
+			slug: "c10-draft-post",
+			status: "draft",
+			translations: [
+				{ lang: "en", title: "C10 draft post", excerpt: "", body: "" },
+			],
+		},
+	};
+	const out = run([
+		draftPage,
+		makePage,
+		draftPost,
+		makePostWithBody,
+		{ call: "pages.bySlug", input: { slug: "c10-draft", lang: "en" } },
+		{ call: "pages.bySlug", input: { slug: "c10-page", lang: "en" } },
+		{
+			call: "routes.resolve",
+			input: { path: "news/c10-draft-post", lang: "en" },
+		},
+		{ call: "routes.resolve", input: { path: "news/c10-post", lang: "en" } },
+	]);
+
+	const value = (r: Result) => ("ok" in r && r.ok ? r.value : null);
+
+	it("hides a draft page from pages.bySlug but still serves a published one", () => {
+		expect(value(out[4])).toBeNull();
+		expect((value(out[5]) as { slug?: string } | null)?.slug).toBe("c10-page");
+	});
+
+	it("resolves a draft post's url to notfound but a published one to an article", () => {
+		expect((value(out[6]) as { kind?: string } | null)?.kind).toBe("notfound");
+		expect((value(out[7]) as { kind?: string } | null)?.kind).toBe("article");
+	});
+});
