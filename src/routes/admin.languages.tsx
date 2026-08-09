@@ -169,6 +169,7 @@ function LanguagesAdmin() {
 									<td className="px-2 text-center">
 										<input
 											type="checkbox"
+											aria-label={`Enable ${l.name}`}
 											checked={l.enabled}
 											onChange={(e) => save(l, { enabled: e.target.checked })}
 										/>

@@ -147,6 +147,7 @@ export function TermsManager({
 									<td className="px-1">
 										<input
 											className={`${cellInput} font-mono`}
+											aria-label={`Key for ${r.label || r.key}`}
 											value={r.key}
 											onChange={(e) => patch(r.id, "key", e.target.value)}
 										/>
@@ -154,6 +155,7 @@ export function TermsManager({
 									<td className="px-1">
 										<input
 											className={cellInput}
+											aria-label={`Label for ${r.key}`}
 											value={r.label}
 											onChange={(e) => patch(r.id, "label", e.target.value)}
 										/>

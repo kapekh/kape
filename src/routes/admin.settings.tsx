@@ -555,6 +555,7 @@ function SettingsAdmin() {
 									<td>
 										<input
 											className={ci}
+											aria-label={`Value for ${r.key}`}
 											value={r.value}
 											onChange={(e) =>
 												setRows((rs) =>

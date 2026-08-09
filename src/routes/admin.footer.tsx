@@ -75,12 +75,14 @@ function LinkRows({
 					<input
 						className={`${fieldInput} flex-1`}
 						placeholder="Label"
+						aria-label={`Link ${i + 1} label`}
 						value={l.label}
 						onChange={(e) => patch(i, { label: e.target.value })}
 					/>
 					<input
 						className={`${fieldInput} flex-1 font-mono text-xs`}
 						placeholder="/path or https://…"
+						aria-label={`Link ${i + 1} path`}
 						value={l.href}
 						onChange={(e) => patch(i, { href: e.target.value })}
 					/>
