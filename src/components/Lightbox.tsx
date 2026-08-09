@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { useT } from "@/lib/i18n";
 
-export type LightboxPhoto = { url: string; caption?: string };
+export type LightboxPhoto = { id: number; url: string; caption?: string };
 
 /**
  * Full-screen photo viewer. Built on the native `<dialog>` so the focus trap,
@@ -128,7 +128,7 @@ export function PhotoGrid({
 			<div className={`grid gap-3 ${className}`}>
 				{photos.map((p, i) => (
 					<button
-						key={p.url}
+						key={p.id}
 						type="button"
 						onClick={() => setIndex(i)}
 						aria-label={

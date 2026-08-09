@@ -437,7 +437,7 @@ export async function listAlbums(db: DB, lang: string): Promise<AlbumItem[]> {
 	return out;
 }
 
-export type AlbumPhoto = { url: string; caption: string };
+export type AlbumPhoto = { id: number; url: string; caption: string };
 export type ResolvedAlbum = {
 	id: number;
 	slug: string;
@@ -482,6 +482,7 @@ export async function getAlbum(
 		slug: a.slug,
 		title: f.title ?? "",
 		photos: pm.map((p) => ({
+			id: p.mediaId,
 			url: p.url ?? "",
 			caption: caps.get(p.mediaId)?.caption ?? "",
 		})),
@@ -585,6 +586,7 @@ export async function getPostBySlug(
 		bodyHtml: renderBody(f.body ?? null),
 		coverUrl,
 		gallery: pm.map((p) => ({
+			id: p.mediaId,
 			url: p.url ?? "",
 			caption: caps.get(p.mediaId)?.caption ?? "",
 		})),
