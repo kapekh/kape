@@ -88,31 +88,37 @@ function LanguagesAdmin() {
 			>
 				<div className="flex flex-wrap items-end gap-3">
 					<div className="w-20">
-						<label className={fieldLabel}>Code</label>
-						<input
-							className={`${fieldInput} font-mono`}
-							placeholder="fr"
-							value={add.code}
-							onChange={(e) => setAdd({ ...add, code: e.target.value })}
-						/>
+						<label className="block">
+							<span className={fieldLabel}>Code</span>
+							<input
+								className={`${fieldInput} font-mono`}
+								placeholder="fr"
+								value={add.code}
+								onChange={(e) => setAdd({ ...add, code: e.target.value })}
+							/>
+						</label>
 					</div>
 					<div className="flex-1 min-w-[160px]">
-						<label className={fieldLabel}>English name</label>
-						<input
-							className={fieldInput}
-							placeholder="French"
-							value={add.name}
-							onChange={(e) => setAdd({ ...add, name: e.target.value })}
-						/>
+						<label className="block">
+							<span className={fieldLabel}>English name</span>
+							<input
+								className={fieldInput}
+								placeholder="French"
+								value={add.name}
+								onChange={(e) => setAdd({ ...add, name: e.target.value })}
+							/>
+						</label>
 					</div>
 					<div className="flex-1 min-w-[160px]">
-						<label className={fieldLabel}>Native name</label>
-						<input
-							className={fieldInput}
-							placeholder="Français"
-							value={add.nativeName}
-							onChange={(e) => setAdd({ ...add, nativeName: e.target.value })}
-						/>
+						<label className="block">
+							<span className={fieldLabel}>Native name</span>
+							<input
+								className={fieldInput}
+								placeholder="Français"
+								value={add.nativeName}
+								onChange={(e) => setAdd({ ...add, nativeName: e.target.value })}
+							/>
+						</label>
 					</div>
 					<label className="flex items-center gap-1.5 text-sm pb-2">
 						<input
@@ -163,6 +169,7 @@ function LanguagesAdmin() {
 									<td className="px-2 text-center">
 										<input
 											type="checkbox"
+											aria-label={`Enable ${l.name}`}
 											checked={l.enabled}
 											onChange={(e) => save(l, { enabled: e.target.checked })}
 										/>

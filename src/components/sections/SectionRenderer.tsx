@@ -118,12 +118,18 @@ function useL() {
 
 const Icon = {
 	play: (c = "") => (
-		<svg className={c} viewBox="0 0 24 24" fill="currentColor">
+		<svg
+			aria-hidden="true"
+			className={c}
+			viewBox="0 0 24 24"
+			fill="currentColor"
+		>
 			<path d="M8 5v14l11-7z" />
 		</svg>
 	),
 	doc: (c = "") => (
 		<svg
+			aria-hidden="true"
 			className={c}
 			viewBox="0 0 24 24"
 			fill="none"
@@ -138,6 +144,7 @@ const Icon = {
 	),
 	download: (c = "") => (
 		<svg
+			aria-hidden="true"
 			className={c}
 			viewBox="0 0 24 24"
 			fill="none"
@@ -209,10 +216,13 @@ function Slideshow({ slides }: { slides: any[] }) {
 	}, [paused, slides.length]);
 	if (!slides.length) return null;
 	return (
+		// biome-ignore lint/a11y/noStaticElementInteractions: pause region, not a control. Hover and focus both stop the rotation, and the slide buttons inside stay the only way to act on it.
 		<div
 			className="relative h-[440px] md:h-[560px]"
 			onMouseEnter={() => setPaused(true)}
 			onMouseLeave={() => setPaused(false)}
+			onFocus={() => setPaused(true)}
+			onBlur={() => setPaused(false)}
 		>
 			<div className="group absolute inset-0 overflow-hidden rounded-[2rem] shadow-[var(--shadow-lift)] ring-1 ring-border">
 				{slides.map((s, idx) => (

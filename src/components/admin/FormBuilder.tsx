@@ -193,8 +193,8 @@ export function FormBuilder({
 						>
 							<div className="space-y-4">
 								<div className="grid sm:grid-cols-2 gap-4">
-									<div>
-										<label className={fieldLabel}>Title (EN)</label>
+									<label className="block">
+										<span className={fieldLabel}>Title (EN)</span>
 										<input
 											className={fieldInput}
 											value={formTitle}
@@ -202,24 +202,26 @@ export function FormBuilder({
 											placeholder="Alumni registration"
 											required
 										/>
-									</div>
-									<div>
-										<label className={fieldLabel}>Title (KM)</label>
+									</label>
+									<label className="block">
+										<span className={fieldLabel}>Title (KM)</span>
 										<input
 											className={`${fieldInput} font-khmer`}
 											value={titleKm}
 											onChange={(e) => setTitleKm(e.target.value)}
 										/>
-									</div>
+									</label>
 								</div>
 								<div>
-									<label className={fieldLabel}>Form name (unique)</label>
-									<input
-										className={`${fieldInput} font-mono ${slugStatus === "taken" ? "border-destructive focus:border-destructive" : ""}`}
-										value={slug}
-										onChange={(e) => setSlug(slugify(e.target.value))}
-										placeholder="alumni"
-									/>
+									<label className="block">
+										<span className={fieldLabel}>Form name (unique)</span>
+										<input
+											className={`${fieldInput} font-mono ${slugStatus === "taken" ? "border-destructive focus:border-destructive" : ""}`}
+											value={slug}
+											onChange={(e) => setSlug(slugify(e.target.value))}
+											placeholder="alumni"
+										/>
+									</label>
 									<p className="mt-1 text-xs">
 										{slugStatus === "checking" ? (
 											<span className="text-muted-foreground">
@@ -241,15 +243,15 @@ export function FormBuilder({
 										)}
 									</p>
 								</div>
-								<div>
-									<label className={fieldLabel}>Intro</label>
+								<label className="block">
+									<span className={fieldLabel}>Intro</span>
 									<textarea
 										className={fieldInput}
 										rows={2}
 										value={intro}
 										onChange={(e) => setIntro(e.target.value)}
 									/>
-								</div>
+								</label>
 							</div>
 						</FormSection>
 
@@ -401,8 +403,8 @@ export function FormBuilder({
 					<div className="space-y-5">
 						<FormSection title="Availability">
 							<div className="space-y-4">
-								<div>
-									<label className={fieldLabel}>Status</label>
+								<label className="block">
+									<span className={fieldLabel}>Status</span>
 									<select
 										className={fieldInput}
 										value={status}
@@ -411,15 +413,17 @@ export function FormBuilder({
 										<option value="active">Active — accepting responses</option>
 										<option value="draft">Draft — hidden</option>
 									</select>
-								</div>
+								</label>
 								<div>
-									<label className={fieldLabel}>Deadline (optional)</label>
-									<input
-										type="date"
-										className={fieldInput}
-										value={deadline}
-										onChange={(e) => setDeadline(e.target.value)}
-									/>
+									<label className="block">
+										<span className={fieldLabel}>Deadline (optional)</span>
+										<input
+											type="date"
+											className={fieldInput}
+											value={deadline}
+											onChange={(e) => setDeadline(e.target.value)}
+										/>
+									</label>
 									<p className="mt-1 text-xs text-muted-foreground">
 										{deadline
 											? isFormClosed(deadline)
@@ -432,17 +436,17 @@ export function FormBuilder({
 						</FormSection>
 						<FormSection title="After submit">
 							<div className="space-y-4">
-								<div>
-									<label className={fieldLabel}>Submit button label</label>
+								<label className="block">
+									<span className={fieldLabel}>Submit button label</span>
 									<input
 										className={fieldInput}
 										value={submitLabel}
 										onChange={(e) => setSubmitLabel(e.target.value)}
 										placeholder="Submit"
 									/>
-								</div>
-								<div>
-									<label className={fieldLabel}>Success message</label>
+								</label>
+								<label className="block">
+									<span className={fieldLabel}>Success message</span>
 									<textarea
 										className={fieldInput}
 										rows={3}
@@ -450,16 +454,16 @@ export function FormBuilder({
 										onChange={(e) => setSuccessMessage(e.target.value)}
 										placeholder="Thank you — your response has been recorded."
 									/>
-								</div>
-								<div>
-									<label className={fieldLabel}>Notify email (optional)</label>
+								</label>
+								<label className="block">
+									<span className={fieldLabel}>Notify email (optional)</span>
 									<input
 										className={fieldInput}
 										value={notifyEmail}
 										onChange={(e) => setNotifyEmail(e.target.value)}
 										placeholder="team@example.org"
 									/>
-								</div>
+								</label>
 							</div>
 						</FormSection>
 					</div>

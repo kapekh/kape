@@ -194,8 +194,8 @@ export function CampaignForm({
 						>
 							<div className="space-y-4">
 								<div className="grid sm:grid-cols-2 gap-4">
-									<div>
-										<label className={fieldLabel}>Title (EN)</label>
+									<label className="block">
+										<span className={fieldLabel}>Title (EN)</span>
 										<input
 											className={fieldInput}
 											value={titleEn}
@@ -203,47 +203,49 @@ export function CampaignForm({
 											placeholder="Where every child learns"
 											required
 										/>
-									</div>
-									<div>
-										<label className={fieldLabel}>Title (KM)</label>
+									</label>
+									<label className="block">
+										<span className={fieldLabel}>Title (KM)</span>
 										<input
 											className={`${fieldInput} font-khmer`}
 											value={titleKm}
 											onChange={(e) => setTitleKm(e.target.value)}
 										/>
-									</div>
+									</label>
 								</div>
 								<div>
-									<label className={fieldLabel}>Slug</label>
-									<input
-										className={`${fieldInput} font-mono`}
-										value={slug}
-										onChange={(e) => setSlug(slugify(e.target.value))}
-										placeholder="every-child-learns"
-									/>
+									<label className="block">
+										<span className={fieldLabel}>Slug</span>
+										<input
+											className={`${fieldInput} font-mono`}
+											value={slug}
+											onChange={(e) => setSlug(slugify(e.target.value))}
+											placeholder="every-child-learns"
+										/>
+									</label>
 									<p className="mt-1 text-xs text-muted-foreground">
 										URL: /donate/{slug || slugify(titleEn) || "…"}
 									</p>
 								</div>
 								<div className="grid sm:grid-cols-2 gap-4">
-									<div>
-										<label className={fieldLabel}>Blurb (EN)</label>
+									<label className="block">
+										<span className={fieldLabel}>Blurb (EN)</span>
 										<textarea
 											className={fieldInput}
 											rows={3}
 											value={blurb}
 											onChange={(e) => setBlurb(e.target.value)}
 										/>
-									</div>
-									<div>
-										<label className={fieldLabel}>Blurb (KM)</label>
+									</label>
+									<label className="block">
+										<span className={fieldLabel}>Blurb (KM)</span>
 										<textarea
 											className={`${fieldInput} font-khmer`}
 											rows={3}
 											value={blurbKm}
 											onChange={(e) => setBlurbKm(e.target.value)}
 										/>
-									</div>
+									</label>
 								</div>
 							</div>
 						</FormSection>
@@ -254,8 +256,8 @@ export function CampaignForm({
 						>
 							<div className="space-y-4">
 								<div className="grid sm:grid-cols-2 gap-4">
-									<div>
-										<label className={fieldLabel}>Currency</label>
+									<label className="block">
+										<span className={fieldLabel}>Currency</span>
 										<select
 											className={fieldInput}
 											value={currency}
@@ -266,9 +268,9 @@ export function CampaignForm({
 											<option value="USD">USD ($)</option>
 											<option value="KHR">KHR (៛)</option>
 										</select>
-									</div>
-									<div>
-										<label className={fieldLabel}>Goal amount (optional)</label>
+									</label>
+									<label className="block">
+										<span className={fieldLabel}>Goal amount (optional)</span>
 										<input
 											className={fieldInput}
 											type="number"
@@ -276,27 +278,28 @@ export function CampaignForm({
 											onChange={(e) => setGoal(e.target.value)}
 											placeholder="50000"
 										/>
-									</div>
-								</div>
-								<div>
-									<label className={fieldLabel}>
-										Preset amounts (comma-separated)
 									</label>
+								</div>
+								<label className="block">
+									<span className={fieldLabel}>
+										Preset amounts (comma-separated)
+									</span>
 									<input
 										className={fieldInput}
 										value={presetsText}
 										onChange={(e) => setPresetsText(e.target.value)}
 										placeholder="25, 50, 100, 250"
 									/>
-								</div>
-								<div>
-									<label className={fieldLabel}>Impact tiers</label>
+								</label>
+								<fieldset>
+									<legend className={fieldLabel}>Impact tiers</legend>
 									<div className="space-y-2">
 										{tiers.map((t, i) => (
 											<div key={i} className="flex gap-2">
 												<input
 													className={`${fieldInput} w-28`}
 													type="number"
+													aria-label={`Tier ${i + 1} amount`}
 													value={t.amount}
 													placeholder="25"
 													onChange={(e) =>
@@ -309,6 +312,7 @@ export function CampaignForm({
 												/>
 												<input
 													className={fieldInput}
+													aria-label={`Tier ${i + 1} label`}
 													value={t.label}
 													placeholder="Textbooks for a classroom"
 													onChange={(e) =>
@@ -340,7 +344,7 @@ export function CampaignForm({
 											+ Add tier
 										</button>
 									</div>
-								</div>
+								</fieldset>
 							</div>
 						</FormSection>
 					</div>

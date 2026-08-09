@@ -44,13 +44,14 @@ export function MapField({
 			</button>
 
 			{open && (
-				<div
-					className="fixed inset-0 z-[60] grid place-items-center bg-foreground/40 p-4 backdrop-blur-sm"
-					onMouseDown={(e) => {
-						if (e.target === e.currentTarget) setOpen(false);
-					}}
-				>
-					<div className="w-full max-w-2xl rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-lift)]">
+				<div className="fixed inset-0 z-[60] grid place-items-center bg-foreground/40 p-4 backdrop-blur-sm">
+					<button
+						type="button"
+						aria-label={`Close ${label} picker`}
+						className="absolute inset-0 cursor-default"
+						onClick={() => setOpen(false)}
+					/>
+					<div className="relative w-full max-w-2xl rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-lift)]">
 						<h3 className="mb-1 font-display text-lg font-semibold text-primary">
 							Set {label}
 						</h3>
@@ -60,24 +61,24 @@ export function MapField({
 						</p>
 						<MapPicker lat={lat} lng={lng} onPick={onChange} />
 						<div className="mt-3 grid grid-cols-2 gap-3">
-							<div>
-								<label className={fieldLabel}>Latitude</label>
+							<label className="block">
+								<span className={fieldLabel}>Latitude</span>
 								<input
 									className={fieldInput}
 									value={lat}
 									onChange={(e) => onChange(e.target.value, lng)}
 									placeholder="12.245"
 								/>
-							</div>
-							<div>
-								<label className={fieldLabel}>Longitude</label>
+							</label>
+							<label className="block">
+								<span className={fieldLabel}>Longitude</span>
 								<input
 									className={fieldInput}
 									value={lng}
 									onChange={(e) => onChange(lat, e.target.value)}
 									placeholder="104.668"
 								/>
-							</div>
+							</label>
 						</div>
 						<div className="mt-4 flex items-center justify-end gap-2">
 							{has && (

@@ -87,8 +87,8 @@ export function PartnerForm({
 						description="Organisations you collaborate with, shown on the Partners page."
 					>
 						<div className="space-y-4">
-							<div>
-								<label className={fieldLabel}>Name</label>
+							<label className="block">
+								<span className={fieldLabel}>Name</span>
 								<input
 									className={fieldInput}
 									value={name}
@@ -96,7 +96,7 @@ export function PartnerForm({
 									placeholder="e.g. UNICEF"
 									required
 								/>
-							</div>
+							</label>
 							<div>
 								<label className={fieldLabel}>Category</label>
 								<SearchableSelect
@@ -110,15 +110,15 @@ export function PartnerForm({
 									}))}
 								/>
 							</div>
-							<div>
-								<label className={fieldLabel}>Website (optional)</label>
+							<label className="block">
+								<span className={fieldLabel}>Website (optional)</span>
 								<input
 									className={fieldInput}
 									value={url}
 									onChange={(e) => setUrl(e.target.value)}
 									placeholder="https://…"
 								/>
-							</div>
+							</label>
 						</div>
 					</FormSection>
 				}

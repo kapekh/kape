@@ -174,6 +174,15 @@ export function PageForm({
 		mq.addEventListener("change", sync);
 		return () => mq.removeEventListener("change", sync);
 	}, []);
+	function nudgeResize(e: React.KeyboardEvent) {
+		const step = e.shiftKey ? 80 : 16;
+		if (e.key === "ArrowLeft") setPanelW((w) => Math.max(300, w - step));
+		else if (e.key === "ArrowRight") setPanelW((w) => Math.min(880, w + step));
+		else if (e.key === "Home") setPanelW(300);
+		else if (e.key === "End") setPanelW(880);
+		else return;
+		e.preventDefault();
+	}
 	function startResize(e: React.MouseEvent) {
 		e.preventDefault();
 		const startX = e.clientX;
@@ -253,8 +262,8 @@ export function PageForm({
 				<div className="border-b border-border p-4">
 					<h2 className={panelHead}>Page settings</h2>
 					<div className="mt-3 space-y-3">
-						<div>
-							<label className={fieldLabel}>Parent page</label>
+						<label className="block">
+							<span className={fieldLabel}>Parent page</span>
 							<select
 								className={fieldInput}
 								value={parentId ?? ""}
@@ -269,23 +278,25 @@ export function PageForm({
 									</option>
 								))}
 							</select>
-						</div>
+						</label>
 						<div>
-							<label className={fieldLabel}>URL segment</label>
-							<input
-								className={fieldInput}
-								value={segment}
-								onChange={(e) => setSegment(e.target.value)}
-								placeholder="about"
-								required
-							/>
+							<label className="block">
+								<span className={fieldLabel}>URL segment</span>
+								<input
+									className={fieldInput}
+									value={segment}
+									onChange={(e) => setSegment(e.target.value)}
+									placeholder="about"
+									required
+								/>
+							</label>
 							<p className="mt-1 text-[11px] text-muted-foreground">
 								URL:{" "}
 								<span className="font-mono text-foreground/80">{fullPath}</span>
 							</p>
 						</div>
-						<div>
-							<label className={fieldLabel}>Status</label>
+						<label className="block">
+							<span className={fieldLabel}>Status</span>
 							<select
 								className={fieldInput}
 								value={status}
@@ -294,7 +305,7 @@ export function PageForm({
 								<option value="draft">Draft</option>
 								<option value="published">Published</option>
 							</select>
-						</div>
+						</label>
 					</div>
 				</div>
 
@@ -314,14 +325,26 @@ export function PageForm({
 			</aside>
 
 			{/* 1px divider with a centered grab handle */}
+			{/* biome-ignore lint/a11y/useSemanticElements: <hr> is void and cannot hold the grab handle, and a focusable splitter is a widget rather than a thematic break. */}
 			<div
-				onMouseDown={startResize}
 				role="separator"
 				aria-orientation="vertical"
-				className="relative hidden w-px shrink-0 cursor-col-resize bg-border transition-colors hover:bg-[var(--accent)]/50 xl:block"
+				aria-label="Resize editor panel"
+				aria-valuenow={panelW}
+				aria-valuemin={300}
+				aria-valuemax={880}
+				tabIndex={0}
+				onMouseDown={startResize}
+				onKeyDown={nudgeResize}
+				className="relative hidden w-px shrink-0 cursor-col-resize bg-border transition-colors hover:bg-[var(--accent)]/50 focus-visible:bg-[var(--accent)] focus-visible:outline-none xl:block"
 			>
 				<span className="absolute left-1/2 top-1/2 z-10 grid h-11 w-5 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]">
-					<svg className="h-4 w-4" viewBox="0 0 16 16" fill="currentColor">
+					<svg
+						aria-hidden="true"
+						className="h-4 w-4"
+						viewBox="0 0 16 16"
+						fill="currentColor"
+					>
 						<circle cx="6" cy="4" r="1" />
 						<circle cx="10" cy="4" r="1" />
 						<circle cx="6" cy="8" r="1" />

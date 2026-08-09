@@ -331,31 +331,32 @@ function CardsEditor({
 									</label>
 								)}
 							</div>
-							<div>
-								<label className={fieldLabel}>Title</label>
+							<label className="block">
+								<span className={fieldLabel}>Title</span>
 								<input
 									className={fieldInput}
 									value={card.title ?? ""}
 									onChange={(e) => patch(i, { title: e.target.value })}
 								/>
-							</div>
-							<div>
-								<label className={fieldLabel}>Text</label>
+							</label>
+							<label className="block">
+								<span className={fieldLabel}>Text</span>
 								<textarea
 									className={`${fieldInput} resize-y`}
 									rows={2}
 									value={card.body ?? ""}
 									onChange={(e) => patch(i, { body: e.target.value })}
 								/>
-							</div>
-							<div>
-								<label className={fieldLabel}>Buttons</label>
+							</label>
+							<fieldset>
+								<legend className={fieldLabel}>Buttons</legend>
 								<div className="space-y-1.5">
 									{btns.map((b, bi) => (
 										<div key={bi} className="flex gap-1.5">
 											<input
 												className={`${fieldInput} flex-1`}
 												placeholder="Label"
+												aria-label={`Button ${bi + 1} label`}
 												value={b.label ?? ""}
 												onChange={(e) =>
 													setButtons(
@@ -369,6 +370,7 @@ function CardsEditor({
 											<input
 												className={`${fieldInput} flex-1 font-mono text-xs`}
 												placeholder="/link or https://…"
+												aria-label={`Button ${bi + 1} link`}
 												value={b.href ?? ""}
 												onChange={(e) =>
 													setButtons(
@@ -403,7 +405,7 @@ function CardsEditor({
 										+ Add button
 									</button>
 								</div>
-							</div>
+							</fieldset>
 						</div>
 					</div>
 				);
@@ -446,10 +448,10 @@ function FieldInput({
 			? (value as Record<string, unknown>[])
 			: [];
 		return (
-			<div>
-				<label className={fieldLabel}>{field.label}</label>
+			<fieldset>
+				<legend className={fieldLabel}>{field.label}</legend>
 				<CardsEditor rows={rows} onChange={onChange} />
-			</div>
+			</fieldset>
 		);
 	}
 
@@ -621,8 +623,8 @@ function SectionEditor({
 				</div>
 			)}
 			{def.layouts.length > 1 && !formPicked && (
-				<div>
-					<label className={fieldLabel}>Layout</label>
+				<label className="block">
+					<span className={fieldLabel}>Layout</span>
 					<select
 						className={fieldInput}
 						value={node.layout ?? def.layouts[0].value}
@@ -634,40 +636,42 @@ function SectionEditor({
 							</option>
 						))}
 					</select>
-				</div>
+				</label>
 			)}
 
 			{def.kind === "dynamic" && sources.length > 0 && (
 				<div className="grid grid-cols-2 gap-2">
 					<div className="col-span-2">
-						<label className={fieldLabel}>Data source</label>
-						<select
-							className={fieldInput}
-							value={`${node.query?.source ?? sources[0].value}::${node.query?.contentType ?? sources[0].contentType ?? ""}`}
-							onChange={(e) => {
-								const [source, contentType] = e.target.value.split("::");
-								onChange({
-									...node,
-									query: {
-										...node.query,
-										source: source as never,
-										contentType: contentType || undefined,
-									},
-								});
-							}}
-						>
-							{sources.map((s) => (
-								<option
-									key={`${s.value}:${s.contentType ?? ""}`}
-									value={`${s.value}::${s.contentType ?? ""}`}
-								>
-									{s.label}
-								</option>
-							))}
-						</select>
+						<label className="block">
+							<span className={fieldLabel}>Data source</span>
+							<select
+								className={fieldInput}
+								value={`${node.query?.source ?? sources[0].value}::${node.query?.contentType ?? sources[0].contentType ?? ""}`}
+								onChange={(e) => {
+									const [source, contentType] = e.target.value.split("::");
+									onChange({
+										...node,
+										query: {
+											...node.query,
+											source: source as never,
+											contentType: contentType || undefined,
+										},
+									});
+								}}
+							>
+								{sources.map((s) => (
+									<option
+										key={`${s.value}:${s.contentType ?? ""}`}
+										value={`${s.value}::${s.contentType ?? ""}`}
+									>
+										{s.label}
+									</option>
+								))}
+							</select>
+						</label>
 					</div>
-					<div>
-						<label className={fieldLabel}>Limit</label>
+					<label className="block">
+						<span className={fieldLabel}>Limit</span>
 						<input
 							type="number"
 							className={fieldInput}
@@ -683,9 +687,9 @@ function SectionEditor({
 								})
 							}
 						/>
-					</div>
-					<div>
-						<label className={fieldLabel}>Category filter</label>
+					</label>
+					<label className="block">
+						<span className={fieldLabel}>Category filter</span>
 						<input
 							className={fieldInput}
 							value={node.query?.category ?? ""}
@@ -700,7 +704,7 @@ function SectionEditor({
 								})
 							}
 						/>
-					</div>
+					</label>
 				</div>
 			)}
 
@@ -801,6 +805,7 @@ export function SectionsBuilder({
 								className="flex min-w-0 flex-1 items-center gap-2 text-left"
 							>
 								<svg
+									aria-hidden="true"
 									className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-90" : ""}`}
 									viewBox="0 0 12 12"
 									fill="none"

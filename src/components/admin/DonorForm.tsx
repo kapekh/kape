@@ -79,8 +79,8 @@ export function DonorForm({
 						description="Organisations that fund the work."
 					>
 						<div className="space-y-4">
-							<div>
-								<label className={fieldLabel}>Name</label>
+							<label className="block">
+								<span className={fieldLabel}>Name</span>
 								<input
 									className={fieldInput}
 									value={name}
@@ -88,16 +88,16 @@ export function DonorForm({
 									placeholder="e.g. European Union"
 									required
 								/>
-							</div>
-							<div>
-								<label className={fieldLabel}>Website (optional)</label>
+							</label>
+							<label className="block">
+								<span className={fieldLabel}>Website (optional)</span>
 								<input
 									className={fieldInput}
 									value={url}
 									onChange={(e) => setUrl(e.target.value)}
 									placeholder="https://…"
 								/>
-							</div>
+							</label>
 						</div>
 					</FormSection>
 				}

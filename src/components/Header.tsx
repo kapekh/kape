@@ -176,6 +176,7 @@ function MobileNode({
 			>
 				<span>{node.label}</span>
 				<svg
+					aria-hidden="true"
 					className={`h-4 w-4 opacity-60 transition-transform ${open ? "rotate-180" : ""}`}
 					viewBox="0 0 12 12"
 					fill="none"
@@ -389,6 +390,7 @@ export function Header({
 			{/* Header + mega panel share a hover region so moving into the panel doesn't close it.
 			    The sticky lives HERE (not on <header>) because a sticky element only sticks within
 			    its parent's box — this wrapper's parent is <body>, so it stays pinned page-wide. */}
+			{/* biome-ignore lint/a11y/noStaticElementInteractions: layout wrapper, not a control. The handlers only cancel a hover timer; every menu it opens is also reachable by the nav buttons' onClick and aria-expanded. */}
 			<div
 				onMouseLeave={hoverClose}
 				onMouseEnter={cancelHover}
@@ -466,6 +468,7 @@ export function Header({
 											{n.label}
 											{hasChildren && (
 												<svg
+													aria-hidden="true"
 													className={`h-3 w-3 opacity-60 transition-transform ${active ? "rotate-180" : ""}`}
 													viewBox="0 0 12 12"
 													fill="none"
@@ -501,6 +504,7 @@ export function Header({
 								className="lg:hidden grid h-10 w-10 place-items-center rounded-full border border-border text-primary hover:bg-muted transition"
 							>
 								<svg
+									aria-hidden="true"
 									className="h-5 w-5"
 									viewBox="0 0 24 24"
 									fill="none"
@@ -595,7 +599,9 @@ export function Header({
 			{/* Mobile drawer */}
 			{mobileOpen && (
 				<div className="lg:hidden fixed inset-0 z-50 h-[100dvh]">
-					<div
+					<button
+						type="button"
+						aria-label="Close menu"
 						className="absolute inset-0 bg-black/40 backdrop-blur-sm"
 						onClick={() => setMobileOpen(false)}
 					/>
@@ -611,6 +617,7 @@ export function Header({
 								className="grid h-9 w-9 place-items-center rounded-full border border-border text-foreground/70 hover:bg-muted transition"
 							>
 								<svg
+									aria-hidden="true"
 									className="h-5 w-5"
 									viewBox="0 0 24 24"
 									fill="none"

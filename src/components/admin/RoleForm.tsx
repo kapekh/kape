@@ -139,8 +139,8 @@ export function RoleForm({
 				aside={
 					<FormSection title="Role" description="A label staff will recognise.">
 						<div className="space-y-4">
-							<div>
-								<label className={fieldLabel}>Name</label>
+							<label className="block">
+								<span className={fieldLabel}>Name</span>
 								<input
 									className={fieldInput}
 									value={name}
@@ -148,7 +148,7 @@ export function RoleForm({
 									placeholder="e.g. Editor, Fundraiser"
 									required
 								/>
-							</div>
+							</label>
 							{initial?.isSystem && (
 								<p className="text-xs text-muted-foreground">
 									This is a built-in role — it can be renamed

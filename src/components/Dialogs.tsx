@@ -107,9 +107,8 @@ export function DialogHost() {
 			{ts.length > 0 && (
 				<div className="fixed bottom-4 right-4 z-[200] flex w-[min(92vw,22rem)] flex-col gap-2">
 					{ts.map((t) => (
-						<div
+						<output
 							key={t.id}
-							role="status"
 							className={`rounded-xl border px-4 py-3 text-sm shadow-[var(--shadow-lift)] animate-[mega-content-in_0.2s_ease-out] ${
 								t.kind === "error"
 									? "border-destructive/40 bg-destructive/10 text-destructive"
@@ -119,7 +118,7 @@ export function DialogHost() {
 							}`}
 						>
 							{t.message}
-						</div>
+						</output>
 					))}
 				</div>
 			)}

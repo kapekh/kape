@@ -193,8 +193,8 @@ export function ProjectForm({
 							<LangTabs languages={languages}>
 								{(l) => (
 									<div className="space-y-4">
-										<div>
-											<label className={fieldLabel}>Name</label>
+										<label className="block">
+											<span className={fieldLabel}>Name</span>
 											<input
 												className={`${fieldInput} ${l.code === "km" ? "font-khmer" : ""}`}
 												value={trans[l.code]?.name ?? ""}
@@ -202,9 +202,9 @@ export function ProjectForm({
 													setField(l.code, "name", e.target.value)
 												}
 											/>
-										</div>
-										<div>
-											<label className={fieldLabel}>Summary</label>
+										</label>
+										<label className="block">
+											<span className={fieldLabel}>Summary</span>
 											<textarea
 												className={`${fieldInput} ${l.code === "km" ? "font-khmer" : ""}`}
 												rows={2}
@@ -213,7 +213,7 @@ export function ProjectForm({
 													setField(l.code, "summary", e.target.value)
 												}
 											/>
-										</div>
+										</label>
 										<div>
 											<label className={fieldLabel}>Body</label>
 											<RichTextEditor
@@ -357,8 +357,8 @@ export function ProjectForm({
 							description="Code, slug and lifecycle."
 						>
 							<div className="space-y-4">
-								<div>
-									<label className={fieldLabel}>Code</label>
+								<label className="block">
+									<span className={fieldLabel}>Code</span>
 									<input
 										className={fieldInput}
 										value={code}
@@ -366,9 +366,9 @@ export function ProjectForm({
 										placeholder="NGS"
 										required
 									/>
-								</div>
-								<div>
-									<label className={fieldLabel}>Slug</label>
+								</label>
+								<label className="block">
+									<span className={fieldLabel}>Slug</span>
 									<input
 										className={fieldInput}
 										value={slug}
@@ -376,9 +376,9 @@ export function ProjectForm({
 										placeholder="ngs"
 										required
 									/>
-								</div>
-								<div>
-									<label className={fieldLabel}>Status</label>
+								</label>
+								<label className="block">
+									<span className={fieldLabel}>Status</span>
 									<select
 										className={fieldInput}
 										value={status}
@@ -387,7 +387,7 @@ export function ProjectForm({
 										<option value="current">Current</option>
 										<option value="past">Past</option>
 									</select>
-								</div>
+								</label>
 								<div>
 									<label className={fieldLabel} htmlFor="project-start-date">
 										Start date
