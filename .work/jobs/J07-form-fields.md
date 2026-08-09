@@ -28,7 +28,7 @@ no grouping.
 **Also gates on `bunx tsc --noEmit` reporting 0 errors.** It passes clean on `main` as of
 `ba0c534`, so any type error during your run is yours.
 
-1. `bun run test` passes, 3 of 3.
+1. `bun run test` passes. Baseline on your branch is 272 tests over 25 files; it may only go up.
 2. Build the alumni form from `feedback/src/routes/opportunities.alumni.tsx` entirely through the
    admin UI, submit it, and show the stored row. This is the acceptance test — if you cannot build
    that form without code, the job is not done.
@@ -38,7 +38,9 @@ no grouping.
 5. Server-side validation rejects a malformed date and a checkbox group value that is not in the
    declared option set. Show both rejections. Client-side validation alone is a fail — this is a
    trust boundary.
-6. `bunx biome check` on your files: no new errors.
+6. `bunx biome check` on your files: no new errors. Repo baseline is 20 errors and 30 warnings.
+   Two of those warnings are `noExplicitAny` in `src/components/admin/FormBuilder.tsx`, which is
+   yours: type them as you go rather than leaving them for the job that cannot open your files.
 
 ## Out of scope
 
