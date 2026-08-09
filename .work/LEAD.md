@@ -44,9 +44,31 @@ verify itself; its 62-file lint pass was re-gated in this pane and committed as 
 `projects.json` and report were already tracked, so closing its pane lost nothing.
 
 **A fourth occurrence of unsubmitted text in a pane input.** K1's held "now do the same for the
-other 16 placeholder projects", matching its own suggested next step. Not typed by this lead, not
-confirmed by Rithy at the time. Left unsent and the pane closed. The work is now in scope by Rithy's
-own answer, and it goes to a fresh pane under `SEED-COPY`, not by pressing enter on found text.
+other 16 placeholder projects", matching its own suggested next step. Left unsent and the pane
+closed; the work went to `SEED-COPY` under a written contract instead.
+
+### The unsubmitted text is a herdr bug, not a mystery
+
+Reproduced dispatching this round, so stop recording it as unexplained. `herdr agent prompt` types
+the prompt into the pane and then fails to deliver the Enter. The text sits in the input looking
+exactly like something a person typed and abandoned. Three shapes seen in one dispatch:
+
+- text typed, no submit, command returns success and `agent_status: done`
+- text typed, no submit, command returns `agent_prompt_stalled` naming the missing state change
+- prompt never arrives at all, input left empty
+
+It hit long multi-line prompts hardest; a one-line prompt went through cleanly. That also explains
+why the earlier occurrences each "matched that agent's own suggested next step" - they were the
+lead's own follow-up dispatches, typed and never submitted.
+
+**Dispatch procedure now:** send the prompt, then read the pane, then
+`herdr agent send-keys <agent> enter`, then confirm `agent_status` is `working` before walking away.
+Never assume a prompt landed because the command exited 0.
+
+**Reading a worker's output does not work through `agent read`.** Claude Code runs on the
+alternate screen, so its rows never reach herdr's scrollback and every read returns just the input
+line. Use `terminal_title_stripped` from `herdr agent get` for liveness, and the worktree's own
+`git log`/`git status` for progress.
 
 ## Queued, two rounds of two
 
