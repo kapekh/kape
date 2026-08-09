@@ -346,13 +346,13 @@ function MediaLibrary() {
 						)}
 					</p>
 				</div>
-				<label className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:opacity-90 cursor-pointer shadow-[var(--shadow-lift)]">
+				<label className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:opacity-90 cursor-pointer shadow-[var(--shadow-lift)] focus-within:outline-none focus-within:ring-2 focus-within:ring-[var(--accent)] focus-within:ring-offset-2">
 					{upload ? `Uploading ${upload.done}/${upload.total}…` : "↑ Upload"}
 					<input
 						ref={fileRef}
 						type="file"
 						multiple
-						className="hidden"
+						className="sr-only"
 						onChange={(e) => e.target.files && uploadFiles(e.target.files)}
 						disabled={!!upload}
 					/>

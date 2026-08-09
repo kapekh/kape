@@ -191,13 +191,13 @@ export function MediaLibraryDialog({
 							placeholder="Search…"
 							className="w-40 rounded-lg border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:border-[var(--accent)]"
 						/>
-						<label className="cursor-pointer rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90">
+						<label className="cursor-pointer rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 focus-within:outline-none focus-within:ring-2 focus-within:ring-[var(--accent)] focus-within:ring-offset-2">
 							{busy ? "Uploading…" : "↑ Upload"}
 							<input
 								ref={fileRef}
 								type="file"
 								accept={accept}
-								className="hidden"
+								className="sr-only"
 								onChange={upload}
 								disabled={busy}
 							/>
