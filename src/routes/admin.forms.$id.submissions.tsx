@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { confirm, toast } from "@/components/Dialogs";
-import type { FormField } from "@/lib/forms";
+import { type FormField, isContentField } from "@/lib/forms";
 
 export const Route = createFileRoute("/admin/forms/$id/submissions")({
 	component: Submissions,
@@ -27,8 +27,9 @@ function Submissions() {
 	const [rows, setRows] = useState<Sub[]>([]);
 	const [loading, setLoading] = useState(true);
 
-	// `content` blocks are author text, not inputs — they have no submission column.
-	const dataFields = fields.filter((f) => f.type !== "content");
+	// `content` blocks and `section` headings are author text, not inputs — they
+	// have no submission column.
+	const dataFields = fields.filter((f) => !isContentField(f));
 	const stripHtml = (s: string) =>
 		s
 			.replace(/<[^>]*>/g, " ")

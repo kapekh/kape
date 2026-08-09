@@ -9,11 +9,30 @@ export type FormFieldType =
 	| "email"
 	| "tel"
 	| "number"
+	| "date"
 	| "select"
 	| "checkbox"
+	| "checkboxes"
 	| "file"
 	| "richtext"
-	| "content";
+	| "content"
+	| "section";
+
+export const FORM_FIELD_TYPES = [
+	"text",
+	"textarea",
+	"email",
+	"tel",
+	"number",
+	"date",
+	"select",
+	"checkbox",
+	"checkboxes",
+	"file",
+	"richtext",
+	"content",
+	"section",
+] as const satisfies readonly FormFieldType[];
 
 export type FormField = {
 	key: string; // stable column key, e.g. "graduation_year"
@@ -22,7 +41,7 @@ export type FormField = {
 	type: FormFieldType;
 	required?: boolean;
 	placeholder?: string;
-	options?: string[]; // for `select`
+	options?: string[]; // for `select` and `checkboxes`
 	content?: string; // for `content` blocks: author Tiptap JSON (not an input)
 	contentHtml?: string; // server-rendered HTML for `content` blocks (populated when served)
 };
@@ -34,15 +53,80 @@ export const FIELD_TYPES: { value: FormFieldType; label: string }[] = [
 	{ value: "email", label: "Email" },
 	{ value: "tel", label: "Phone" },
 	{ value: "number", label: "Number" },
+	{ value: "date", label: "Date" },
 	{ value: "select", label: "Dropdown" },
 	{ value: "checkbox", label: "Checkbox (e.g. consent)" },
+	{ value: "checkboxes", label: "Checkboxes (choose any)" },
 	{ value: "file", label: "File upload" },
 	{ value: "content", label: "Content / instructions (no input)" },
+	{ value: "section", label: "Section heading (groups what follows)" },
 ];
 
 /** Field types that are author content, not respondent inputs (no submission column). */
 export function isContentField(f: { type: FormFieldType }): boolean {
-	return f.type === "content";
+	return f.type === "content" || f.type === "section";
+}
+
+/** Field types whose answer is a list, stored joined rather than as one value. */
+export function isMultiField(f: { type: FormFieldType }): boolean {
+	return f.type === "checkboxes";
+}
+
+/** How a checkbox group's picks are joined into the single stored/exported cell. */
+export const MULTI_SEPARATOR = ", ";
+
+/** Coerce a submitted checkbox-group value (one, many, or none) to a clean list. */
+export function toStringList(raw: unknown): string[] {
+	const all = Array.isArray(raw) ? raw : [raw];
+	return all
+		.filter((v): v is string => typeof v === "string")
+		.map((v) => v.trim())
+		.filter(Boolean);
+}
+
+/** Render a checkbox group's picks as the one string stored in the submission. */
+export function formatMultiValue(values: string[]): string {
+	return values.join(MULTI_SEPARATOR);
+}
+
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** True for a real calendar date in YYYY-MM-DD (rejects 2025-02-30, 2025-13-01…). */
+export function isIsoDate(v: string): boolean {
+	if (!ISO_DATE_RE.test(v)) return false;
+	const [y, m, d] = v.split("-").map(Number);
+	const dt = new Date(Date.UTC(y, m - 1, d));
+	return (
+		dt.getUTCFullYear() === y &&
+		dt.getUTCMonth() === m - 1 &&
+		dt.getUTCDate() === d
+	);
+}
+
+export type FormSectionGroup = {
+	/** The `section` field that opens this group; null for fields before the first one. */
+	heading: FormField | null;
+	/** 1-based, in section order — what the renderer prints before the legend. */
+	number: number;
+	fields: FormField[];
+};
+
+/**
+ * Split a flat field list into numbered sections. A `section` field opens a new
+ * group and everything after it belongs to that group until the next one.
+ */
+export function groupIntoSections(fields: FormField[]): FormSectionGroup[] {
+	const groups: FormSectionGroup[] = [];
+	let n = 0;
+	for (const f of fields) {
+		if (f.type === "section") {
+			groups.push({ heading: f, number: ++n, fields: [] });
+			continue;
+		}
+		if (!groups.length) groups.push({ heading: null, number: 0, fields: [] });
+		groups[groups.length - 1].fields.push(f);
+	}
+	return groups;
 }
 
 /** File extensions accepted for `file` fields (mirrors the server allow-list). */
@@ -91,9 +175,21 @@ export function validateSubmission(
 	values: Record<string, unknown>,
 ): string | null {
 	for (const f of fields) {
-		if (f.type === "content") continue; // author content, not an input
+		if (isContentField(f)) continue; // author content, not an input
 		const raw = values[f.key];
 		const v = typeof raw === "string" ? raw.trim() : raw;
+		if (f.type === "checkboxes") {
+			// Multi-value: the wire carries a repeated key, so `raw` may be an array.
+			const picked = toStringList(raw);
+			if (f.required && !picked.length) return `“${f.label}” is required.`;
+			const allowed = new Set(f.options ?? []);
+			for (const p of picked)
+				if (!allowed.has(p)) return `“${f.label}” has an invalid choice.`;
+			continue;
+		}
+		// Only a checkbox group may arrive as a repeated key. Anything else would
+		// slip past the string-guarded checks below as an array.
+		if (Array.isArray(raw)) return `“${f.label}” has an invalid value.`;
 		if (f.type === "richtext") {
 			// Value is ProseMirror JSON; an "empty" editor still serializes a doc,
 			// so treat it as filled only when it carries a text node.
@@ -111,6 +207,8 @@ export function validateSubmission(
 			return `“${f.label}” must be a valid email.`;
 		if (f.type === "number" && typeof v === "string" && Number.isNaN(Number(v)))
 			return `“${f.label}” must be a number.`;
+		if (f.type === "date" && (typeof v !== "string" || !isIsoDate(v)))
+			return `“${f.label}” must be a date (YYYY-MM-DD).`;
 		if (
 			f.type === "select" &&
 			f.options?.length &&

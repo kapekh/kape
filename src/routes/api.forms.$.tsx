@@ -3,7 +3,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
 	ATTACHMENT_EXTS,
 	ATTACHMENT_MAX_BYTES,
+	formatMultiValue,
+	isContentField,
 	isFormClosed,
+	toStringList,
 	validateSubmission,
 } from "#/lib/forms";
 import { db } from "#/server/db";
@@ -60,9 +63,15 @@ async function handler({ request }: { request: Request }) {
 	if (contentType.includes("multipart/form-data")) {
 		const fd = await request.formData().catch(() => null);
 		if (fd) {
-			for (const [k, v] of fd.entries()) {
-				if (typeof v === "string") body[k] = v;
-				else fileEntries[k] = v as File;
+			// getAll, not entries: a checkbox group posts its key once per pick.
+			for (const k of new Set(fd.keys())) {
+				const strings: string[] = [];
+				for (const v of fd.getAll(k)) {
+					if (typeof v === "string") strings.push(v);
+					else fileEntries[k] = v as File;
+				}
+				if (strings.length > 1) body[k] = strings;
+				else if (strings.length === 1) body[k] = strings[0];
 			}
 		}
 	} else {
@@ -129,7 +138,14 @@ async function handler({ request }: { request: Request }) {
 		if (err) return Response.json({ error: err }, { status: 400 });
 		const data: Record<string, string> = {};
 		for (const f of form.fields) {
-			if (f.type === "content") continue; // author content, never submitted
+			if (isContentField(f)) continue; // author content, never submitted
+			if (f.type === "checkboxes") {
+				// Stored joined so the column stays a string (and CSV stays readable).
+				const picked = toStringList(body[f.key]);
+				if (picked.length)
+					data[f.key] = formatMultiValue(picked).slice(0, 5000);
+				continue;
+			}
 			if (f.type === "file") {
 				const file = fileEntries[f.key];
 				if (!file || file.size === 0) continue;
