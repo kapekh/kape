@@ -11,12 +11,12 @@ import { ShareButtons } from "@/components/ShareButtons";
 import { SubPage } from "@/components/SubPage";
 import { SectionRenderer } from "@/components/sections/SectionRenderer";
 import { useTRPC } from "@/integrations/trpc/react";
+import { localeLinks } from "@/lib/canonical";
 import { COLLECTIONS, collectionHref } from "@/lib/collections";
 import { useLang, useT } from "@/lib/i18n";
 import {
 	DEFAULT_LANG,
 	isFunctional,
-	LANGS,
 	localizedHref,
 	stripLang,
 } from "@/lib/i18n-config";
@@ -123,37 +123,18 @@ export const Route = createFileRoute("/$")({
 			{ property: "og:description", content: description },
 		];
 
-		// Canonical + hreflang alternates (only when a site URL is configured —
-		// these need an absolute origin, so we don't guess the domain).
-		const links: Array<Record<string, string>> = [];
-		const siteUrl = (
-			import.meta.env.VITE_SITE_URL as string | undefined
-		)?.replace(/\/$/, "");
-		if (siteUrl) {
-			const { path } = stripLang(`/${params._splat ?? ""}`);
-			const tail = path === "/" ? "" : path;
-			const canonical = `${siteUrl}/${stripLang(`/${params._splat ?? ""}`).lang}${tail}`;
-			meta.push({ property: "og:url", content: canonical });
-			if (image)
-				meta.push({
-					property: "og:image",
-					content: image.startsWith("http") ? image : `${siteUrl}${image}`,
-				});
-			links.push({ rel: "canonical", href: canonical });
-			for (const l of LANGS)
-				links.push({
-					rel: "alternate",
-					hrefLang: l,
-					href: `${siteUrl}/${l}${tail}`,
-				});
-			links.push({
-				rel: "alternate",
-				hrefLang: "x-default",
-				href: `${siteUrl}/${DEFAULT_LANG}${tail}`,
+		const siteUrl = import.meta.env.VITE_SITE_URL as string | undefined;
+		const { links, absolute } = localeLinks(params._splat ?? "", siteUrl);
+		// og:url and og:image are ignored unless they are fully qualified.
+		if (absolute) meta.push({ property: "og:url", content: absolute });
+		if (image)
+			meta.push({
+				property: "og:image",
+				content:
+					absolute && !image.startsWith("http")
+						? `${new URL(absolute).origin}${image}`
+						: image,
 			});
-		} else if (image) {
-			meta.push({ property: "og:image", content: image });
-		}
 		return { meta, links };
 	},
 	component: ResolvedRoute,
