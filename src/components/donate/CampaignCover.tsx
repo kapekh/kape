@@ -63,6 +63,7 @@ export function CampaignCover({
 			<span className="absolute -left-6 -top-6 h-28 w-28 rounded-full bg-white/15 blur-xl" />
 			<span className="absolute -bottom-8 -right-4 h-32 w-32 rounded-full bg-black/10 blur-xl" />
 			<svg
+				aria-hidden="true"
 				viewBox="0 0 24 24"
 				fill="none"
 				stroke="white"

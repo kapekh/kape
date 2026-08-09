@@ -280,6 +280,7 @@ export function DonateForm({ campaign }: { campaign: CampaignPublic }) {
 			</button>
 			<p className="flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
 				<svg
+					aria-hidden="true"
 					viewBox="0 0 24 24"
 					className="h-3.5 w-3.5"
 					fill="none"

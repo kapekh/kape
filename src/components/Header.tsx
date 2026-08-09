@@ -176,6 +176,7 @@ function MobileNode({
 			>
 				<span>{node.label}</span>
 				<svg
+					aria-hidden="true"
 					className={`h-4 w-4 opacity-60 transition-transform ${open ? "rotate-180" : ""}`}
 					viewBox="0 0 12 12"
 					fill="none"
@@ -466,6 +467,7 @@ export function Header({
 											{n.label}
 											{hasChildren && (
 												<svg
+													aria-hidden="true"
 													className={`h-3 w-3 opacity-60 transition-transform ${active ? "rotate-180" : ""}`}
 													viewBox="0 0 12 12"
 													fill="none"
@@ -501,6 +503,7 @@ export function Header({
 								className="lg:hidden grid h-10 w-10 place-items-center rounded-full border border-border text-primary hover:bg-muted transition"
 							>
 								<svg
+									aria-hidden="true"
 									className="h-5 w-5"
 									viewBox="0 0 24 24"
 									fill="none"
@@ -611,6 +614,7 @@ export function Header({
 								className="grid h-9 w-9 place-items-center rounded-full border border-border text-foreground/70 hover:bg-muted transition"
 							>
 								<svg
+									aria-hidden="true"
 									className="h-5 w-5"
 									viewBox="0 0 24 24"
 									fill="none"

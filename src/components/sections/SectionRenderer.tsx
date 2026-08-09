@@ -118,12 +118,18 @@ function useL() {
 
 const Icon = {
 	play: (c = "") => (
-		<svg className={c} viewBox="0 0 24 24" fill="currentColor">
+		<svg
+			aria-hidden="true"
+			className={c}
+			viewBox="0 0 24 24"
+			fill="currentColor"
+		>
 			<path d="M8 5v14l11-7z" />
 		</svg>
 	),
 	doc: (c = "") => (
 		<svg
+			aria-hidden="true"
 			className={c}
 			viewBox="0 0 24 24"
 			fill="none"
@@ -138,6 +144,7 @@ const Icon = {
 	),
 	download: (c = "") => (
 		<svg
+			aria-hidden="true"
 			className={c}
 			viewBox="0 0 24 24"
 			fill="none"

@@ -102,6 +102,7 @@ export function PageSwitcher() {
 			>
 				<span className="min-w-0 truncate">{currentLabel}</span>
 				<svg
+					aria-hidden="true"
 					className="h-3 w-3 shrink-0 text-muted-foreground"
 					viewBox="0 0 12 12"
 					fill="none"
@@ -170,6 +171,7 @@ export function PageSwitcher() {
 						className="flex w-full items-center gap-2 border-t border-border px-3 py-2 text-sm font-semibold text-primary hover:bg-muted transition"
 					>
 						<svg
+							aria-hidden="true"
 							className="h-4 w-4 shrink-0"
 							viewBox="0 0 16 16"
 							fill="none"
@@ -187,9 +189,11 @@ export function PageSwitcher() {
 				type="button"
 				onClick={() => navigate({ to: "/admin/pages/new" })}
 				title="New page"
+				aria-label="New page"
 				className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-border text-primary hover:border-[var(--accent)] hover:text-[var(--accent)] transition"
 			>
 				<svg
+					aria-hidden="true"
 					className="h-4 w-4"
 					viewBox="0 0 16 16"
 					fill="none"

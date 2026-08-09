@@ -399,6 +399,7 @@ function NavBuilder() {
 							className="grid h-5 w-5 shrink-0 place-items-center text-muted-foreground hover:text-foreground"
 						>
 							<svg
+								aria-hidden="true"
 								className={`h-3 w-3 transition-transform ${open ? "rotate-90" : ""}`}
 								viewBox="0 0 12 12"
 								fill="none"

@@ -362,6 +362,7 @@ function MediaLibrary() {
 			<div className="mb-5 flex flex-wrap items-center gap-3">
 				<div className="relative flex-1 min-w-[200px] max-w-sm">
 					<svg
+						aria-hidden="true"
 						className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
 						viewBox="0 0 24 24"
 						fill="none"
@@ -483,6 +484,7 @@ function MediaLibrary() {
 									className={`absolute left-2 top-2 grid h-6 w-6 place-items-center rounded-md border transition ${sel ? "border-[var(--accent)] bg-[var(--accent)] text-accent-foreground" : "border-white/70 bg-black/30 text-transparent opacity-0 group-hover:opacity-100"}`}
 								>
 									<svg
+										aria-hidden="true"
 										viewBox="0 0 24 24"
 										className="h-4 w-4"
 										fill="none"
@@ -511,12 +513,14 @@ function MediaLibrary() {
 											type="button"
 											onClick={() => copy(m)}
 											title="Copy URL"
+											aria-label="Copy URL"
 											className="grid h-7 w-7 place-items-center rounded-md bg-white/15 text-white hover:bg-white/30"
 										>
 											{copiedId === m.id ? (
 												"✓"
 											) : (
 												<svg
+													aria-hidden="true"
 													viewBox="0 0 24 24"
 													className="h-4 w-4"
 													fill="none"
@@ -532,9 +536,11 @@ function MediaLibrary() {
 											type="button"
 											onClick={() => del(m.id)}
 											title="Delete"
+											aria-label="Delete"
 											className="grid h-7 w-7 place-items-center rounded-md bg-white/15 text-white hover:bg-destructive"
 										>
 											<svg
+												aria-hidden="true"
 												viewBox="0 0 24 24"
 												className="h-4 w-4"
 												fill="none"

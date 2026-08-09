@@ -321,7 +321,12 @@ export function PageForm({
 				className="relative hidden w-px shrink-0 cursor-col-resize bg-border transition-colors hover:bg-[var(--accent)]/50 xl:block"
 			>
 				<span className="absolute left-1/2 top-1/2 z-10 grid h-11 w-5 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]">
-					<svg className="h-4 w-4" viewBox="0 0 16 16" fill="currentColor">
+					<svg
+						aria-hidden="true"
+						className="h-4 w-4"
+						viewBox="0 0 16 16"
+						fill="currentColor"
+					>
 						<circle cx="6" cy="4" r="1" />
 						<circle cx="10" cy="4" r="1" />
 						<circle cx="6" cy="8" r="1" />

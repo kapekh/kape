@@ -49,6 +49,7 @@ export function ThemeToggle({
 		>
 			{dark ? (
 				<svg
+					aria-hidden="true"
 					className="h-4 w-4"
 					viewBox="0 0 24 24"
 					fill="none"
@@ -62,6 +63,7 @@ export function ThemeToggle({
 				</svg>
 			) : (
 				<svg
+					aria-hidden="true"
 					className="h-4 w-4"
 					viewBox="0 0 24 24"
 					fill="none"
