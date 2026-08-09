@@ -316,6 +316,7 @@ function MediaLibrary() {
 		`rounded-lg px-3 py-1.5 text-sm font-medium transition ${active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`;
 
 	return (
+		// biome-ignore lint/a11y/noStaticElementInteractions: drop target, not a control. Dragging a file here is a shortcut for the Upload button below, which stays keyboard reachable.
 		<div
 			onDragOver={(e) => {
 				e.preventDefault();

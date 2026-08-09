@@ -182,10 +182,7 @@ export function MediaPlaceholder({
 	const icon = kind === "pdf" ? "📄" : kind === "video" ? "▶" : "🖼";
 	const label = kind === "pdf" ? "PDF" : kind === "video" ? "Video" : "Image";
 	return (
-		<a
-			href="#"
-			className="group flex items-start gap-4 rounded-2xl border border-border bg-background/40 p-4 hover:border-[var(--accent)]/50 hover:bg-[var(--accent)]/5 transition"
-		>
+		<div className="group flex items-start gap-4 rounded-2xl border border-border bg-background/40 p-4 hover:border-[var(--accent)]/50 hover:bg-[var(--accent)]/5 transition">
 			<div className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-[var(--secondary)]/15 text-xl text-[var(--secondary)]">
 				{icon}
 			</div>
@@ -200,6 +197,6 @@ export function MediaPlaceholder({
 					<div className="text-xs text-muted-foreground mt-1">{meta}</div>
 				)}
 			</div>
-		</a>
+		</div>
 	);
 }

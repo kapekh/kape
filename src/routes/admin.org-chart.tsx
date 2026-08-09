@@ -94,6 +94,7 @@ function NodeForm({
 						value={name}
 						onChange={(e) => setName(e.target.value)}
 						placeholder="e.g. Executive Director"
+						// biome-ignore lint/a11y/noAutofocus: NodeForm only mounts inside the Add/Edit person modal, opened by an explicit click. Focus belongs in the modal, not left on the trigger behind it.
 						autoFocus
 						required
 					/>
@@ -282,16 +283,17 @@ function OrgChartAdmin() {
 			)}
 
 			{showModal && (
-				<div
-					className="fixed inset-0 z-[60] grid place-items-center bg-foreground/40 p-4 backdrop-blur-sm"
-					onMouseDown={(e) => {
-						if (e.target === e.currentTarget) {
+				<div className="fixed inset-0 z-[60] grid place-items-center bg-foreground/40 p-4 backdrop-blur-sm">
+					<button
+						type="button"
+						aria-label="Close person editor"
+						className="absolute inset-0 cursor-default"
+						onClick={() => {
 							setEditing(null);
 							setAdding(undefined);
-						}
-					}}
-				>
-					<div className="w-full max-w-2xl rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-lift)]">
+						}}
+					/>
+					<div className="relative w-full max-w-2xl rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-lift)]">
 						<h3 className="mb-4 font-display text-lg font-semibold text-primary">
 							{editing != null ? "Edit person" : "Add person"}
 						</h3>

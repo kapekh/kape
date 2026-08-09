@@ -216,10 +216,13 @@ function Slideshow({ slides }: { slides: any[] }) {
 	}, [paused, slides.length]);
 	if (!slides.length) return null;
 	return (
+		// biome-ignore lint/a11y/noStaticElementInteractions: pause region, not a control. Hover and focus both stop the rotation, and the slide buttons inside stay the only way to act on it.
 		<div
 			className="relative h-[440px] md:h-[560px]"
 			onMouseEnter={() => setPaused(true)}
 			onMouseLeave={() => setPaused(false)}
+			onFocus={() => setPaused(true)}
+			onBlur={() => setPaused(false)}
 		>
 			<div className="group absolute inset-0 overflow-hidden rounded-[2rem] shadow-[var(--shadow-lift)] ring-1 ring-border">
 				{slides.map((s, idx) => (

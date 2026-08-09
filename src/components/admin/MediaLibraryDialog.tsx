@@ -172,13 +172,14 @@ export function MediaLibraryDialog({
 	}
 
 	return (
-		<div
-			className="fixed inset-0 z-[60] grid place-items-center bg-foreground/40 backdrop-blur-sm p-4"
-			onMouseDown={(e) => {
-				if (e.target === e.currentTarget) onClose();
-			}}
-		>
-			<div className="flex max-h-[85vh] w-full max-w-3xl flex-col rounded-2xl border border-border bg-card shadow-[var(--shadow-lift)]">
+		<div className="fixed inset-0 z-[60] grid place-items-center bg-foreground/40 backdrop-blur-sm p-4">
+			<button
+				type="button"
+				aria-label="Close media library"
+				className="absolute inset-0 cursor-default"
+				onClick={onClose}
+			/>
+			<div className="relative flex max-h-[85vh] w-full max-w-3xl flex-col rounded-2xl border border-border bg-card shadow-[var(--shadow-lift)]">
 				<div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3.5">
 					<h3 className="font-display font-semibold text-primary">
 						Media library

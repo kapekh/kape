@@ -390,6 +390,7 @@ export function Header({
 			{/* Header + mega panel share a hover region so moving into the panel doesn't close it.
 			    The sticky lives HERE (not on <header>) because a sticky element only sticks within
 			    its parent's box — this wrapper's parent is <body>, so it stays pinned page-wide. */}
+			{/* biome-ignore lint/a11y/noStaticElementInteractions: layout wrapper, not a control. The handlers only cancel a hover timer; every menu it opens is also reachable by the nav buttons' onClick and aria-expanded. */}
 			<div
 				onMouseLeave={hoverClose}
 				onMouseEnter={cancelHover}
@@ -598,7 +599,9 @@ export function Header({
 			{/* Mobile drawer */}
 			{mobileOpen && (
 				<div className="lg:hidden fixed inset-0 z-50 h-[100dvh]">
-					<div
+					<button
+						type="button"
+						aria-label="Close menu"
 						className="absolute inset-0 bg-black/40 backdrop-blur-sm"
 						onClick={() => setMobileOpen(false)}
 					/>

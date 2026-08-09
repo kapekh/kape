@@ -129,39 +129,39 @@ export function PageSwitcher() {
 							className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-[var(--accent)] focus:outline-none"
 						/>
 					</div>
-					<ul
+					<div
 						role="listbox"
+						aria-label="Pages"
 						className="thin-scroll max-h-72 overflow-y-auto py-1"
 					>
 						{filtered.length === 0 ? (
-							<li className="px-3 py-3 text-center text-xs text-muted-foreground">
+							<p className="px-3 py-3 text-center text-xs text-muted-foreground">
 								No pages match “{query}”.
-							</li>
+							</p>
 						) : (
 							filtered.map((p, i) => {
 								const isCurrent = String(p.id) === current;
 								return (
-									<li key={p.id}>
-										<button
-											type="button"
-											role="option"
-											aria-selected={isCurrent}
-											onMouseEnter={() => setActive(i)}
-											onClick={() => choose(p)}
-											className={`flex w-full flex-col items-start gap-0.5 px-3 py-1.5 text-left transition ${i === active ? "bg-muted" : ""} ${isCurrent ? "text-[var(--accent)]" : "text-foreground"}`}
-										>
-											<span className="w-full truncate text-sm font-medium">
-												{p.title || p.slug || "Untitled page"}
-											</span>
-											<span className="w-full truncate font-mono text-[11px] text-muted-foreground">
-												/{p.slug}
-											</span>
-										</button>
-									</li>
+									<button
+										key={p.id}
+										type="button"
+										role="option"
+										aria-selected={isCurrent}
+										onMouseEnter={() => setActive(i)}
+										onClick={() => choose(p)}
+										className={`flex w-full flex-col items-start gap-0.5 px-3 py-1.5 text-left transition ${i === active ? "bg-muted" : ""} ${isCurrent ? "text-[var(--accent)]" : "text-foreground"}`}
+									>
+										<span className="w-full truncate text-sm font-medium">
+											{p.title || p.slug || "Untitled page"}
+										</span>
+										<span className="w-full truncate font-mono text-[11px] text-muted-foreground">
+											/{p.slug}
+										</span>
+									</button>
 								);
 							})
 						)}
-					</ul>
+					</div>
 					<button
 						type="button"
 						onClick={() => {
