@@ -1,0 +1,409 @@
+/* ===== AIR ===== */
+snapshots: [
+	{ value: "48", label: "Schools engaged" },
+	{ value: "320", label: "Teachers trained" },
+	{ value: "9,400", label: "Students reached" },
+	{ value: "26", label: "AI clubs" },
+],
+blocks: [
+	{
+		heading: "Project goal",
+		kind: "paragraphs",
+		items: [
+			"Prepare Cambodian schools, teachers and learners to use artificial intelligence safely, ethically and productively, so that AI strengthens rather than replaces good teaching.",
+		],
+	},
+	{
+		heading: "Project update",
+		kind: "paragraphs",
+		items: [
+			"AI literacy modules are being piloted with teachers and students in partner schools, alongside a growing library of Khmer-language resources.",
+			"Teacher coaching sessions on responsible use of AI tools run every month in target provinces.",
+		],
+	},
+	{
+		heading: "Key activities",
+		kind: "list",
+		items: [
+			"Develop an AI-readiness curriculum and Khmer-language teaching resources for lower and upper secondary schools",
+			"Train teachers and school leaders on AI literacy, prompt design and academic-integrity policy",
+			"Establish student AI clubs that build small, locally-relevant AI projects",
+			"Run community awareness sessions on responsible AI use, privacy and misinformation",
+			"Produce an AI readiness assessment used to guide school improvement planning",
+		],
+	},
+	{
+		heading: "Target group",
+		kind: "list",
+		items: [
+			"Secondary school students",
+			"Teachers and ICT focal points",
+			"School directors and provincial education officers",
+		],
+	},
+	{
+		heading: "Impact",
+		kind: "list",
+		items: [
+			"Students able to use AI tools critically, safely and productively",
+			"Teachers integrating AI-supported activities into lesson plans",
+			"A growing base of Khmer-language AI learning materials",
+		],
+	},
+	{
+		heading: "Case studies",
+		kind: "cards",
+		items: [
+			{
+				title: "An AI club that answers local questions",
+				text: "Grade 11 students trained a simple classifier to sort community questions to the right commune office, presenting their model at the district science fair.",
+			},
+			{
+				title: "Teachers redesign assessment",
+				text: "After AI-literacy training, a school team replaced take-home essays with in-class oral defences, keeping assessment fair in the age of generative tools.",
+			},
+		],
+	},
+],
+
+/* ===== IDEAL ===== */
+snapshots: [
+	{ value: "36", label: "Schools" },
+	{ value: "210", label: "Study clubs" },
+	{ value: "640", label: "Teachers trained" },
+	{ value: "18,700", label: "Students" },
+],
+blocks: [
+	{
+		heading: "Project goal",
+		kind: "paragraphs",
+		items: [
+			"Improve digital education for all learners by embedding digital tools, media literacy and project-based learning in everyday classroom practice.",
+		],
+	},
+	{
+		heading: "Project update",
+		kind: "paragraphs",
+		items: [
+			"Digital learning labs are active in partner schools, with student exhibitions held annually to showcase learning outcomes.",
+			"Recent exhibitions at Chaktomuk Secondary School and Hun Neang Bak Kheng Primary School demonstrated student projects to parents and officials.",
+		],
+	},
+	{
+		heading: "Key activities",
+		kind: "list",
+		items: [
+			"Establish and mentor school study clubs across core subjects",
+			"Equip schools with digital corners, tablets and shared learning resources",
+			"Coach teachers on project-based learning and digital lesson design",
+			"Organise annual student achievement exhibitions to showcase learning",
+			"Support school management committees to plan and sustain digital education",
+		],
+	},
+	{
+		heading: "Target group",
+		kind: "list",
+		items: [
+			"Primary and secondary students in target schools",
+			"Teachers delivering ICT and digital learning",
+			"School management and parent communities",
+		],
+	},
+	{
+		heading: "Impact",
+		kind: "list",
+		items: [
+			"Thousands of students gaining hands-on digital skills each year",
+			"Teachers confidently running digital and blended lessons",
+			"Schools with sustainable ICT labs and maintenance plans",
+		],
+	},
+	{
+		heading: "Case studies",
+		kind: "cards",
+		items: [
+			{
+				title: "Bak Kheng Primary School",
+				text: "Students designed and presented their own booths on coding, science and Khmer arts at the annual exhibition, explaining their own thinking rather than reciting lessons.",
+			},
+			{
+				title: "Chaktomuk Secondary School",
+				text: "Seventeen study clubs, from Earth Science to Mathematics, turned a year of research into a school-wide exhibition attended by around 350 people.",
+			},
+		],
+	},
+],
+
+/* ===== MIDL ===== */
+snapshots: [
+	{ value: "42", label: "Schools" },
+	{ value: "12,000", label: "Youth trained" },
+	{ value: "260", label: "Peer educators" },
+	{ value: "18", label: "Campaigns" },
+],
+blocks: [
+	{
+		heading: "Project goal",
+		kind: "paragraphs",
+		items: [
+			"Build media and information digital literacy so young Cambodians can evaluate online information, protect themselves online and participate as responsible digital citizens.",
+		],
+	},
+	{
+		heading: "Project update",
+		kind: "paragraphs",
+		items: [
+			"Media and information literacy curricula are being rolled out in partner schools and youth clubs.",
+			"Youth-led campaigns against misinformation are running on social media with KAPE mentoring.",
+		],
+	},
+	{
+		heading: "Key activities",
+		kind: "list",
+		items: [
+			"Deliver MIDL curriculum sessions in secondary schools and youth centres",
+			"Train teacher-facilitators and youth peer educators",
+			"Run campus and online campaigns against misinformation and online harm",
+			"Produce Khmer-language media-literacy videos and printed toolkits",
+			"Support youth-led community research on local information needs",
+		],
+	},
+	{
+		heading: "Target group",
+		kind: "list",
+		items: [
+			"Secondary students and youth club members",
+			"Teachers and youth facilitators",
+			"Parents and wider community audiences",
+		],
+	},
+	{
+		heading: "Impact",
+		kind: "list",
+		items: [
+			"Young people better able to identify misinformation online",
+			"Active youth clubs producing their own digital content",
+			"Teachers equipped with ready-to-use MIL lesson plans",
+		],
+	},
+	{
+		heading: "Case studies",
+		kind: "cards",
+		items: [
+			{
+				title: "Fact-checking the feed",
+				text: "A youth team traced a viral health rumour to its source and produced a Khmer explainer video that reached tens of thousands of local viewers.",
+			},
+			{
+				title: "Safer classrooms online",
+				text: "Peer educators supported classmates facing online harassment and helped their school adopt a clear reporting procedure.",
+			},
+		],
+	},
+],
+
+/* ===== DVITSA ===== */
+snapshots: [
+	{ value: "3,100", label: "Learners" },
+	{ value: "140", label: "Instructors" },
+	{ value: "38", label: "Partner employers" },
+	{ value: "12", label: "Centres" },
+],
+blocks: [
+	{
+		heading: "Project goal",
+		kind: "paragraphs",
+		items: [
+			"Strengthen digital and vocational skills for in-school and out-of-school adolescents, opening pathways to further study and decent work.",
+		],
+	},
+	{
+		heading: "Project update",
+		kind: "paragraphs",
+		items: [
+			"Digital vocational and technical skills training cohorts are running with partner institutions.",
+			"Employer linkages and internship placements are being expanded for graduating trainees.",
+		],
+	},
+	{
+		heading: "Key activities",
+		kind: "list",
+		items: [
+			"Deliver digital and vocational skills modules in partner schools and centres",
+			"Link learners with local employers for internships and job shadowing",
+			"Train instructors on competency-based, hands-on teaching",
+			"Provide career guidance and portfolio-building support",
+			"Support small start-up grants for youth enterprise ideas",
+		],
+	},
+	{
+		heading: "Target group",
+		kind: "list",
+		items: [
+			"Out-of-school youth and TVET students",
+			"Young women seeking digital career pathways",
+			"Training institutions and employers",
+		],
+	},
+	{
+		heading: "Impact",
+		kind: "list",
+		items: [
+			"Trainees placed in digital and technology-related jobs",
+			"Stronger institutional capacity to deliver digital skills courses",
+			"Increased participation of young women in technology careers",
+		],
+	},
+	{
+		heading: "Case studies",
+		kind: "cards",
+		items: [
+			{
+				title: "From club to contract",
+				text: "Two graduates of the digital design module now work part-time for a local printing business while continuing their studies.",
+			},
+			{
+				title: "Second chance learners",
+				text: "Out-of-school youth completed a basic ICT and life-skills course and re-entered formal education through the equivalency programme.",
+			},
+		],
+	},
+],
+
+/* ===== DWD ===== */
+snapshots: [
+	{ value: "1,450", label: "Children supported" },
+	{ value: "310", label: "Teachers trained" },
+	{ value: "64", label: "Schools" },
+	{ value: "820", label: "Assistive devices" },
+],
+blocks: [
+	{
+		heading: "Project goal",
+		kind: "paragraphs",
+		items: [
+			"Ensure children who are deaf or hard of hearing, and children with other disabilities, can access, participate in and complete quality education alongside their peers.",
+		],
+	},
+	{
+		heading: "Project update",
+		kind: "paragraphs",
+		items: [
+			"Sign-language coaching cycles are running in all partner schools this school year, with monthly follow-up visits from KAPE inclusive-education officers.",
+			"Screening camps completed in the latest quarter referred a new cohort of children for hearing and vision services, with assistive devices distributed at school level.",
+		],
+	},
+	{
+		heading: "Key activities",
+		kind: "list",
+		items: [
+			"Train teachers in Cambodian Sign Language and inclusive classroom practice",
+			"Provide assistive devices, learning aids and accessible materials",
+			"Support screening, referral and follow-up with health services",
+			"Work with families and communities to reduce stigma and increase enrolment",
+			"Adapt school infrastructure for physical accessibility",
+		],
+	},
+	{
+		heading: "Target group",
+		kind: "list",
+		items: [
+			"Children who are deaf or hard of hearing in mainstream primary and secondary schools",
+			"Children with physical, visual and intellectual disabilities",
+			"Teachers, school directors and school support committees",
+			"Parents and caregivers of children with disabilities",
+		],
+	},
+	{
+		heading: "Impact",
+		kind: "list",
+		items: [
+			"More children with disabilities enrolled and retained in mainstream classrooms",
+			"Teachers confident using sign language and adapted materials in daily lessons",
+			"Reduced stigma reported by families and community members",
+			"Accessible school facilities that keep children in school year after year",
+		],
+	},
+	{
+		heading: "Case studies",
+		kind: "cards",
+		items: [
+			{
+				title: "A signing classroom",
+				text: "A rural primary school introduced daily sign-language practice for all pupils, so deaf classmates are included in play as well as lessons.",
+			},
+			{
+				title: "Back to school",
+				text: "A boy with a mobility impairment returned to Grade 4 after a ramp and accessible latrine were built with community contributions.",
+			},
+		],
+	},
+],
+
+/* ===== LOTUS ===== */
+snapshots: [
+	{ value: "980", label: "Girls supported" },
+	{ value: "420", label: "Bicycles provided" },
+	{ value: "260", label: "Counselling cases" },
+	{ value: "27", label: "Schools" },
+],
+blocks: [
+	{
+		heading: "Project goal",
+		kind: "paragraphs",
+		items: [
+			"Reduce dropout and trafficking risk for the most vulnerable girls by combining scholarships, safe transport, counselling and community engagement.",
+		],
+	},
+	{
+		heading: "Project update",
+		kind: "paragraphs",
+		items: [
+			"Scholarship disbursements and mentoring visits are on schedule for the current academic year.",
+			"Life-skills and safeguarding sessions have been delivered to all scholarship recipients and their families.",
+		],
+	},
+	{
+		heading: "Key activities",
+		kind: "list",
+		items: [
+			"Provide scholarships, bicycles and school materials to at-risk girls",
+			"Deliver counselling and protection case management",
+			"Run community awareness on child protection and safe migration",
+			"Support school-based girls' clubs and peer networks",
+			"Coordinate referrals with local authorities and social services",
+		],
+	},
+	{
+		heading: "Target group",
+		kind: "list",
+		items: [
+			"Girls at high risk of dropping out, trafficking or early marriage",
+			"Poor rural families with school-aged daughters",
+			"Lower- and upper-secondary students needing financial support",
+		],
+	},
+	{
+		heading: "Impact",
+		kind: "list",
+		items: [
+			"Scholarship girls progressing to upper secondary and higher education",
+			"Families better informed on safe migration and child protection",
+			"Reduced dropout among the most vulnerable girls in target schools",
+		],
+	},
+	{
+		heading: "Case studies",
+		kind: "cards",
+		items: [
+			{
+				title: "A bicycle changes attendance",
+				text: "Girls living more than five kilometres from school raised their attendance sharply after receiving bicycles and a safe-route plan.",
+			},
+			{
+				title: "Girls' club leadership",
+				text: "A school girls' club led a campaign on reporting harassment, supported by trained teacher counsellors.",
+			},
+		],
+	},
+],
