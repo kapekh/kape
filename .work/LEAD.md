@@ -36,13 +36,29 @@ needs no component edit. Domain features are modules an install enables.
 
 ## Live now
 
-Two, at the concurrency limit. Tree at `5ed6e11` bar `.env.example` and the unattributed script.
+Nothing. `j12` and `k1` are closed, their output committed or on disk. Tree clean at `421e151` bar
+`.env.example` and the unattributed script, both still needing Rithy's call.
 
-- **J12** in `w1:tF`, lint, owns every source file. Re-measured its own baseline at 215 and is
-  through category 2 at 210.
-- **K1** in `w1:tG`, lifts the 8 unlifted project bodies off the client's prototype. Writes only
-  under `.work/kape-copy/`, so it does not collide with J12. Applying its JSON to
-  `src/server/seed/projects.ts` is a follow-up job that waits for J12 to land.
+**J12 and K1 both landed here, not in their own panes.** J12 was at 164% context and could not
+verify itself; its 62-file lint pass was re-gated in this pane and committed as `70499a0`. K1's
+`projects.json` and report were already tracked, so closing its pane lost nothing.
+
+**A fourth occurrence of unsubmitted text in a pane input.** K1's held "now do the same for the
+other 16 placeholder projects", matching its own suggested next step. Not typed by this lead, not
+confirmed by Rithy at the time. Left unsent and the pane closed. The work is now in scope by Rithy's
+own answer, and it goes to a fresh pane under `SEED-COPY`, not by pressing enter on found text.
+
+## Queued, two rounds of two
+
+Baseline for all four, measured here at `421e151`: 142 errors, 30 warnings, `tsc` silent, 269 tests
+over 24 files, format clean over 247.
+
+- Round 1: **A11Y** (`.work/jobs/A11Y-label-and-svg-pass.md`) owns every `.tsx` under
+  `src/components/` and `src/routes/`. **SEED-COPY** (`.work/jobs/SEED-COPY-project-bodies.md`) owns
+  `src/server/seed/projects.ts` and `.work/kape-copy/`. Disjoint.
+- Round 2: **J07** (`.work/jobs/J07-form-fields.md`, its "3 of 3 tests" line is stale, read 269)
+  owns the form files. **NOANY** (`.work/jobs/NOANY-type-the-thirty.md`) owns the other 28 `any`
+  sites. Round 2 follows round 1 because A11Y and NOANY both touch the same `.tsx` files.
 
 ## How C9 and C10 were verified
 
