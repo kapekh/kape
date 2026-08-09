@@ -817,37 +817,54 @@ function Resources(p: ResourcesProps) {
 					<Empty>No resources published yet.</Empty>
 				) : (
 					<div className={`grid grid-cols-1 ${cols} gap-4`}>
-						{items.map((it, n) => (
-							<NavLink
-								// biome-ignore lint/suspicious/noArrayIndexKey: server-rendered list, no reorder or delete while mounted
-								key={n}
-								href={it.href || "#"}
-								onClick={(e) =>
-									it.href && openPdf(e, { url: it.href, title: it.title })
-								}
-								className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-[var(--shadow-soft)]"
-							>
-								<div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
-									{Icon.doc("h-6 w-6")}
-								</div>
-								<div className="min-w-0 flex-1">
-									<div className="text-[10px] uppercase tracking-[0.18em] text-[var(--accent)] font-semibold">
-										{it.kind || "file"}
+						{items.map((it, n) => {
+							// "#" is what the editor stores for a file it has not uploaded yet
+							const href = it.href && it.href !== "#" ? it.href : null;
+							const body = (
+								<>
+									<div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
+										{Icon.doc("h-6 w-6")}
 									</div>
-									<div className="mt-0.5 font-medium text-foreground group-hover:text-[var(--accent)] transition">
-										{it.title}
-									</div>
-									{it.meta && (
-										<div className="text-xs text-muted-foreground mt-0.5">
-											{it.meta}
+									<div className="min-w-0 flex-1">
+										<div className="text-[10px] uppercase tracking-[0.18em] text-[var(--accent)] font-semibold">
+											{it.kind || "file"}
 										</div>
-									)}
+										<div className="mt-0.5 font-medium text-foreground group-hover:text-[var(--accent)] transition">
+											{it.title}
+										</div>
+										{it.meta && (
+											<div className="text-xs text-muted-foreground mt-0.5">
+												{it.meta}
+											</div>
+										)}
+									</div>
+								</>
+							);
+							// still worth listing, but as a row: a link to "#" announces
+							// itself as a link and then jumps to the top of the page
+							return href ? (
+								<NavLink
+									// biome-ignore lint/suspicious/noArrayIndexKey: server-rendered list, no reorder or delete while mounted
+									key={n}
+									href={href}
+									onClick={(e) => openPdf(e, { url: href, title: it.title })}
+									className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-[var(--shadow-soft)]"
+								>
+									{body}
+									<span className="shrink-0 text-muted-foreground/50 group-hover:text-[var(--accent)] transition">
+										{Icon.download("h-5 w-5")}
+									</span>
+								</NavLink>
+							) : (
+								<div
+									// biome-ignore lint/suspicious/noArrayIndexKey: server-rendered list, no reorder or delete while mounted
+									key={n}
+									className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm"
+								>
+									{body}
 								</div>
-								<span className="shrink-0 text-muted-foreground/50 group-hover:text-[var(--accent)] transition">
-									{Icon.download("h-5 w-5")}
-								</span>
-							</NavLink>
-						))}
+							);
+						})}
 					</div>
 				)}
 				{reader}
