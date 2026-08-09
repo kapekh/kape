@@ -8,15 +8,25 @@ import type { QuerySource, SectionNode, SectionQuery } from "#/lib/sections";
 import type { DB } from "../db";
 import { renderBody } from "../richtext";
 import {
+	type AlbumItem,
+	type JobItem,
 	listAlbums,
 	listJobs,
 	listPosts,
 	listPublications,
 	listVideos,
+	type PostListItem,
+	type PublicationItem,
+	type VideoItem,
 } from "./content";
-import { getOrgTree } from "./org";
-import { listPeople } from "./people";
-import { listProjectCards, listProjectLocations } from "./projects";
+import { getOrgTree, type OrgNode } from "./org";
+import { listPeople, type PersonItem } from "./people";
+import {
+	listProjectCards,
+	listProjectLocations,
+	type ProjectCard,
+	type ProjectPin,
+} from "./projects";
 import { listOffices, listPartners } from "./site";
 import { staffDirectory, staffDocuments, staffEvents } from "./staff";
 
@@ -29,12 +39,34 @@ import { staffDirectory, staffDocuments, staffEvents } from "./staff";
  */
 export type ResolveOptions = { allowSource?: (s: QuerySource) => boolean };
 
+/**
+ * The row a section receives for each `query.source` — the one place the renderer
+ * can read what `props.data` holds, since the resolved rows reach it as untyped
+ * JSON. `resolveQuery` returns rows of this union, so a source whose repo function
+ * changes shape fails here rather than in a section template.
+ */
+export type SourceRow = {
+	posts: PostListItem | JobItem;
+	videos: VideoItem;
+	albums: AlbumItem;
+	publications: PublicationItem;
+	people: PersonItem;
+	locations: ProjectPin;
+	projects: ProjectCard;
+	orgchart: OrgNode;
+	offices: Awaited<ReturnType<typeof listOffices>>[number];
+	partners: Awaited<ReturnType<typeof listPartners>>[number];
+	staff: Awaited<ReturnType<typeof staffDirectory>>[number];
+	events: Awaited<ReturnType<typeof staffEvents>>[number];
+	documents: Awaited<ReturnType<typeof staffDocuments>>[number];
+};
+
 async function resolveQuery(
 	db: DB,
 	q: SectionQuery,
 	lang: string,
 	opts?: ResolveOptions,
-): Promise<unknown> {
+): Promise<SourceRow[QuerySource][] | null> {
 	if (opts?.allowSource && !opts.allowSource(q.source)) return null;
 	switch (q.source) {
 		case "posts": {

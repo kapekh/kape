@@ -89,15 +89,15 @@ export function CampaignForm({
 	title: string;
 }) {
 	const [slug, setSlug] = useState(initial?.slug ?? "");
-	const [status, setStatus] = useState<"active" | "draft" | "ended">(
-		(initial?.status as any) ?? "active",
+	const [status, setStatus] = useState<CampaignFormValue["status"]>(
+		(initial?.status as CampaignFormValue["status"]) ?? "active",
 	);
 	const [titleEn, setTitleEn] = useState(initial?.title ?? "");
 	const [titleKm, setTitleKm] = useState(initial?.titleKm ?? "");
 	const [blurb, setBlurb] = useState(initial?.blurb ?? "");
 	const [blurbKm, setBlurbKm] = useState(initial?.blurbKm ?? "");
-	const [currency, setCurrency] = useState<"USD" | "KHR">(
-		(initial?.currency as any) ?? "USD",
+	const [currency, setCurrency] = useState<CampaignFormValue["currency"]>(
+		(initial?.currency as CampaignFormValue["currency"]) ?? "USD",
 	);
 	const [goal, setGoal] = useState(
 		initial?.goalAmount != null ? String(initial.goalAmount) : "",
@@ -355,7 +355,9 @@ export function CampaignForm({
 							<select
 								className={fieldInput}
 								value={status}
-								onChange={(e) => setStatus(e.target.value as any)}
+								onChange={(e) =>
+									setStatus(e.target.value as CampaignFormValue["status"])
+								}
 							>
 								<option value="active">Active — accepting donations</option>
 								<option value="draft">Draft — hidden</option>

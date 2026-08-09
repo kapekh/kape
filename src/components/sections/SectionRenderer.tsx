@@ -3,6 +3,8 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import type { SectionNode } from "#/lib/sections";
+import type { JobItem, PostListItem } from "#/server/repo/content";
+import type { SourceRow } from "#/server/repo/sections";
 import { useLang } from "@/lib/i18n";
 import { localizedHref } from "@/lib/i18n-config";
 import { PLACEHOLDER_IMAGE } from "@/lib/placeholder";
@@ -14,8 +16,18 @@ import { NavLink } from "../NavLink";
 import { PublicOrgChart } from "../PublicOrgChart";
 import { RichBody } from "../RichBody";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-type P = Record<string, any> & { layout?: string };
+/**
+ * What every section is authored with: the layout variant picked in the editor
+ * plus the heading fields `SECTION_DEFS` gives all of them. Each template adds
+ * its own fields, and a dynamic one adds the `data` its `query.source` resolves
+ * to — see `SourceRow` in src/server/repo/sections.ts.
+ */
+type Common = {
+	layout?: string;
+	eyebrow?: string;
+	title?: string;
+	tone?: string;
+};
 
 /* ------------------------------------------------------------------ */
 /* Shared primitives                                                   */
@@ -108,7 +120,8 @@ const Blob = ({ className }: { className: string }) => (
 	/>
 );
 
-const imgFor = (p: any) => p.image || p.cover || PLACEHOLDER_IMAGE;
+const imgFor = (r: { image?: string | null; cover?: string | null }) =>
+	r.image || r.cover || PLACEHOLDER_IMAGE;
 
 /** Returns a language-prefixing localizer for internal hrefs (path-based i18n). */
 function useL() {
@@ -206,7 +219,25 @@ function useInView<T extends HTMLElement>() {
 /* Hero                                                                */
 /* ------------------------------------------------------------------ */
 
-function Slideshow({ slides }: { slides: any[] }) {
+type HeroSlide = {
+	image?: string;
+	kicker?: string;
+	title?: string;
+	caption?: string;
+};
+type HeroStat = { value?: string; label?: string };
+type HeroProps = Common & {
+	lead?: string;
+	image?: string;
+	ctaLabel?: string;
+	ctaHref?: string;
+	cta2Label?: string;
+	cta2Href?: string;
+	slides?: HeroSlide[];
+	stats?: HeroStat[];
+};
+
+function Slideshow({ slides }: { slides: HeroSlide[] }) {
 	const [i, setI] = useState(0);
 	const [paused, setPaused] = useState(false);
 	useEffect(() => {
@@ -280,11 +311,11 @@ function Slideshow({ slides }: { slides: any[] }) {
 	);
 }
 
-function Hero(p: P) {
+function Hero(p: HeroProps) {
 	const L = useL();
 	const layout = p.layout ?? "banner";
-	const slides: any[] = Array.isArray(p.slides) ? p.slides : [];
-	const stats: any[] = Array.isArray(p.stats) ? p.stats : [];
+	const slides: HeroSlide[] = Array.isArray(p.slides) ? p.slides : [];
+	const stats: HeroStat[] = Array.isArray(p.stats) ? p.stats : [];
 
 	const ctas = (center?: boolean) => (
 		<div
@@ -415,7 +446,10 @@ function Hero(p: P) {
 /* Static templates                                                    */
 /* ------------------------------------------------------------------ */
 
-function RichText(p: P) {
+/** Rich text is authored as a document and pre-rendered to `bodyHtml` server-side. */
+type RichTextProps = Common & { bodyHtml?: string };
+
+function RichText(p: RichTextProps) {
 	return (
 		<section className={`${PAD} ${toneBg(p.tone)}`}>
 			<Container className={p.layout === "narrow" ? "max-w-3xl" : "max-w-4xl"}>
@@ -426,7 +460,18 @@ function RichText(p: P) {
 	);
 }
 
-function Cards(p: P) {
+type CardButton = { label?: string; href?: string };
+type CardItem = {
+	image?: string;
+	imageAsBg?: boolean;
+	title?: string;
+	body?: string;
+	href?: string;
+	buttons?: CardButton[];
+};
+type CardsProps = Common & { center?: string; items?: CardItem[] };
+
+function Cards(p: CardsProps) {
 	const L = useL();
 	const cols =
 		p.layout === "cols-2"
@@ -434,11 +479,11 @@ function Cards(p: P) {
 			: p.layout === "cols-4"
 				? "sm:grid-cols-2 lg:grid-cols-4"
 				: "sm:grid-cols-2 lg:grid-cols-3";
-	const items: any[] = Array.isArray(p.items) ? p.items : [];
+	const items: CardItem[] = Array.isArray(p.items) ? p.items : [];
 
-	const footer = (it: any, light = false) => {
+	const footer = (it: CardItem, light = false) => {
 		// Buttons: explicit list, or a legacy single `href` folded into one button.
-		const btns: any[] = Array.isArray(it.buttons)
+		const btns: CardButton[] = Array.isArray(it.buttons)
 			? it.buttons
 			: it.href
 				? [{ label: "Learn more", href: it.href }]
@@ -464,7 +509,7 @@ function Cards(p: P) {
 	return (
 		<section className={`${PAD} ${toneBg(p.tone)}`}>
 			<Container>
-				<Heading eyebrow={p.eyebrow} title={p.title} center={p.center} />
+				<Heading eyebrow={p.eyebrow} title={p.title} center={!!p.center} />
 				<div className={`grid grid-cols-1 ${cols} gap-5`}>
 					{items.map((it, n) => {
 						// Background-image card: image fills the card, text overlaid in white.
@@ -541,7 +586,7 @@ function StatItem({
 	labelClass = "text-xs",
 }: {
 	value: string;
-	label: string;
+	label?: string;
 	icon?: string;
 	run: boolean;
 	valueClass?: string;
@@ -599,16 +644,23 @@ const STAT_LABEL_SIZE: Record<string, string> = {
 	md: "text-base",
 };
 
-function Stats(p: P) {
-	const items: any[] = Array.isArray(p.items) ? p.items : [];
+type StatRow = { icon?: string; value?: string; label?: string };
+type StatsProps = Common & {
+	valueSize?: string;
+	labelSize?: string;
+	image?: string;
+	items?: StatRow[];
+};
+
+function Stats(p: StatsProps) {
+	const items: StatRow[] = Array.isArray(p.items) ? p.items : [];
 	const [bandRef, inView] = useInView<HTMLElement>();
 	const band = p.layout !== "plain";
 	// Default the number to large on the band / medium on the plain layout; label defaults small.
 	const valueClass =
-		STAT_VALUE_SIZE[p.valueSize as string] ??
+		STAT_VALUE_SIZE[p.valueSize ?? ""] ??
 		(band ? STAT_VALUE_SIZE.lg : STAT_VALUE_SIZE.md);
-	const labelClass =
-		STAT_LABEL_SIZE[p.labelSize as string] ?? STAT_LABEL_SIZE.xs;
+	const labelClass = STAT_LABEL_SIZE[p.labelSize ?? ""] ?? STAT_LABEL_SIZE.xs;
 	if (!band) {
 		return (
 			<section className={PAD}>
@@ -683,7 +735,15 @@ function Stats(p: P) {
 	);
 }
 
-function Cta(p: P) {
+type CtaProps = Common & {
+	body?: string;
+	ctaLabel?: string;
+	ctaHref?: string;
+	cta2Label?: string;
+	cta2Href?: string;
+};
+
+function Cta(p: CtaProps) {
 	const L = useL();
 	return (
 		<section
@@ -729,8 +789,16 @@ function Cta(p: P) {
 	);
 }
 
-function Resources(p: P) {
-	const items: any[] = Array.isArray(p.items) ? p.items : [];
+type ResourceItem = {
+	kind?: string;
+	title?: string;
+	meta?: string;
+	href?: string;
+};
+type ResourcesProps = Common & { items?: ResourceItem[] };
+
+function Resources(p: ResourcesProps) {
+	const items: ResourceItem[] = Array.isArray(p.items) ? p.items : [];
 	const cols = p.layout === "cols-2" ? "md:grid-cols-2" : "";
 	return (
 		<section className={`${PAD} ${toneBg(p.tone)}`}>
@@ -775,7 +843,14 @@ function Resources(p: P) {
 	);
 }
 
-function Split(p: P) {
+type SplitProps = Common & {
+	image?: string;
+	bodyHtml?: string;
+	statValue?: string;
+	statLabel?: string;
+};
+
+function Split(p: SplitProps) {
 	const mediaLeft = p.layout === "media-left";
 	const media = p.image ? (
 		<div className="relative">
@@ -830,9 +905,12 @@ function Split(p: P) {
 	);
 }
 
-function Pills(p: P) {
-	const groups: any[] = Array.isArray(p.groups) ? p.groups : [];
-	const parse = (s: string) =>
+type PillGroup = { heading?: string; links?: string };
+type PillsProps = Common & { groups?: PillGroup[] };
+
+function Pills(p: PillsProps) {
+	const groups: PillGroup[] = Array.isArray(p.groups) ? p.groups : [];
+	const parse = (s?: string) =>
 		String(s || "")
 			.split(",")
 			.map((x) => x.trim())
@@ -874,7 +952,13 @@ function Pills(p: P) {
 	);
 }
 
-function FormSection(p: P) {
+type FormProps = Common & {
+	formSlug?: string;
+	body?: string;
+	submitLabel?: string;
+};
+
+function FormSection(p: FormProps) {
 	// A built form carries its own title/intro/submit, so the section's heading
 	// and intro are only used for the quick (contact/subscribe/signup) layouts.
 	const builtForm = !!p.formSlug;
@@ -931,7 +1015,21 @@ function FormSection(p: P) {
 /* Dynamic templates                                                   */
 /* ------------------------------------------------------------------ */
 
-function PostCard({ post, base }: { post: any; base: string }) {
+/**
+ * A postList binds to news/stories or to jobs — one `posts` source, two row
+ * shapes — and the renderer is not told which. So a row carries whichever fields
+ * its own source filled: the table layout reads the job pair, the rest read the
+ * post fields.
+ */
+type PostRow = Partial<PostListItem & JobItem> &
+	Pick<PostListItem, "id" | "slug" | "title">;
+type PostListProps = Common & {
+	moreHref?: string;
+	linkBase?: string;
+	data?: PostRow[];
+};
+
+function PostCard({ post, base }: { post: PostRow; base: string }) {
 	const L = useL();
 	const href = base ? L(`${base}/${post.slug}`) : undefined;
 	const body = (
@@ -977,9 +1075,9 @@ function PostCard({ post, base }: { post: any; base: string }) {
 	);
 }
 
-function PostList(p: P) {
+function PostList(p: PostListProps) {
 	const L = useL();
-	const posts: any[] = Array.isArray(p.data) ? p.data : [];
+	const posts: PostRow[] = Array.isArray(p.data) ? p.data : [];
 	const base = p.linkBase ?? "";
 	const link = (slug: string) => (base ? L(`${base}/${slug}`) : "#");
 	const layout = p.layout ?? "grid-3";
@@ -1141,9 +1239,14 @@ function youtubeId(url: string): string | null {
 	return m ? m[1] : null;
 }
 
-function VideoGrid(p: P) {
+type VideoGridProps = Common & {
+	moreHref?: string;
+	data?: SourceRow["videos"][];
+};
+
+function VideoGrid(p: VideoGridProps) {
 	const L = useL();
-	const videos: any[] = Array.isArray(p.data) ? p.data : [];
+	const videos: SourceRow["videos"][] = Array.isArray(p.data) ? p.data : [];
 	return (
 		<section className={`${PAD} ${toneBg(p.tone)}`}>
 			<Container>
@@ -1201,9 +1304,11 @@ function VideoGrid(p: P) {
 	);
 }
 
-function AlbumGrid(p: P) {
+type AlbumGridProps = Common & { data?: SourceRow["albums"][] };
+
+function AlbumGrid(p: AlbumGridProps) {
 	const L = useL();
-	const albums: any[] = Array.isArray(p.data) ? p.data : [];
+	const albums: SourceRow["albums"][] = Array.isArray(p.data) ? p.data : [];
 	return (
 		<section className={`${PAD} ${toneBg(p.tone)}`}>
 			<Container>
@@ -1240,8 +1345,12 @@ function AlbumGrid(p: P) {
 	);
 }
 
-function PublicationList(p: P) {
-	const items: any[] = Array.isArray(p.data) ? p.data : [];
+type PublicationListProps = Common & { data?: SourceRow["publications"][] };
+
+function PublicationList(p: PublicationListProps) {
+	const items: SourceRow["publications"][] = Array.isArray(p.data)
+		? p.data
+		: [];
 	// Optimistic bump so the counter the reader just incremented is visibly theirs.
 	const [bumped, setBumped] = useState<Record<number, number>>({});
 	const track = (id: number) => {
@@ -1313,9 +1422,11 @@ function PublicationList(p: P) {
 	);
 }
 
-function People(p: P) {
+type PeopleProps = Common & { data?: SourceRow["people"][] };
+
+function People(p: PeopleProps) {
 	const L = useL();
-	const people: any[] = Array.isArray(p.data) ? p.data : [];
+	const people: SourceRow["people"][] = Array.isArray(p.data) ? p.data : [];
 	const initials = (name: string) =>
 		String(name || "")
 			.split(/\s+/)
@@ -1366,18 +1477,34 @@ function People(p: P) {
 	);
 }
 
-function MapSection(p: P) {
-	const rows: any[] = Array.isArray(p.data) ? p.data : [];
+/** A map pins project locations or offices; only a location links back to a project. */
+type MapRow = SourceRow["locations"] | SourceRow["offices"];
+type MapProps = Common & { data?: MapRow[] };
+
+function MapSection(p: MapProps) {
+	const rows: MapRow[] = Array.isArray(p.data) ? p.data : [];
 	const markers: MapMarker[] = rows
-		.map((r) => ({
-			lat: Number(r.lat),
-			lng: Number(r.lng),
-			label: r.label || r.name || r.schoolName || "",
-			sublabel: r.projectName ?? null,
-			photoUrl: r.photoUrl ?? null,
-			href: r.projectHref ?? null,
-			status: r.status ?? null,
-		}))
+		.map((r) =>
+			"schoolName" in r
+				? {
+						lat: r.lat,
+						lng: r.lng,
+						label: r.schoolName,
+						sublabel: r.projectName,
+						photoUrl: r.photoUrl,
+						href: r.projectHref,
+						status: r.status,
+					}
+				: {
+						lat: Number(r.lat),
+						lng: Number(r.lng),
+						label: r.name,
+						sublabel: null,
+						photoUrl: null,
+						href: null,
+						status: null,
+					},
+		)
 		.filter((m) => Number.isFinite(m.lat) && Number.isFinite(m.lng));
 	const center: [number, number] = markers.length
 		? [markers[0].lat, markers[0].lng]
@@ -1394,8 +1521,18 @@ function MapSection(p: P) {
 	);
 }
 
-function Directory(p: P) {
-	const rows: any[] = Array.isArray(p.data) ? p.data : [];
+/**
+ * A directory table is column-generic: it prints whatever keys its source's rows
+ * carry, which is why the three sources below need nothing in common.
+ */
+type DirectoryRow =
+	| SourceRow["staff"]
+	| SourceRow["events"]
+	| SourceRow["documents"];
+type DirectoryProps = Common & { data?: DirectoryRow[] };
+
+function Directory(p: DirectoryProps) {
+	const rows: Record<string, unknown>[] = Array.isArray(p.data) ? p.data : [];
 	const cols = rows.length
 		? Object.keys(rows[0]).filter((k) => k !== "id")
 		: [];
@@ -1422,7 +1559,10 @@ function Directory(p: P) {
 							</thead>
 							<tbody className="divide-y divide-border">
 								{rows.map((r, n) => (
-									<tr key={r.id ?? n} className="hover:bg-muted/30 transition">
+									<tr
+										key={String(r.id ?? n)}
+										className="hover:bg-muted/30 transition"
+									>
 										{cols.map((c) => (
 											<td key={c} className="px-4 py-3 text-foreground/80">
 												{String(r[c] ?? "")}
@@ -1439,12 +1579,8 @@ function Directory(p: P) {
 	);
 }
 
-type PartnerRow = {
-	id: number;
-	name: string;
-	url?: string | null;
-	logoUrl?: string | null;
-};
+type PartnerRow = SourceRow["partners"];
+type PartnersProps = Common & { data?: PartnerRow[] };
 
 function PartnerLink({
 	row,
@@ -1524,8 +1660,8 @@ function PartnerMarquee({ rows }: { rows: PartnerRow[] }) {
 	);
 }
 
-function Partners(p: P) {
-	const rows: any[] = Array.isArray(p.data) ? p.data : [];
+function Partners(p: PartnersProps) {
+	const rows: PartnerRow[] = Array.isArray(p.data) ? p.data : [];
 	if (p.layout === "marquee") {
 		return (
 			<section className={`${PAD} ${toneBg(p.tone)}`}>
@@ -1542,7 +1678,7 @@ function Partners(p: P) {
 			</section>
 		);
 	}
-	const byCat = new Map<string, any[]>();
+	const byCat = new Map<string, PartnerRow[]>();
 	for (const r of rows) {
 		const k = r.category || "Partners";
 		byCat.set(k, [...(byCat.get(k) ?? []), r]);
@@ -1600,17 +1736,14 @@ function Partners(p: P) {
 	);
 }
 
-type ProjectRow = {
-	id: number;
-	slug: string;
-	code: string;
-	status: string;
-	name: string;
-	summary: string;
-	image: string | null;
+type ProjectRow = SourceRow["projects"];
+type ProjectListProps = Common & {
+	moreHref?: string;
+	linkBase?: string;
+	data?: ProjectRow[];
 };
 
-function ProjectList(p: P) {
+function ProjectList(p: ProjectListProps) {
 	const L = useL();
 	const rows: ProjectRow[] = Array.isArray(p.data) ? p.data : [];
 	const base = p.linkBase ?? "";
@@ -1699,7 +1832,12 @@ type CertificateItem = {
 	fileUrl?: string;
 };
 
-function Certificates(p: P) {
+type CertificatesProps = Common & {
+	center?: string;
+	items?: CertificateItem[];
+};
+
+function Certificates(p: CertificatesProps) {
 	const items: CertificateItem[] = Array.isArray(p.items) ? p.items : [];
 	const cols =
 		p.layout === "cols-2"
@@ -1710,7 +1848,7 @@ function Certificates(p: P) {
 	return (
 		<section className={`${PAD} ${toneBg(p.tone)}`}>
 			<Container>
-				<Heading eyebrow={p.eyebrow} title={p.title} center={p.center} />
+				<Heading eyebrow={p.eyebrow} title={p.title} center={!!p.center} />
 				{items.length === 0 ? (
 					<Empty>No accreditations listed yet.</Empty>
 				) : (
@@ -1783,8 +1921,10 @@ type NavEntry = {
 	children: NavEntry[];
 };
 
+type SiteMapProps = Common & { center?: string };
+
 /** The published nav tree as an on-page index. Content comes from the nav, not from props. */
-function SiteMap(p: P) {
+function SiteMap(p: SiteMapProps) {
 	const L = useL();
 	const rootData = useLoaderData({ from: "__root__" }) as { nav?: NavEntry[] };
 	const nav: NavEntry[] = Array.isArray(rootData?.nav) ? rootData.nav : [];
@@ -1817,7 +1957,7 @@ function SiteMap(p: P) {
 	return (
 		<section className={`${PAD} ${toneBg(p.tone)}`}>
 			<Container>
-				<Heading eyebrow={p.eyebrow} title={p.title} center={p.center} />
+				<Heading eyebrow={p.eyebrow} title={p.title} center={!!p.center} />
 				{nav.length === 0 ? (
 					<Empty>No navigation published yet.</Empty>
 				) : (
@@ -1861,9 +2001,11 @@ function SiteMap(p: P) {
 	);
 }
 
+type OrgChartProps = Common & { data?: SourceRow["orgchart"][] };
+
 /** Hierarchical management tree, rendered as an n8n-style React Flow canvas. */
-function OrgChart(p: P) {
-	const roots: any[] = Array.isArray(p.data) ? p.data : [];
+function OrgChart(p: OrgChartProps) {
+	const roots: SourceRow["orgchart"][] = Array.isArray(p.data) ? p.data : [];
 	// React Flow is client-only and we no longer render a CSS-tree fallback (it caused
 	// a visible swap on hydration). Until mounted, show a same-sized empty box so the
 	// canvas simply fades into an already-present container — no reflow, no jump.
@@ -1891,7 +2033,7 @@ function OrgChart(p: P) {
 /* Registry + renderer                                                 */
 /* ------------------------------------------------------------------ */
 
-export const sectionRegistry: Record<string, (p: P) => React.ReactNode> = {
+export const sectionRegistry = {
 	hero: Hero,
 	richtext: RichText,
 	cards: Cards,
@@ -1915,6 +2057,16 @@ export const sectionRegistry: Record<string, (p: P) => React.ReactNode> = {
 	orgChart: OrgChart,
 };
 
+/**
+ * A stored section names its template with a plain string and carries its props
+ * as authored JSON, so this lookup is the one place the two are tied together —
+ * past it, each template's own props type applies.
+ */
+type SectionTemplate = (props: Record<string, unknown>) => React.ReactNode;
+
+const templateFor = (type: string): SectionTemplate | undefined =>
+	(sectionRegistry as Record<string, SectionTemplate>)[type];
+
 function UnknownSection({ type }: { type: string }) {
 	return (
 		<Container className="py-6">
@@ -1934,7 +2086,7 @@ export function SectionRenderer({ sections }: { sections: SectionNode[] }) {
 	return (
 		<>
 			{sections.map((s, i) => {
-				const Template = sectionRegistry[s.type];
+				const Template = templateFor(s.type);
 				const body = Template ? (
 					<Template layout={s.layout} {...(s.props ?? {})} />
 				) : (

@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, type LinkComponentProps } from "@tanstack/react-router";
 import type { AnchorHTMLAttributes, ReactNode } from "react";
 
 type Props = AnchorHTMLAttributes<HTMLAnchorElement> & {
@@ -21,9 +21,9 @@ export function NavLink({ href, children, ...rest }: Props) {
 	}
 	// `to` accepts a fully-resolved path string at runtime; the router matches it
 	// against the route tree (the `$` splat for content, explicit functional routes).
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	// Its static type is the union of authored routes, which a resolved path is not.
 	return (
-		<Link to={href as any} {...(rest as any)}>
+		<Link to={href as LinkComponentProps<"a">["to"]} {...rest}>
 			{children}
 		</Link>
 	);
