@@ -46,12 +46,13 @@ export function PageForm({
 	onSubmit,
 	saving,
 	savedAt,
+	title,
 }: {
 	initial: Initial;
 	languages: LangOpt[];
 	onSubmit: (value: PageFormValue) => void;
 	saving?: boolean;
-	title?: string; // kept for caller compatibility; the page editor has no title bar
+	title?: string;
 	savedAt?: string | null;
 }) {
 	const [segment, setSegment] = useState(
@@ -207,6 +208,8 @@ export function PageForm({
 	// render, flooding the console and hanging the tab. Save is an explicit button below.
 	return (
 		<div className="flex flex-col xl:h-[calc(100dvh-4rem)] xl:flex-row">
+			{/* the design gives this editor no title bar, so the h1 is for AT only */}
+			<h1 className="sr-only">{title ?? "Page"}</h1>
 			{/* Page-owned titlebar content (rendered into the admin topbar slot). */}
 			<AdminHeader>
 				<PageSwitcher />
@@ -238,21 +241,28 @@ export function PageForm({
 						<LangTabs languages={languages}>
 							{(l) => (
 								<div className="space-y-2">
-									<input
-										className={`${fieldInput} ${l.code === "km" ? "font-khmer" : ""}`}
-										placeholder="Title"
-										value={trans[l.code]?.title ?? ""}
-										onChange={(e) => setField(l.code, "title", e.target.value)}
-									/>
-									<textarea
-										className={`${fieldInput} resize-y ${l.code === "km" ? "font-khmer" : ""}`}
-										rows={2}
-										placeholder="Brief — shown on menu cards and used for SEO."
-										value={trans[l.code]?.excerpt ?? ""}
-										onChange={(e) =>
-											setField(l.code, "excerpt", e.target.value)
-										}
-									/>
+									<label className="block">
+										<span className={fieldLabel}>Title</span>
+										<input
+											className={`${fieldInput} ${l.code === "km" ? "font-khmer" : ""}`}
+											value={trans[l.code]?.title ?? ""}
+											onChange={(e) =>
+												setField(l.code, "title", e.target.value)
+											}
+										/>
+									</label>
+									<label className="block">
+										<span className={fieldLabel}>Brief</span>
+										<textarea
+											className={`${fieldInput} resize-y ${l.code === "km" ? "font-khmer" : ""}`}
+											rows={2}
+											placeholder="Shown on menu cards and used for SEO."
+											value={trans[l.code]?.excerpt ?? ""}
+											onChange={(e) =>
+												setField(l.code, "excerpt", e.target.value)
+											}
+										/>
+									</label>
 								</div>
 							)}
 						</LangTabs>
