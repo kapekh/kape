@@ -87,8 +87,8 @@ function NodeForm({
 	return (
 		<form onSubmit={submit} className="space-y-3">
 			<div className="grid gap-3 sm:grid-cols-2">
-				<div>
-					<label className={fieldLabel}>Name</label>
+				<label className="block">
+					<span className={fieldLabel}>Name</span>
 					<input
 						className={fieldInput}
 						value={name}
@@ -98,16 +98,16 @@ function NodeForm({
 						autoFocus
 						required
 					/>
-				</div>
-				<div>
-					<label className={fieldLabel}>Title / role</label>
+				</label>
+				<label className="block">
+					<span className={fieldLabel}>Title / role</span>
 					<input
 						className={fieldInput}
 						value={title}
 						onChange={(e) => setTitle(e.target.value)}
 						placeholder="e.g. Director of Programs"
 					/>
-				</div>
+				</label>
 				<div>
 					<label className={fieldLabel}>
 						Link to team member (optional — photo + profile)

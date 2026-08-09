@@ -262,8 +262,8 @@ export function PageForm({
 				<div className="border-b border-border p-4">
 					<h2 className={panelHead}>Page settings</h2>
 					<div className="mt-3 space-y-3">
-						<div>
-							<label className={fieldLabel}>Parent page</label>
+						<label className="block">
+							<span className={fieldLabel}>Parent page</span>
 							<select
 								className={fieldInput}
 								value={parentId ?? ""}
@@ -278,23 +278,25 @@ export function PageForm({
 									</option>
 								))}
 							</select>
-						</div>
+						</label>
 						<div>
-							<label className={fieldLabel}>URL segment</label>
-							<input
-								className={fieldInput}
-								value={segment}
-								onChange={(e) => setSegment(e.target.value)}
-								placeholder="about"
-								required
-							/>
+							<label className="block">
+								<span className={fieldLabel}>URL segment</span>
+								<input
+									className={fieldInput}
+									value={segment}
+									onChange={(e) => setSegment(e.target.value)}
+									placeholder="about"
+									required
+								/>
+							</label>
 							<p className="mt-1 text-[11px] text-muted-foreground">
 								URL:{" "}
 								<span className="font-mono text-foreground/80">{fullPath}</span>
 							</p>
 						</div>
-						<div>
-							<label className={fieldLabel}>Status</label>
+						<label className="block">
+							<span className={fieldLabel}>Status</span>
 							<select
 								className={fieldInput}
 								value={status}
@@ -303,7 +305,7 @@ export function PageForm({
 								<option value="draft">Draft</option>
 								<option value="published">Published</option>
 							</select>
-						</div>
+						</label>
 					</div>
 				</div>
 

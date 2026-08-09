@@ -132,8 +132,8 @@ export function SchoolForm({
 							description="The school's name and where it sits in the programme."
 						>
 							<div className="space-y-4">
-								<div>
-									<label className={fieldLabel}>School name</label>
+								<label className="block">
+									<span className={fieldLabel}>School name</span>
 									<input
 										className={fieldInput}
 										value={name}
@@ -141,19 +141,19 @@ export function SchoolForm({
 										placeholder="e.g. Hun Sen Rolea B'ier High School"
 										required
 									/>
-								</div>
+								</label>
 								<div className="grid sm:grid-cols-2 gap-4">
-									<div>
-										<label className={fieldLabel}>School code</label>
+									<label className="block">
+										<span className={fieldLabel}>School code</span>
 										<input
 											className={fieldInput}
 											value={code}
 											onChange={(e) => setCode(e.target.value)}
 											placeholder="EMIS / internal code"
 										/>
-									</div>
-									<div>
-										<label className={fieldLabel}>Level</label>
+									</label>
+									<label className="block">
+										<span className={fieldLabel}>Level</span>
 										<select
 											className={fieldInput}
 											value={level}
@@ -165,7 +165,7 @@ export function SchoolForm({
 												</option>
 											))}
 										</select>
-									</div>
+									</label>
 									<div>
 										<label className={fieldLabel}>Province</label>
 										<SearchableSelect
@@ -201,17 +201,17 @@ export function SchoolForm({
 							description="Address and exact map position for the schools map."
 						>
 							<div className="space-y-4">
-								<div>
-									<label className={fieldLabel}>Address</label>
+								<label className="block">
+									<span className={fieldLabel}>Address</span>
 									<input
 										className={fieldInput}
 										value={address}
 										onChange={(e) => setAddress(e.target.value)}
 										placeholder="Village / commune / district"
 									/>
-								</div>
-								<div>
-									<label className={fieldLabel}>Map position</label>
+								</label>
+								<fieldset>
+									<legend className={fieldLabel}>Map position</legend>
 									<p className="text-xs text-muted-foreground mb-2">
 										Click the map to drop a pin (or drag it). Coordinates fill
 										in automatically.
@@ -225,7 +225,7 @@ export function SchoolForm({
 										}}
 									/>
 									<div className="grid grid-cols-2 gap-4 max-w-sm mt-3">
-										<div>
+										<label className="block">
 											<span className="block text-[11px] text-muted-foreground mb-1">
 												Latitude
 											</span>
@@ -235,8 +235,8 @@ export function SchoolForm({
 												onChange={(e) => setLat(e.target.value)}
 												placeholder="12.245"
 											/>
-										</div>
-										<div>
+										</label>
+										<label className="block">
 											<span className="block text-[11px] text-muted-foreground mb-1">
 												Longitude
 											</span>
@@ -246,9 +246,9 @@ export function SchoolForm({
 												onChange={(e) => setLng(e.target.value)}
 												placeholder="104.668"
 											/>
-										</div>
+										</label>
 									</div>
-								</div>
+								</fieldset>
 							</div>
 						</FormSection>
 					</>

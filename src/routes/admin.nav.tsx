@@ -69,14 +69,16 @@ function HeaderSettings() {
 					<div className="grid sm:grid-cols-2 gap-4">
 						{FIELDS.map((f) => (
 							<div key={f.key}>
-								<label className={fieldLabel}>{f.label}</label>
-								<input
-									className={`${fieldInput} ${f.mono ? "font-mono text-xs" : ""}`}
-									value={vals[f.key] ?? ""}
-									onChange={(e) =>
-										setVals((o) => ({ ...o, [f.key]: e.target.value }))
-									}
-								/>
+								<label className="block">
+									<span className={fieldLabel}>{f.label}</span>
+									<input
+										className={`${fieldInput} ${f.mono ? "font-mono text-xs" : ""}`}
+										value={vals[f.key] ?? ""}
+										onChange={(e) =>
+											setVals((o) => ({ ...o, [f.key]: e.target.value }))
+										}
+									/>
+								</label>
 							</div>
 						))}
 					</div>

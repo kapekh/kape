@@ -493,23 +493,27 @@ function SettingsAdmin() {
 			>
 				<div className="flex flex-wrap items-end gap-3">
 					<div className="min-w-[180px]">
-						<label className={fieldLabel}>Key</label>
-						<input
-							className={`${fieldInput} font-mono`}
-							placeholder="contact_email"
-							value={add.key}
-							onChange={(e) => setAdd({ ...add, key: e.target.value })}
-						/>
+						<label className="block">
+							<span className={fieldLabel}>Key</span>
+							<input
+								className={`${fieldInput} font-mono`}
+								placeholder="contact_email"
+								value={add.key}
+								onChange={(e) => setAdd({ ...add, key: e.target.value })}
+							/>
+						</label>
 					</div>
 					<div className="flex-1 min-w-[220px]">
-						<label className={fieldLabel}>Value</label>
-						<input
-							className={fieldInput}
-							placeholder="hello@example.org"
-							value={add.value}
-							onChange={(e) => setAdd({ ...add, value: e.target.value })}
-							onKeyDown={(e) => e.key === "Enter" && create()}
-						/>
+						<label className="block">
+							<span className={fieldLabel}>Value</span>
+							<input
+								className={fieldInput}
+								placeholder="hello@example.org"
+								value={add.value}
+								onChange={(e) => setAdd({ ...add, value: e.target.value })}
+								onKeyDown={(e) => e.key === "Enter" && create()}
+							/>
+						</label>
 					</div>
 					<button
 						type="button"

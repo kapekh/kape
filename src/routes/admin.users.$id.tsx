@@ -102,16 +102,18 @@ function ResetPasswordCard({ userId }: { userId: number }) {
 			</div>
 			<div className="flex flex-wrap items-end gap-3 p-5">
 				<div className="flex-1 min-w-[220px]">
-					<label className={fieldLabel}>New password</label>
-					<input
-						className={fieldInput}
-						type="text"
-						value={pw}
-						onChange={(e) => setPw(e.target.value)}
-						placeholder="At least 8 characters"
-						minLength={8}
-						autoComplete="new-password"
-					/>
+					<label className="block">
+						<span className={fieldLabel}>New password</span>
+						<input
+							className={fieldInput}
+							type="text"
+							value={pw}
+							onChange={(e) => setPw(e.target.value)}
+							placeholder="At least 8 characters"
+							minLength={8}
+							autoComplete="new-password"
+						/>
+					</label>
 				</div>
 				<button
 					type="submit"

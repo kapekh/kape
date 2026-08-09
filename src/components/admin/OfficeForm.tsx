@@ -119,8 +119,8 @@ export function OfficeForm({
 							description="An office location shown on the public Contact page and map."
 						>
 							<div className="space-y-4">
-								<div>
-									<label className={fieldLabel}>Office name</label>
+								<label className="block">
+									<span className={fieldLabel}>Office name</span>
 									<input
 										className={fieldInput}
 										value={name}
@@ -128,7 +128,7 @@ export function OfficeForm({
 										placeholder="e.g. Head Office (PTTC)"
 										required
 									/>
-								</div>
+								</label>
 								<div>
 									<label className={fieldLabel}>Province</label>
 									<SearchableSelect
@@ -166,24 +166,24 @@ export function OfficeForm({
 							description="How visitors reach this office."
 						>
 							<div className="grid sm:grid-cols-2 gap-4">
-								<div>
-									<label className={fieldLabel}>Phone</label>
+								<label className="block">
+									<span className={fieldLabel}>Phone</span>
 									<input
 										className={fieldInput}
 										value={phone}
 										onChange={(e) => setPhone(e.target.value)}
 										placeholder="+855 …"
 									/>
-								</div>
-								<div>
-									<label className={fieldLabel}>Email</label>
+								</label>
+								<label className="block">
+									<span className={fieldLabel}>Email</span>
 									<input
 										className={fieldInput}
 										value={email}
 										onChange={(e) => setEmail(e.target.value)}
 										placeholder="office@example.org"
 									/>
-								</div>
+								</label>
 							</div>
 						</FormSection>
 
@@ -192,17 +192,17 @@ export function OfficeForm({
 							description="Address and exact map position for the offices map."
 						>
 							<div className="space-y-4">
-								<div>
-									<label className={fieldLabel}>Address</label>
+								<label className="block">
+									<span className={fieldLabel}>Address</span>
 									<input
 										className={fieldInput}
 										value={address}
 										onChange={(e) => setAddress(e.target.value)}
 										placeholder="Village / commune / district"
 									/>
-								</div>
-								<div>
-									<label className={fieldLabel}>Map position</label>
+								</label>
+								<fieldset>
+									<legend className={fieldLabel}>Map position</legend>
 									<p className="text-xs text-muted-foreground mb-2">
 										Click the map to drop a pin (or drag it). Coordinates fill
 										in automatically.
@@ -216,7 +216,7 @@ export function OfficeForm({
 										}}
 									/>
 									<div className="grid grid-cols-2 gap-4 max-w-sm mt-3">
-										<div>
+										<label className="block">
 											<span className="block text-[11px] text-muted-foreground mb-1">
 												Latitude
 											</span>
@@ -226,8 +226,8 @@ export function OfficeForm({
 												onChange={(e) => setLat(e.target.value)}
 												placeholder="12.245"
 											/>
-										</div>
-										<div>
+										</label>
+										<label className="block">
 											<span className="block text-[11px] text-muted-foreground mb-1">
 												Longitude
 											</span>
@@ -237,9 +237,9 @@ export function OfficeForm({
 												onChange={(e) => setLng(e.target.value)}
 												placeholder="104.668"
 											/>
-										</div>
+										</label>
 									</div>
-								</div>
+								</fieldset>
 							</div>
 						</FormSection>
 					</div>

@@ -270,8 +270,8 @@ export function PostForm({
 						<LangTabs languages={languages}>
 							{(l) => (
 								<div className="space-y-4">
-									<div>
-										<label className={label}>Title</label>
+									<label className="block">
+										<span className={label}>Title</span>
 										<input
 											className={`${input} ${l.code === "km" ? "font-khmer" : ""}`}
 											value={trans[l.code]?.title ?? ""}
@@ -279,9 +279,9 @@ export function PostForm({
 												setField(l.code, "title", e.target.value)
 											}
 										/>
-									</div>
-									<div>
-										<label className={label}>Excerpt</label>
+									</label>
+									<label className="block">
+										<span className={label}>Excerpt</span>
 										<textarea
 											className={`${input} ${l.code === "km" ? "font-khmer" : ""}`}
 											rows={2}
@@ -290,7 +290,7 @@ export function PostForm({
 												setField(l.code, "excerpt", e.target.value)
 											}
 										/>
-									</div>
+									</label>
 									<div>
 										<label className={label}>Body</label>
 										<RichTextEditor
@@ -342,8 +342,8 @@ export function PostForm({
 										}))}
 									/>
 								</div>
-								<div>
-									<label className={label}>Status</label>
+								<label className="block">
+									<span className={label}>Status</span>
 									<select
 										className={input}
 										value={status}
@@ -353,9 +353,9 @@ export function PostForm({
 										<option value="published">Published</option>
 										<option value="archived">Archived</option>
 									</select>
-								</div>
-								<div>
-									<label className={label}>Slug</label>
+								</label>
+								<label className="block">
+									<span className={label}>Slug</span>
 									<input
 										className={input}
 										value={slug}
@@ -363,25 +363,25 @@ export function PostForm({
 										placeholder="my-post-slug"
 										required
 									/>
-								</div>
-								<div>
-									<label className={label}>Published at</label>
+								</label>
+								<label className="block">
+									<span className={label}>Published at</span>
 									<input
 										className={input}
 										type="date"
 										value={publishedAt}
 										onChange={(e) => setPublishedAt(e.target.value)}
 									/>
-								</div>
-								<div>
-									<label className={label}>Author</label>
+								</label>
+								<label className="block">
+									<span className={label}>Author</span>
 									<input
 										className={input}
 										value={author}
 										onChange={(e) => setAuthor(e.target.value)}
 										placeholder="Author name"
 									/>
-								</div>
+								</label>
 							</div>
 						</FormSection>
 

@@ -95,8 +95,8 @@ function Account() {
 					</h2>
 				</div>
 				<div className="space-y-4 p-5">
-					<div>
-						<label className={fieldLabel}>Current password</label>
+					<label className="block">
+						<span className={fieldLabel}>Current password</span>
 						<input
 							className={fieldInput}
 							type="password"
@@ -105,9 +105,9 @@ function Account() {
 							autoComplete="current-password"
 							required
 						/>
-					</div>
-					<div>
-						<label className={fieldLabel}>New password</label>
+					</label>
+					<label className="block">
+						<span className={fieldLabel}>New password</span>
 						<input
 							className={fieldInput}
 							type="password"
@@ -118,9 +118,9 @@ function Account() {
 							placeholder="At least 8 characters"
 							required
 						/>
-					</div>
-					<div>
-						<label className={fieldLabel}>Confirm new password</label>
+					</label>
+					<label className="block">
+						<span className={fieldLabel}>Confirm new password</span>
 						<input
 							className={fieldInput}
 							type="password"
@@ -130,7 +130,7 @@ function Account() {
 							autoComplete="new-password"
 							required
 						/>
-					</div>
+					</label>
 					<button
 						type="submit"
 						disabled={busy || !dirty}

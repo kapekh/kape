@@ -153,8 +153,8 @@ export function PeopleForm({
 						>
 							<div className="space-y-4">
 								<div className="grid sm:grid-cols-2 gap-4">
-									<div>
-										<label className={fieldLabel}>Name (English)</label>
+									<label className="block">
+										<span className={fieldLabel}>Name (English)</span>
 										<input
 											className={fieldInput}
 											value={nameEn}
@@ -162,26 +162,26 @@ export function PeopleForm({
 											placeholder="Chenda Sok"
 											required
 										/>
-									</div>
-									<div>
-										<label className={fieldLabel}>Name (Khmer)</label>
+									</label>
+									<label className="block">
+										<span className={fieldLabel}>Name (Khmer)</span>
 										<input
 											className={`${fieldInput} font-khmer`}
 											value={nameKm}
 											onChange={(e) => setNameKm(e.target.value)}
 											placeholder="សុខ ច័ន្ទដា"
 										/>
-									</div>
+									</label>
 								</div>
-								<div>
-									<label className={fieldLabel}>Position / role</label>
+								<label className="block">
+									<span className={fieldLabel}>Position / role</span>
 									<input
 										className={fieldInput}
 										value={position}
 										onChange={(e) => setPosition(e.target.value)}
 										placeholder="Executive Director"
 									/>
-								</div>
+								</label>
 							</div>
 						</FormSection>
 
@@ -204,17 +204,17 @@ export function PeopleForm({
 							description="Contact info for the internal staff directory."
 						>
 							<div className="grid sm:grid-cols-2 gap-4">
-								<div>
-									<label className={fieldLabel}>Staff no.</label>
+								<label className="block">
+									<span className={fieldLabel}>Staff no.</span>
 									<input
 										className={fieldInput}
 										value={staffNo}
 										onChange={(e) => setStaffNo(e.target.value)}
 										placeholder="K001"
 									/>
-								</div>
-								<div>
-									<label className={fieldLabel}>Sex</label>
+								</label>
+								<label className="block">
+									<span className={fieldLabel}>Sex</span>
 									<select
 										className={fieldInput}
 										value={sex}
@@ -224,18 +224,18 @@ export function PeopleForm({
 										<option value="M">M</option>
 										<option value="F">F</option>
 									</select>
-								</div>
-								<div>
-									<label className={fieldLabel}>Phone</label>
+								</label>
+								<label className="block">
+									<span className={fieldLabel}>Phone</span>
 									<input
 										className={fieldInput}
 										value={phone}
 										onChange={(e) => setPhone(e.target.value)}
 										placeholder="012 000 000"
 									/>
-								</div>
-								<div>
-									<label className={fieldLabel}>Email</label>
+								</label>
+								<label className="block">
+									<span className={fieldLabel}>Email</span>
 									<input
 										className={fieldInput}
 										type="email"
@@ -243,15 +243,17 @@ export function PeopleForm({
 										onChange={(e) => setEmail(e.target.value)}
 										placeholder="name@example.org"
 									/>
-								</div>
+								</label>
 								<div className="sm:col-span-2">
-									<label className={fieldLabel}>Program / department</label>
-									<input
-										className={fieldInput}
-										value={program}
-										onChange={(e) => setProgram(e.target.value)}
-										placeholder="NGS"
-									/>
+									<label className="block">
+										<span className={fieldLabel}>Program / department</span>
+										<input
+											className={fieldInput}
+											value={program}
+											onChange={(e) => setProgram(e.target.value)}
+											placeholder="NGS"
+										/>
+									</label>
 								</div>
 							</div>
 						</FormSection>
@@ -278,8 +280,8 @@ export function PeopleForm({
 							description="Where this person appears."
 						>
 							<div className="space-y-4">
-								<div>
-									<label className={fieldLabel}>Tier</label>
+								<label className="block">
+									<span className={fieldLabel}>Tier</span>
 									<select
 										className={fieldInput}
 										value={tier}
@@ -291,7 +293,7 @@ export function PeopleForm({
 											</option>
 										))}
 									</select>
-								</div>
+								</label>
 								<label className="flex items-center gap-2 text-sm">
 									<input
 										type="checkbox"
@@ -302,13 +304,15 @@ export function PeopleForm({
 								</label>
 								{isPublic && (
 									<div>
-										<label className={fieldLabel}>Public URL slug</label>
-										<input
-											className={fieldInput}
-											value={slug}
-											onChange={(e) => setSlug(e.target.value)}
-											placeholder="chenda-sok"
-										/>
+										<label className="block">
+											<span className={fieldLabel}>Public URL slug</span>
+											<input
+												className={fieldInput}
+												value={slug}
+												onChange={(e) => setSlug(e.target.value)}
+												placeholder="chenda-sok"
+											/>
+										</label>
 										<p className="mt-1 text-xs text-muted-foreground">
 											Profile lives at /team/{slug || "…"}
 										</p>

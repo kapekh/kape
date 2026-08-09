@@ -61,24 +61,24 @@ export function MapField({
 						</p>
 						<MapPicker lat={lat} lng={lng} onPick={onChange} />
 						<div className="mt-3 grid grid-cols-2 gap-3">
-							<div>
-								<label className={fieldLabel}>Latitude</label>
+							<label className="block">
+								<span className={fieldLabel}>Latitude</span>
 								<input
 									className={fieldInput}
 									value={lat}
 									onChange={(e) => onChange(e.target.value, lng)}
 									placeholder="12.245"
 								/>
-							</div>
-							<div>
-								<label className={fieldLabel}>Longitude</label>
+							</label>
+							<label className="block">
+								<span className={fieldLabel}>Longitude</span>
 								<input
 									className={fieldInput}
 									value={lng}
 									onChange={(e) => onChange(lat, e.target.value)}
 									placeholder="104.668"
 								/>
-							</div>
+							</label>
 						</div>
 						<div className="mt-4 flex items-center justify-end gap-2">
 							{has && (

@@ -87,8 +87,8 @@ export function TermsManager({
 				description="Key is the stored value; label is what's shown."
 			>
 				<div className="flex flex-wrap items-end gap-3">
-					<div>
-						<label className={fieldLabel}>Key</label>
+					<label className="block">
+						<span className={fieldLabel}>Key</span>
 						<input
 							className={`${fieldInput} w-48 font-mono`}
 							placeholder="annual-report"
@@ -96,16 +96,18 @@ export function TermsManager({
 							onChange={(e) => setAdd({ ...add, key: e.target.value })}
 							onKeyDown={(e) => e.key === "Enter" && create()}
 						/>
-					</div>
+					</label>
 					<div className="flex-1 min-w-[200px]">
-						<label className={fieldLabel}>Label</label>
-						<input
-							className={fieldInput}
-							placeholder="Annual Report"
-							value={add.label}
-							onChange={(e) => setAdd({ ...add, label: e.target.value })}
-							onKeyDown={(e) => e.key === "Enter" && create()}
-						/>
+						<label className="block">
+							<span className={fieldLabel}>Label</span>
+							<input
+								className={fieldInput}
+								placeholder="Annual Report"
+								value={add.label}
+								onChange={(e) => setAdd({ ...add, label: e.target.value })}
+								onKeyDown={(e) => e.key === "Enter" && create()}
+							/>
+						</label>
 					</div>
 					<button
 						type="button"

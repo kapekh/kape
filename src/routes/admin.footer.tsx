@@ -218,9 +218,12 @@ function FooterAdmin() {
 		area?: boolean;
 	}) => (
 		<div>
-			<label className={fieldLabel}>{label}</label>
+			<label className={fieldLabel} htmlFor={`footer-${k}`}>
+				{label}
+			</label>
 			{area ? (
 				<textarea
+					id={`footer-${k}`}
 					className={`${fieldInput} resize-y ${km ? "font-khmer" : ""}`}
 					rows={3}
 					value={vals[k] ?? ""}
@@ -228,6 +231,7 @@ function FooterAdmin() {
 				/>
 			) : (
 				<input
+					id={`footer-${k}`}
 					className={`${fieldInput} ${km ? "font-khmer" : ""}`}
 					value={vals[k] ?? ""}
 					onChange={(e) => set(k, e.target.value)}
@@ -340,8 +344,8 @@ function FooterAdmin() {
 				title="Social & legal"
 				description="Each social platform with its full URL and an optional logo. No logo? A letter badge is shown. Square logos look best — each is shown on a small white circle."
 			>
-				<div>
-					<label className={fieldLabel}>Social links</label>
+				<fieldset>
+					<legend className={fieldLabel}>Social links</legend>
 					<div className="mt-1 space-y-3">
 						{socials.map((sc, i) => (
 							<div
@@ -364,12 +368,14 @@ function FooterAdmin() {
 										<input
 											className={fieldInput}
 											placeholder="Name (e.g. Facebook)"
+											aria-label={`Social link ${i + 1} name`}
 											value={sc.name}
 											onChange={(e) => setSocial(i, { name: e.target.value })}
 										/>
 										<input
 											className={`${fieldInput} font-mono text-xs`}
 											placeholder="https://…"
+											aria-label={`Social link ${i + 1} URL`}
 											value={sc.url}
 											onChange={(e) => setSocial(i, { url: e.target.value })}
 										/>
@@ -417,7 +423,7 @@ function FooterAdmin() {
 							+ Add social
 						</button>
 					</div>
-				</div>
+				</fieldset>
 				<div className="mt-4 grid sm:grid-cols-2 gap-4">
 					<Field k="copyright" label="Copyright line" />
 					<Field k="copyright_km" label="Copyright line (Khmer)" km />

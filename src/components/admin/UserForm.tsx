@@ -85,8 +85,8 @@ export function UserForm({
 						description="Login details for this person."
 					>
 						<div className="space-y-4">
-							<div>
-								<label className={fieldLabel}>Email</label>
+							<label className="block">
+								<span className={fieldLabel}>Email</span>
 								<input
 									className={fieldInput}
 									type="email"
@@ -95,29 +95,31 @@ export function UserForm({
 									placeholder="person@example.org"
 									required
 								/>
-							</div>
-							<div>
-								<label className={fieldLabel}>Name</label>
+							</label>
+							<label className="block">
+								<span className={fieldLabel}>Name</span>
 								<input
 									className={fieldInput}
 									value={name}
 									onChange={(e) => setName(e.target.value)}
 									placeholder="Full name"
 								/>
-							</div>
+							</label>
 							{isNew && (
 								<div>
-									<label className={fieldLabel}>Initial password</label>
-									<input
-										className={fieldInput}
-										type="text"
-										value={password}
-										onChange={(e) => setPassword(e.target.value)}
-										placeholder="At least 8 characters"
-										minLength={8}
-										required
-										autoComplete="new-password"
-									/>
+									<label className="block">
+										<span className={fieldLabel}>Initial password</span>
+										<input
+											className={fieldInput}
+											type="text"
+											value={password}
+											onChange={(e) => setPassword(e.target.value)}
+											placeholder="At least 8 characters"
+											minLength={8}
+											required
+											autoComplete="new-password"
+										/>
+									</label>
 									<p className="mt-1 text-xs text-muted-foreground">
 										Share it with them; they can change it from their account
 										page.
