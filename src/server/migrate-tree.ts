@@ -116,7 +116,22 @@ async function createLandings(db: DB) {
 }
 
 /* ---------------- Static content pages (from extracted specs) ---------------- */
-type Block = Record<string, any>;
+type BlockItem = {
+	kind?: string;
+	title?: string;
+	body?: string;
+	meta?: string;
+	href?: string;
+};
+type Block = {
+	type?: string;
+	title?: string;
+	cols?: number;
+	category?: string;
+	kind?: string;
+	paragraphs?: string[];
+	items?: BlockItem[];
+};
 type PageSpec = {
 	slug: string;
 	title: string;
@@ -144,7 +159,7 @@ function blockToSection(b: Block, i: number): SectionNode {
 				layout: (b.items?.length ?? 0) > 3 ? "cols-2" : "cols-1",
 				props: {
 					title: b.title ?? "",
-					items: (b.items ?? []).map((it: Block) => ({
+					items: (b.items ?? []).map((it) => ({
 						kind: it.kind ?? "pdf",
 						title: it.title ?? "",
 						meta: it.meta ?? "",
