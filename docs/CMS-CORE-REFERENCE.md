@@ -44,7 +44,7 @@ Anything that forces a code edit is a finding, and *where* it forced one is the 
 |---|---|---|
 | 2.1 | Organisation name, logo, contact details, social links and copyright are data | Change each in admin, confirm on the public site and in JSON-LD, OG tags and `<title>` |
 | 2.2 | A full re-skin needs no component edit | Swap the palette, confirm every section changes, including the CTA band and the donate landing |
-| 2.3 | Dark mode is complete | No token defined in `:root` and missing from `.dark` |
+| 2.3 | Dark mode is complete, and an organisation can decline it | No token defined in `:root` and missing from `.dark`; turn `theme_dark_mode` off and confirm a light page on a dark system |
 | 2.4 | Fonts are configurable per organisation, including the script-specific stack | |
 | 2.5 | No organisation's name appears in a CSS class, cookie name, storage key, database marker or order prefix | |
 | 2.6 | Changing the primary colour changes `theme-color` | No independent hex literal |
@@ -119,7 +119,12 @@ Graded as a product a non-technical staffer uses daily, not as a set of forms th
 | 7.6 | The admin is usable on a tablet | |
 | 7.7 | Interactive controls are reachable and operable by keyboard, and labelled | Reorder, row menus, the builder's split handle |
 
-**Baseline today:** 7.1, 7.2, 7.3, 7.4, 7.5, 7.6 fail; 7.7 fails except in the sidebar. Only `/admin/media` has search or pagination of any kind. 75 of 86 admin files contain no `aria-` attribute.
+**Baseline today:** 7.1, 7.2, 7.3, 7.4, 7.5, 7.6 fail. Only `/admin/media` has search or pagination of any kind.
+
+7.7 now passes for labelling and for the controls that were mouse-only.
+The 134 accessibility lint errors are gone: 122 wired by containment, six captions that were never one field's name became `fieldset`/`legend`, four scrims and the page-editor splitter became real controls, and 43 inputs that carried no name at all were found by driving the forms rather than by a rule.
+Counting files with an `aria-` attribute is no longer the measure - a `<label>` that wraps its input needs none.
+Two gaps remain, both written up in `.work/a11y-report.md`: the map picker, media library and person editor are divs with no `role="dialog"`, no focus trap and no Escape, and row actions in the media grid and the settings table all announce as bare "Save" or "Delete".
 
 ## 8. Internationalisation
 

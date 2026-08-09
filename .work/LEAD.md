@@ -32,16 +32,22 @@ needs no component edit. Domain features are modules an install enables.
 | J23 upload-crud-check | pane | **verified, committed `29a23ab`** | its one fix is four lines in a file it owned. Gates re-run here: 256 tests / 22 files, `tsc` silent, format clean. Repo `kape.db` untouched, checked through a connection. Its standing finding confirmed here in the code |
 | C9 debrand-leftovers | pane | **verified, committed `4773690`** | package renamed `koompi-cms`, `docs/` generalised, two client-specific files deleted (both survive on `main`, checked). Language work landed its build-time half and priced the rest |
 | C10 media-usage + trpc-tests | pane | **verified, committed `145d962`** | both contract-named mutations re-run here, each kills its own named test. Refusal confirmed in `.work/c10-shots/05` |
-| J12 lint-pass | - | queued, runs alone | - |
+| J12 lint-pass | pane, landed here | **verified, committed `70499a0`** | 219 → 142 errors. The worker was at 164% context and could not verify itself, so its 62-file diff was re-gated in this pane |
+| SEED-COPY | worktree pane | **verified, merged `b0b36ed`** | refuted its own brief and was right: only 8 projects ever had copy, not 24. `.work/seed-copy-report.md` |
+| A11Y | worktree pane | **verified, merged, then finished here `92583d3`** | 134 → 0 a11y errors. Five suppressions, each with a reason, and zero added to reach the number - checked in the diff, not taken on trust |
 
 ## Live now
 
-Nothing. `j12` and `k1` are closed, their output committed or on disk. Tree clean at `421e151` bar
-`.env.example` and the unattributed script, both still needing Rithy's call.
+`j07` (w4:p1) and `noany` (w5:p1), round 2, both in worktrees off `cms-core`.
 
-**J12 and K1 both landed here, not in their own panes.** J12 was at 164% context and could not
-verify itself; its 62-file lint pass was re-gated in this pane and committed as `70499a0`. K1's
-`projects.json` and report were already tracked, so closing its pane lost nothing.
+Tree at `92583d3`. `.env.example` and the unattributed `scripts/import-client-assets.ts` are still
+uncommitted and still need Rithy's call.
+
+**Three jobs landed here rather than in their own panes**, because a worker's done is a claim.
+J12 could not verify itself at 164% context. SEED-COPY's central finding - that 16 projects have no
+copy to lift - was re-checked here against the prototype's own routes before it was believed.
+A11Y's five suppressions were counted out of its diff, and one of its label wirings was un-wired to
+prove the lint gate actually fires.
 
 **A fourth occurrence of unsubmitted text in a pane input.** K1's held "now do the same for the
 other 16 placeholder projects", matching its own suggested next step. Left unsent and the pane
@@ -70,17 +76,33 @@ alternate screen, so its rows never reach herdr's scrollback and every read retu
 line. Use `terminal_title_stripped` from `herdr agent get` for liveness, and the worktree's own
 `git log`/`git status` for progress.
 
-## Queued, two rounds of two
+## The rounds
 
-Baseline for all four, measured here at `421e151`: 142 errors, 30 warnings, `tsc` silent, 269 tests
-over 24 files, format clean over 247.
+Round 1 is done. Baseline for round 2, measured here at `92583d3`: **8 errors, 30 warnings**, `tsc`
+silent, **274 tests over 26 files**, format clean over 249.
 
-- Round 1: **A11Y** (`.work/jobs/A11Y-label-and-svg-pass.md`) owns every `.tsx` under
-  `src/components/` and `src/routes/`. **SEED-COPY** (`.work/jobs/SEED-COPY-project-bodies.md`) owns
-  `src/server/seed/projects.ts` and `.work/kape-copy/`. Disjoint.
-- Round 2: **J07** (`.work/jobs/J07-form-fields.md`, its "3 of 3 tests" line is stale, read 269)
-  owns the form files. **NOANY** (`.work/jobs/NOANY-type-the-thirty.md`) owns the other 28 `any`
-  sites. Round 2 follows round 1 because A11Y and NOANY both touch the same `.tsx` files.
+The 8 errors are the `noArrayIndexKey` sites J12 left standing on purpose. The 30 warnings are
+`noExplicitAny`, and they are exactly what round 2 is for: 28 belong to NOANY, and the 2 in
+`FormBuilder.tsx` belong to J07, which is the only job allowed to open that file.
+
+Round 2 had to follow round 1: A11Y owned every `.tsx` under `src/components/` and `src/routes/`,
+which is where 26 of the 30 `any` sites live.
+
+### Why the last twelve labels came back here
+
+A11Y stopped on 12 captions rather than fake them, and it was right to. They sat beside
+`SearchableSelect`, `RichTextEditor` and `MediaPicker`, whose real control is buried inside the
+component, and closing them meant changing three shared components' public props - a decision the
+brief told it not to make alone.
+
+Closing them here turned up something the lint rule cannot see. Giving `RichTextEditor` an `id` and
+pointing `htmlFor` at it makes `noLabelWithoutControl` go green **while the editor stays anonymous**,
+because a contenteditable is not a labelable element. The lint gate proves a `htmlFor` exists, never
+that it names anything. Chrome's accessibility tree is the only thing that settles it, and it read
+`textbox ""` until the editor got `role="textbox"` and `aria-labelledby`.
+
+Worth keeping as a rule: a linter's silence is not evidence for a criterion about what a screen
+reader announces.
 
 ## How C9 and C10 were verified
 
@@ -313,8 +335,20 @@ learn their order.
 
 ## Next action
 
-When J12 lands, apply K1's `.work/kape-copy/projects.json` to `src/server/seed/projects.ts`. That is
-a source edit and must not overlap the lint pass.
+Verify J07 and NOANY here when they settle, merge, re-gate, then close both worktrees.
 
-The confirm-dialog copy and the router half of the language work are still open. Re-read any queued
-contract against current source before it goes out - J22 is what happens when nobody does.
+Two things wait on Rithy and cannot be agent-decided:
+
+- **CTSP and CamScam.** Both summaries contradict every block beneath them on the client's own
+  prototype, and both bodies are held back until he says which is true. `.work/seed-copy-report.md`
+  has the two readings side by side.
+- **Target areas.** The seed gives each project the single province its map pin sits in; the pages
+  list three or four. LOTUS is seeded as Battambang and its page names four provinces, none of them
+  Battambang.
+
+Still open and owned by nobody: the confirm-dialog copy, the router half of the language work, and
+the two accessibility gaps A11Y priced rather than took - the modals have no dialog semantics, and
+row actions across the admin tables all announce as bare "Save" or "Delete".
+
+Re-read any queued contract against current source before it goes out - J22 is what happens when
+nobody does.
