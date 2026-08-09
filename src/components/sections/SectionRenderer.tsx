@@ -108,6 +108,13 @@ function Heading({
 	);
 }
 
+// one level below whatever the section drew: h3 under its own h2, h2 when it
+// drew nothing or drew the page h1
+function useItemHeading(titled: boolean): "h2" | "h3" {
+	const ownsPageTitle = useContext(OwnsPageTitle);
+	return titled && !ownsPageTitle ? "h3" : "h2";
+}
+
 const Empty = ({ children }: { children: React.ReactNode }) => (
 	<p className="rounded-2xl border border-dashed border-border bg-muted/30 px-6 py-12 text-center text-sm text-muted-foreground">
 		{children}
@@ -279,9 +286,9 @@ function Slideshow({ slides }: { slides: HeroSlide[] }) {
 								</div>
 							)}
 							{s.title && (
-								<h3 className="mt-2 max-w-md font-display text-2xl md:text-3xl font-semibold leading-tight">
+								<h2 className="mt-2 max-w-md font-display text-2xl md:text-3xl font-semibold leading-tight">
 									{s.title}
-								</h3>
+								</h2>
 							)}
 							{s.caption && (
 								<p className="mt-2 text-sm opacity-90">{s.caption}</p>
@@ -1036,7 +1043,15 @@ type PostListProps = Common & {
 	data?: PostRow[];
 };
 
-function PostCard({ post, base }: { post: PostRow; base: string }) {
+function PostCard({
+	post,
+	base,
+	titleAs: H,
+}: {
+	post: PostRow;
+	base: string;
+	titleAs: "h2" | "h3";
+}) {
 	const L = useL();
 	const t = useT();
 	const href = base ? L(`${base}/${post.slug}`) : undefined;
@@ -1056,9 +1071,9 @@ function PostCard({ post, base }: { post: PostRow; base: string }) {
 				)}
 			</div>
 			<div className="p-6">
-				<h3 className="t-card-title text-primary group-hover:text-[var(--accent)] transition">
+				<H className="t-card-title text-primary group-hover:text-[var(--accent)] transition">
 					{post.title}
-				</h3>
+				</H>
 				{post.excerpt && (
 					<p className="mt-2 t-meta text-foreground/70 line-clamp-3">
 						{post.excerpt}
@@ -1086,6 +1101,9 @@ function PostCard({ post, base }: { post: PostRow; base: string }) {
 function PostList(p: PostListProps) {
 	const L = useL();
 	const t = useT();
+	const H = useItemHeading(Boolean(p.title || p.eyebrow));
+	// the "featured" layout nests its secondary posts under the lead one
+	const HSub = H === "h2" ? "h3" : "h4";
 	const posts: PostRow[] = Array.isArray(p.data) ? p.data : [];
 	const base = p.linkBase ?? "";
 	const link = (slug: string) => (base ? L(`${base}/${slug}`) : "#");
@@ -1190,7 +1208,7 @@ function PostList(p: PostListProps) {
 											{posts[0].publishedAt}
 										</span>
 									)}
-									<h3 className="mt-4 max-w-xl t-section">{posts[0].title}</h3>
+									<H className="mt-4 max-w-xl t-section">{posts[0].title}</H>
 									{posts[0].excerpt && (
 										<p className="mt-3 max-w-lg t-meta opacity-90 line-clamp-2">
 											{posts[0].excerpt}
@@ -1222,9 +1240,9 @@ function PostList(p: PostListProps) {
 												{post.publishedAt}
 											</div>
 										)}
-										<h4 className="mt-1.5 t-card-title text-primary group-hover:text-[var(--accent)] transition line-clamp-3">
+										<HSub className="mt-1.5 t-card-title text-primary group-hover:text-[var(--accent)] transition line-clamp-3">
 											{post.title}
-										</h4>
+										</HSub>
 									</div>
 								</NavLink>
 							))}
@@ -1235,7 +1253,7 @@ function PostList(p: PostListProps) {
 						className={`grid gap-8 ${layout === "grid-2" || posts.length < 3 ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-3"}`}
 					>
 						{posts.map((post) => (
-							<PostCard key={post.id} post={post} base={base} />
+							<PostCard key={post.id} post={post} base={base} titleAs={H} />
 						))}
 					</div>
 				)}
@@ -1259,6 +1277,7 @@ type VideoGridProps = Common & {
 function VideoGrid(p: VideoGridProps) {
 	const L = useL();
 	const t = useT();
+	const H = useItemHeading(Boolean(p.title || p.eyebrow));
 	const videos: SourceRow["videos"][] = Array.isArray(p.data) ? p.data : [];
 	return (
 		<section className={`${PAD} ${toneBg(p.tone)}`}>
@@ -1304,9 +1323,9 @@ function VideoGrid(p: VideoGridProps) {
 											</span>
 										</div>
 									</div>
-									<h3 className="mt-4 t-card-title text-primary group-hover:text-[var(--accent)] transition">
+									<H className="mt-4 t-card-title text-primary group-hover:text-[var(--accent)] transition">
 										{v.title}
-									</h3>
+									</H>
 								</NavLink>
 							);
 						})}
@@ -1681,6 +1700,7 @@ function PartnerMarquee({ rows }: { rows: PartnerRow[] }) {
 
 function Partners(p: PartnersProps) {
 	const rows: PartnerRow[] = Array.isArray(p.data) ? p.data : [];
+	const H = useItemHeading(Boolean(p.title || p.eyebrow));
 	if (p.layout === "marquee") {
 		return (
 			<section className={`${PAD} ${toneBg(p.tone)}`}>
@@ -1717,9 +1737,9 @@ function Partners(p: PartnersProps) {
 								key={cat}
 								className="grid gap-3 py-6 md:grid-cols-[minmax(0,190px)_1fr] md:gap-8 md:py-7"
 							>
-								<h3 className="t-eyebrow text-[var(--accent)] md:pt-2.5">
+								<H className="t-eyebrow text-[var(--accent)] md:pt-2.5">
 									{cat.replace(/-/g, " ")}
-								</h3>
+								</H>
 								<div className="flex flex-wrap items-center gap-3">
 									{list.map((r) => (
 										<PartnerLink

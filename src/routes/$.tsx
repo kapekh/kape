@@ -252,9 +252,9 @@ function ResolvedRoute() {
 									</div>
 								)}
 								<div className="flex flex-1 flex-col p-6">
-									<h3 className="t-card-title text-primary group-hover:text-[var(--accent)] transition">
+									<h2 className="t-card-title text-primary group-hover:text-[var(--accent)] transition">
 										{c.title}
-									</h3>
+									</h2>
 									{c.excerpt && (
 										<p className="mt-2 text-sm text-muted-foreground line-clamp-3">
 											{c.excerpt}
