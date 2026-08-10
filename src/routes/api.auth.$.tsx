@@ -80,7 +80,7 @@ export async function handler({ request }: { request: Request }) {
 		);
 		return Response.json(
 			{ user },
-			{ headers: { "set-cookie": sessionCookie(token) } },
+			{ headers: { "set-cookie": sessionCookie(token, request) } },
 		);
 	}
 
@@ -90,7 +90,7 @@ export async function handler({ request }: { request: Request }) {
 		if (auth) await revokeSession(db, auth.sessionId);
 		return Response.json(
 			{ ok: true },
-			{ headers: { "set-cookie": clearSessionCookie() } },
+			{ headers: { "set-cookie": clearSessionCookie(request) } },
 		);
 	}
 

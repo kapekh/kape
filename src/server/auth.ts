@@ -138,12 +138,23 @@ export function parseCookies(header: string | null): Record<string, string> {
 	return out;
 }
 
-// `Secure` is added automatically in production so the session cookie is only
-// ever sent over HTTPS. (Left off in dev where the server is plain http.)
-const SECURE = process.env.NODE_ENV === "production" ? "; Secure" : "";
-export function sessionCookie(token: string): string {
-	return `${SESSION_COOKIE}=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${MAX_AGE_S}${SECURE}`;
+// browsers discard a Secure cookie set over plain http, which silently breaks
+// sign-in on a LAN deployment - so track the scheme the request arrived on
+// rather than NODE_ENV. x-forwarded-proto covers TLS terminated at a proxy.
+function secureFlag(request?: Request): string {
+	if (!request) return "; Secure";
+	const forwarded = request.headers
+		.get("x-forwarded-proto")
+		?.split(",")[0]
+		.trim();
+	const https = forwarded
+		? forwarded === "https"
+		: new URL(request.url).protocol === "https:";
+	return https ? "; Secure" : "";
 }
-export function clearSessionCookie(): string {
-	return `${SESSION_COOKIE}=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0${SECURE}`;
+export function sessionCookie(token: string, request?: Request): string {
+	return `${SESSION_COOKIE}=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${MAX_AGE_S}${secureFlag(request)}`;
+}
+export function clearSessionCookie(request?: Request): string {
+	return `${SESSION_COOKIE}=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0${secureFlag(request)}`;
 }
