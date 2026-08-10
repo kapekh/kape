@@ -116,16 +116,6 @@ export const Route = createFileRoute("/$")({
 					limit: RELATED_POOL,
 				}),
 			);
-			// The resolved post drops meta, so the file and the video URL come from
-			// the same listing query the collection pages read them from.
-			if (resolved.post.contentType === "video")
-				await context.queryClient.ensureQueryData(
-					context.trpc.posts.videos.queryOptions({ lang }),
-				);
-			if (resolved.post.contentType === "publication")
-				await context.queryClient.ensureQueryData(
-					context.trpc.posts.publications.queryOptions({ lang, category: "" }),
-				);
 		}
 		const settings = await context.queryClient.ensureQueryData(
 			context.trpc.site.settings.queryOptions(),
@@ -256,12 +246,8 @@ function RelatedPosts({
 }
 
 /** The video itself. Falls back to a link when the record holds a URL no player can take. */
-function VideoPlayer({ slug, title }: { slug: string; title: string }) {
-	const trpc = useTRPC();
-	const { lang } = useLang();
+function VideoPlayer({ url, title }: { url: string; title: string }) {
 	const t = useT();
-	const { data } = useQuery(trpc.posts.videos.queryOptions({ lang }));
-	const url = data?.find((v) => v.slug === slug)?.youtubeUrl ?? "";
 	const id = youtubeId(url);
 	if (id)
 		return (
@@ -289,17 +275,17 @@ function VideoPlayer({ slug, title }: { slug: string; title: string }) {
 }
 
 /** The publication itself: the same reader the listing opens, on the detail page. */
-function PublicationFile({ slug, title }: { slug: string; title: string }) {
-	const trpc = useTRPC();
-	const { lang } = useLang();
+function PublicationFile({
+	id,
+	fileUrl,
+	title,
+}: {
+	id: number;
+	fileUrl: string;
+	title: string;
+}) {
 	const t = useT();
 	const { openPdf, reader } = usePdfReader();
-	const { data } = useQuery(
-		trpc.posts.publications.queryOptions({ lang, category: "" }),
-	);
-	const pub = data?.find((p) => p.slug === slug);
-	const fileUrl = pub?.fileUrl;
-	if (!fileUrl) return null;
 	return (
 		<div className="mb-8">
 			<a
@@ -307,7 +293,7 @@ function PublicationFile({ slug, title }: { slug: string; title: string }) {
 				target="_blank"
 				rel="noreferrer"
 				onClick={(e) => {
-					trpcClient.posts.trackDownload.mutate({ id: pub.id }).catch(() => {});
+					trpcClient.posts.trackDownload.mutate({ id }).catch(() => {});
 					openPdf(e, { url: fileUrl, title });
 				}}
 				className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
@@ -460,11 +446,15 @@ function ResolvedRoute() {
 						{post.publishedAt} · {post.author ?? socialSiteName(settings)}
 					</div>
 				)}
-				{post.contentType === "video" && (
-					<VideoPlayer slug={post.slug} title={post.title} />
+				{post.contentType === "video" && post.youtubeUrl && (
+					<VideoPlayer url={post.youtubeUrl} title={post.title} />
 				)}
-				{post.contentType === "publication" && (
-					<PublicationFile slug={post.slug} title={post.title} />
+				{post.contentType === "publication" && post.fileUrl && (
+					<PublicationFile
+						id={post.id}
+						fileUrl={post.fileUrl}
+						title={post.title}
+					/>
 				)}
 				<RichBody className="prose-body" html={post.bodyHtml} />
 				{post.gallery.length > 0 && (

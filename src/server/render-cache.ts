@@ -13,10 +13,12 @@ import { renderCache } from "./schema";
 const ENABLED = process.env.SSG_CACHE !== "off";
 const TTL_SECONDS = 7 * 24 * 60 * 60; // backstop; precise invalidation is the primary mechanism
 
-// Entries hold rendered HTML, so a change to how rich text serialises makes
-// every existing entry wrong. Bump this when that happens; old rows are then
-// unreachable and age out on the TTL.
-const FORMAT = "v2";
+// Entries hold rendered HTML and the resolved payload's own shape, so a change
+// to how rich text serialises, or a field added to what is cached, makes every
+// existing entry wrong. Bump this when that happens; old rows are then
+// unreachable and age out on the TTL. v3: ResolvedPost gained fileUrl and
+// youtubeUrl, which a v2 entry cannot have.
+const FORMAT = "v3";
 
 export const cacheKey = (path: string, lang: string) =>
 	`${FORMAT}::${lang || "en"}::${path.replace(/^\/+|\/+$/g, "")}`;

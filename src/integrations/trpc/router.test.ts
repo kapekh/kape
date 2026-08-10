@@ -233,6 +233,53 @@ describe("posts.publications", () => {
 	});
 });
 
+describe("a publication and a video resolve with what they are for", () => {
+	const out = run([
+		{
+			sql: `INSERT OR IGNORE INTO content_types (key, name, sort) VALUES
+				('publication', 'Publications', 1), ('video', 'Videos', 2) RETURNING key`,
+		},
+		{
+			sql: `INSERT INTO posts (tenant_id, content_type, slug, status, published_at, meta) VALUES
+				(1, 'publication', 'c10-doc', 'published', '2024-01-01',
+					json_object('fileUrl', '/uploads/c10-doc.pdf')),
+				(1, 'video', 'c10-clip', 'published', '2024-01-01',
+					json_object('youtube_url', 'https://youtu.be/c10clip')),
+				(1, 'news', 'c10-plain', 'published', '2024-01-01', json_object())
+				RETURNING id`,
+		},
+		{ call: "routes.resolve", input: { path: "publications/c10-doc", lang: "en" } },
+		{ call: "routes.resolve", input: { path: "videos/c10-clip", lang: "en" } },
+		{ call: "routes.resolve", input: { path: "news/c10-plain", lang: "en" } },
+	]);
+
+	// the detail page used to fetch the whole collection listing to find one
+	// record's own file, so the record has to carry it
+	const post = (r: Result) => {
+		if (!("ok" in r) || !r.ok) throw new Error(`call failed: ${JSON.stringify(r)}`);
+		return (r.value as { post?: { fileUrl: string | null; youtubeUrl: string | null } })
+			.post;
+	};
+
+	it("hands the publication its file", () => {
+		expect(post(out[2])).toMatchObject({
+			fileUrl: "/uploads/c10-doc.pdf",
+			youtubeUrl: null,
+		});
+	});
+
+	it("hands the video its url", () => {
+		expect(post(out[3])).toMatchObject({
+			fileUrl: null,
+			youtubeUrl: "https://youtu.be/c10clip",
+		});
+	});
+
+	it("leaves both null on a post that is neither", () => {
+		expect(post(out[4])).toMatchObject({ fileUrl: null, youtubeUrl: null });
+	});
+});
+
 describe("unpublished content stays off the public API", () => {
 	const draftPage = {
 		call: "adminPages.create",

@@ -502,6 +502,10 @@ export type ResolvedPost = {
 	bodyHtml: string;
 	coverUrl: string | null;
 	gallery: AlbumPhoto[];
+	// what a publication or a video is FOR: without them the detail page had to
+	// fetch the whole collection listing to find one record's own file
+	fileUrl: string | null;
+	youtubeUrl: string | null;
 };
 
 /** If `slug` was an old page slug, return the page's current slug (for a 301). */
@@ -575,6 +579,7 @@ export async function getPostBySlug(
 		lang,
 	);
 
+	const meta = (post.meta ?? {}) as Record<string, unknown>;
 	return {
 		id: post.id,
 		slug: post.slug,
@@ -591,5 +596,7 @@ export async function getPostBySlug(
 			url: p.url ?? "",
 			caption: caps.get(p.mediaId)?.caption ?? "",
 		})),
+		fileUrl: meta.fileUrl ? String(meta.fileUrl) : null,
+		youtubeUrl: meta.youtube_url ? String(meta.youtube_url) : null,
 	};
 }
