@@ -9,83 +9,54 @@
  *
  * At runtime the app reads UI strings from the DB, so adding a language is pure
  * data (INSERT rows) — no code change. Keep keys stable; components reference them.
+ *
+ * The keys live in one module per slice under ./ui-strings/, so eight jobs can
+ * each add their own without editing one file in eight places. A key belongs in
+ * the same change as the component that renders it: seed it earlier and it is
+ * dead weight nobody can see is dead. `ui-strings/dictionary.test.ts` enforces
+ * both that rule and the absence of a key defined by two modules at once.
  */
-export const defaultUiStrings: Record<string, { en: string; km?: string }> = {
-	// top bar (Header.tsx)
-	"top.search": { en: "Search", km: "ស្វែងរក" },
-	"top.sitemap": { en: "Site Map", km: "ផែនទីគេហទំព័រ" },
+import { common } from "./ui-strings/common";
+import { donate } from "./ui-strings/donate";
+import { forms } from "./ui-strings/forms";
+import { internal } from "./ui-strings/internal";
+import { nav } from "./ui-strings/nav";
+import { pages } from "./ui-strings/pages";
+import { sections } from "./ui-strings/sections";
+import { site } from "./ui-strings/site";
 
-	// navigation chrome (Header.tsx, SubPage.tsx, contact route)
-	"nav.home": { en: "Home", km: "ទំព័រដើម" },
-	"nav.menu": { en: "Menu", km: "ម៉ឺនុយ" },
-	"nav.contact": { en: "Contact", km: "ទំនាក់ទំនង" },
-	"nav.donate": { en: "♡ Donate", km: "♡ បរិច្ចាគ" },
+export type UiString = { en: string; km?: string };
 
-	"top.login": { en: "Staff login", km: "ចូលសម្រាប់បុគ្គលិក" },
-
-	// forms (ContactForm.tsx, FormRenderer.tsx, SectionRenderer form section)
-	"forms.send": { en: "Send message", km: "ផ្ញើសារ" },
-	"forms.sending": { en: "Sending…", km: "កំពុងផ្ញើ…" },
-	"forms.submit": { en: "Submit", km: "ដាក់ស្នើ" },
-
-	// newsletter (Footer.tsx)
-	"newsletter.email": { en: "Email address", km: "អាសយដ្ឋានអ៊ីមែល" },
-	"newsletter.subscribe": { en: "Subscribe", km: "ជាវ" },
-	"newsletter.thanks": {
-		en: "Thanks for subscribing!",
-		km: "សូមអរគុណសម្រាប់ការជាវ!",
-	},
-	"newsletter.error": {
-		en: "Something went wrong. Please try again.",
-		km: "មានបញ្ហាបានកើតឡើង។ សូមព្យាយាមម្តងទៀត។",
-	},
-	"footer.calendar": {
-		en: "ប្រតិទិនខ្មែរ · Khmer Calendar",
-		km: "ប្រតិទិនខ្មែរ",
-	},
-
-	// collection listings (SectionRenderer.tsx)
-	"home.news.readmore": { en: "Read more →", km: "អានបន្ថែម →" },
-	"home.news.all": { en: "See all →", km: "មើលទាំងអស់ →" },
-	"home.video.all": { en: "All videos →", km: "វីដេអូទាំងអស់ →" },
-	"share.label": { en: "Share", km: "ចែករំលែក" },
-
-	// announcement popup (AnnouncementPopup.tsx)
-	"announcement.label": { en: "Announcement", km: "សេចក្តីជូនដំណឹង" },
-	"announcement.more": { en: "Read more", km: "អានបន្ថែម" },
-	"announcement.deadline": { en: "Deadline", km: "ថ្ងៃផុតកំណត់" },
-	"announcement.prev": { en: "Previous", km: "មុន" },
-	"announcement.next": { en: "Next", km: "បន្ទាប់" },
-	"announcement.close": {
-		en: "Close announcement",
-		km: "បិទសេចក្តីជូនដំណឹង",
-	},
-	"announcement.close.label": { en: "Close", km: "បិទ" },
-
-	// lightbox (Lightbox.tsx)
-	"lightbox.title": { en: "Photo viewer", km: "កម្មវិធីមើលរូបភាព" },
-	"lightbox.view": { en: "View photo", km: "មើលរូបភាព" },
-	"lightbox.prev": { en: "Previous photo", km: "រូបភាពមុន" },
-	"lightbox.next": { en: "Next photo", km: "រូបភាពបន្ទាប់" },
-	"lightbox.close": { en: "Close", km: "បិទ" },
-
-	// pdf reader (PdfReader.tsx)
-	"pdf.title": { en: "Document viewer", km: "កម្មវិធីមើលឯកសារ" },
-	"pdf.newTab": { en: "Open in new tab", km: "បើកក្នុងផ្ទាំងថ្មី" },
-	"pdf.close": { en: "Close", km: "បិទ" },
-
-	// khmer calendar (KhmerCalendar.tsx)
-	"calendar.prev": { en: "Previous month", km: "ខែមុន" },
-	"calendar.next": { en: "Next month", km: "ខែបន្ទាប់" },
-
-	// search (search route). The three that compose into one sentence are left
-	// English until a Khmer speaker words the whole sentence, not each fragment.
-	"search.none": { en: "Nothing matched", km: "រកមិនឃើញ" },
-	"search.prompt": {
-		en: "Type a word above to search the site — try a project name, a place, or a title.",
-		km: "សូមវាយបញ្ចូលពាក្យខាងលើដើម្បីស្វែងរក ដូចជាឈ្មោះគម្រោង ទីកន្លែង ឬចំណងជើង។",
-	},
-	"search.results": { en: "results" },
-	"search.showingFirst": { en: "showing the first" },
-	"related.more": { en: "More from" },
+/** Slice name → the keys that slice owns. Ordered as INVENTORY.md's slice table. */
+export const uiStringModules: Record<string, Record<string, UiString>> = {
+	common,
+	nav,
+	forms,
+	pages,
+	sections,
+	site,
+	donate,
+	internal,
 };
+
+/**
+ * Keys defined by more than one module, as `key: moduleA, moduleB`.
+ *
+ * A spread merge lets the last module silently win, which is how a component
+ * ends up rendering another slice's words. Reported rather than thrown so the
+ * failure is one named test instead of every importer crashing at load.
+ */
+export function duplicateUiStringKeys(): Record<string, string[]> {
+	const owners: Record<string, string[]> = {};
+	for (const [module, strings] of Object.entries(uiStringModules))
+		for (const key of Object.keys(strings))
+			owners[key] = [...(owners[key] ?? []), module];
+	return Object.fromEntries(
+		Object.entries(owners).filter(([, from]) => from.length > 1),
+	);
+}
+
+export const defaultUiStrings: Record<string, UiString> = Object.assign(
+	{},
+	...Object.values(uiStringModules),
+);

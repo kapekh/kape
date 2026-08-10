@@ -11,13 +11,34 @@ import { isFunctional, stripLang } from "./i18n-config";
 
 export type LangInfo = { code: string; name: string; nativeName: string };
 
+/** Values substituted into a string's `{name}` slots. */
+export type TParams = Record<string, string | number>;
+
 type Ctx = {
 	lang: string;
 	languages: LangInfo[];
 	// `fallback` is shown when the key isn't in the dictionary (e.g. a not-yet-seeded
 	// string), so new UI text degrades to readable English instead of the raw key.
-	t: (key: string, fallback?: string) => string;
+	// `params` fill `{name}` slots — a whole sentence stays one translatable unit
+	// instead of being concatenated from fragments, which Khmer word order breaks.
+	t: (key: string, fallback?: string, params?: TParams) => string;
 };
+
+// unmatched slot stays on screen: a visible {n} gets reported, `undefined` does not
+const fill = (text: string, params?: TParams) =>
+	params === undefined
+		? text
+		: text.replace(/\{(\w+)\}/g, (slot, name) =>
+				Object.hasOwn(params, name) ? String(params[name]) : slot,
+			);
+
+const makeT =
+	(strings: Record<string, string>): Ctx["t"] =>
+	(key, fallback, params) =>
+		fill(strings[key] ?? fallback ?? key, params);
+
+// no dictionary outside a provider, so every lookup resolves to its own fallback
+const fallbackT = makeT({});
 
 const LangContext = createContext<Ctx | null>(null);
 
@@ -45,7 +66,7 @@ export function LanguageProvider({
 		}
 	}, [lang]);
 
-	const t = (key: string, fallback?: string) => strings[key] ?? fallback ?? key;
+	const t = makeT(strings);
 
 	return (
 		<LangContext.Provider value={{ lang, languages, t }}>
@@ -56,7 +77,7 @@ export function LanguageProvider({
 
 export function useLang(): Ctx {
 	const ctx = useContext(LangContext);
-	if (!ctx) return { lang: "en", languages: [], t: (k, fb) => fb ?? k };
+	if (!ctx) return { lang: "en", languages: [], t: fallbackT };
 	return ctx;
 }
 

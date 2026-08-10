@@ -24,6 +24,7 @@ import { Route as UploadsSplatRouteImport } from './routes/uploads.$'
 import { Route as InternalsourcesDocumentsRouteImport } from './routes/internalsources.documents'
 import { Route as InternalsourcesDirectoryRouteImport } from './routes/internalsources.directory'
 import { Route as InternalsourcesCalendarRouteImport } from './routes/internalsources.calendar'
+import { Route as AdminUiStringsRouteImport } from './routes/admin.ui-strings'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminPublicationCategoriesRouteImport } from './routes/admin.publication-categories'
 import { Route as AdminPartnerCategoriesRouteImport } from './routes/admin.partner-categories'
@@ -166,6 +167,11 @@ const InternalsourcesCalendarRoute = InternalsourcesCalendarRouteImport.update({
   id: '/calendar',
   path: '/calendar',
   getParentRoute: () => InternalsourcesRoute,
+} as any)
+const AdminUiStringsRoute = AdminUiStringsRouteImport.update({
+  id: '/ui-strings',
+  path: '/ui-strings',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
   id: '/settings',
@@ -521,6 +527,7 @@ export interface FileRoutesByFullPath {
   '/admin/partner-categories': typeof AdminPartnerCategoriesRoute
   '/admin/publication-categories': typeof AdminPublicationCategoriesRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/ui-strings': typeof AdminUiStringsRoute
   '/internalsources/calendar': typeof InternalsourcesCalendarRoute
   '/internalsources/directory': typeof InternalsourcesDirectoryRoute
   '/internalsources/documents': typeof InternalsourcesDocumentsRoute
@@ -600,6 +607,7 @@ export interface FileRoutesByTo {
   '/admin/partner-categories': typeof AdminPartnerCategoriesRoute
   '/admin/publication-categories': typeof AdminPublicationCategoriesRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/ui-strings': typeof AdminUiStringsRoute
   '/internalsources/calendar': typeof InternalsourcesCalendarRoute
   '/internalsources/directory': typeof InternalsourcesDirectoryRoute
   '/internalsources/documents': typeof InternalsourcesDocumentsRoute
@@ -681,6 +689,7 @@ export interface FileRoutesById {
   '/admin/partner-categories': typeof AdminPartnerCategoriesRoute
   '/admin/publication-categories': typeof AdminPublicationCategoriesRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/ui-strings': typeof AdminUiStringsRoute
   '/internalsources/calendar': typeof InternalsourcesCalendarRoute
   '/internalsources/directory': typeof InternalsourcesDirectoryRoute
   '/internalsources/documents': typeof InternalsourcesDocumentsRoute
@@ -765,6 +774,7 @@ export interface FileRouteTypes {
     | '/admin/partner-categories'
     | '/admin/publication-categories'
     | '/admin/settings'
+    | '/admin/ui-strings'
     | '/internalsources/calendar'
     | '/internalsources/directory'
     | '/internalsources/documents'
@@ -844,6 +854,7 @@ export interface FileRouteTypes {
     | '/admin/partner-categories'
     | '/admin/publication-categories'
     | '/admin/settings'
+    | '/admin/ui-strings'
     | '/internalsources/calendar'
     | '/internalsources/directory'
     | '/internalsources/documents'
@@ -924,6 +935,7 @@ export interface FileRouteTypes {
     | '/admin/partner-categories'
     | '/admin/publication-categories'
     | '/admin/settings'
+    | '/admin/ui-strings'
     | '/internalsources/calendar'
     | '/internalsources/directory'
     | '/internalsources/documents'
@@ -1108,6 +1120,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/internalsources/calendar'
       preLoaderRoute: typeof InternalsourcesCalendarRouteImport
       parentRoute: typeof InternalsourcesRoute
+    }
+    '/admin/ui-strings': {
+      id: '/admin/ui-strings'
+      path: '/ui-strings'
+      fullPath: '/admin/ui-strings'
+      preLoaderRoute: typeof AdminUiStringsRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/settings': {
       id: '/admin/settings'
@@ -1608,6 +1627,7 @@ interface AdminRouteChildren {
   AdminPartnerCategoriesRoute: typeof AdminPartnerCategoriesRoute
   AdminPublicationCategoriesRoute: typeof AdminPublicationCategoriesRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminUiStringsRoute: typeof AdminUiStringsRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminCampaignsIdRoute: typeof AdminCampaignsIdRouteWithChildren
   AdminCampaignsNewRoute: typeof AdminCampaignsNewRoute
@@ -1662,6 +1682,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminPartnerCategoriesRoute: AdminPartnerCategoriesRoute,
   AdminPublicationCategoriesRoute: AdminPublicationCategoriesRoute,
   AdminSettingsRoute: AdminSettingsRoute,
+  AdminUiStringsRoute: AdminUiStringsRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminCampaignsIdRoute: AdminCampaignsIdRouteWithChildren,
   AdminCampaignsNewRoute: AdminCampaignsNewRoute,

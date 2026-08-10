@@ -98,6 +98,7 @@ export const NAV_AREA: Record<string, PermissionArea> = {
 	"/admin/doc-categories": "lists",
 	"/admin/partner-categories": "lists",
 	"/admin/languages": "settings",
+	"/admin/ui-strings": "settings",
 	"/admin/settings": "settings",
 	"/admin/modules": "settings",
 	"/admin/users": "users",

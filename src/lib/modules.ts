@@ -124,6 +124,7 @@ export const CORE_NAV_PATHS = [
 	"/admin/publication-categories",
 	"/admin/doc-categories",
 	"/admin/languages",
+	"/admin/ui-strings",
 	"/admin/settings",
 	"/admin/modules",
 	"/admin/users",
