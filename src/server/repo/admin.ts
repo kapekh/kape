@@ -486,6 +486,74 @@ async function nextSortOrder(db: DB, parentId: number | null): Promise<number> {
 	return rows.reduce((m, r) => Math.max(m, (r.s ?? 0) + 1), 0);
 }
 
+type PageNode = {
+	id: number;
+	parentId: number | null;
+	segment: string | null;
+	slug: string;
+};
+
+/** The whole tenant tree, which is what both slug walks read. */
+function allPages(db: DB): Promise<PageNode[]> {
+	return db
+		.select({
+			id: pages.id,
+			parentId: pages.parentId,
+			segment: pages.segment,
+			slug: pages.slug,
+		})
+		.from(pages)
+		.where(eq(pages.tenantId, TENANT));
+}
+
+type SlugMove = { id: number; slug: string; from: string };
+
+/** A transaction handle; the writes below run inside one, never on their own. */
+type Tx = Parameters<Parameters<DB["transaction"]>[0]>[0];
+
+/**
+ * Where every page under `rootId` ends up once that node's path is `newSlug`.
+ * Pure, so the walk can be planned before a transaction opens: `bun:sqlite`
+ * takes a synchronous callback and nothing async may run inside one.
+ */
+function subtreeMoves(
+	all: PageNode[],
+	rootId: number,
+	newSlug: string,
+): SlugMove[] {
+	const childrenOf = new Map<number, PageNode[]>();
+	for (const p of all) {
+		if (p.parentId == null) continue;
+		const kids = childrenOf.get(p.parentId);
+		if (kids) kids.push(p);
+		else childrenOf.set(p.parentId, [p]);
+	}
+	const moves: SlugMove[] = [];
+	const walk = (id: number, slug: string, from: string) => {
+		if (slug !== from) moves.push({ id, slug, from });
+		for (const c of childrenOf.get(id) ?? [])
+			walk(c.id, `${slug}/${c.segment}`, c.slug);
+	};
+	walk(rootId, newSlug, all.find((p) => p.id === rootId)?.slug ?? newSlug);
+	return moves;
+}
+
+/** Move the pages and leave a 301 behind each one. */
+function applyMoves(tx: Tx, moves: SlugMove[]): void {
+	for (const m of moves) {
+		tx.update(pages).set({ slug: m.slug }).where(eq(pages.id, m.id)).run();
+		tx.insert(slugRedirects)
+			.values({
+				tenantId: TENANT,
+				entityType: "page",
+				fromSlug: m.from,
+				toEntityId: m.id,
+			})
+			.onConflictDoNothing()
+			.run();
+	}
+}
+
 /**
  * Recompute slugs for a subtree after a node's slug changed (rename or reparent),
  * recording a 301 redirect for every page whose URL moved. `newSlug` is the node's
@@ -496,43 +564,8 @@ async function recomputeSubtree(
 	rootId: number,
 	newSlug: string,
 ): Promise<void> {
-	const all = await db
-		.select({
-			id: pages.id,
-			parentId: pages.parentId,
-			segment: pages.segment,
-			slug: pages.slug,
-		})
-		.from(pages)
-		.where(eq(pages.tenantId, TENANT));
-	const childrenOf = new Map<number, typeof all>();
-	for (const p of all) {
-		if (p.parentId == null) continue;
-		let kids = childrenOf.get(p.parentId);
-		if (!kids) {
-			kids = [];
-			childrenOf.set(p.parentId, kids);
-		}
-		kids.push(p);
-	}
-	const walk = async (id: number, slug: string, oldSlug: string) => {
-		if (slug !== oldSlug) {
-			await db.update(pages).set({ slug }).where(eq(pages.id, id));
-			await db
-				.insert(slugRedirects)
-				.values({
-					tenantId: TENANT,
-					entityType: "page",
-					fromSlug: oldSlug,
-					toEntityId: id,
-				})
-				.onConflictDoNothing();
-		}
-		for (const c of childrenOf.get(id) ?? [])
-			await walk(c.id, `${slug}/${c.segment}`, c.slug);
-	};
-	const root = all.find((p) => p.id === rootId);
-	await walk(rootId, newSlug, root?.slug ?? newSlug);
+	const moves = subtreeMoves(await allPages(db), rootId, newSlug);
+	db.transaction((tx) => applyMoves(tx, moves));
 }
 
 export async function adminListPages(db: DB) {
@@ -813,37 +846,37 @@ export async function movePage(
 export async function deletePage(db: DB, id: number): Promise<void> {
 	if (await frontPageSlug(db, id)) refuseFrontPage("deleting it");
 	// Reparent children up to the deleted node's parent so the subtree isn't orphaned,
-	// recomputing their slugs (with 301s) under the new parent.
-	const [self] = await db
-		.select({ parentId: pages.parentId, slug: pages.slug })
-		.from(pages)
-		.where(and(eq(pages.tenantId, TENANT), eq(pages.id, id)))
-		.limit(1);
-	if (self) {
-		const kids = await db
-			.select({ id: pages.id, segment: pages.segment })
-			.from(pages)
-			.where(and(eq(pages.tenantId, TENANT), eq(pages.parentId, id)));
-		for (const k of kids) {
-			await db
-				.update(pages)
-				.set({ parentId: self.parentId })
-				.where(eq(pages.id, k.id));
-			await recomputeSubtree(
-				db,
-				k.id,
-				await slugFor(db, self.parentId, k.segment ?? ""),
-			);
-		}
-	}
-	await db
-		.delete(translations)
-		.where(
-			and(eq(translations.entityType, "page"), eq(translations.entityId, id)),
-		);
-	await db
-		.delete(pages)
-		.where(and(eq(pages.tenantId, TENANT), eq(pages.id, id)));
+	// recomputing their slugs (with 301s) under the new parent. Planned first and
+	// written in one transaction: it is a dozen statements over three tables, and a
+	// failure partway used to leave the tree half-reparented, carrying slugs that
+	// no longer matched where the pages hung.
+	const all = await allPages(db);
+	const self = all.find((p) => p.id === id);
+	const newParentId = self?.parentId ?? null;
+	const newParentSlug = all.find((p) => p.id === newParentId)?.slug;
+	const kids = self ? all.filter((p) => p.parentId === id) : [];
+	const moves = kids.flatMap((k) => {
+		const segment = (k.segment ?? "").replace(/^\/+|\/+$/g, "");
+		const under = newParentSlug ? `${newParentSlug}/${segment}` : segment;
+		return subtreeMoves(all, k.id, under);
+	});
+
+	db.transaction((tx) => {
+		for (const k of kids)
+			tx.update(pages)
+				.set({ parentId: newParentId })
+				.where(eq(pages.id, k.id))
+				.run();
+		applyMoves(tx, moves);
+		tx.delete(translations)
+			.where(
+				and(eq(translations.entityType, "page"), eq(translations.entityId, id)),
+			)
+			.run();
+		tx.delete(pages)
+			.where(and(eq(pages.tenantId, TENANT), eq(pages.id, id)))
+			.run();
+	});
 }
 
 /* ---------------- Navigation builder ---------------- */

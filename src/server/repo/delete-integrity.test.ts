@@ -125,6 +125,83 @@ describe("deleting a project a school still points at", () => {
 	});
 });
 
+describe("deleting a page that has children", () => {
+	const page = (segment: string, parentId: number | null, title: string) =>
+		JSON.stringify({
+			slug: segment,
+			segment,
+			parentId,
+			status: "published",
+			coverMediaId: null,
+			sections: [],
+			translations: [{ lang: "en", title, excerpt: "", body: "" }],
+		});
+
+	const r = run(`
+		const parent = await admin.createPage(db, ${page("parent", null, "Parent")});
+		const middle = await admin.createPage(db, { ...${page("middle", null, "Middle")}, parentId: parent });
+		const leaf = await admin.createPage(db, { ...${page("leaf", null, "Leaf")}, parentId: middle });
+		const slug = (id) => q("select slug from pages where id=?", id)[0]?.slug ?? null;
+		const parentOf = (id) => q("select parent_id p from pages where id=?", id)[0]?.p ?? null;
+		const redirects = () => q("select from_slug f from slug_redirects where entity_type='page'").map((x) => x.f);
+
+		out.before = { middle: slug(middle), leaf: slug(leaf), leafParent: parentOf(leaf) };
+
+		// a delete that fails on its last statement must leave the reparenting behind it undone
+		exec("create trigger t_no_page_delete before delete on pages begin select raise(abort, 'boom'); end");
+		out.abortMessage = await refusal(() => admin.deletePage(db, middle));
+		out.afterAbort = {
+			middle: slug(middle),
+			leaf: slug(leaf),
+			leafParent: parentOf(leaf),
+			redirects: redirects(),
+			middleTranslations: n("select count(*) c from translations where entity_type='page' and entity_id=?", middle),
+		};
+		exec("drop trigger t_no_page_delete");
+
+		out.refusal = await refusal(() => admin.deletePage(db, middle));
+		out.after = {
+			middle: slug(middle),
+			leaf: slug(leaf),
+			leafParent: parentOf(leaf),
+			leafIsUnderParent: parentOf(leaf) === parent,
+			redirects: redirects(),
+			middleTranslations: n("select count(*) c from translations where entity_type='page' and entity_id=?", middle),
+		};
+	`);
+
+	it("starts with the leaf two levels down", () => {
+		expect(r.before).toMatchObject({
+			middle: "parent/middle",
+			leaf: "parent/middle/leaf",
+		});
+	});
+
+	it("rolls the reparenting back when the delete itself fails", () => {
+		expect(r.abortMessage).toMatch(/boom/i);
+		expect(r.afterAbort).toMatchObject({
+			middle: "parent/middle",
+			leaf: "parent/middle/leaf",
+			redirects: [],
+			middleTranslations: 1,
+		});
+		expect((r.afterAbort as { leafParent: number }).leafParent).toBe(
+			(r.before as { leafParent: number }).leafParent,
+		);
+	});
+
+	it("lifts the leaf up to the grandparent and leaves a 301 behind it", () => {
+		expect(r.refusal).toBe("");
+		expect(r.after).toMatchObject({
+			middle: null,
+			leaf: "parent/leaf",
+			leafIsUnderParent: true,
+			redirects: ["parent/middle/leaf"],
+			middleTranslations: 0,
+		});
+	});
+});
+
 describe("deleting a user", () => {
 	const r = run(`
 		const owner = q("select id from users where email = 'owner@test.example'")[0].id;
