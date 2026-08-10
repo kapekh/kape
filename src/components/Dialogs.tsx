@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+
+import { useModalPanel } from "#/lib/use-modal-panel";
 
 /**
  * In-app replacements for the browser's native dialogs — we never use those.
@@ -147,11 +149,13 @@ function Modal({
 		[onFinish, req, isPrompt, value],
 	);
 
+	const panelRef = useModalPanel(cancel);
+	const headingId = useId();
+
 	useEffect(() => {
 		if (isPrompt) inputRef.current?.focus();
 		const onKey = (e: KeyboardEvent) => {
-			if (e.key === "Escape") cancel();
-			else if (
+			if (
 				e.key === "Enter" &&
 				(isPrompt || (e.target as HTMLElement)?.tagName !== "TEXTAREA")
 			)
@@ -159,7 +163,7 @@ function Modal({
 		};
 		window.addEventListener("keydown", onKey);
 		return () => window.removeEventListener("keydown", onKey);
-	}, [isPrompt, cancel, accept]);
+	}, [isPrompt, accept]);
 
 	const o = req.opts as ConfirmOpts & PromptOpts;
 	const danger = req.kind === "confirm" && (req.opts as ConfirmOpts).danger;
@@ -173,17 +177,24 @@ function Modal({
 				onClick={cancel}
 			/>
 			<div
+				ref={panelRef}
 				role="dialog"
 				aria-modal="true"
-				className="relative w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl animate-[mega-content-in_0.18s_ease-out]"
+				tabIndex={-1}
+				aria-labelledby={o.title || o.message ? headingId : undefined}
+				className="relative w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl animate-[mega-content-in_0.18s_ease-out] focus:outline-none"
 			>
 				{o.title && (
-					<h2 className="font-display text-lg font-semibold text-primary">
+					<h2
+						id={headingId}
+						className="font-display text-lg font-semibold text-primary"
+					>
 						{o.title}
 					</h2>
 				)}
 				{o.message && (
 					<p
+						id={o.title ? undefined : headingId}
 						className={`whitespace-pre-line text-sm text-foreground/85 ${o.title ? "mt-2" : ""}`}
 					>
 						{o.message}

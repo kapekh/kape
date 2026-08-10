@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 
+import { useModalPanel } from "#/lib/use-modal-panel";
 import { fieldInput, fieldLabel } from "./form-ui";
 import { MapPicker } from "./MapPicker";
 
@@ -20,6 +21,8 @@ export function MapField({
 	label?: string;
 }) {
 	const [open, setOpen] = useState(false);
+	const headingId = useId();
+	const panelRef = useModalPanel(() => setOpen(false), open);
 	const has =
 		lat !== "" &&
 		lng !== "" &&
@@ -51,8 +54,18 @@ export function MapField({
 						className="absolute inset-0 cursor-default"
 						onClick={() => setOpen(false)}
 					/>
-					<div className="relative w-full max-w-2xl rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-lift)]">
-						<h3 className="mb-1 font-display text-lg font-semibold text-primary">
+					<div
+						ref={panelRef}
+						role="dialog"
+						aria-modal="true"
+						tabIndex={-1}
+						aria-labelledby={headingId}
+						className="relative w-full max-w-2xl rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-lift)] focus:outline-none"
+					>
+						<h3
+							id={headingId}
+							className="mb-1 font-display text-lg font-semibold text-primary"
+						>
 							Set {label}
 						</h3>
 						<p className="mb-3 text-xs text-muted-foreground">

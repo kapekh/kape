@@ -5,6 +5,7 @@ import { fieldInput, fieldLabel } from "#/components/admin/form-ui";
 import { OrgCanvas, type OrgRow } from "#/components/admin/OrgCanvas";
 import { SearchableSelect } from "#/components/admin/SearchableSelect";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { useModalPanel } from "#/lib/use-modal-panel";
 import { confirm } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/org-chart")({
@@ -232,6 +233,12 @@ function OrgChartAdmin() {
 	const editingNode =
 		editing != null ? rows.find((r) => r.id === editing) : undefined;
 	const showModal = editing != null || adding !== undefined;
+	const closeModal = useCallback(() => {
+		setEditing(null);
+		setAdding(undefined);
+	}, []);
+	const modalHeadingId = useId();
+	const panelRef = useModalPanel(closeModal, showModal);
 
 	return (
 		<div className="max-w-[1600px]">
@@ -293,13 +300,20 @@ function OrgChartAdmin() {
 						type="button"
 						aria-label="Close person editor"
 						className="absolute inset-0 cursor-default"
-						onClick={() => {
-							setEditing(null);
-							setAdding(undefined);
-						}}
+						onClick={closeModal}
 					/>
-					<div className="relative w-full max-w-2xl rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-lift)]">
-						<h3 className="mb-4 font-display text-lg font-semibold text-primary">
+					<div
+						ref={panelRef}
+						role="dialog"
+						aria-modal="true"
+						tabIndex={-1}
+						aria-labelledby={modalHeadingId}
+						className="relative w-full max-w-2xl rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-lift)] focus:outline-none"
+					>
+						<h3
+							id={modalHeadingId}
+							className="mb-4 font-display text-lg font-semibold text-primary"
+						>
 							{editing != null ? "Edit person" : "Add person"}
 						</h3>
 						<NodeForm

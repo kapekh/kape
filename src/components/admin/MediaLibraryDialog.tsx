@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { useModalPanel } from "#/lib/use-modal-panel";
 import { toast } from "@/components/Dialogs";
 
 export type MediaItem = {
@@ -50,6 +51,8 @@ export function MediaLibraryDialog({
 	const [q, setQ] = useState("");
 	const [debounced, setDebounced] = useState("");
 	const fileRef = useRef<HTMLInputElement>(null);
+	const headingId = useId();
+	const panelRef = useModalPanel(onClose, open);
 
 	const offsetRef = useRef(0);
 	const reqRef = useRef(0);
@@ -136,13 +139,6 @@ export function MediaLibraryDialog({
 		return () => obs.disconnect();
 	}, [open, loading]);
 
-	useEffect(() => {
-		if (!open) return;
-		const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-		document.addEventListener("keydown", onKey);
-		return () => document.removeEventListener("keydown", onKey);
-	}, [open, onClose]);
-
 	if (!open) return null;
 
 	async function upload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -179,9 +175,19 @@ export function MediaLibraryDialog({
 				className="absolute inset-0 cursor-default"
 				onClick={onClose}
 			/>
-			<div className="relative flex max-h-[85vh] w-full max-w-3xl flex-col rounded-2xl border border-border bg-card shadow-[var(--shadow-lift)]">
+			<div
+				ref={panelRef}
+				role="dialog"
+				aria-modal="true"
+				tabIndex={-1}
+				aria-labelledby={headingId}
+				className="relative flex max-h-[85vh] w-full max-w-3xl flex-col rounded-2xl border border-border bg-card shadow-[var(--shadow-lift)] focus:outline-none"
+			>
 				<div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3.5">
-					<h3 className="font-display font-semibold text-primary">
+					<h3
+						id={headingId}
+						className="font-display font-semibold text-primary"
+					>
 						Media library
 					</h3>
 					<div className="flex items-center gap-2">

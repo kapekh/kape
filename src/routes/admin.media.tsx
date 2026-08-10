@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { useModalPanel } from "#/lib/use-modal-panel";
 import { confirm, toast } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/media")({
@@ -83,6 +84,9 @@ function MediaLibrary() {
 	const [selected, setSelected] = useState<Set<number>>(new Set());
 	const [copiedId, setCopiedId] = useState<number | null>(null);
 	const [preview, setPreview] = useState<MediaRow | null>(null);
+	const previewHeadingId = useId();
+	const closePreview = useCallback(() => setPreview(null), []);
+	const previewRef = useModalPanel(closePreview, !!preview);
 	const [usage, setUsage] = useState<MediaUsage[] | null>(null);
 	const fileRef = useRef<HTMLInputElement>(null);
 
@@ -191,13 +195,6 @@ function MediaLibrary() {
 		);
 		obs.observe(el);
 		return () => obs.disconnect();
-	}, []);
-
-	// Esc closes the lightbox.
-	useEffect(() => {
-		const onKey = (e: KeyboardEvent) => e.key === "Escape" && setPreview(null);
-		window.addEventListener("keydown", onKey);
-		return () => window.removeEventListener("keydown", onKey);
 	}, []);
 
 	async function uploadFiles(files: FileList | File[]) {
@@ -598,7 +595,14 @@ function MediaLibrary() {
 						className="absolute inset-0 bg-black/70 backdrop-blur-sm"
 						onClick={() => setPreview(null)}
 					/>
-					<div className="relative grid w-full max-w-4xl overflow-hidden rounded-3xl border border-border bg-card shadow-2xl md:grid-cols-[1fr_360px]">
+					<div
+						ref={previewRef}
+						role="dialog"
+						aria-modal="true"
+						tabIndex={-1}
+						aria-labelledby={previewHeadingId}
+						className="relative grid w-full max-w-4xl overflow-hidden rounded-3xl border border-border bg-card shadow-2xl focus:outline-none md:grid-cols-[1fr_360px]"
+					>
 						<div className="grid min-h-[260px] place-items-center bg-muted">
 							{isImage(preview) ? (
 								<img
@@ -612,12 +616,16 @@ function MediaLibrary() {
 						</div>
 						<div className="flex flex-col p-5">
 							<div className="mb-3 flex items-start justify-between gap-2">
-								<h2 className="font-display text-lg font-semibold text-primary break-words">
+								<h2
+									id={previewHeadingId}
+									className="font-display text-lg font-semibold text-primary break-words"
+								>
 									{nameOf(preview)}
 								</h2>
 								<button
 									type="button"
-									onClick={() => setPreview(null)}
+									aria-label="Close"
+									onClick={closePreview}
 									className="grid h-8 w-8 flex-none place-items-center rounded-full border border-border text-foreground/60 hover:bg-muted"
 								>
 									✕
