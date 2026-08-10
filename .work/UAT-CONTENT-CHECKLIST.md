@@ -96,20 +96,20 @@ should exist.
 
 ## 6. Four sign-up forms need building
 
-The Volunteer, Alumni, Scholarship and E-Newsletter pages each show a sign-up form that currently
-throws submissions away. **We are fixing the code so that can never happen silently again**, but
-each of those four pages still needs a real form built in the forms editor and attached to it.
-Until then those pages cannot accept an application.
+The Volunteer, Alumni, Scholarship and E-Newsletter pages each showed a sign-up form that threw
+submissions away. **That is fixed: a form with nothing behind it no longer renders at all**, so
+those four pages now show no form rather than a form that silently discards what is typed into it.
+Each of the four still needs a real form built in the forms editor and attached to it before it can
+accept an application.
 
 ## 7. Sign-in details before the first session
 
-The site has two accounts: `admin@kapekh.org`, which reaches everything, and `staff@kapekh.org`,
-which reaches the staff portal but not the admin.
+The test site has two accounts: `admin@kapekh.org`, which reaches everything, and
+`staff@kapekh.org`, which reaches the staff portal but not the admin.
 
-**Nobody currently knows the staff password.** The admin one is known and works; the staff account's
-was set at seeding time and is not written down anywhere we can find. It needs resetting from
-`/admin/users` before anyone tries to test the portal, otherwise the whole `/internalsources`
-section is untestable.
+The staff password was set at seeding time and written down nowhere, which left `/internalsources`
+untestable, so it has been reset. Both passwords are sent separately from this document, not in it.
+Change them from `/admin/users` on first sign-in.
 
 ---
 
