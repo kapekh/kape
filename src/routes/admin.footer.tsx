@@ -11,6 +11,8 @@ import { MediaPicker } from "#/components/admin/MediaPicker";
 import { useDirtyGuard } from "#/components/admin/useDirty";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { FOOTER_DEFAULTS } from "#/lib/footer-defaults";
+import { saveErrorMessage } from "#/lib/save-error";
+import { toast } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/footer")({
 	component: FooterAdmin,
@@ -56,6 +58,10 @@ const serializeLinks = (ls: Link[]) =>
 		.map((l) => `${l.label.trim()}|${l.href.trim()}`)
 		.join(", ");
 
+/** What a social row's controls call it. Falls back to its position when unnamed. */
+const socialName = (s: Social, i: number) =>
+	s.name.trim() || s.url.trim() || `social link ${i + 1}`;
+
 /** Editable "Label → path" rows, shared by the links column and the buttons. */
 function LinkRows({
 	rows,
@@ -86,10 +92,13 @@ function LinkRows({
 						value={l.href}
 						onChange={(e) => patch(i, { href: e.target.value })}
 					/>
+					{/* names the row it removes: 19 buttons all called "Remove" tell a
+					    screen reader which control it is on and nothing about which
+					    link goes. An unnamed row falls back to its position. */}
 					<button
 						type="button"
 						onClick={() => setRows((ls) => ls.filter((_, j) => j !== i))}
-						aria-label="Remove"
+						aria-label={`Remove ${l.label.trim() || `link ${i + 1}`}`}
 						className="shrink-0 grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40"
 					>
 						✕
@@ -192,18 +201,28 @@ function FooterAdmin() {
 					})),
 			),
 		};
-		await Promise.all(
-			Object.entries(payload).map(([key, value]) =>
-				trpcClient.adminSettings.set.mutate({ key, value }),
-			),
-		);
-		setSaving(false);
-		setSavedAt(new Date().toLocaleTimeString());
+		// Same shape as admin.nav.tsx's save. Without the try, one rejected
+		// `settings.set` left the button on "Saving…" for good, and the only way
+		// out of that was a reload, which threw the edits away.
+		try {
+			await Promise.all(
+				Object.entries(payload).map(([key, value]) =>
+					trpcClient.adminSettings.set.mutate({ key, value }),
+				),
+			);
+			setSavedAt(new Date().toLocaleTimeString());
+			toast("Footer saved.", "success");
+		} catch (err) {
+			toast(saveErrorMessage(err), "error");
+		} finally {
+			setSaving(false);
+		}
 	}
 
 	const dirty = useDirtyGuard(
 		JSON.stringify({ vals, links, buttons, socials }),
 		savedAt,
+		!loading,
 	);
 
 	if (loading) return <p className="text-sm text-muted-foreground">Loading…</p>;
@@ -387,7 +406,7 @@ function FooterAdmin() {
 											type="button"
 											disabled={i === 0}
 											onClick={() => moveSocial(i, -1)}
-											aria-label="Move up"
+											aria-label={`Move ${socialName(sc, i)} up`}
 											className="grid h-7 w-7 place-items-center rounded-lg border border-border text-muted-foreground hover:text-foreground disabled:opacity-30"
 										>
 											↑
@@ -396,7 +415,7 @@ function FooterAdmin() {
 											type="button"
 											disabled={i === socials.length - 1}
 											onClick={() => moveSocial(i, 1)}
-											aria-label="Move down"
+											aria-label={`Move ${socialName(sc, i)} down`}
 											className="grid h-7 w-7 place-items-center rounded-lg border border-border text-muted-foreground hover:text-foreground disabled:opacity-30"
 										>
 											↓
@@ -406,7 +425,7 @@ function FooterAdmin() {
 											onClick={() =>
 												setSocials((ls) => ls.filter((_, j) => j !== i))
 											}
-											aria-label="Remove"
+											aria-label={`Remove ${socialName(sc, i)}`}
 											className="grid h-7 w-7 place-items-center rounded-lg border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40"
 										>
 											✕

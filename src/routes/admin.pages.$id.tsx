@@ -1,11 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { PageForm, type PageFormValue } from "#/components/admin/PageForm";
 import type { LangOpt } from "#/components/admin/PostForm";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { saveErrorMessage } from "#/lib/save-error";
-import { toast } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/pages/$id")({
 	component: EditPage,
@@ -15,6 +14,9 @@ type PageEdit = NonNullable<
 	Awaited<ReturnType<typeof trpcClient.adminPages.get.query>>
 >;
 
+/** tRPC sends the code as the whole message when the throw site gives no text. */
+const STALE = "CONFLICT";
+
 function EditPage() {
 	const { id } = Route.useParams();
 	const pid = Number(id);
@@ -23,28 +25,56 @@ function EditPage() {
 	const [notFound, setNotFound] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [savedAt, setSavedAt] = useState<string | null>(null);
+	const [error, setError] = useState<string | null>(null);
+	const [stale, setStale] = useState(false);
+	// The version this editor loaded. The server refuses a save when the stored
+	// value has moved on, which is how a second tab used to overwrite the first.
+	const [version, setVersion] = useState<string | null>(null);
+	// Remounts the form so a reload replaces every field, drafts included.
+	const [formKey, setFormKey] = useState(0);
+
+	const load = useCallback(async () => {
+		const d = await trpcClient.adminPages.get.query({ id: pid });
+		if (!d) {
+			setNotFound(true);
+			return null;
+		}
+		setData(d);
+		setVersion(d.updatedAt);
+		return d;
+	}, [pid]);
 
 	useEffect(() => {
-		Promise.all([
-			trpcClient.adminPages.get.query({ id: pid }),
-			trpcClient.i18n.languages.query(),
-		]).then(([d, l]) => {
-			if (!d) setNotFound(true);
-			else setData(d);
-			setLangs(l);
-		});
-	}, [pid]);
+		Promise.all([load(), trpcClient.i18n.languages.query()]).then(([, l]) =>
+			setLangs(l),
+		);
+	}, [load]);
 
 	async function onSubmit(v: PageFormValue) {
 		setSaving(true);
+		setError(null);
+		setStale(false);
 		try {
-			await trpcClient.adminPages.update.mutate({ id: pid, ...v });
+			const updatedAt = await trpcClient.adminPages.update.mutate({
+				id: pid,
+				...v,
+				expectedUpdatedAt: version,
+			});
+			setVersion(updatedAt);
 			setSavedAt(new Date().toLocaleTimeString());
 		} catch (e) {
-			toast(saveErrorMessage(e), "error");
+			setError(saveErrorMessage(e));
+			setStale(e instanceof Error && e.message === STALE);
 		} finally {
 			setSaving(false);
 		}
+	}
+
+	async function reload() {
+		setError(null);
+		setStale(false);
+		setSavedAt(null);
+		if (await load()) setFormKey((k) => k + 1);
 	}
 
 	if (notFound)
@@ -54,12 +84,15 @@ function EditPage() {
 
 	return (
 		<PageForm
+			key={formKey}
 			initial={data}
 			languages={langs}
 			onSubmit={onSubmit}
 			saving={saving}
 			title="Edit page"
 			savedAt={savedAt}
+			error={error}
+			onReload={stale ? reload : undefined}
 		/>
 	);
 }

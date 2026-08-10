@@ -17,7 +17,8 @@ import {
 	themeContrast,
 	toggleOn,
 } from "#/lib/site-theme";
-import { confirm } from "@/components/Dialogs";
+import { saveErrorMessage } from "#/lib/save-error";
+import { confirm, toast } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/settings")({
 	component: SettingsAdmin,
@@ -394,12 +395,26 @@ function SettingsAdmin() {
 		refresh();
 	}, [refresh]);
 
+	// One row at a time, keyed by the setting: the raw table has no inline status
+	// slot per row, so success and failure both go to a toast.
+	const [rowBusy, setRowBusy] = useState<string | null>(null);
+
 	async function save(key: string, value: string) {
-		await trpcClient.adminSettings.set.mutate({ key, value });
+		setRowBusy(key);
+		try {
+			await trpcClient.adminSettings.set.mutate({ key, value });
+			toast(`Saved ${key}.`, "success");
+		} catch (err) {
+			toast(saveErrorMessage(err), "error");
+		} finally {
+			setRowBusy(null);
+		}
 	}
+	const [adding, setAdding] = useState(false);
 	async function create() {
 		if (!add.key.trim()) return;
 		setAddError(null);
+		setAdding(true);
 		try {
 			await trpcClient.adminSettings.set.mutate({
 				key: add.key.trim(),
@@ -410,14 +425,27 @@ function SettingsAdmin() {
 				err instanceof Error ? err.message : "The server refused the change.",
 			);
 			return;
+		} finally {
+			setAdding(false);
 		}
 		setAdd({ key: "", value: "" });
 		refresh();
+		toast(`Added ${add.key.trim()}.`, "success");
 	}
 	async function del(key: string) {
 		if (!(await confirm(`Delete setting "${key}"?`))) return;
-		await trpcClient.adminSettings.delete.mutate({ key });
-		setRows((rs) => (rs ?? []).filter((r) => r.key !== key));
+		setRowBusy(key);
+		try {
+			await trpcClient.adminSettings.delete.mutate({ key });
+			// dropped from the table only after the server took it, so a refused
+			// delete cannot leave the row looking gone until the next reload
+			setRows((rs) => (rs ?? []).filter((r) => r.key !== key));
+			toast(`Deleted ${key}.`, "success");
+		} catch (err) {
+			toast(saveErrorMessage(err), "error");
+		} finally {
+			setRowBusy(null);
+		}
 	}
 
 	const brandValues = Object.fromEntries(
@@ -518,9 +546,10 @@ function SettingsAdmin() {
 					<button
 						type="button"
 						onClick={create}
-						className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:opacity-90 transition"
+						disabled={adding}
+						className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition"
 					>
-						Add
+						{adding ? "Adding…" : "Add"}
 					</button>
 				</div>
 				{addError && (
@@ -570,9 +599,11 @@ function SettingsAdmin() {
 										<button
 											type="button"
 											onClick={() => save(r.key, r.value)}
-											className="text-xs rounded border border-border px-2.5 py-1 hover:bg-muted"
+											disabled={rowBusy === r.key}
+											aria-label={`Save ${r.key}`}
+											className="text-xs rounded border border-border px-2.5 py-1 hover:bg-muted disabled:opacity-40"
 										>
-											Save
+											{rowBusy === r.key ? "Saving…" : "Save"}
 										</button>
 										<span className="ml-2 inline-flex align-middle">
 											<ActionMenu

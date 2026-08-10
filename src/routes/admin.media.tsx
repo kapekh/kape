@@ -23,6 +23,7 @@ const PAGE = 30;
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 const isImage = (m: MediaRow) => !!m.contentType?.startsWith("image/");
+const isVideo = (m: MediaRow) => !!m.contentType?.startsWith("video/");
 const nameOf = (m: MediaRow) =>
 	(m.url || m.r2Key || "").split("/").pop()?.split("?")[0] || `media-${m.id}`;
 const extOf = (m: MediaRow) =>
@@ -271,9 +272,13 @@ function MediaLibrary() {
 		setPreview((p) => (p?.id === id ? null : p));
 	}
 
+	// Deleting N items is N round trips; a second click would re-issue every one
+	// of them against ids the first pass is already removing.
+	const [bulkBusy, setBulkBusy] = useState(false);
+
 	async function bulkDelete() {
 		const ids = [...selected];
-		if (!ids.length) return;
+		if (!ids.length || bulkBusy) return;
 		const usages = await Promise.all(
 			ids.map((id) =>
 				trpcClient.adminMedia.usage
@@ -286,17 +291,23 @@ function MediaLibrary() {
 			? `⚠ ${inUse} of these ${ids.length} item${ids.length > 1 ? "s" : ""} ${inUse > 1 ? "are" : "is"} still used by other records and will leave broken images.\n\nDelete all ${ids.length} anyway? This can't be undone.`
 			: `Delete ${plural(ids.length, "selected item")}? This can't be undone.`;
 		if (!(await confirm(msg))) return;
-		const results = await Promise.allSettled(
-			ids.map((id) => trpcClient.adminMedia.delete.mutate({ id })),
-		);
-		const gone = ids.filter((_, i) => results[i].status === "fulfilled");
-		dropLocal(gone);
-		const stuck = results.length - gone.length;
-		if (stuck)
-			toast(
-				`${plural(stuck, "item")} could not be deleted: still attached to a record.`,
-				"error",
+		setBulkBusy(true);
+		try {
+			const results = await Promise.allSettled(
+				ids.map((id) => trpcClient.adminMedia.delete.mutate({ id })),
 			);
+			const gone = ids.filter((_, i) => results[i].status === "fulfilled");
+			dropLocal(gone);
+			const stuck = results.length - gone.length;
+			if (stuck)
+				toast(
+					`${plural(stuck, "item")} could not be deleted: still attached to a record.`,
+					"error",
+				);
+			else toast(`${plural(gone.length, "item")} deleted.`, "success");
+		} finally {
+			setBulkBusy(false);
+		}
 	}
 
 	function toggle(id: number) {
@@ -469,6 +480,23 @@ function MediaLibrary() {
 											loading="lazy"
 											className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
 										/>
+									) : isVideo(m) ? (
+										// the frame the browser decodes IS the thumbnail, so a video
+										// looks like what it is without storing a poster for it
+										<span className="relative block h-full w-full">
+											<video
+												src={m.url ?? ""}
+												muted
+												playsInline
+												preload="metadata"
+												className="h-full w-full bg-black object-cover"
+											/>
+											<span className="absolute inset-0 grid place-items-center">
+												<span className="grid h-10 w-10 place-items-center rounded-full bg-black/55 text-lg text-white">
+													▶
+												</span>
+											</span>
+										</span>
 									) : (
 										<span className="grid h-full w-full place-items-center text-4xl">
 											📄
@@ -609,6 +637,15 @@ function MediaLibrary() {
 									src={preview.url ?? ""}
 									alt={nameOf(preview)}
 									className="max-h-[70vh] w-full object-contain"
+								/>
+							) : isVideo(preview) ? (
+								// playable here: checking a clip is the whole reason to open it
+								// biome-ignore lint/a11y/useMediaCaption: operator-uploaded clip, captions belong on the record that embeds it
+								<video
+									src={preview.url ?? ""}
+									controls
+									preload="metadata"
+									className="max-h-[70vh] w-full bg-black object-contain"
 								/>
 							) : (
 								<span className="text-6xl">📄</span>

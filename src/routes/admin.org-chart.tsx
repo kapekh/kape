@@ -6,7 +6,8 @@ import { OrgCanvas, type OrgRow } from "#/components/admin/OrgCanvas";
 import { SearchableSelect } from "#/components/admin/SearchableSelect";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { useModalPanel } from "#/lib/use-modal-panel";
-import { confirm } from "@/components/Dialogs";
+import { saveErrorMessage } from "#/lib/save-error";
+import { confirm, toast } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/org-chart")({
 	component: OrgChartAdmin,
@@ -43,6 +44,7 @@ function NodeForm({
 	fixedParent,
 	onSave,
 	onCancel,
+	saving,
 }: {
 	rows: OrgRow[];
 	people: PersonOpt[];
@@ -50,6 +52,7 @@ function NodeForm({
 	fixedParent?: number | null;
 	onSave: (v: FormValue) => void;
 	onCancel: () => void;
+	saving?: boolean;
 }) {
 	const uid = useId();
 	const [name, setName] = useState(initial?.name ?? "");
@@ -140,9 +143,10 @@ function NodeForm({
 			<div className="flex items-center gap-2">
 				<button
 					type="submit"
-					className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:opacity-90"
+					disabled={saving}
+					className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:opacity-90 disabled:opacity-50"
 				>
-					Save
+					{saving ? "Saving…" : "Save"}
 				</button>
 				<button
 					type="button"
@@ -179,12 +183,22 @@ function OrgChartAdmin() {
 		refresh().catch(() => setLoading(false));
 	}, [refresh]);
 
+	const [busy, setBusy] = useState(false);
+
 	async function save(v: FormValue, id?: number) {
-		if (id != null) await trpcClient.adminOrg.update.mutate({ id, ...v });
-		else await trpcClient.adminOrg.create.mutate(v);
-		setEditing(null);
-		setAdding(undefined);
-		await refresh();
+		setBusy(true);
+		try {
+			if (id != null) await trpcClient.adminOrg.update.mutate({ id, ...v });
+			else await trpcClient.adminOrg.create.mutate(v);
+			setEditing(null);
+			setAdding(undefined);
+			await refresh();
+			toast(id != null ? "Position saved." : "Position added.", "success");
+		} catch (e) {
+			toast(saveErrorMessage(e), "error");
+		} finally {
+			setBusy(false);
+		}
 	}
 	const onDelete = useCallback(
 		async (id: number) => {
@@ -197,21 +211,39 @@ function OrgChartAdmin() {
 				))
 			)
 				return;
-			await trpcClient.adminOrg.delete.mutate({ id });
-			await refresh();
+			try {
+				await trpcClient.adminOrg.delete.mutate({ id });
+				await refresh();
+				toast(`Deleted ${node?.name ?? "the position"}.`, "success");
+			} catch (e) {
+				toast(saveErrorMessage(e), "error");
+			}
 		},
 		[rows, refresh],
 	);
 	const onReparent = useCallback(
 		async (childId: number, parentId: number) => {
-			await trpcClient.adminOrg.reparent.mutate({ id: childId, parentId });
-			await refresh();
+			try {
+				await trpcClient.adminOrg.reparent.mutate({ id: childId, parentId });
+				await refresh();
+			} catch (e) {
+				// a refused reparent leaves the canvas showing the new line until the
+				// refresh below puts the node back where the server still has it
+				toast(saveErrorMessage(e), "error");
+				await refresh();
+			}
 		},
 		[refresh],
 	);
 	const onMovePosition = useCallback(
 		async (id: number, x: number, y: number) => {
-			await trpcClient.adminOrg.setPosition.mutate({ id, x, y });
+			try {
+				await trpcClient.adminOrg.setPosition.mutate({ id, x, y });
+			} catch (e) {
+				toast(saveErrorMessage(e), "error");
+				await refresh();
+				return;
+			}
 			// keep local rows in sync so a later refresh/relayout respects the saved spot
 			setRows((rs) =>
 				rs.map((r) =>
@@ -219,7 +251,7 @@ function OrgChartAdmin() {
 				),
 			);
 		},
-		[],
+		[refresh],
 	);
 	const onEdit = useCallback((id: number) => {
 		setEditing(id);
@@ -322,6 +354,7 @@ function OrgChartAdmin() {
 							initial={editingNode}
 							fixedParent={adding ?? null}
 							onSave={(v) => save(v, editing ?? undefined)}
+							saving={busy}
 							onCancel={() => {
 								setEditing(null);
 								setAdding(undefined);

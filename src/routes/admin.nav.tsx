@@ -48,6 +48,7 @@ function HeaderSettings() {
 				),
 			);
 			setSavedAt(new Date().toLocaleTimeString());
+			toast("Header settings saved.", "success");
 		} catch (e) {
 			toast(saveErrorMessage(e), "error");
 		} finally {
@@ -55,7 +56,7 @@ function HeaderSettings() {
 		}
 	}
 
-	const dirty = useDirtyGuard(JSON.stringify(vals), savedAt);
+	const dirty = useDirtyGuard(JSON.stringify(vals), savedAt, !loading);
 
 	return (
 		<FormSection
@@ -360,24 +361,60 @@ function NavBuilder() {
 		refresh();
 	}, [refresh]);
 
+	// One in-flight row action at a time. The menu is a tree the server renumbers
+	// on every move, so a second click before the refresh acts on stale sort
+	// positions and lands the item somewhere nobody asked for.
+	const [busyId, setBusyId] = useState<number | "new" | null>(null);
+
 	async function create(parentId: number | null, v: FormValue) {
-		await trpcClient.adminNav.create.mutate({ parentId, ...v });
-		setAddingParent(undefined);
-		await refresh();
+		setBusyId("new");
+		try {
+			await trpcClient.adminNav.create.mutate({ parentId, ...v });
+			setAddingParent(undefined);
+			await refresh();
+			toast("Menu item added.", "success");
+		} catch (e) {
+			toast(saveErrorMessage(e), "error");
+		} finally {
+			setBusyId(null);
+		}
 	}
 	async function update(id: number, v: FormValue) {
-		await trpcClient.adminNav.update.mutate({ id, ...v });
-		setEditing(null);
-		await refresh();
+		setBusyId(id);
+		try {
+			await trpcClient.adminNav.update.mutate({ id, ...v });
+			setEditing(null);
+			await refresh();
+			toast("Menu item saved.", "success");
+		} catch (e) {
+			toast(saveErrorMessage(e), "error");
+		} finally {
+			setBusyId(null);
+		}
 	}
 	async function del(id: number) {
 		if (!(await confirm("Delete this item and all its children?"))) return;
-		await trpcClient.adminNav.delete.mutate({ id });
-		await refresh();
+		setBusyId(id);
+		try {
+			await trpcClient.adminNav.delete.mutate({ id });
+			await refresh();
+			toast("Menu item deleted.", "success");
+		} catch (e) {
+			toast(saveErrorMessage(e), "error");
+		} finally {
+			setBusyId(null);
+		}
 	}
 	async function move(id: number, dir: "up" | "down") {
-		await trpcClient.adminNav.move.mutate({ id, dir });
-		await refresh();
+		setBusyId(id);
+		try {
+			await trpcClient.adminNav.move.mutate({ id, dir });
+			await refresh();
+		} catch (e) {
+			toast(saveErrorMessage(e), "error");
+		} finally {
+			setBusyId(null);
+		}
 	}
 
 	function renderNode(node: NavNode, depth: number) {
@@ -385,8 +422,9 @@ function NavBuilder() {
 			node.labels.en ?? Object.values(node.labels)[0] ?? "(no label)";
 		const hasKids = node.children.length > 0;
 		const open = !collapsed.has(node.id);
+		const busy = busyId === node.id;
 		const act =
-			"grid h-6 w-6 shrink-0 place-items-center rounded text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition";
+			"grid h-6 w-6 shrink-0 place-items-center rounded text-sm text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-40 transition";
 		return (
 			<div key={node.id}>
 				<div
@@ -442,10 +480,15 @@ function NavBuilder() {
 							</span>
 						)}
 					</button>
+					{/* Each control names the row it acts on: 25 rows of "Move up" tells a
+					    screen reader nothing about which item moved. `title` was carrying
+					    that text and was dead weight — a button with text content never
+					    takes its accessible name from `title`. */}
 					<div className="ml-auto flex shrink-0 items-center gap-0.5 opacity-0 transition group-hover/row:opacity-100 focus-within:opacity-100">
 						<button
 							type="button"
-							title="Move up"
+							aria-label={`Move ${label} up`}
+							disabled={busy}
 							className={act}
 							onClick={() => move(node.id, "up")}
 						>
@@ -453,7 +496,8 @@ function NavBuilder() {
 						</button>
 						<button
 							type="button"
-							title="Move down"
+							aria-label={`Move ${label} down`}
+							disabled={busy}
 							className={act}
 							onClick={() => move(node.id, "down")}
 						>
@@ -461,7 +505,8 @@ function NavBuilder() {
 						</button>
 						<button
 							type="button"
-							title="Add child"
+							aria-label={`Add a child item under ${label}`}
+							disabled={busy}
 							className={act}
 							onClick={() => {
 								setCollapsed((s) => {
@@ -476,7 +521,8 @@ function NavBuilder() {
 						</button>
 						<button
 							type="button"
-							title="Edit"
+							aria-label={`Edit ${label}`}
+							aria-expanded={editing === node.id}
 							className={act}
 							onClick={() => setEditing(editing === node.id ? null : node.id)}
 						>
@@ -484,7 +530,8 @@ function NavBuilder() {
 						</button>
 						<button
 							type="button"
-							title="Delete"
+							aria-label={`Delete ${label}`}
+							disabled={busy}
 							className={`${act} hover:text-destructive`}
 							onClick={() => del(node.id)}
 						>

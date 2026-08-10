@@ -1,7 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
+import {
+	EmptyState,
+	ListSearch,
+	ListStatus,
+	matchesQuery,
+	removeWithRollback,
+	TableScroll,
+	useListQuery,
+} from "#/components/admin/list-ui";
 import { useModules } from "#/components/admin/useModules";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { confirm } from "@/components/Dialogs";
@@ -22,46 +31,67 @@ const LEVEL_LABELS: Record<string, string> = {
 };
 
 function SchoolsList() {
-	const [rows, setRows] = useState<Row[]>([]);
 	const [provinces, setProvinces] = useState<Record<string, string>>({});
 	const [projects, setProjects] = useState<Record<number, string>>({});
 	const [media, setMedia] = useState<Record<number, string>>({});
-	const [loading, setLoading] = useState(true);
 	const modules = useModules();
 
-	const refresh = useCallback(async () => {
-		try {
-			const [s, prov, proj] = await Promise.all([
-				trpcClient.adminSchools.list.query(),
-				trpcClient.terms.list.query({ taxonomy: "location" }),
-				modules.list("projects", () => trpcClient.adminProjects.list.query()),
-			]);
-			setRows(s);
-			setProvinces(Object.fromEntries(prov.map((p) => [p.key, p.label])));
-			setProjects(Object.fromEntries(proj.map((p) => [p.id, p.code])));
-			// Resolve only the cover images actually referenced by the rows.
-			const coverIds = [
-				...new Set(
-					s.map((x) => x.coverMediaId).filter((v): v is number => v != null),
-				),
-			];
-			const m = await trpcClient.adminMedia.byIds.query({ ids: coverIds });
-			setMedia(Object.fromEntries(m.map((x) => [x.id, x.url ?? ""])));
-		} finally {
-			// In `finally`: a list that cannot load should say it is empty, not spin
-			// under a count of zero for ever.
-			setLoading(false);
-		}
+	const load = useCallback(async () => {
+		const [s, prov, proj] = await Promise.all([
+			trpcClient.adminSchools.list.query(),
+			trpcClient.terms.list.query({ taxonomy: "location" }),
+			modules.list("projects", () => trpcClient.adminProjects.list.query()),
+		]);
+		setProvinces(Object.fromEntries(prov.map((p) => [p.key, p.label])));
+		setProjects(Object.fromEntries(proj.map((p) => [p.id, p.code])));
+		// Resolve only the cover images actually referenced by the rows.
+		const coverIds = [
+			...new Set(
+				s.map((x) => x.coverMediaId).filter((v): v is number => v != null),
+			),
+		];
+		const m = await trpcClient.adminMedia.byIds.query({ ids: coverIds });
+		setMedia(Object.fromEntries(m.map((x) => [x.id, x.url ?? ""])));
+		return s;
 	}, [modules]);
-	useEffect(() => {
-		refresh();
-	}, [refresh]);
+	const { rows, setRows, state, error, reload } = useListQuery<Row>(load);
+	const [q, setQ] = useState("");
 
-	async function del(id: number) {
+	async function del(row: Row) {
 		if (!(await confirm("Delete this school?"))) return;
-		await trpcClient.adminSchools.delete.mutate({ id });
-		setRows((rs) => rs.filter((r) => r.id !== id));
+		await removeWithRollback(
+			rows,
+			setRows,
+			(r) => r.id === row.id,
+			() => trpcClient.adminSchools.delete.mutate({ id: row.id }),
+		);
 	}
+
+	const levelLabel = (r: Row) =>
+		r.level ? (LEVEL_LABELS[r.level] ?? r.level) : "";
+	const provinceLabel = (r: Row) =>
+		r.province ? (provinces[r.province] ?? r.province) : "";
+	const projectLabel = (r: Row) =>
+		r.projectId != null ? (projects[r.projectId] ?? "") : "";
+	const shown = rows.filter((r) =>
+		matchesQuery(
+			q,
+			r.name,
+			r.code,
+			levelLabel(r),
+			provinceLabel(r),
+			projectLabel(r),
+		),
+	);
+
+	const newSchool = (
+		<Link
+			to="/admin/schools/new"
+			className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold hover:opacity-90 transition"
+		>
+			+ New school
+		</Link>
+	);
 
 	return (
 		<div>
@@ -71,111 +101,123 @@ function SchoolsList() {
 						Schools
 					</h1>
 					<p className="mt-1 text-sm text-muted-foreground">
-						Schools supported — {rows.length} total.
+						Schools supported
+						{state === "ready" ? ` — ${rows.length} total.` : "."}
 					</p>
 				</div>
-				<Link
-					to="/admin/schools/new"
-					className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold hover:opacity-90 transition"
-				>
-					+ New school
-				</Link>
+				{newSchool}
 			</div>
 
-			<div className="overflow-hidden rounded-xl border border-border bg-card">
-				<table className="w-full text-sm">
-					<thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
-						<tr>
-							<th className="px-4 py-2.5 w-16" />
-							<th className="px-2 py-2.5">Name</th>
-							<th className="px-2 py-2.5">Level</th>
-							<th className="px-2 py-2.5">Province</th>
-							<th className="px-2 py-2.5">Project</th>
-							<th className="px-3 py-2.5 text-right">Actions</th>
-						</tr>
-					</thead>
-					<tbody className="divide-y divide-border">
-						{loading ? (
-							<tr>
-								<td colSpan={6} className="px-4 py-6 text-muted-foreground">
-									Loading…
-								</td>
-							</tr>
-						) : rows.length === 0 ? (
-							<tr>
-								<td colSpan={6} className="px-4 py-6 text-muted-foreground">
-									No schools yet.{" "}
-									<Link
-										to="/admin/schools/new"
-										className="text-[var(--accent)] hover:underline"
-									>
-										Add the first school →
-									</Link>
-								</td>
-							</tr>
-						) : (
-							rows.map((r) => (
-								<tr key={r.id} className="hover:bg-muted/20">
-									<td className="px-4 py-2">
-										<div className="h-10 w-14 rounded-md overflow-hidden bg-muted ring-1 ring-border">
-											{r.coverMediaId && media[r.coverMediaId] ? (
-												<img
-													src={media[r.coverMediaId]}
-													alt=""
-													className="h-full w-full object-cover"
-												/>
-											) : null}
-										</div>
-									</td>
-									<td className="px-2 py-2">
-										<Link
-											to="/admin/schools/$id"
-											params={{ id: String(r.id) }}
-											className="font-medium text-foreground hover:text-[var(--accent)]"
-										>
-											{r.name}
-										</Link>
-										{r.code ? (
-											<span className="ml-2 text-xs text-muted-foreground">
-												{r.code}
-											</span>
-										) : null}
-									</td>
-									<td className="px-2 py-2 text-foreground/80">
-										{r.level ? (LEVEL_LABELS[r.level] ?? r.level) : "—"}
-									</td>
-									<td className="px-2 py-2 text-foreground/80">
-										{r.province ? (provinces[r.province] ?? r.province) : "—"}
-									</td>
-									<td className="px-2 py-2 text-foreground/80">
-										{r.projectId != null ? (projects[r.projectId] ?? "—") : "—"}
-									</td>
-									<td className="px-3 py-2 text-right whitespace-nowrap">
-										<Link
-											to="/admin/schools/$id"
-											params={{ id: String(r.id) }}
-											className="text-xs font-semibold text-[var(--accent)] hover:underline"
-										>
-											Edit
-										</Link>
-										<span className="ml-2 inline-flex align-middle">
-											<ActionMenu
-												items={[
-													{
-														label: "Delete school",
-														danger: true,
-														onClick: () => del(r.id),
-													},
-												]}
-											/>
-										</span>
-									</td>
-								</tr>
-							))
-						)}
-					</tbody>
-				</table>
-			</div>
+			{state !== "ready" ? (
+				<ListStatus state={state} error={error} onRetry={reload} />
+			) : rows.length === 0 ? (
+				<EmptyState
+					title="No schools yet"
+					description="Schools are the sites this organisation supports, each with a level, a province and an optional project."
+					action={newSchool}
+				/>
+			) : (
+				<>
+					<ListSearch
+						value={q}
+						onChange={setQ}
+						label="Search schools"
+						placeholder="Search by name, code, province or project…"
+						status={q ? `${shown.length} of ${rows.length}` : undefined}
+					/>
+					{shown.length === 0 ? (
+						<EmptyState
+							title="No schools match that search"
+							description={`Nothing here contains “${q}”.`}
+							action={
+								<button
+									type="button"
+									onClick={() => setQ("")}
+									className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
+								>
+									Clear search
+								</button>
+							}
+						/>
+					) : (
+						<TableScroll label="Schools">
+							<table className="w-full text-sm">
+								<thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
+									<tr>
+										<th className="px-4 py-2.5 w-16" />
+										<th className="px-2 py-2.5">Name</th>
+										<th className="px-2 py-2.5">Level</th>
+										<th className="px-2 py-2.5">Province</th>
+										<th className="px-2 py-2.5">Project</th>
+										<th className="px-3 py-2.5 text-right">Actions</th>
+									</tr>
+								</thead>
+								<tbody className="divide-y divide-border">
+									{shown.map((r) => (
+										<tr key={r.id} className="hover:bg-muted/20">
+											<td className="px-4 py-2">
+												<div className="h-10 w-14 rounded-md overflow-hidden bg-muted ring-1 ring-border">
+													{r.coverMediaId && media[r.coverMediaId] ? (
+														<img
+															src={media[r.coverMediaId]}
+															alt=""
+															className="h-full w-full object-cover"
+														/>
+													) : null}
+												</div>
+											</td>
+											<td className="px-2 py-2">
+												<Link
+													to="/admin/schools/$id"
+													params={{ id: String(r.id) }}
+													className="font-medium text-foreground hover:text-[var(--accent)]"
+												>
+													{r.name}
+												</Link>
+												{r.code ? (
+													<span className="ml-2 text-xs text-muted-foreground">
+														{r.code}
+													</span>
+												) : null}
+											</td>
+											<td className="px-2 py-2 text-foreground/80">
+												{levelLabel(r) || "—"}
+											</td>
+											<td className="px-2 py-2 text-foreground/80">
+												{provinceLabel(r) || "—"}
+											</td>
+											<td className="px-2 py-2 text-foreground/80">
+												{projectLabel(r) || "—"}
+											</td>
+											<td className="px-3 py-2 text-right whitespace-nowrap">
+												<Link
+													to="/admin/schools/$id"
+													params={{ id: String(r.id) }}
+													className="text-xs font-semibold text-[var(--accent)] hover:underline"
+												>
+													Edit
+												</Link>
+												<span className="ml-2 inline-flex align-middle">
+													<ActionMenu
+														label={`Actions for ${r.name}`}
+														items={[
+															{
+																label: "Delete school",
+																danger: true,
+																onClick: () => del(r),
+															},
+														]}
+													/>
+												</span>
+											</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</TableScroll>
+					)}
+				</>
+			)}
 		</div>
 	);
 }

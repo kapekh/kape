@@ -1,8 +1,9 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import type { SectionNode } from "#/lib/sections";
+import { PAGE_TITLE_MAX, segmentProblem } from "#/lib/slug";
 
 import { AdminHeader } from "./AdminHeader";
 import { cancelButtonClass, fieldInput, fieldLabel } from "./form-ui";
@@ -40,6 +41,13 @@ type Initial = {
 	translations: Record<string, Record<string, string>>;
 } | null;
 
+/** Which field the save stopped on, so the message sits beside it and it takes focus. */
+type FieldError = { field: "segment" | "title"; lang?: string; text: string };
+
+/** A title stored before the cap existed still has to fit one dropdown line. */
+const optionLabel = (text: string) =>
+	text.length > 60 ? `${text.slice(0, 60)}…` : text;
+
 export function PageForm({
 	initial,
 	languages,
@@ -47,6 +55,8 @@ export function PageForm({
 	saving,
 	savedAt,
 	title,
+	error,
+	onReload,
 }: {
 	initial: Initial;
 	languages: LangOpt[];
@@ -54,10 +64,15 @@ export function PageForm({
 	saving?: boolean;
 	title?: string;
 	savedAt?: string | null;
+	/** A refusal from the server, shown against the Save button until the next try. */
+	error?: string | null;
+	/** Offered only when the record moved: replaces the draft with what is stored. */
+	onReload?: () => void;
 }) {
 	const [segment, setSegment] = useState(
 		initial?.segment ?? initial?.slug ?? "",
 	);
+	const initialSegment = (initial?.segment ?? initial?.slug ?? "").trim();
 	const [parentId, setParentId] = useState<number | null>(
 		initial?.parentId ?? null,
 	);
@@ -141,10 +156,43 @@ export function PageForm({
 			[lang]: { ...prev[lang], [field]: value },
 		}));
 	}
+	const [fieldError, setFieldError] = useState<FieldError | null>(null);
+	const segmentRef = useRef<HTMLInputElement>(null);
+	const titleRefs = useRef<Record<string, HTMLInputElement | null>>({});
+	const segmentInvalid = fieldError?.field === "segment";
+	const titleInvalid = (lang: string) =>
+		fieldError?.field === "title" && fieldError.lang === lang;
+
 	function submit(e?: React.SyntheticEvent) {
 		e?.preventDefault();
+		const cleaned = segment.trim().replace(/^\/+|\/+$/g, "");
+		// A page stored before the rule existed keeps its address until someone
+		// edits it, the same as the server: refusing to save an untouched legacy
+		// segment would strand the page in its own editor.
+		const untouched = !!cleaned && cleaned === initialSegment;
+		const problem = untouched ? null : segmentProblem(cleaned);
+		if (problem) {
+			setFieldError({ field: "segment", text: problem });
+			segmentRef.current?.focus();
+			return;
+		}
+		// Not maxLength alone: a title stored before the cap existed is already over
+		// it, and the field would look fine while the server refused every save.
+		const long = languages.find(
+			(l) => (trans[l.code]?.title ?? "").length > PAGE_TITLE_MAX,
+		);
+		if (long) {
+			setFieldError({
+				field: "title",
+				lang: long.code,
+				text: `The ${long.name} title is ${trans[long.code].title.length} characters. The limit is ${PAGE_TITLE_MAX}.`,
+			});
+			titleRefs.current[long.code]?.focus();
+			return;
+		}
+		setFieldError(null);
 		onSubmit({
-			segment: segment.replace(/^\/+|\/+$/g, ""),
+			segment: cleaned,
 			parentId,
 			status,
 			coverMediaId,
@@ -244,13 +292,32 @@ export function PageForm({
 									<label className="block">
 										<span className={fieldLabel}>Title</span>
 										<input
-											className={`${fieldInput} ${l.code === "km" ? "font-khmer" : ""}`}
+											ref={(el) => {
+												titleRefs.current[l.code] = el;
+											}}
+											id={`page-title-${l.code}`}
+											maxLength={PAGE_TITLE_MAX}
+											aria-invalid={titleInvalid(l.code) || undefined}
+											aria-describedby={
+												titleInvalid(l.code)
+													? `page-title-error-${l.code}`
+													: undefined
+											}
+											className={`${fieldInput} ${titleInvalid(l.code) ? "border-destructive" : ""} ${l.code === "km" ? "font-khmer" : ""}`}
 											value={trans[l.code]?.title ?? ""}
 											onChange={(e) =>
 												setField(l.code, "title", e.target.value)
 											}
 										/>
 									</label>
+									{titleInvalid(l.code) && fieldError && (
+										<p
+											id={`page-title-error-${l.code}`}
+											className="text-xs font-medium text-destructive"
+										>
+											{fieldError.text}
+										</p>
+									)}
 									<label className="block">
 										<span className={fieldLabel}>Brief</span>
 										<textarea
@@ -284,7 +351,7 @@ export function PageForm({
 								<option value="">— Top level</option>
 								{parentOptions.map((p) => (
 									<option key={p.id} value={p.id}>
-										{p.slug} — {p.title}
+										{p.slug} — {optionLabel(p.title)}
 									</option>
 								))}
 							</select>
@@ -293,14 +360,36 @@ export function PageForm({
 							<label className="block">
 								<span className={fieldLabel}>URL segment</span>
 								<input
-									className={fieldInput}
+									ref={segmentRef}
+									id="page-segment"
+									className={`${fieldInput} ${segmentInvalid ? "border-destructive" : ""}`}
+									aria-invalid={segmentInvalid || undefined}
+									aria-describedby={
+										segmentInvalid
+											? "page-segment-error page-segment-url"
+											: "page-segment-url"
+									}
 									value={segment}
-									onChange={(e) => setSegment(e.target.value)}
+									onChange={(e) => {
+										setSegment(e.target.value);
+										if (segmentInvalid) setFieldError(null);
+									}}
 									placeholder="about"
 									required
 								/>
 							</label>
-							<p className="mt-1 text-[11px] text-muted-foreground">
+							{segmentInvalid && fieldError && (
+								<p
+									id="page-segment-error"
+									className="mt-1 text-xs font-medium text-destructive"
+								>
+									{fieldError.text}
+								</p>
+							)}
+							<p
+								id="page-segment-url"
+								className="mt-1 text-[11px] text-muted-foreground"
+							>
 								URL:{" "}
 								<span className="font-mono text-foreground/80">{fullPath}</span>
 							</p>
@@ -375,11 +464,10 @@ export function PageForm({
 						</span>
 					</span>
 					<div className="flex items-center gap-2">
-						{savedAt && (
-							<span className="text-xs text-[var(--palm)]">
-								Saved {savedAt}
-							</span>
-						)}
+						{/* the save used to finish in silence, the button re-disabling its only cue */}
+						<output className="text-xs text-[var(--palm)]">
+							{savedAt ? `Saved ${savedAt}` : ""}
+						</output>
 						<Link to="/admin/pages" className={cancelButtonClass}>
 							Cancel
 						</Link>
@@ -393,6 +481,28 @@ export function PageForm({
 						</button>
 					</div>
 				</div>
+				{error && (
+					<div
+						role="alert"
+						className="flex shrink-0 flex-wrap items-center gap-3 border-b border-destructive/40 bg-destructive/5 px-4 py-2.5"
+					>
+						<p className="text-sm text-destructive">{error}</p>
+						{onReload && (
+							<button
+								type="button"
+								onClick={onReload}
+								className="rounded-full border border-border bg-card px-4 py-1 text-xs font-semibold hover:bg-muted transition"
+							>
+								Reload the saved version
+							</button>
+						)}
+						<p className="text-xs text-muted-foreground">
+							{onReload
+								? "Your draft is still on screen. Reloading replaces it with what is stored."
+								: "Nothing you have typed has been lost."}
+						</p>
+					</div>
+				)}
 				<div className="min-h-0 flex-1 overflow-y-auto thin-scroll">
 					<div className="bg-background">
 						<PagePreview sections={sections} />

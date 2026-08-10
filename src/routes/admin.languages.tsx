@@ -8,7 +8,9 @@ import {
 	fieldLabel,
 } from "#/components/admin/form-ui";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
-import { confirm } from "@/components/Dialogs";
+import { LANGS } from "#/lib/i18n-config";
+import { saveErrorMessage } from "#/lib/save-error";
+import { confirm, toast } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/languages")({
 	component: LanguagesAdmin,
@@ -17,6 +19,11 @@ export const Route = createFileRoute("/admin/languages")({
 type Lang = Awaited<
 	ReturnType<typeof trpcClient.adminLanguages.list.query>
 >[number];
+
+const routable = (code: string) => LANGS.includes(code);
+
+const needsDeveloper = (code: string) =>
+	`The site can't serve /${code}/ yet: a developer has to add "${code}" to LANGS in src/lib/i18n-config.ts. Until then it stays out of the visitor language switcher, and you can already translate content into it.`;
 
 function LanguagesAdmin() {
 	const [langs, setLangs] = useState<Lang[]>([]);
@@ -36,38 +43,71 @@ function LanguagesAdmin() {
 		refresh();
 	}, [refresh]);
 
+	// Keyed by language code so one row's toggle does not freeze the whole table.
+	const [busy, setBusy] = useState<string | null>(null);
+
 	async function create() {
 		if (!add.code.trim() || !add.name.trim()) return;
-		await trpcClient.adminLanguages.create.mutate({
-			code: add.code.trim(),
-			name: add.name.trim(),
-			nativeName: add.nativeName.trim() || add.name.trim(),
-			enabled: true,
-			isDefault: false,
-			rtl: add.rtl,
-			sort: langs.length,
-		});
-		setAdd({ code: "", name: "", nativeName: "", rtl: false });
-		refresh();
+		setBusy("add");
+		const code = add.code.trim();
+		const name = add.name.trim();
+		try {
+			await trpcClient.adminLanguages.create.mutate({
+				code,
+				name,
+				nativeName: add.nativeName.trim() || name,
+				enabled: true,
+				isDefault: false,
+				rtl: add.rtl,
+				sort: langs.length,
+			});
+			setAdd({ code: "", name: "", nativeName: "", rtl: false });
+			await refresh();
+			if (routable(code)) toast(`${name} added.`, "success");
+			else toast(`${name} added. ${needsDeveloper(code)}`, "info");
+		} catch (e) {
+			toast(saveErrorMessage(e), "error");
+		} finally {
+			setBusy(null);
+		}
 	}
 	async function save(l: Lang, patch: Partial<Lang>) {
-		await trpcClient.adminLanguages.update.mutate({
-			code: l.code,
-			name: l.name,
-			nativeName: l.nativeName,
-			enabled: l.enabled,
-			isDefault: l.isDefault,
-			rtl: l.rtl,
-			sort: l.sort,
-			...patch,
-		});
-		refresh();
+		setBusy(l.code);
+		try {
+			await trpcClient.adminLanguages.update.mutate({
+				code: l.code,
+				name: l.name,
+				nativeName: l.nativeName,
+				enabled: l.enabled,
+				isDefault: l.isDefault,
+				rtl: l.rtl,
+				sort: l.sort,
+				...patch,
+			});
+			await refresh();
+			toast(`${l.name} saved.`, "success");
+		} catch (e) {
+			// refresh anyway: a refused toggle leaves the checkbox showing the state
+			// the operator asked for rather than the one the server still holds
+			toast(saveErrorMessage(e), "error");
+			await refresh();
+		} finally {
+			setBusy(null);
+		}
 	}
 	async function del(code: string) {
 		if (!(await confirm(`Delete language "${code}" and its translations?`)))
 			return;
-		await trpcClient.adminLanguages.delete.mutate({ code });
-		refresh();
+		setBusy(code);
+		try {
+			await trpcClient.adminLanguages.delete.mutate({ code });
+			await refresh();
+			toast(`Language ${code} deleted.`, "success");
+		} catch (e) {
+			toast(saveErrorMessage(e), "error");
+		} finally {
+			setBusy(null);
+		}
 	}
 
 	return (
@@ -77,8 +117,10 @@ function LanguagesAdmin() {
 					Languages
 				</h1>
 				<p className="mt-1 text-sm text-muted-foreground">
-					A new language appears in the site switcher immediately; untranslated
-					content falls back to the default language.
+					Untranslated content falls back to the default language. A language
+					the site can already serve appears in the visitor switcher as soon as
+					you enable it; any other one is marked below and needs a developer
+					first.
 				</p>
 			</div>
 
@@ -131,9 +173,10 @@ function LanguagesAdmin() {
 					<button
 						type="button"
 						onClick={create}
-						className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:opacity-90 transition"
+						disabled={busy === "add"}
+						className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition"
 					>
-						Add
+						{busy === "add" ? "Adding…" : "Add"}
 					</button>
 				</div>
 			</FormSection>
@@ -156,20 +199,33 @@ function LanguagesAdmin() {
 									Loading…
 								</td>
 							</tr>
+						) : langs.length === 0 ? (
+							<tr>
+								<td colSpan={5} className="px-3 py-4 text-muted-foreground">
+									No languages yet — add one above. The site needs at least one,
+									and the first you add becomes the default.
+								</td>
+							</tr>
 						) : (
 							langs.map((l) => (
 								<tr key={l.code} className="hover:bg-muted/20">
 									<td className="px-2 font-mono">{l.code}</td>
-									<td className="px-2">
+									<td className="px-2 py-2">
 										{l.name}{" "}
 										<span className="text-muted-foreground">
 											· {l.nativeName}
 										</span>
+										{routable(l.code) ? null : (
+											<span className="mt-1 block text-xs text-destructive">
+												Not served to visitors. {needsDeveloper(l.code)}
+											</span>
+										)}
 									</td>
 									<td className="px-2 text-center">
 										<input
 											type="checkbox"
 											aria-label={`Enable ${l.name}`}
+											disabled={busy === l.code}
 											checked={l.enabled}
 											onChange={(e) => save(l, { enabled: e.target.checked })}
 										/>
@@ -183,7 +239,12 @@ function LanguagesAdmin() {
 											<button
 												type="button"
 												onClick={() => save(l, { isDefault: true })}
-												className="text-xs text-[var(--accent)] hover:underline"
+												disabled={busy === l.code || !routable(l.code)}
+												title={
+													routable(l.code) ? undefined : needsDeveloper(l.code)
+												}
+												aria-label={`Make ${l.name} the default language`}
+												className="text-xs text-[var(--accent)] hover:underline disabled:opacity-40"
 											>
 												Make default
 											</button>
@@ -191,11 +252,12 @@ function LanguagesAdmin() {
 									</td>
 									<td className="px-3 py-2 text-right">
 										<ActionMenu
+											label={`Actions for ${l.name}`}
 											items={[
 												{
 													label: "Delete",
 													danger: true,
-													disabled: l.isDefault,
+													disabled: l.isDefault || busy === l.code,
 													onClick: () => del(l.code),
 												},
 											]}

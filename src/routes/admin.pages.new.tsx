@@ -15,6 +15,9 @@ function NewPage() {
 	const navigate = useNavigate();
 	const [langs, setLangs] = useState<LangOpt[]>([]);
 	const [saving, setSaving] = useState(false);
+	// A refusal used to arrive as a toast in the far corner and leave after 4.5s,
+	// with the author still looking at the field that caused it.
+	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
 		trpcClient.i18n.languages.query().then(setLangs);
@@ -22,11 +25,13 @@ function NewPage() {
 
 	async function onSubmit(v: PageFormValue) {
 		setSaving(true);
+		setError(null);
 		try {
 			const id = await trpcClient.adminPages.create.mutate(v);
+			toast("Page created.", "success");
 			navigate({ to: "/admin/pages/$id", params: { id: String(id) } });
 		} catch (e) {
-			toast(saveErrorMessage(e), "error");
+			setError(saveErrorMessage(e));
 		} finally {
 			setSaving(false);
 		}
@@ -42,6 +47,7 @@ function NewPage() {
 			onSubmit={onSubmit}
 			saving={saving}
 			title="New page"
+			error={error}
 		/>
 	);
 }
