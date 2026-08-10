@@ -201,6 +201,38 @@ describe("adminMedia.delete", () => {
 	});
 });
 
+describe("posts.publications", () => {
+	const PROBE = 30;
+	const out = run([
+		{
+			sql: `INSERT OR IGNORE INTO content_types (key, name, sort) VALUES ('publication', 'Publications', 1)`,
+		},
+		{
+			sql: `WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM n WHERE i < ${PROBE})
+				INSERT INTO posts (tenant_id, content_type, slug, status, published_at, meta)
+				SELECT 1, 'publication', 'c10-pub-' || i, 'published',
+					date('2024-01-01', '-' || i || ' days'),
+					json_object('fileUrl', '/uploads/c10-' || i || '.pdf', 'year', '2024')
+				FROM n RETURNING id`,
+		},
+		{ call: "posts.publications", input: { lang: "en", category: "" } },
+	]);
+
+	// the detail page reads one publication's file out of this list, so a row the
+	// list drops is a document nobody can open
+	it("returns every publication, not just a page of them", () => {
+		expect(failed(out[2])).toBeNull();
+		const value = ("ok" in out[2] && out[2].ok ? out[2].value : []) as {
+			slug: string;
+			fileUrl: string | null;
+		}[];
+		expect(value).toHaveLength(PROBE);
+		expect(value.find((p) => p.slug === `c10-pub-${PROBE}`)?.fileUrl).toBe(
+			`/uploads/c10-${PROBE}.pdf`,
+		);
+	});
+});
+
 describe("unpublished content stays off the public API", () => {
 	const draftPage = {
 		call: "adminPages.create",

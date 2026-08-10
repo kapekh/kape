@@ -143,11 +143,14 @@ type MatchRow = {
 
 type Hit = { score: number; snippet: string };
 
+/** A snippet of the title is the title again, so the title cannot be one. */
+const TITLE_FIELDS = new Set(["title", "name"]);
+
 /** Best score per field (a record matching in two languages counts once). */
-function collect(rows: MatchRow[], query: string): Map<number, Hit> {
+export function collect(rows: MatchRow[], query: string): Map<number, Hit> {
 	const perEntity = new Map<
 		number,
-		{ fields: Map<string, number>; best: number; snippet: string }
+		{ fields: Map<string, number>; snippetScore: number; snippet: string }
 	>();
 	for (const row of rows) {
 		const text = fieldText(row.field, row.value);
@@ -155,13 +158,13 @@ function collect(rows: MatchRow[], query: string): Map<number, Hit> {
 		if (score === 0) continue;
 		const entry = perEntity.get(row.id) ?? {
 			fields: new Map<string, number>(),
-			best: 0,
+			snippetScore: 0,
 			snippet: "",
 		};
 		if (score > (entry.fields.get(row.field) ?? 0))
 			entry.fields.set(row.field, score);
-		if (score > entry.best) {
-			entry.best = score;
+		if (!TITLE_FIELDS.has(row.field) && score > entry.snippetScore) {
+			entry.snippetScore = score;
 			entry.snippet = snippetAround(text, query);
 		}
 		perEntity.set(row.id, entry);

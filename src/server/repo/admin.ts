@@ -16,6 +16,7 @@ import {
 import type { SQLiteColumn, SQLiteTable } from "drizzle-orm/sqlite-core";
 
 import type { SectionNode } from "#/lib/sections";
+import { segmentProblem } from "#/lib/slug";
 import type { DB } from "../db";
 import {
 	alumniRegistrations,
@@ -432,7 +433,26 @@ export type PageInput = {
 		excerpt: string;
 		body: string;
 	}[];
+	/** The `updatedAt` the editor loaded. Absent skips the check (imports, seeds). */
+	expectedUpdatedAt?: string | null;
 };
+
+/** The row moved between the editor reading it and this save. */
+export class StaleWriteError extends Error {
+	constructor() {
+		super("CONFLICT");
+		this.name = "StaleWriteError";
+	}
+}
+
+/** Trim the wrapper the editor may send; the rest of the segment is the author's. */
+const cleanSegment = (input: PageInput) =>
+	(input.segment || input.slug).trim().replace(/^\/+|\/+$/g, "");
+
+function requireValidSegment(segment: string): void {
+	const problem = segmentProblem(segment);
+	if (problem) throw new Error(problem);
+}
 
 /** Full path for a page = parent's slug + "/" + segment (segment alone at root). */
 async function slugFor(
@@ -582,6 +602,7 @@ export async function getPageForEdit(db: DB, id: number) {
 		coverMediaId: page.heroMediaId,
 		sections: (page.sections ?? []) as SectionNode[],
 		translations: byLang,
+		updatedAt: page.updatedAt,
 	};
 }
 
@@ -635,7 +656,8 @@ const refuseFrontPage = (what: string) => {
 };
 
 export async function createPage(db: DB, input: PageInput): Promise<number> {
-	const segment = (input.segment || input.slug).replace(/^\/+|\/+$/g, "");
+	const segment = cleanSegment(input);
+	requireValidSegment(segment);
 	const slug = await slugFor(db, input.parentId, segment);
 	await requireFreeSlug(db, "page", slug);
 	const sortOrder = await nextSortOrder(db, input.parentId);
@@ -661,13 +683,21 @@ export async function updatePage(
 	db: DB,
 	id: number,
 	input: PageInput,
-): Promise<void> {
+): Promise<string> {
 	const [prev] = await db
-		.select({ slug: pages.slug, parentId: pages.parentId })
+		.select({
+			slug: pages.slug,
+			segment: pages.segment,
+			parentId: pages.parentId,
+		})
 		.from(pages)
 		.where(and(eq(pages.tenantId, TENANT), eq(pages.id, id)))
 		.limit(1);
-	const segment = (input.segment || input.slug).replace(/^\/+|\/+$/g, "");
+	const segment = cleanSegment(input);
+	// A row stored before the rule existed keeps its segment until someone edits
+	// it; refusing to save an untouched legacy address would strand the page.
+	if (segment !== (prev?.segment ?? prev?.slug ?? ""))
+		requireValidSegment(segment);
 	// Guard against reparenting under self/descendant (would orphan the subtree).
 	const parentId = (await isDescendant(db, input.parentId, id))
 		? (prev?.parentId ?? null)
@@ -680,7 +710,10 @@ export async function updatePage(
 		parentId !== (prev?.parentId ?? null)
 			? await nextSortOrder(db, parentId)
 			: undefined;
-	await db
+	// Compare-and-swap on the version the editor loaded: two tabs editing one page
+	// otherwise both save, and the later write silently replaces the earlier one.
+	const updatedAt = new Date().toISOString();
+	const written = await db
 		.update(pages)
 		.set({
 			segment,
@@ -689,9 +722,19 @@ export async function updatePage(
 			heroMediaId: input.coverMediaId,
 			sections: input.sections,
 			...(reorder != null ? { sortOrder: reorder } : {}),
-			updatedAt: new Date().toISOString(),
+			updatedAt,
 		})
-		.where(and(eq(pages.tenantId, TENANT), eq(pages.id, id)));
+		.where(
+			and(
+				eq(pages.tenantId, TENANT),
+				eq(pages.id, id),
+				...(input.expectedUpdatedAt
+					? [eq(pages.updatedAt, input.expectedUpdatedAt)]
+					: []),
+			),
+		)
+		.returning({ id: pages.id });
+	if (!written.length) throw new StaleWriteError();
 	// Slug change (rename or reparent) cascades to descendants via recomputeSubtree,
 	// which writes the new slugs and records a 301 for every page whose URL moved.
 	if (prev && prev.slug !== newSlug) await recomputeSubtree(db, id, newSlug);
@@ -702,6 +745,7 @@ export async function updatePage(
 		);
 	const trs = pageTranslationRows(id, input);
 	if (trs.length) await db.insert(translations).values(trs);
+	return updatedAt;
 }
 
 /** True if `candidateParentId` is `id` itself or one of its descendants. */
@@ -2136,19 +2180,23 @@ export async function updateProject(
 	await setProjectRelations(db, id, input);
 }
 export async function deleteProject(db: DB, id: number): Promise<void> {
-	await db
-		.delete(translations)
-		.where(
-			and(
-				eq(translations.entityType, "project"),
-				eq(translations.entityId, id),
-			),
-		);
-	await db.delete(projectDonors).where(eq(projectDonors.projectId, id));
-	await db.delete(projectLocations).where(eq(projectLocations.projectId, id));
-	await db
-		.delete(projects)
-		.where(and(eq(projects.tenantId, TENANT), eq(projects.id, id)));
+	// a school still pointing here makes the last delete fail: without the
+	// transaction the first three have already gutted the project it refused
+	db.transaction((tx) => {
+		tx.delete(translations)
+			.where(
+				and(
+					eq(translations.entityType, "project"),
+					eq(translations.entityId, id),
+				),
+			)
+			.run();
+		tx.delete(projectDonors).where(eq(projectDonors.projectId, id)).run();
+		tx.delete(projectLocations).where(eq(projectLocations.projectId, id)).run();
+		tx.delete(projects)
+			.where(and(eq(projects.tenantId, TENANT), eq(projects.id, id)))
+			.run();
+	});
 }
 
 /* ---------------- Terms (managed reference data) ---------------- */
@@ -2234,9 +2282,11 @@ export async function updateLanguage(
 }
 
 export async function deleteLanguage(db: DB, code: string): Promise<void> {
-	await db.delete(translations).where(eq(translations.lang, code));
-	await db.delete(uiStrings).where(eq(uiStrings.lang, code));
-	await db.delete(languages).where(eq(languages.code, code));
+	db.transaction((tx) => {
+		tx.delete(translations).where(eq(translations.lang, code)).run();
+		tx.delete(uiStrings).where(eq(uiStrings.lang, code)).run();
+		tx.delete(languages).where(eq(languages.code, code)).run();
+	});
 }
 
 /* ---------------- (nav move, below) ---------------- */

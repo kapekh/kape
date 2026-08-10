@@ -242,7 +242,7 @@ export async function listPublications(
 	db: DB,
 	lang: string,
 	category?: string,
-	limit = 24,
+	limit?: number,
 ): Promise<PublicationItem[]> {
 	const rows = await db
 		.select()
@@ -262,7 +262,8 @@ export async function listPublications(
 					category,
 			)
 		: rows;
-	const picked = filtered.slice(0, limit);
+	// a section asks for the rows it will render; every other caller wants them all
+	const picked = limit ? filtered.slice(0, limit) : filtered;
 	const f = await resolveTranslations(
 		db,
 		"post",

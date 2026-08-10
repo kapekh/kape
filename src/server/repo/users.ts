@@ -141,13 +141,14 @@ export async function deleteUser(
 	if (!u) return;
 	if (u.role === "admin" && (await countAdmins(db)) <= 1)
 		throw new Error("Can't delete the only admin.");
-	await db
-		.update(sessions)
-		.set({ revokedAt: new Date().toISOString() })
-		.where(eq(sessions.userId, id));
-	await db
-		.delete(users)
-		.where(and(eq(users.tenantId, TENANT), eq(users.id, id)));
+	// revoking left the rows behind and sessions.user_id then refused the delete;
+	// a revoked session outliving its user has no reader
+	db.transaction((tx) => {
+		tx.delete(sessions).where(eq(sessions.userId, id)).run();
+		tx.delete(users)
+			.where(and(eq(users.tenantId, TENANT), eq(users.id, id)))
+			.run();
+	});
 }
 
 /** A user changes their own password (verifies the current one). Keeps them logged in. */

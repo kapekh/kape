@@ -13,6 +13,7 @@ import {
 	type PermissionArea,
 } from "#/lib/permissions";
 import type { SectionNode } from "#/lib/sections";
+import { PAGE_TITLE_MAX } from "#/lib/slug";
 import { checkSettingValue } from "#/lib/site-theme";
 import type { DB } from "#/server/db";
 import { invalidateTags, tagSourceQuery } from "#/server/render-cache";
@@ -75,6 +76,7 @@ import {
 	MediaInUseError,
 	moveNavItem,
 	movePage,
+	StaleWriteError,
 	updateDonor,
 	updateHero,
 	updateLanguage,
@@ -179,6 +181,11 @@ import {
 	recordAndGetVisits,
 } from "#/server/repo/site";
 import { staffDocuments, staffEvents, staffNews } from "#/server/repo/staff";
+import {
+	listUiStrings,
+	resetUiString,
+	setUiString,
+} from "#/server/repo/ui-strings";
 import {
 	adminListUsers,
 	changeOwnPassword,
@@ -684,7 +691,7 @@ const pageInput = z.object({
 	translations: z.array(
 		z.object({
 			lang: z.string(),
-			title: z.string(),
+			title: z.string().max(PAGE_TITLE_MAX),
 			excerpt: z.string(),
 			body: z.string(),
 		}),
@@ -768,14 +775,26 @@ const adminPagesRouter = {
 		return createPage(ctx.db, input as PageInput);
 	}),
 	update: adminProcedure
-		.input(pageInput.extend({ id: z.number() }))
+		.input(
+			pageInput.extend({
+				id: z.number(),
+				expectedUpdatedAt: z.string().nullish(),
+			}),
+		)
 		.mutation(async ({ ctx, input }) => {
 			await assertSectionsAllowed(
 				ctx.db,
 				input.sections as SectionNode[],
 				input.id,
 			);
-			return updatePage(ctx.db, input.id, input as PageInput);
+			try {
+				return await updatePage(ctx.db, input.id, input as PageInput);
+			} catch (err) {
+				// The editor turns the bare code into the sentence and the reload offer.
+				if (err instanceof StaleWriteError)
+					throw new TRPCError({ code: "CONFLICT" });
+				throw err;
+			}
 		}),
 	delete: adminProcedure
 		.input(z.object({ id: z.number() }))
@@ -922,6 +941,17 @@ const adminSettingsRouter = {
 	delete: adminProcedure
 		.input(z.object({ key: z.string() }))
 		.mutation(({ ctx, input }) => deleteSetting(ctx.db, input.key)),
+	// chrome strings ride this router so they answer to `settings`, the area that
+	// already covers languages
+	uiStrings: adminProcedure.query(({ ctx }) => listUiStrings(ctx.db)),
+	setUiString: adminProcedure
+		.input(z.object({ key: z.string(), lang: z.string(), value: z.string() }))
+		.mutation(({ ctx, input }) =>
+			setUiString(ctx.db, input.key, input.lang, input.value),
+		),
+	resetUiString: adminProcedure
+		.input(z.object({ key: z.string(), lang: z.string() }))
+		.mutation(({ ctx, input }) => resetUiString(ctx.db, input.key, input.lang)),
 } satisfies TRPCRouterRecord;
 
 const adminPartnersRouter = {

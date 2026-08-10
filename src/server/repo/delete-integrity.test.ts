@@ -1,0 +1,158 @@
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterAll, describe, expect, it } from "vitest";
+
+/**
+ * A delete that spans several tables has to survive its own refusal. Both cases
+ * here used to leave the record gutted or unremovable: the project delete
+ * cleared translations, donors and pins before the foreign key from `schools`
+ * stopped it, and the user delete revoked sessions that then blocked the row for
+ * good. Driven through the repo functions against a real installed database,
+ * because what is being tested is the transaction the driver runs, not our code.
+ */
+const dir = mkdtempSync(join(tmpdir(), "delete-integrity-"));
+const dbPath = join(dir, "integrity.db");
+const root = process.cwd();
+
+afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+execFileSync("bun", ["src/server/install.ts"], {
+	env: {
+		...process.env,
+		DATABASE_PATH: dbPath,
+		SITE_NAME: "Test Org",
+		ADMIN_EMAIL: "owner@test.example",
+		ADMIN_PASSWORD: "test-install-password",
+		SSG_CACHE: "off",
+	},
+	encoding: "utf8",
+});
+
+/** Run a script against the installed database; it prints one JSON object. */
+function run(body: string): Record<string, unknown> {
+	const out = execFileSync(
+		"bun",
+		[
+			"-e",
+			`import { db } from "${root}/src/server/db.ts";
+			 import * as admin from "${root}/src/server/repo/admin.ts";
+			 import * as usersRepo from "${root}/src/server/repo/users.ts";
+			 import { createSession } from "${root}/src/server/auth.ts";
+			 const q = (s, ...a) => db.$client.query(s).all(...a);
+			 const exec = (s, ...a) => db.$client.query(s).run(...a);
+			 const n = (s, ...a) => Number(q(s, ...a)[0].c);
+			 const refusal = async (fn) => { try { await fn(); return ""; } catch (e) { return e.message; } };
+			 const out = {};
+			 ${body}
+			 console.log(JSON.stringify(out));
+			 process.exit(0);`,
+		],
+		{
+			env: { ...process.env, DATABASE_PATH: dbPath, SSG_CACHE: "off" },
+			encoding: "utf8",
+		},
+	);
+	return JSON.parse(out.trim().split("\n").pop() ?? "{}");
+}
+
+const projectInput = JSON.stringify({
+	code: "TST",
+	slug: "test-project",
+	status: "active",
+	sort: 0,
+	startDate: "",
+	endDate: "",
+	targetAreas: [],
+	snapshots: [],
+	translations: [
+		{ lang: "en", name: "Test Project", summary: "S", body: "B" },
+		{ lang: "km", name: "គម្រោង", summary: "ស", body: "ខ" },
+	],
+	donorIds: [],
+	locations: [{ schoolName: "Pin", lat: "11.5", lng: "104.9" }],
+});
+
+describe("deleting a project a school still points at", () => {
+	const r = run(`
+		await admin.createLanguage(db, {
+			code: "km", name: "Khmer", nativeName: "ខ្មែរ",
+			enabled: true, isDefault: false, rtl: false, sort: 1,
+		});
+		const donorId = await admin.createDonor(db, { name: "Test Donor", url: "", sort: 0 });
+		const projectId = await admin.createProject(db, { ...${projectInput}, donorIds: [donorId] });
+		await admin.createSchool(db, {
+			name: "Attached School", code: "", level: "primary", province: "",
+			projectId, coverMediaId: null, address: "", lat: "", lng: "", sort: 0,
+		});
+		const counts = () => ({
+			translations: n("select count(*) c from translations where entity_type='project' and entity_id=?", projectId),
+			donors: n("select count(*) c from project_donors where project_id=?", projectId),
+			locations: n("select count(*) c from project_locations where project_id=?", projectId),
+			project: n("select count(*) c from projects where id=?", projectId),
+		});
+		out.before = counts();
+		out.refusal = await refusal(() => admin.deleteProject(db, projectId));
+		out.after = counts();
+		exec("update schools set project_id = null where project_id = ?", projectId);
+		out.detachedRefusal = await refusal(() => admin.deleteProject(db, projectId));
+		out.afterDetached = counts();
+	`);
+
+	it("is refused", () => {
+		expect(r.refusal).toMatch(/FOREIGN KEY/i);
+	});
+
+	it("leaves every related row where it was", () => {
+		expect(r.before).toEqual({
+			translations: 6,
+			donors: 1,
+			locations: 1,
+			project: 1,
+		});
+		expect(r.after).toEqual(r.before);
+	});
+
+	it("goes through once nothing points at it", () => {
+		expect(r.detachedRefusal).toBe("");
+		expect(r.afterDetached).toEqual({
+			translations: 0,
+			donors: 0,
+			locations: 0,
+			project: 0,
+		});
+	});
+});
+
+describe("deleting a user", () => {
+	const r = run(`
+		const owner = q("select id from users where email = 'owner@test.example'")[0].id;
+		const signedIn = await usersRepo.createUser(db, {
+			email: "signedin@test.example", name: "Signed In", role: "staff", password: "pw-long-enough",
+		});
+		await createSession(db, signedIn);
+		out.sessionsBefore = n("select count(*) c from sessions where user_id=?", signedIn);
+		out.signedInRefusal = await refusal(() => usersRepo.deleteUser(db, signedIn, owner));
+		out.signedInLeft = n("select count(*) c from users where id=?", signedIn);
+		out.sessionsAfter = n("select count(*) c from sessions where user_id=?", signedIn);
+
+		const never = await usersRepo.createUser(db, {
+			email: "never@test.example", name: "Never", role: "staff", password: "pw-long-enough",
+		});
+		out.neverRefusal = await refusal(() => usersRepo.deleteUser(db, never, owner));
+		out.neverLeft = n("select count(*) c from users where id=?", never);
+	`);
+
+	it("works for a user who has signed in, and takes their sessions with it", () => {
+		expect(r.sessionsBefore).toBe(1);
+		expect(r.signedInRefusal).toBe("");
+		expect(r.signedInLeft).toBe(0);
+		expect(r.sessionsAfter).toBe(0);
+	});
+
+	it("works for a user who never signed in", () => {
+		expect(r.neverRefusal).toBe("");
+		expect(r.neverLeft).toBe(0);
+	});
+});

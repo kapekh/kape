@@ -26,6 +26,8 @@ const CODE_SENTENCES: Record<string, string> = {
 
 const CONSTRAINT = /^(FOREIGN KEY|UNIQUE) constraint failed(?::\s*(.*))?$/;
 
+type Action = "save" | "delete";
+
 function humanise(name: string): string {
 	const words = name
 		.replace(/([a-z0-9])([A-Z])/g, "$1 $2")
@@ -60,11 +62,16 @@ function zodIssues(message: string): ZodIssue[] {
 	}
 }
 
-function constraintSentence(message: string): string | null {
+function constraintSentence(message: string, action: Action): string | null {
 	const m = CONSTRAINT.exec(message);
 	if (!m) return null;
+	// A foreign key fails in opposite directions: saving, something this record
+	// points at is gone; deleting, something still points at this one. Telling a
+	// deleter to "pick it again" sends them nowhere.
 	if (m[1] === "FOREIGN KEY")
-		return "Something this record points at was deleted while you were editing. Reload the page, pick it again, and save.";
+		return action === "delete"
+			? "Something else still points at this record. Remove those links first, then try again."
+			: "Something this record points at was deleted while you were editing. Reload the page, pick it again, and save.";
 	const column = (m[2] ?? "")
 		.split(",")
 		.map((c) => c.trim().split(".").pop() ?? "")
@@ -81,8 +88,12 @@ function constraintSentence(message: string): string | null {
  * the bare code "UNAUTHORIZED", a stale reference as a raw SQLite constraint
  * string, and an aborted request as "Failed to fetch".
  */
-export function saveErrorMessage(error: unknown): string {
-	if (!(error instanceof Error) || !error.message) return "Could not save.";
+export function saveErrorMessage(
+	error: unknown,
+	action: Action = "save",
+): string {
+	if (!(error instanceof Error) || !error.message)
+		return action === "delete" ? "Could not delete." : "Could not save.";
 	const message = error.message;
 
 	if (NETWORK.test(message))
@@ -94,7 +105,7 @@ export function saveErrorMessage(error: unknown): string {
 			"Could not save. Try again, or reload the page if it keeps failing."
 		);
 
-	const constraint = constraintSentence(message);
+	const constraint = constraintSentence(message, action);
 	if (constraint) return constraint;
 
 	const issues = zodIssues(message);

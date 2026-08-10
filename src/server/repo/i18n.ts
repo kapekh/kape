@@ -1,5 +1,6 @@
 import { and, eq, inArray } from "drizzle-orm";
 
+import { LANGS } from "#/lib/i18n-config";
 import type { DB } from "../db";
 import { languages, translations, uiStrings } from "../schema";
 
@@ -129,7 +130,9 @@ export async function bootstrapI18n(
 	db: DB,
 	requestedLang: string,
 ): Promise<I18nBootstrap> {
-	const langs = await listLanguages(db);
+	// only what the router can serve: offering /fr/ in the switcher when LANGS has
+	// no prefix for it sends every visitor who picks it to a 404
+	const langs = (await listLanguages(db)).filter((l) => LANGS.includes(l.code));
 	const defaultLang = await getDefaultLang(db);
 	const active = langs.some((l) => l.code === requestedLang)
 		? requestedLang

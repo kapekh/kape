@@ -39,6 +39,14 @@ describe("saveErrorMessage", () => {
 		);
 	});
 
+	// The same SQLite error points the opposite way on a delete: other records
+	// still reference this one, so "pick it again and save" sends nobody anywhere.
+	it("turns the foreign key round when the action was a delete", () => {
+		expect(saveErrorMessage(new Error(WIRE.foreignKey), "delete")).toMatch(
+			/still points at this record/,
+		);
+	});
+
 	it("names the column a unique constraint objected to", () => {
 		expect(saveErrorMessage(new Error(WIRE.unique))).toBe(
 			"Another record already uses that slug. Choose a different one.",

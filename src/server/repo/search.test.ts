@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { NON_PUBLIC_CONTENT_TYPES } from "#/lib/collections";
 import {
+	collect,
 	fieldText,
 	PUBLIC_POST_TYPES,
 	scoreField,
@@ -76,5 +77,25 @@ describe("snippet", () => {
 		const text = `${"filler ".repeat(60)}needle tail`;
 		expect(snippetAround(text, "needle")).toContain("needle");
 		expect(snippetAround(text, "needle").startsWith("…")).toBe(true);
+	});
+
+	it("leaves a title-only match with no snippet to repeat", () => {
+		const hit = collect(
+			[{ id: 1, field: "title", value: "Schools for Empowerment" }],
+			"schools",
+		).get(1);
+		expect(hit?.score).toBeGreaterThan(0);
+		expect(hit?.snippet).toBe("");
+	});
+
+	it("still snippets the body when only the title outscored it", () => {
+		const hit = collect(
+			[
+				{ id: 1, field: "title", value: "Schools for Empowerment" },
+				{ id: 1, field: "body", value: doc("Two hundred schools in Kratie") },
+			],
+			"schools",
+		).get(1);
+		expect(hit?.snippet).toContain("Kratie");
 	});
 });
