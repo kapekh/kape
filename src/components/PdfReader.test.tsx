@@ -70,9 +70,21 @@ describe("usePdfReader", () => {
 
 		expect(click.defaultPrevented).toBe(true);
 		expect(screen.getByTitle("Annual Report")).toHaveProperty(
-			"src",
+			"data",
 			expect.stringContaining("/uploads/report.pdf"),
 		);
+	});
+
+	// a file that 404s used to leave the visitor watching an empty frame
+	it("says so when the document cannot be loaded", () => {
+		pointer("fine");
+		render(<Docs href="/uploads/report.pdf" />);
+		fireEvent.click(screen.getByRole("link", { name: "Open" }));
+
+		fireEvent.error(screen.getByTitle("Annual Report"));
+
+		expect(screen.queryByTitle("Annual Report")).toBeNull();
+		expect(screen.getByText(/could not be loaded/i)).toBeTruthy();
 	});
 
 	// once focus is inside the plugin, Esc and Shift+Tab both stop working

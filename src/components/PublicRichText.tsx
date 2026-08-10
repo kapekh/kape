@@ -1,6 +1,7 @@
 import { EditorContent, useEditor } from "@tiptap/react";
 import { basicRichTextExtensions } from "#/lib/richtext/extensions";
 import { prompt } from "@/components/Dialogs";
+import { useT } from "@/lib/i18n";
 
 function parseContent(value: string): object | string {
 	if (!value) return "";
@@ -26,6 +27,7 @@ export function PublicRichText({
 	onChange: (json: string) => void;
 	km?: boolean;
 }) {
+	const t = useT();
 	const editor = useEditor({
 		immediatelyRender: false,
 		extensions: basicRichTextExtensions,
@@ -59,14 +61,14 @@ export function PublicRichText({
 						className={btn}
 						onClick={() => editor.chain().focus().toggleBulletList().run()}
 					>
-						• List
+						{t("richtext.bulletList", "• List")}
 					</button>
 					<button
 						type="button"
 						className={btn}
 						onClick={() => editor.chain().focus().toggleOrderedList().run()}
 					>
-						1. List
+						{t("richtext.orderedList", "1. List")}
 					</button>
 					<button
 						type="button"
@@ -80,9 +82,12 @@ export function PublicRichText({
 						className={btn}
 						onClick={() => {
 							void prompt({
-								title: "Add link",
-								placeholder: "https://…",
-								confirmLabel: "Apply",
+								title: t("richtext.link.title", "Add link"),
+								placeholder: t("richtext.link.placeholder", "https://…"),
+								confirmLabel: t("richtext.link.apply", "Apply"),
+								// the dialog host is mounted outside LanguageProvider, so its own
+								// default would stay English whatever the dictionary says
+								cancelLabel: t("dialog.cancel", "Cancel"),
 							}).then((url) => {
 								if (url?.trim())
 									editor.chain().focus().setLink({ href: url.trim() }).run();
@@ -90,7 +95,7 @@ export function PublicRichText({
 							});
 						}}
 					>
-						Link
+						{t("richtext.link", "Link")}
 					</button>
 				</div>
 			)}

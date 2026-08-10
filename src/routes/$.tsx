@@ -1,15 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, notFound, redirect } from "@tanstack/react-router";
 
+import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { AnnouncementPopup } from "@/components/AnnouncementPopup";
 import { JsonLd } from "@/components/JsonLd";
 import { PhotoGrid } from "@/components/Lightbox";
 import { NavLink } from "@/components/NavLink";
+import { usePdfReader } from "@/components/PdfReader";
 import { ProjectView } from "@/components/ProjectView";
 import { RichBody } from "@/components/RichBody";
 import { ShareButtons } from "@/components/ShareButtons";
 import { SubPage } from "@/components/SubPage";
-import { SectionRenderer } from "@/components/sections/SectionRenderer";
+import {
+	SectionRenderer,
+	youtubeId,
+} from "@/components/sections/SectionRenderer";
 import { useTRPC } from "@/integrations/trpc/react";
 import { localeLinks } from "@/lib/canonical";
 import { COLLECTIONS, collectionHref } from "@/lib/collections";
@@ -31,6 +36,37 @@ import { articleLd } from "@/lib/structured-data";
 
 // pool, not display count — the current article is filtered out of it
 const RELATED_POOL = 5;
+
+/**
+ * A collection's dictionary key, by URL prefix. Spelled out rather than built as
+ * `collection.${prefix}`, because the dictionary's "nothing seeded that nothing
+ * renders" check proves a key is read by finding it quoted in the source.
+ */
+const COLLECTION_KEYS: Record<string, string> = {
+	careers: "collection.careers",
+	events: "collection.events",
+	galleries: "collection.galleries",
+	news: "collection.news",
+	projects: "collection.projects",
+	publications: "collection.publications",
+	stories: "collection.stories",
+	team: "collection.team",
+	videos: "collection.videos",
+};
+
+/**
+ * The resolver hands down the English label rather than the prefix, so the key
+ * is found back through `COLLECTIONS`. An unrecognised label renders as it
+ * arrived — better a stale English word than a raw key on a live page.
+ */
+function collectionLabel(
+	t: (key: string, fallback?: string) => string,
+	label: string,
+): string {
+	const def = Object.values(COLLECTIONS).find((c) => c.label === label);
+	const key = def && COLLECTION_KEYS[def.prefix];
+	return key ? t(key, label) : label;
+}
 
 /**
  * The public catch-all + i18n router. Every content URL is language-prefixed
@@ -80,6 +116,16 @@ export const Route = createFileRoute("/$")({
 					limit: RELATED_POOL,
 				}),
 			);
+			// The resolved post drops meta, so the file and the video URL come from
+			// the same listing query the collection pages read them from.
+			if (resolved.post.contentType === "video")
+				await context.queryClient.ensureQueryData(
+					context.trpc.posts.videos.queryOptions({ lang }),
+				);
+			if (resolved.post.contentType === "publication")
+				await context.queryClient.ensureQueryData(
+					context.trpc.posts.publications.queryOptions({ lang, category: "" }),
+				);
 		}
 		const settings = await context.queryClient.ensureQueryData(
 			context.trpc.site.settings.queryOptions(),
@@ -209,18 +255,103 @@ function RelatedPosts({
 	);
 }
 
+/** The video itself. Falls back to a link when the record holds a URL no player can take. */
+function VideoPlayer({ slug, title }: { slug: string; title: string }) {
+	const trpc = useTRPC();
+	const { lang } = useLang();
+	const t = useT();
+	const { data } = useQuery(trpc.posts.videos.queryOptions({ lang }));
+	const url = data?.find((v) => v.slug === slug)?.youtubeUrl ?? "";
+	const id = youtubeId(url);
+	if (id)
+		return (
+			<div className="mb-8 aspect-video overflow-hidden rounded-2xl ring-1 ring-border">
+				<iframe
+					src={`https://www.youtube-nocookie.com/embed/${id}`}
+					title={title}
+					allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+					allowFullScreen
+					className="h-full w-full"
+				/>
+			</div>
+		);
+	if (!url) return null;
+	return (
+		<a
+			href={url}
+			target="_blank"
+			rel="noreferrer"
+			className="mb-8 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+		>
+			{t("videos.watch", "Watch the video")}
+		</a>
+	);
+}
+
+/** The publication itself: the same reader the listing opens, on the detail page. */
+function PublicationFile({ slug, title }: { slug: string; title: string }) {
+	const trpc = useTRPC();
+	const { lang } = useLang();
+	const t = useT();
+	const { openPdf, reader } = usePdfReader();
+	const { data } = useQuery(
+		trpc.posts.publications.queryOptions({ lang, category: "" }),
+	);
+	const pub = data?.find((p) => p.slug === slug);
+	const fileUrl = pub?.fileUrl;
+	if (!fileUrl) return null;
+	return (
+		<div className="mb-8">
+			<a
+				href={fileUrl}
+				target="_blank"
+				rel="noreferrer"
+				onClick={(e) => {
+					trpcClient.posts.trackDownload.mutate({ id: pub.id }).catch(() => {});
+					openPdf(e, { url: fileUrl, title });
+				}}
+				className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+			>
+				{t("publications.open", "Open the document")}
+			</a>
+			{reader}
+		</div>
+	);
+}
+
 function ResolvedRoute() {
 	const { route: r, settings } = Route.useLoaderData();
 	const { lang } = useLang();
+	const t = useT();
 
 	if (r.kind === "page") {
 		const page = r.page;
 		if (page.sections && page.sections.length > 0) {
+			// SectionRenderer promotes a hero, or else the first section carrying a
+			// title, to the page h1. Sections with neither used to render alone, and
+			// the page shipped with no h1, no brief and no breadcrumb at all - while
+			// the editor still made the author fill the Title in.
+			const sectionsOwnTitle = page.sections.some(
+				(s) => s.type === "hero" || !!(s.props as { title?: string })?.title,
+			);
+			if (sectionsOwnTitle)
+				return (
+					<main className="min-h-screen overflow-x-hidden text-foreground">
+						{page.slug === "home" && <AnnouncementPopup />}
+						<SectionRenderer sections={page.sections} />
+					</main>
+				);
 			return (
-				<main className="min-h-screen overflow-x-hidden text-foreground">
+				<SubPage
+					wide
+					section={page.parentTitle ?? page.title}
+					title={page.title}
+					lead={page.excerpt || undefined}
+					heroImage={page.coverUrl || undefined}
+				>
 					{page.slug === "home" && <AnnouncementPopup />}
 					<SectionRenderer sections={page.sections} />
-				</main>
+				</SubPage>
 			);
 		}
 		// A parent/hub page with no content of its own renders its children as an
@@ -230,7 +361,7 @@ function ResolvedRoute() {
 			return (
 				<SubPage
 					wide
-					section={page.parentTitle ?? siteShortName(settings)}
+					section={page.parentTitle ?? page.title}
 					title={page.title}
 					lead={page.excerpt || undefined}
 					heroImage={page.coverUrl || undefined}
@@ -261,7 +392,7 @@ function ResolvedRoute() {
 										</p>
 									)}
 									<span className="mt-4 inline-block text-sm font-semibold text-[var(--accent)]">
-										Explore →
+										{t("nav.explore", "Explore")} →
 									</span>
 								</div>
 							</NavLink>
@@ -272,7 +403,7 @@ function ResolvedRoute() {
 		}
 		return (
 			<SubPage
-				section={page.parentTitle ?? siteShortName(settings)}
+				section={page.parentTitle ?? page.title}
 				title={page.title}
 				lead={page.excerpt || undefined}
 				heroImage={page.coverUrl || undefined}
@@ -286,13 +417,16 @@ function ResolvedRoute() {
 				) : (
 					<div className="text-center py-6">
 						<p className="text-muted-foreground">
-							This section is being updated. Please check back soon.
+							{t(
+								"page.empty",
+								"This section is being updated. Please check back soon.",
+							)}
 						</p>
 						<NavLink
 							href={localizedHref("/", lang)}
 							className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-lift)] transition hover:-translate-y-0.5"
 						>
-							← Back to home
+							← {t("nav.backHome", "Back to home")}
 						</NavLink>
 					</div>
 				)}
@@ -304,7 +438,7 @@ function ResolvedRoute() {
 		const post = r.post;
 		return (
 			<SubPage
-				section={r.label}
+				section={collectionLabel(t, r.label)}
 				title={post.title}
 				lead={post.excerpt || undefined}
 				heroImage={post.coverUrl || undefined}
@@ -326,6 +460,12 @@ function ResolvedRoute() {
 						{post.publishedAt} · {post.author ?? socialSiteName(settings)}
 					</div>
 				)}
+				{post.contentType === "video" && (
+					<VideoPlayer slug={post.slug} title={post.title} />
+				)}
+				{post.contentType === "publication" && (
+					<PublicationFile slug={post.slug} title={post.title} />
+				)}
 				<RichBody className="prose-body" html={post.bodyHtml} />
 				{post.gallery.length > 0 && (
 					<div className="mt-10">
@@ -336,7 +476,7 @@ function ResolvedRoute() {
 				<RelatedPosts
 					contentType={post.contentType}
 					slug={post.slug}
-					label={r.label}
+					label={collectionLabel(t, r.label)}
 				/>
 			</SubPage>
 		);
@@ -354,9 +494,9 @@ function ResolvedRoute() {
 					: "grid-cols-2 md:grid-cols-3";
 		return (
 			<SubPage
-				section={r.label}
+				section={collectionLabel(t, r.label)}
 				title={album.title}
-				lead="Click any photo to view it larger."
+				lead={t("album.lead", "Click any photo to view it larger.")}
 			>
 				<PhotoGrid photos={album.photos} className={albumCols} />
 			</SubPage>
@@ -367,7 +507,7 @@ function ResolvedRoute() {
 		const p = r.person;
 		return (
 			<SubPage
-				section={r.label}
+				section={collectionLabel(t, r.label)}
 				title={p.name}
 				lead={p.position || undefined}
 				heroImage={p.photoUrl || undefined}
@@ -389,7 +529,9 @@ function ResolvedRoute() {
 	}
 
 	if (r.kind === "project") {
-		return <ProjectView project={r.project} section={r.label} />;
+		return (
+			<ProjectView project={r.project} section={collectionLabel(t, r.label)} />
+		);
 	}
 
 	return <PageNotFound />;
@@ -398,16 +540,20 @@ function ResolvedRoute() {
 /** Rendered for a thrown notFound(), so the branded body still carries a 404 status. */
 function PageNotFound() {
 	const { lang } = useLang();
+	const t = useT();
 	return (
-		<SubPage section="Not found" title="Page not found">
+		<SubPage
+			section={t("error.notfound.section", "Not found")}
+			title={t("error.notfound.title", "Page not found")}
+		>
 			<p className="text-muted-foreground">
-				This page doesn't exist or was moved.
+				{t("error.notfound.body", "This page doesn't exist or was moved.")}
 			</p>
 			<NavLink
 				href={localizedHref("/", lang)}
 				className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-lift)] transition hover:-translate-y-0.5"
 			>
-				← Back to home
+				← {t("nav.backHome", "Back to home")}
 			</NavLink>
 		</SubPage>
 	);

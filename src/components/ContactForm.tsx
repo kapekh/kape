@@ -50,7 +50,10 @@ export function ContactForm() {
 	if (status === "sent") {
 		return (
 			<div className="rounded-2xl border border-[var(--palm)]/40 bg-[var(--palm)]/5 p-5 text-sm">
-				Thank you — your message has been sent. We'll be in touch.
+				{t(
+					"contact.form.sent",
+					"Thank you — your message has been sent. We'll be in touch.",
+				)}
 			</div>
 		);
 	}
@@ -75,13 +78,13 @@ export function ContactForm() {
 						className={input}
 						name="name"
 						autoComplete="name"
-						placeholder="Full name"
+						placeholder={t("forms.name", "Full name")}
 						value={f.name}
 						onChange={(e) => setF({ ...f, name: e.target.value })}
 						required
 					/>
 					<label htmlFor="cf-name" className={floatLabel}>
-						Full name
+						{t("forms.name", "Full name")}
 					</label>
 				</div>
 				<div className="relative">
@@ -91,13 +94,13 @@ export function ContactForm() {
 						name="email"
 						autoComplete="email"
 						type="email"
-						placeholder="Email"
+						placeholder={t("forms.email", "Email")}
 						value={f.email}
 						onChange={(e) => setF({ ...f, email: e.target.value })}
 						required
 					/>
 					<label htmlFor="cf-email" className={floatLabel}>
-						Email
+						{t("forms.email", "Email")}
 					</label>
 				</div>
 			</div>
@@ -107,12 +110,12 @@ export function ContactForm() {
 					className={input}
 					name="phone"
 					autoComplete="tel"
-					placeholder="Phone (optional)"
+					placeholder={t("forms.phoneOptional", "Phone (optional)")}
 					value={f.phone}
 					onChange={(e) => setF({ ...f, phone: e.target.value })}
 				/>
 				<label htmlFor="cf-phone" className={floatLabel}>
-					Phone (optional)
+					{t("forms.phoneOptional", "Phone (optional)")}
 				</label>
 			</div>
 			<div className="relative flex flex-1 flex-col">
@@ -121,18 +124,18 @@ export function ContactForm() {
 					className={`${input} flex-1 min-h-0 pt-7`}
 					name="message"
 					rows={4}
-					placeholder="Message"
+					placeholder={t("forms.message", "Message")}
 					value={f.message}
 					onChange={(e) => setF({ ...f, message: e.target.value })}
 					required
 				/>
 				<label htmlFor="cf-message" className={areaLabel}>
-					Message
+					{t("forms.message", "Message")}
 				</label>
 			</div>
 			{status === "error" && (
 				<p className="text-sm text-destructive">
-					Something went wrong. Please try again.
+					{t("error.generic", "Something went wrong. Please try again.")}
 				</p>
 			)}
 			<button

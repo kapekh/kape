@@ -115,7 +115,10 @@ export function AnnouncementPopup() {
 							aria-live="polite"
 							className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground"
 						>
-							{index + 1} / {items.length}
+							{t("announcement.position", "{n} of {total}", {
+								n: index + 1,
+								total: items.length,
+							})}
 						</div>
 					)}
 				</div>
@@ -132,7 +135,10 @@ export function AnnouncementPopup() {
 				)}
 				{a.deadline && (
 					<div className="mt-6 inline-flex items-center gap-1 rounded-full border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-4 py-1.5 text-sm font-semibold text-[var(--accent)]">
-						⏳ {t("announcement.deadline", "Deadline")} {a.deadline}
+						⏳{" "}
+						{t("announcement.deadlineOn", "Deadline {date}", {
+							date: a.deadline,
+						})}
 					</div>
 				)}
 				<div className="mt-8 flex flex-wrap gap-3">
@@ -168,7 +174,9 @@ export function AnnouncementPopup() {
 									key={it.id}
 									type="button"
 									onClick={() => setIndex(i)}
-									aria-label={`${t("announcement.label", "Announcement")} ${i + 1}`}
+									aria-label={t("announcement.goto", "Announcement {n}", {
+										n: i + 1,
+									})}
 									className={`h-2 rounded-full transition-all ${i === index ? "w-8 bg-[var(--accent)]" : "w-2 bg-border hover:bg-muted-foreground/40"}`}
 								/>
 							))}

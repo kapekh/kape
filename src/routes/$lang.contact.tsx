@@ -8,27 +8,47 @@ import { DEFAULT_LANG, LANGS } from "@/lib/i18n-config";
 import { siteLogo, siteShortName } from "@/lib/site-identity";
 
 export const Route = createFileRoute("/$lang/contact")({
-	loader: ({ context, params, location }) => {
+	loader: async ({ context, params, location }) => {
 		if (!LANGS.includes(params.lang))
 			throw redirect({
 				href: `/${DEFAULT_LANG}${location.pathname}${location.searchStr}`,
 				statusCode: 301,
 			});
-		return context.queryClient
-			.ensureQueryData(context.trpc.site.offices.queryOptions())
-			.then(async (offices) => ({
-				offices,
-				settings: await context.queryClient.ensureQueryData(
-					context.trpc.site.settings.queryOptions(),
-				),
-			}));
+		const [offices, settings, i18n] = await Promise.all([
+			context.queryClient.ensureQueryData(
+				context.trpc.site.offices.queryOptions(),
+			),
+			context.queryClient.ensureQueryData(
+				context.trpc.site.settings.queryOptions(),
+			),
+			// head() runs outside the LanguageProvider, so the two meta strings
+			// travel with the loader instead of through useT()
+			context.queryClient.ensureQueryData(
+				context.trpc.i18n.bootstrap.queryOptions({ lang: params.lang }),
+			),
+		]);
+		return {
+			offices,
+			settings,
+			meta: {
+				title: i18n.strings["contact.metaTitle"],
+				description: i18n.strings["contact.metaDescription"],
+			},
+		};
 	},
 	head: ({ loaderData }) => ({
 		meta: [
-			{ title: `Contact ${siteShortName(loaderData?.settings ?? {})}` },
+			{
+				title: (loaderData?.meta.title ?? "Contact {site}").replace(
+					"{site}",
+					siteShortName(loaderData?.settings ?? {}),
+				),
+			},
 			{
 				name: "description",
-				content: "Reach our head office and regional teams.",
+				content:
+					loaderData?.meta.description ??
+					"Reach our head office and regional teams.",
 			},
 		],
 	}),
@@ -51,33 +71,48 @@ function ContactPage() {
 		<SubPage
 			wide
 			section={t("nav.contact")}
-			title="Contact Us"
-			lead={`Get in touch with ${siteShortName(settings)} at our head office or any of our regional teams.`}
-			badge="Say hello"
+			title={t("contact.title", "Contact Us")}
+			lead={t(
+				"contact.lead",
+				"Get in touch with {site} at our head office or any of our regional teams.",
+				{ site: siteShortName(settings) },
+			)}
+			badge={t("contact.badge", "Say hello")}
 		>
 			{/* Top: message form ‹› head office + map */}
 			<div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
 				<div className={`${panel} flex flex-col`}>
-					<h2 className="t-subsection text-primary">Send us a message</h2>
+					<h2 className="t-subsection text-primary">
+						{t("contact.form.title", "Send us a message")}
+					</h2>
 					<p className="mt-1 mb-5 text-sm text-muted-foreground">
-						We usually reply within a couple of working days.
+						{t(
+							"contact.form.note",
+							"We usually reply within a couple of working days.",
+						)}
 					</p>
 					<ContactForm />
 				</div>
 
 				{hq && (
 					<div className={panel}>
-						<h2 className="t-subsection text-primary">Head office</h2>
+						<h2 className="t-subsection text-primary">
+							{t("contact.hq", "Head office")}
+						</h2>
 						<div className="mt-4 space-y-1 text-sm text-foreground/85">
 							{hq.address && (
 								<div>
-									<strong className="text-foreground">Address:</strong>{" "}
+									<strong className="text-foreground">
+										{t("contact.address", "Address:")}
+									</strong>{" "}
 									{hq.address}
 								</div>
 							)}
 							{hq.phone && (
 								<div>
-									<strong className="text-foreground">Telephone:</strong>{" "}
+									<strong className="text-foreground">
+										{t("contact.phone", "Phone:")}
+									</strong>{" "}
 									<a
 										href={`tel:${hq.phone}`}
 										className="hover:text-[var(--accent)]"
@@ -88,7 +123,9 @@ function ContactPage() {
 							)}
 							{hq.email && (
 								<div>
-									<strong className="text-foreground">Email:</strong>{" "}
+									<strong className="text-foreground">
+										{t("contact.email", "Email:")}
+									</strong>{" "}
 									<a
 										href={`mailto:${hq.email}`}
 										className="hover:text-[var(--accent)]"
@@ -115,7 +152,9 @@ function ContactPage() {
 			{/* Provincial offices */}
 			{provincial.length > 0 && (
 				<section className="mt-12">
-					<h2 className="t-subsection text-primary">Provincial offices</h2>
+					<h2 className="t-subsection text-primary">
+						{t("contact.provincial", "Provincial offices")}
+					</h2>
 					<Grid cols={3}>
 						{provincial.map((o) => (
 							<Card key={o.id} title={o.name}>
@@ -134,7 +173,7 @@ function ContactPage() {
 								{o.address && <div className="mb-1">{o.address}</div>}
 								{o.phone && (
 									<div>
-										Phone:{" "}
+										{t("contact.phone", "Phone:")}{" "}
 										<a
 											href={`tel:${o.phone}`}
 											className="hover:text-[var(--accent)]"
@@ -145,7 +184,7 @@ function ContactPage() {
 								)}
 								{o.email && (
 									<div>
-										Email:{" "}
+										{t("contact.email", "Email:")}{" "}
 										<a
 											href={`mailto:${o.email}`}
 											className="hover:text-[var(--accent)]"

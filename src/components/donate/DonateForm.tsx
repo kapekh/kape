@@ -1,13 +1,20 @@
 import { useMemo, useState } from "react";
 
 import type { CampaignPublic } from "#/server/repo/campaigns";
+import { useT } from "@/lib/i18n";
+
 import { money } from "./CampaignProgress";
+import { Slot } from "./Slot";
 
 type Visibility = "name" | "custom" | "anonymous";
 
-const MIN: Record<string, number> = { USD: 0.03, KHR: 100 };
+export const MIN: Record<string, number> = { USD: 0.03, KHR: 100 };
+// a number input only accepts min + n*step, so a step that does not divide the
+// gap to a round amount rejects every round amount
+export const STEP: Record<string, number> = { USD: 0.01, KHR: 100 };
 
 export function DonateForm({ campaign }: { campaign: CampaignPublic }) {
+	const t = useT();
 	const cur = campaign.currency;
 	const presets = campaign.presets.length
 		? campaign.presets
@@ -53,18 +60,23 @@ export function DonateForm({ campaign }: { campaign: CampaignPublic }) {
 		return hit;
 	}, [tiers, value]);
 
+	const anonymous = t("donate.anonymous", "Anonymous");
 	const credited =
 		visibility === "anonymous"
-			? "Anonymous"
+			? anonymous
 			: visibility === "custom"
-				? displayName.trim() || "Anonymous"
-				: name.trim() || "Anonymous";
+				? displayName.trim() || anonymous
+				: name.trim() || anonymous;
 
 	function review(e: React.FormEvent) {
 		e.preventDefault();
 		setError(null);
 		if (value < MIN[cur]) {
-			setError(`Minimum donation is ${money(MIN[cur], cur)}.`);
+			setError(
+				t("donate.minimum", "Minimum donation is {amount}.", {
+					amount: money(MIN[cur], cur),
+				}),
+			);
 			return;
 		}
 		setConfirm(true);
@@ -95,10 +107,18 @@ export function DonateForm({ campaign }: { campaign: CampaignPublic }) {
 				window.location.href = data.redirectUrl;
 				return;
 			}
-			setError(data.error || "Something went wrong. Please try again.");
+			setError(
+				data.error ||
+					t("error.generic", "Something went wrong. Please try again."),
+			);
 			setConfirm(false);
 		} catch {
-			setError("Network error. Please check your connection and try again.");
+			setError(
+				t(
+					"error.networkConnection",
+					"Network error. Please check your connection and try again.",
+				),
+			);
 			setConfirm(false);
 		} finally {
 			setBusy(false);
@@ -119,7 +139,7 @@ export function DonateForm({ campaign }: { campaign: CampaignPublic }) {
 						1
 					</span>
 					<span className="text-sm font-semibold text-primary">
-						Choose your impact
+						{t("donate.step1", "Choose your impact")}
 					</span>
 				</legend>
 				<div className="grid gap-2.5">
@@ -150,7 +170,7 @@ export function DonateForm({ campaign }: { campaign: CampaignPublic }) {
 									<span className="text-sm text-foreground/80">{o.label}</span>
 								) : (
 									<span className="text-sm text-muted-foreground">
-										One-time gift
+										{t("donate.oneTime", "One-time gift")}
 									</span>
 								)}
 							</button>
@@ -169,16 +189,19 @@ export function DonateForm({ campaign }: { campaign: CampaignPublic }) {
 								name="custom-amount"
 								type="number"
 								min={MIN[cur]}
-								step={cur === "USD" ? "1" : "1000"}
+								step={STEP[cur]}
 								value={custom}
 								onChange={(e) => setCustom(e.target.value)}
-								placeholder="Other amount"
+								placeholder={t("donate.otherAmount", "Other amount")}
 								className="w-full bg-transparent py-2 text-base focus:outline-none"
 							/>
 						</div>
 						{custom && impact && (
 							<p className="mt-2 text-sm text-[var(--accent)]">
-								✨ Funds <span className="font-semibold">{impact.label}</span>
+								✨{" "}
+								<Slot text={t("donate.funds", "Funds {tier}")} name="tier">
+									<span className="font-semibold">{impact.label}</span>
+								</Slot>
 							</p>
 						)}
 					</div>
@@ -192,7 +215,7 @@ export function DonateForm({ campaign }: { campaign: CampaignPublic }) {
 						2
 					</span>
 					<span className="text-sm font-semibold text-primary">
-						Your details
+						{t("donate.step2", "Your details")}
 					</span>
 				</legend>
 				<div className="space-y-3">
@@ -203,7 +226,9 @@ export function DonateForm({ campaign }: { campaign: CampaignPublic }) {
 							value={name}
 							onChange={(e) => setName(e.target.value)}
 							placeholder={
-								visibility === "name" ? "Your name" : "Your name (optional)"
+								visibility === "name"
+									? t("forms.yourName", "Your name")
+									: t("donate.yourNameOptional", "Your name (optional)")
 							}
 							className={field}
 						/>
@@ -213,7 +238,7 @@ export function DonateForm({ campaign }: { campaign: CampaignPublic }) {
 							autoComplete="email"
 							value={email}
 							onChange={(e) => setEmail(e.target.value)}
-							placeholder="Email for your receipt"
+							placeholder={t("donate.receiptEmail", "Email for your receipt")}
 							className={field}
 						/>
 					</div>
@@ -222,13 +247,16 @@ export function DonateForm({ campaign }: { campaign: CampaignPublic }) {
 						value={message}
 						onChange={(e) => setMessage(e.target.value)}
 						rows={2}
-						placeholder="Leave a message of support (optional)"
+						placeholder={t(
+							"donate.messageOptional",
+							"Leave a message of support (optional)",
+						)}
 						className={field}
 					/>
 
 					<div>
 						<div className="text-xs font-medium text-muted-foreground mb-1.5">
-							Show me on the supporters wall as…
+							{t("donate.wallAs", "Show me on the supporters wall as…")}
 						</div>
 						<div className="flex gap-1 rounded-xl border border-border p-1">
 							<button
@@ -236,21 +264,21 @@ export function DonateForm({ campaign }: { campaign: CampaignPublic }) {
 								onClick={() => setVisibility("name")}
 								className={seg(visibility === "name")}
 							>
-								My name
+								{t("donate.wall.name", "My name")}
 							</button>
 							<button
 								type="button"
 								onClick={() => setVisibility("custom")}
 								className={seg(visibility === "custom")}
 							>
-								Custom
+								{t("donate.wall.custom", "Custom")}
 							</button>
 							<button
 								type="button"
 								onClick={() => setVisibility("anonymous")}
 								className={seg(visibility === "anonymous")}
 							>
-								Anonymous
+								{anonymous}
 							</button>
 						</div>
 						{visibility === "custom" && (
@@ -258,7 +286,10 @@ export function DonateForm({ campaign }: { campaign: CampaignPublic }) {
 								name="display-name"
 								value={displayName}
 								onChange={(e) => setDisplayName(e.target.value)}
-								placeholder="e.g. The Sok Family"
+								placeholder={t(
+									"donate.customNamePlaceholder",
+									"e.g. A family or a team name",
+								)}
 								className={`mt-2 ${field}`}
 							/>
 						)}
@@ -276,7 +307,10 @@ export function DonateForm({ campaign }: { campaign: CampaignPublic }) {
 				type="submit"
 				className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--accent)] text-accent-foreground px-8 py-4 text-base font-bold shadow-[var(--shadow-lift)] transition hover:-translate-y-0.5 active:translate-y-0"
 			>
-				♡ Donate {money(value > 0 ? value : 0, cur)}
+				♡{" "}
+				{t("donate.submit", "Donate {amount}", {
+					amount: money(value > 0 ? value : 0, cur),
+				})}
 			</button>
 			<p className="flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
 				<svg
@@ -292,7 +326,13 @@ export function DonateForm({ campaign }: { campaign: CampaignPublic }) {
 						strokeLinejoin="round"
 					/>
 				</svg>
-				Secured by Baray — KHQR, card, or mobile wallet
+				{t(
+					"donate.secured",
+					"Secured by {provider} — KHQR, card, or mobile wallet",
+					{
+						provider: t("donate.provider", "Baray"),
+					},
+				)}
 			</p>
 
 			{/* Confirm modal */}
@@ -300,13 +340,13 @@ export function DonateForm({ campaign }: { campaign: CampaignPublic }) {
 				<div className="fixed inset-0 z-50 grid place-items-center p-4">
 					<button
 						type="button"
-						aria-label="Close"
+						aria-label={t("dialog.close", "Close")}
 						className="absolute inset-0 bg-black/50 backdrop-blur-sm"
 						onClick={() => !busy && setConfirm(false)}
 					/>
 					<div className="relative w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl">
 						<h3 className="font-display text-xl font-semibold text-primary">
-							Confirm your gift
+							{t("donate.confirm.title", "Confirm your gift")}
 						</h3>
 						<div className="mt-4 rounded-2xl bg-[var(--accent)]/8 p-4 text-center">
 							<div className="font-display text-4xl font-bold text-primary tabular-nums">
@@ -314,14 +354,25 @@ export function DonateForm({ campaign }: { campaign: CampaignPublic }) {
 							</div>
 							{impact && (
 								<div className="mt-1 text-sm text-foreground/70">
-									funds {impact.label}
+									{t("donate.funds", "Funds {tier}", { tier: impact.label })}
 								</div>
 							)}
 						</div>
 						<dl className="mt-4 space-y-2 text-sm">
-							<Row label="Campaign" value={campaign.title} />
-							<Row label="Credited as" value={credited} />
-							{message && <Row label="Message" value={`“${message}”`} />}
+							<Row
+								label={t("donate.confirm.campaign", "Campaign")}
+								value={campaign.title}
+							/>
+							<Row
+								label={t("donate.confirm.creditedAs", "Credited as")}
+								value={credited}
+							/>
+							{message && (
+								<Row
+									label={t("forms.message", "Message")}
+									value={`“${message}”`}
+								/>
+							)}
 						</dl>
 						{error && (
 							<div className="mt-3 rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-2.5 text-sm text-destructive">
@@ -335,7 +386,7 @@ export function DonateForm({ campaign }: { campaign: CampaignPublic }) {
 								disabled={busy}
 								className="flex-none rounded-full border border-border px-5 py-2.5 text-sm font-semibold hover:bg-muted transition disabled:opacity-50"
 							>
-								Back
+								{t("dialog.back", "Back")}
 							</button>
 							<button
 								type="button"
@@ -343,7 +394,9 @@ export function DonateForm({ campaign }: { campaign: CampaignPublic }) {
 								disabled={busy}
 								className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[var(--accent)] text-accent-foreground px-6 py-2.5 text-sm font-semibold hover:opacity-90 transition disabled:opacity-60"
 							>
-								{busy ? "Redirecting…" : "Confirm & pay"}
+								{busy
+									? t("donate.redirecting", "Redirecting…")
+									: t("donate.confirmPay", "Confirm & pay")}
 							</button>
 						</div>
 					</div>

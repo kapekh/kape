@@ -4,6 +4,9 @@ import { useLang } from "@/lib/i18n";
 
 const KM_DIGITS = ["០", "១", "២", "៣", "៤", "៥", "៦", "៧", "៨", "៩"];
 
+// Chrome carries no `km` locale data at all (supportedLocalesOf("km") is empty
+// as of 149), so Intl answers a Khmer request in English. This calendar's own
+// Khmer names have to be spelled out; the Gregorian line below can use Intl.
 const KM_MONTHS = [
 	"មករា",
 	"កុម្ភៈ",
@@ -19,21 +22,6 @@ const KM_MONTHS = [
 	"ធ្នូ",
 ];
 
-const EN_MONTHS = [
-	"January",
-	"February",
-	"March",
-	"April",
-	"May",
-	"June",
-	"July",
-	"August",
-	"September",
-	"October",
-	"November",
-	"December",
-];
-
 const KM_WEEKDAYS = ["អា", "ច", "អ", "ព", "ព្រ", "សុ", "ស"];
 
 const toKhmer = (n: number) =>
@@ -43,7 +31,7 @@ const arrow =
 	"grid h-7 w-7 place-items-center rounded-full border border-primary-foreground/25 transition hover:bg-[var(--secondary)] hover:text-primary";
 
 export function KhmerCalendar() {
-	const { t } = useLang();
+	const { lang, t } = useLang();
 	const [today, setToday] = useState<Date | null>(null);
 	const [cursor, setCursor] = useState<{ year: number; month: number } | null>(
 		null,
@@ -67,7 +55,16 @@ export function KhmerCalendar() {
 		});
 	}
 
-	const startDow = cursor ? new Date(cursor.year, cursor.month, 1).getDay() : 0;
+	const monthStart = cursor ? new Date(cursor.year, cursor.month, 1) : null;
+	const startDow = monthStart?.getDay() ?? 0;
+	// "en" behind the site language so a language the browser has no data for
+	// lands on English rather than on whatever locale the browser prefers
+	const localMonth = monthStart
+		? new Intl.DateTimeFormat([lang, "en"], {
+				month: "long",
+				year: "numeric",
+			}).format(monthStart)
+		: "";
 	const days = cursor
 		? Array.from(
 				{ length: new Date(cursor.year, cursor.month + 1, 0).getDate() },
@@ -100,12 +97,12 @@ export function KhmerCalendar() {
 							</button>
 							<div className="text-center">
 								<div className="font-khmer text-sm font-semibold text-[var(--secondary)]">
-									ខែ{KM_MONTHS[cursor.month]} ឆ្នាំ {toKhmer(cursor.year + 543)}{" "}
-									ព.ស.
+									{t("calendar.buddhistDate", "ខែ{month} ឆ្នាំ {year} ព.ស.", {
+										month: KM_MONTHS[cursor.month],
+										year: toKhmer(cursor.year + 543),
+									})}
 								</div>
-								<div className="text-[11px] opacity-70">
-									{EN_MONTHS[cursor.month]} {cursor.year}
-								</div>
+								<div className="text-[11px] opacity-70">{localMonth}</div>
 							</div>
 							<button
 								type="button"

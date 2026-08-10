@@ -173,6 +173,8 @@ function RootComponent() {
 			{/* Child routes render here. */}
 			<Outlet />
 			{!chromeless && <Footer settings={settings} />}
+			{/* inside the provider or its labels never see an admin's edit */}
+			<DialogHost />
 		</LanguageProvider>
 	);
 }
@@ -207,7 +209,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			</head>
 			<body>
 				{children}
-				<DialogHost />
 				{/* The @tanstack/devtools-vite plugin strips this block from production builds. */}
 				<TanStackDevtools
 					config={{

@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { useT } from "#/lib/i18n";
 
 export const Route = createFileRoute("/internalsources/calendar")({
 	component: Calendar,
@@ -10,6 +11,7 @@ export const Route = createFileRoute("/internalsources/calendar")({
 type Ev = Awaited<ReturnType<typeof trpcClient.staff.events.query>>[number];
 
 function Calendar() {
+	const t = useT();
 	const [events, setEvents] = useState<Ev[]>([]);
 	const [loading, setLoading] = useState(true);
 
@@ -23,19 +25,29 @@ function Calendar() {
 	return (
 		<div>
 			<h1 className="font-display text-2xl font-semibold text-primary mb-6">
-				Calendar of Events
+				{t("internal.calendar.title", "Calendar of Events")}
 			</h1>
 			{loading ? (
-				<p className="text-sm text-muted-foreground">Loading…</p>
+				<p className="text-sm text-muted-foreground">
+					{t("common.loading", "Loading…")}
+				</p>
 			) : (
 				<div className="overflow-hidden rounded-xl border border-border bg-card">
 					<table className="w-full text-sm">
 						<thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
 							<tr>
-								<th className="px-4 py-2.5">Program</th>
-								<th className="px-4 py-2.5">Event</th>
-								<th className="px-4 py-2.5">Start</th>
-								<th className="px-4 py-2.5">End</th>
+								<th className="px-4 py-2.5">
+									{t("internal.calendar.col.program", "Program")}
+								</th>
+								<th className="px-4 py-2.5">
+									{t("internal.calendar.col.event", "Event")}
+								</th>
+								<th className="px-4 py-2.5">
+									{t("internal.calendar.col.start", "Start")}
+								</th>
+								<th className="px-4 py-2.5">
+									{t("internal.calendar.col.end", "End")}
+								</th>
 							</tr>
 						</thead>
 						<tbody>

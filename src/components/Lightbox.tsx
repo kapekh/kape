@@ -103,7 +103,10 @@ export function Lightbox({
 							aria-live="polite"
 							className="mt-1 block text-xs text-white/60"
 						>
-							{(index ?? 0) + 1} / {photos.length}
+							{t("lightbox.position", "{n} of {total}", {
+								n: (index ?? 0) + 1,
+								total: photos.length,
+							})}
 						</span>
 					</figcaption>
 				</figure>
@@ -133,7 +136,10 @@ export function PhotoGrid({
 						onClick={() => setIndex(i)}
 						aria-label={
 							p.caption ||
-							`${t("lightbox.view", "View photo")} ${i + 1} / ${photos.length}`
+							t("lightbox.viewNth", "View photo {n} of {total}", {
+								n: i + 1,
+								total: photos.length,
+							})
 						}
 						className="group relative block overflow-hidden rounded-2xl border border-border focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
 					>

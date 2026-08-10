@@ -32,10 +32,12 @@ export function PdfReader({
 	onClose: () => void;
 }) {
 	const ref = useRef<HTMLDialogElement>(null);
+	const [failed, setFailed] = useState(false);
 	const t = useT();
 	const label = t("pdf.title", "Document viewer");
 
 	useEffect(() => {
+		setFailed(false);
 		const d = ref.current;
 		if (!d) return;
 		if (doc === null) {
@@ -79,15 +81,34 @@ export function PdfReader({
 							×
 						</button>
 					</div>
-					{/* the plugin swallows Esc and never tabs back out, so the keyboard
-					    reads the document through "Open in new tab" instead */}
-					<iframe
-						key={doc.url}
-						src={doc.url}
-						title={doc.title || label}
-						tabIndex={-1}
-						className="h-full w-full rounded-xl bg-white"
-					/>
+					{failed ? (
+						<p className="grid flex-1 place-items-center rounded-xl bg-white/10 p-8 text-center text-sm">
+							{t(
+								"pdf.failed",
+								"This document could not be loaded. It may have been moved or removed.",
+							)}
+						</p>
+					) : (
+						// <object>, not <iframe>: it is the one embed that reports a missing
+						// file as an error even when the file is on another origin. React
+						// wires no onError for it, so the listener is the DOM's own.
+						// The plugin swallows Esc and never tabs back out, so the keyboard
+						// reads the document through "Open in new tab" instead.
+						<object
+							key={doc.url}
+							ref={(el) => {
+								if (!el) return;
+								const fail = () => setFailed(true);
+								el.addEventListener("error", fail);
+								return () => el.removeEventListener("error", fail);
+							}}
+							data={doc.url}
+							type="application/pdf"
+							title={doc.title || label}
+							tabIndex={-1}
+							className="h-full w-full rounded-xl bg-white"
+						/>
+					)}
 				</div>
 			)}
 		</dialog>

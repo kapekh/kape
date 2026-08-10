@@ -20,7 +20,7 @@ export function CampaignDetail({
 	campaign: CampaignWithSupporters;
 	showCrumb?: boolean;
 }) {
-	const { lang } = useLang();
+	const { lang, t } = useLang();
 	const ended = campaign.status !== "active";
 
 	return (
@@ -42,21 +42,23 @@ export function CampaignDetail({
 								href={localizedHref("/", lang)}
 								className="hover:underline"
 							>
-								Home
+								{t("nav.home", "Home")}
 							</NavLink>
 							<span aria-hidden>/</span>
 							<NavLink
 								href={localizedHref("/donate", lang)}
 								className="hover:underline"
 							>
-								Donate
+								{t("donate.title", "Donate")}
 							</NavLink>
 							<span aria-hidden>/</span>
 							<span className="truncate">{campaign.title}</span>
 						</nav>
 					)}
 					<div className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--gold)] backdrop-blur">
-						{ended ? "Campaign closed" : "Stand with us"}
+						{ended
+							? t("donate.closed.badge", "Campaign closed")
+							: t("donate.badge", "Stand with us")}
 					</div>
 					<h1 className="mt-5 max-w-3xl font-display text-4xl md:text-6xl font-semibold tracking-tight [text-shadow:0_2px_24px_rgba(0,0,0,0.3)]">
 						{campaign.title}
@@ -81,7 +83,7 @@ export function CampaignDetail({
 							campaign.recentSupporters.length > 0 && (
 								<div className="rounded-3xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
 									<h2 className="mb-4 font-display text-lg font-semibold text-primary">
-										Recent supporters
+										{t("donate.recentSupporters", "Recent supporters")}
 									</h2>
 									<SupportersWall supporters={campaign.recentSupporters} />
 								</div>
@@ -93,22 +95,25 @@ export function CampaignDetail({
 						{ended ? (
 							<div className="py-8 text-center">
 								<h2 className="font-display text-2xl font-semibold text-primary">
-									This campaign has ended
+									{t("donate.ended.title", "This campaign has ended")}
 								</h2>
 								<p className="mt-2 text-muted-foreground">
-									Thank you to everyone who gave. Explore other ways to give.
+									{t(
+										"donate.ended.body",
+										"Thank you to everyone who gave. Explore other ways to give.",
+									)}
 								</p>
 								<NavLink
 									href={localizedHref("/donate", lang)}
 									className="mt-6 inline-flex rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 transition"
 								>
-									See active campaigns
+									{t("donate.ended.cta", "See active campaigns")}
 								</NavLink>
 							</div>
 						) : (
 							<>
 								<h2 className="mb-6 font-display text-2xl font-semibold text-primary">
-									Make your gift
+									{t("donate.form.title", "Make your gift")}
 								</h2>
 								<DonateForm campaign={campaign} />
 							</>

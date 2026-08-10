@@ -52,7 +52,16 @@ vi.mock("#/integrations/tanstack-query/root-provider", () => ({
 vi.mock("@/lib/i18n", () => ({
 	useLang: () => ({
 		lang: "en",
-		t: (_key: string, fallback?: string) => fallback ?? _key,
+		// mirrors the real `t`: a counter that renders its own `{n}` is the bug
+		// this file exists to catch, so the stub has to fill slots too
+		t: (
+			_key: string,
+			fallback?: string,
+			params?: Record<string, string | number>,
+		) =>
+			(fallback ?? _key).replace(/\{(\w+)\}/g, (slot, name) =>
+				params && Object.hasOwn(params, name) ? String(params[name]) : slot,
+			),
 	}),
 }));
 
@@ -84,7 +93,7 @@ describe("announcement dismissal", () => {
 
 	it("dismisses only the notice the visitor actually saw", async () => {
 		await mount();
-		expect(screen.getByText("1 / 2")).toBeTruthy();
+		expect(screen.getByText("1 of 2")).toBeTruthy();
 
 		await act(async () => {
 			screen.getByText("Close").click();
@@ -98,7 +107,7 @@ describe("announcement dismissal", () => {
 		await act(async () => {
 			screen.getByText(/Next/).click();
 		});
-		expect(screen.getByText("2 / 2")).toBeTruthy();
+		expect(screen.getByText("2 of 2")).toBeTruthy();
 
 		await act(async () => {
 			screen.getByText("Close").click();
@@ -118,6 +127,6 @@ describe("announcement dismissal", () => {
 	it("shows nothing once every notice is dismissed", async () => {
 		localStorage.setItem(KEY, JSON.stringify([ROWS[0].id, ROWS[1].id]));
 		await mount();
-		expect(screen.queryByText(/\d \/ \d/)).toBeNull();
+		expect(screen.queryByText(/\d of \d/)).toBeNull();
 	});
 });

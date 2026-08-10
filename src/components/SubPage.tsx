@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { NavLink } from "@/components/NavLink";
-import { useLang } from "@/lib/i18n";
+import { useLang, useT } from "@/lib/i18n";
 import { localizedHref } from "@/lib/i18n-config";
 
 type Crumb = { label: string; href?: string };
@@ -179,8 +179,14 @@ export function MediaPlaceholder({
 	title: string;
 	meta?: string;
 }) {
+	const t = useT();
 	const icon = kind === "pdf" ? "📄" : kind === "video" ? "▶" : "🖼";
-	const label = kind === "pdf" ? "PDF" : kind === "video" ? "Video" : "Image";
+	const label =
+		kind === "pdf"
+			? "PDF"
+			: kind === "video"
+				? t("media.video", "Video")
+				: t("media.image", "Image");
 	return (
 		<div className="group flex items-start gap-4 rounded-2xl border border-border bg-background/40 p-4 hover:border-[var(--accent)]/50 hover:bg-[var(--accent)]/5 transition">
 			<div className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-[var(--secondary)]/15 text-xl text-[var(--secondary)]">

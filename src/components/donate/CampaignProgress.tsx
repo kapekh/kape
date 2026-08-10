@@ -1,4 +1,7 @@
 import type { CampaignPublic } from "#/server/repo/campaigns";
+import { useT } from "@/lib/i18n";
+
+import { Slot } from "./Slot";
 
 export const money = (n: number, currency: string) =>
 	new Intl.NumberFormat("en-US", {
@@ -18,6 +21,7 @@ export function CampaignProgress({
 	>;
 }) {
 	const { currency, goalAmount, raised, supporters } = campaign;
+	const t = useT();
 	const pct =
 		goalAmount && goalAmount > 0
 			? Math.min(100, Math.round((raised / goalAmount) * 100))
@@ -29,19 +33,20 @@ export function CampaignProgress({
 		return (
 			<div>
 				<div className="font-display text-2xl font-semibold text-primary">
-					Be the first to give
+					{t("donate.beFirst", "Be the first to give")}
 				</div>
 				<div className="mt-1 text-sm text-muted-foreground">
 					{goalAmount ? (
-						<>
-							Help reach the{" "}
+						<Slot
+							text={t("donate.helpReach", "Help reach the {goal} goal.")}
+							name="goal"
+						>
 							<span className="font-medium text-foreground">
 								{money(goalAmount, currency)}
-							</span>{" "}
-							goal.
-						</>
+							</span>
+						</Slot>
 					) : (
-						<>Your gift gets this campaign moving.</>
+						t("donate.getMoving", "Your gift gets this campaign moving.")
 					)}
 				</div>
 			</div>
@@ -56,17 +61,18 @@ export function CampaignProgress({
 						{money(raised, currency)}
 					</div>
 					<div className="text-sm text-muted-foreground">
-						raised
 						{goalAmount ? (
-							<>
-								{" "}
-								of{" "}
+							<Slot
+								text={t("donate.raisedOfGoal", "raised of {goal} goal")}
+								name="goal"
+							>
 								<span className="font-medium text-foreground">
 									{money(goalAmount, currency)}
-								</span>{" "}
-								goal
-							</>
-						) : null}
+								</span>
+							</Slot>
+						) : (
+							t("donate.raised", "raised")
+						)}
 					</div>
 				</div>
 				<div className="text-right">
@@ -74,7 +80,10 @@ export function CampaignProgress({
 						{supporters.toLocaleString()}
 					</div>
 					<div className="text-sm text-muted-foreground">
-						{supporters === 1 ? "supporter" : "supporters"}
+						{t(
+							supporters === 1 ? "donate.supporter" : "donate.supporters",
+							supporters === 1 ? "supporter" : "supporters",
+						)}
 					</div>
 				</div>
 			</div>
@@ -87,7 +96,7 @@ export function CampaignProgress({
 						/>
 					</div>
 					<div className="mt-1.5 text-xs font-semibold text-[var(--accent)]">
-						{pct}% funded
+						{t("donate.pctFunded", "{pct}% funded", { pct })}
 					</div>
 				</div>
 			)}

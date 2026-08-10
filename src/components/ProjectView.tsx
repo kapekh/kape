@@ -1,6 +1,7 @@
 import type { ResolvedProject } from "#/server/repo/projects";
 import { RichBody } from "@/components/RichBody";
 import { Section, SubPage } from "@/components/SubPage";
+import { useT } from "@/lib/i18n";
 
 function formatDate(iso: string) {
 	const d = new Date(`${iso}T00:00:00Z`);
@@ -31,11 +32,18 @@ export function ProjectView({
 	project: ResolvedProject | null;
 	section: string;
 }) {
+	const t = useT();
 	if (!project) {
 		return (
-			<SubPage section={section} title="Project not found">
+			<SubPage
+				section={section}
+				title={t("project.notfound.title", "Project not found")}
+			>
 				<p className="text-muted-foreground">
-					This project doesn't exist or was moved.
+					{t(
+						"project.notfound.body",
+						"This project doesn't exist or was moved.",
+					)}
 				</p>
 			</SubPage>
 		);
@@ -46,13 +54,19 @@ export function ProjectView({
 			section={section}
 			title={project.name}
 			lead={project.summary || undefined}
-			badge={project.status === "current" ? "Current project" : "Past project"}
+			badge={
+				project.status === "current"
+					? t("project.current", "Current project")
+					: t("project.past", "Past project")
+			}
 		>
 			{(project.donors.length > 0 || hasDates) && (
 				<div className="mb-8 space-y-4 rounded-2xl border border-border bg-muted/40 px-4 py-3">
 					{project.donors.length > 0 && (
 						<div className="flex flex-wrap items-center gap-3 text-sm">
-							<span className="font-semibold text-primary">Supported by</span>
+							<span className="font-semibold text-primary">
+								{t("project.donors", "Supported by")}
+							</span>
 							{project.donors.map((d) =>
 								d.logoUrl ? (
 									<span
@@ -80,10 +94,16 @@ export function ProjectView({
 					{hasDates && (
 						<div className="grid gap-3 text-sm sm:grid-cols-2">
 							{project.startDate && (
-								<DateBox label="Start date" iso={project.startDate} />
+								<DateBox
+									label={t("project.startDate", "Start date")}
+									iso={project.startDate}
+								/>
 							)}
 							{project.endDate && (
-								<DateBox label="End date" iso={project.endDate} />
+								<DateBox
+									label={t("project.endDate", "End date")}
+									iso={project.endDate}
+								/>
 							)}
 						</div>
 					)}
@@ -91,7 +111,7 @@ export function ProjectView({
 			)}
 			<RichBody className="prose-body" html={project.bodyHtml} />
 			{project.targetAreas.length > 0 && (
-				<Section title="Target areas">
+				<Section title={t("project.targetAreas", "Target areas")}>
 					<div className="flex flex-wrap gap-2">
 						{project.targetAreas.map((area) => (
 							<span
@@ -105,7 +125,7 @@ export function ProjectView({
 				</Section>
 			)}
 			{project.snapshots.length > 0 && (
-				<Section title="Snapshots">
+				<Section title={t("project.snapshots", "Snapshots")}>
 					<div className="grid grid-cols-2 gap-3 md:grid-cols-4">
 						{project.snapshots.map((s) => (
 							<div

@@ -18,6 +18,8 @@ type FormData = NonNullable<
 const field =
 	"w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm transition focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30";
 
+const maxAttachment = `${Math.round(ATTACHMENT_MAX_BYTES / 1024 ** 2)} MB`;
+
 /** Renders an admin-defined form (by slug) on the public site: fields + submit. */
 export function FormRenderer({ slug }: { slug: string }) {
 	const { lang } = useLang();
@@ -46,7 +48,7 @@ export function FormRenderer({ slug }: { slug: string }) {
 	if (form === undefined)
 		return (
 			<div className="rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground">
-				Loading…
+				{t("common.loading", "Loading…")}
 			</div>
 		);
 	if (!form) return null;
@@ -54,8 +56,10 @@ export function FormRenderer({ slug }: { slug: string }) {
 	if (isFormClosed(form.deadline)) {
 		return (
 			<div className="rounded-2xl border border-[var(--gold)]/40 bg-[var(--gold)]/5 p-6 text-sm text-foreground/80">
-				This form is now closed and no longer accepting responses. Thank you for
-				your interest.
+				{t(
+					"forms.closed",
+					"This form is now closed and no longer accepting responses. Thank you for your interest.",
+				)}
 			</div>
 		);
 	}
@@ -84,7 +88,8 @@ export function FormRenderer({ slug }: { slug: string }) {
 	if (status === "sent") {
 		return (
 			<div className="rounded-2xl border border-[var(--palm)]/40 bg-[var(--palm)]/5 p-6 text-sm">
-				{form.successMessage || "Thank you — your response has been recorded."}
+				{form.successMessage ||
+					t("forms.sent", "Thank you — your response has been recorded.")}
 			</div>
 		);
 	}
@@ -94,7 +99,12 @@ export function FormRenderer({ slug }: { slug: string }) {
 		// Friendly client-side guard before uploading megabytes.
 		for (const [, file] of Object.entries(files)) {
 			if (file && file.size > ATTACHMENT_MAX_BYTES) {
-				setError(`“${file.name}” is too large (max 10 MB).`);
+				setError(
+					t("forms.fileTooLarge", "“{name}” is too large (max {max}).", {
+						name: file.name,
+						max: maxAttachment,
+					}),
+				);
 				setStatus("error");
 				return;
 			}
@@ -122,11 +132,19 @@ export function FormRenderer({ slug }: { slug: string }) {
 			if (res.ok && d.ok) {
 				setStatus("sent");
 			} else {
-				setError(d.error || "Something went wrong. Please try again.");
+				setError(
+					d.error ||
+						t("error.generic", "Something went wrong. Please try again."),
+				);
 				setStatus("error");
 			}
 		} catch {
-			setError("Network error. Please check your connection and try again.");
+			setError(
+				t(
+					"error.networkConnection",
+					"Network error. Please check your connection and try again.",
+				),
+			);
 			setStatus("error");
 		}
 	};
@@ -227,7 +245,10 @@ export function FormRenderer({ slug }: { slug: string }) {
 							className={`${field} cursor-pointer file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-[var(--accent)]/10 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-[var(--accent)]`}
 						/>
 						<p className="mt-1 text-xs text-muted-foreground">
-							Up to 10 MB · {ATTACHMENT_EXTS.join(", ")}
+							{t("forms.fileHint", "Up to {max} · {types}", {
+								max: maxAttachment,
+								types: ATTACHMENT_EXTS.join(", "),
+							})}
 						</p>
 					</>
 				) : f.type === "richtext" ? (
@@ -256,7 +277,9 @@ export function FormRenderer({ slug }: { slug: string }) {
 						onChange={(e) => set(f.key, e.target.value)}
 						className={field}
 					>
-						<option value="">{f.placeholder || "— Select —"}</option>
+						<option value="">
+							{f.placeholder || t("forms.select", "— Select —")}
+						</option>
 						{(f.options ?? []).map((o) => (
 							<option key={o} value={o}>
 								{o}
@@ -359,7 +382,7 @@ export function FormRenderer({ slug }: { slug: string }) {
 				</button>
 				{deadlineLabel && (
 					<span className="text-xs text-muted-foreground">
-						Closes {deadlineLabel}
+						{t("forms.closesOn", "Closes {date}", { date: deadlineLabel })}
 					</span>
 				)}
 			</div>

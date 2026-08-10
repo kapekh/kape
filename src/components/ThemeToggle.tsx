@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useT } from "@/lib/i18n";
 import type { SiteSettings } from "@/lib/site-identity";
 import { darkModeAvailable } from "@/lib/site-theme";
 
@@ -16,6 +17,7 @@ export function ThemeToggle({
 	className?: string;
 }) {
 	const [dark, setDark] = useState(false);
+	const t = useT();
 	useEffect(() => {
 		const root = document.documentElement;
 		setDark(
@@ -43,8 +45,12 @@ export function ThemeToggle({
 		<button
 			type="button"
 			onClick={toggle}
-			aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-			title={dark ? "Light mode" : "Dark mode"}
+			aria-label={
+				dark
+					? t("theme.toLight", "Switch to light mode")
+					: t("theme.toDark", "Switch to dark mode")
+			}
+			title={dark ? t("theme.light", "Light mode") : t("theme.dark", "Dark mode")}
 			className={`grid place-items-center rounded-full transition hover:text-[var(--gold)] ${className}`}
 		>
 			{dark ? (

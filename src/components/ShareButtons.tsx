@@ -26,10 +26,13 @@ export function ShareButtons({ title }: { title: string }) {
 	const text = encodeURIComponent(title);
 	const links = [
 		{
-			label: "Facebook",
+			label: t("share.facebook", "Facebook"),
 			href: `https://www.facebook.com/sharer/sharer.php?u=${u}`,
 		},
-		{ label: "Telegram", href: `https://t.me/share/url?url=${u}&text=${text}` },
+		{
+			label: t("share.telegram", "Telegram"),
+			href: `https://t.me/share/url?url=${u}&text=${text}`,
+		},
 	];
 
 	return (
@@ -39,7 +42,7 @@ export function ShareButtons({ title }: { title: string }) {
 			</span>
 			{links.map((l) => (
 				<a
-					key={l.label}
+					key={l.href}
 					href={l.href}
 					target="_blank"
 					rel="noreferrer"

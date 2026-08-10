@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { NavNode } from "#/server/repo/nav";
-import { LanguageSwitcher, useLang } from "@/lib/i18n";
+import { LanguageSwitcher, useLang, useT } from "@/lib/i18n";
 import { localizedHref } from "@/lib/i18n-config";
 import { siteLogo, siteName, siteShortName } from "@/lib/site-identity";
 import { NavLink } from "./NavLink";
@@ -132,6 +132,7 @@ function MobileNode({
 	onNavigate: () => void;
 }) {
 	const [open, setOpen] = useState(false);
+	const t = useT();
 	const hasChildren = node.children.length > 0;
 	const href = withLang(node.href, lang);
 
@@ -198,7 +199,7 @@ function MobileNode({
 							onClick={onNavigate}
 							className="block rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-[var(--accent)] transition"
 						>
-							Overview
+							{t("nav.overview", "Overview")}
 						</NavLink>
 					)}
 					{node.children.map((c) => (
@@ -500,7 +501,7 @@ export function Header({
 							<button
 								type="button"
 								onClick={() => setMobileOpen(true)}
-								aria-label="Open menu"
+								aria-label={t("nav.openMenu", "Open menu")}
 								className="lg:hidden grid h-10 w-10 place-items-center rounded-full border border-border text-primary hover:bg-muted transition"
 							>
 								<svg
@@ -601,7 +602,7 @@ export function Header({
 				<div className="lg:hidden fixed inset-0 z-50 h-[100dvh]">
 					<button
 						type="button"
-						aria-label="Close menu"
+						aria-label={t("nav.closeMenu", "Close menu")}
 						className="absolute inset-0 bg-black/40 backdrop-blur-sm"
 						onClick={() => setMobileOpen(false)}
 					/>
@@ -613,7 +614,7 @@ export function Header({
 							<button
 								type="button"
 								onClick={() => setMobileOpen(false)}
-								aria-label="Close menu"
+								aria-label={t("nav.closeMenu", "Close menu")}
 								className="grid h-9 w-9 place-items-center rounded-full border border-border text-foreground/70 hover:bg-muted transition"
 							>
 								<svg

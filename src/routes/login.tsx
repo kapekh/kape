@@ -1,21 +1,47 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
+import { useT } from "#/lib/i18n";
+import { detectLang } from "#/lib/i18n-config";
+import { safeRedirect } from "#/lib/safe-redirect";
 import { adminTitle, siteInitial } from "#/lib/site-identity";
 
 export const Route = createFileRoute("/login")({
-	loader: ({ context }) =>
-		context.queryClient.ensureQueryData(
-			context.trpc.site.settings.queryOptions(),
-		),
-	head: ({ loaderData }) => ({
-		meta: [{ title: `Sign in — ${adminTitle(loaderData ?? {})}` }],
-	}),
+	validateSearch: (search: Record<string, unknown>): { redirect?: string } => {
+		const redirect = safeRedirect(search.redirect);
+		return redirect ? { redirect } : {};
+	},
+	// The dictionary is loaded here as well as in the root because `head` runs
+	// outside React and cannot reach the provider. Same query key as the root's,
+	// so it is a cache hit rather than a second round trip.
+	loader: async ({ context, location }) => {
+		const [settings, boot] = await Promise.all([
+			context.queryClient.ensureQueryData(
+				context.trpc.site.settings.queryOptions(),
+			),
+			context.queryClient.ensureQueryData(
+				context.trpc.i18n.bootstrap.queryOptions({
+					lang: detectLang(location.pathname),
+				}),
+			),
+		]);
+		return { settings, strings: boot.strings };
+	},
+	head: ({ loaderData }) => {
+		const site = adminTitle(loaderData?.settings ?? {});
+		// one slot, not a concatenation: Khmer puts the site name elsewhere
+		const title = (
+			loaderData?.strings?.["login.metaTitle"] ?? "Sign in — {site}"
+		).replace("{site}", site);
+		return { meta: [{ title }] };
+	},
 	component: LoginPage,
 });
 
 function LoginPage() {
-	const settings = Route.useLoaderData();
+	const { settings } = Route.useLoaderData();
+	const { redirect } = Route.useSearch();
+	const t = useT();
 	const navigate = useNavigate();
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
@@ -34,12 +60,20 @@ function LoginPage() {
 			});
 			if (res.ok) {
 				const { user } = (await res.json()) as { user: { role: string } };
-				navigate({ to: user.role === "admin" ? "/admin" : "/internalsources" });
+				const home = user.role === "admin" ? "/admin" : "/internalsources";
+				navigate({ to: redirect ?? home });
+			} else if (res.status === 401) {
+				setErr(t("login.invalid", "Invalid email or password."));
 			} else {
-				setErr("Invalid email or password.");
+				const body = (await res.json().catch(() => null)) as {
+					error?: string;
+				} | null;
+				setErr(
+					body?.error || t("login.failed", "Sign-in failed. Please try again."),
+				);
 			}
 		} catch {
-			setErr("Network error. Please try again.");
+			setErr(t("error.network", "Network error. Please try again."));
 		} finally {
 			setBusy(false);
 		}
@@ -61,7 +95,7 @@ function LoginPage() {
 						{adminTitle(settings)}
 					</div>
 					<p className="text-sm text-muted-foreground mt-0.5">
-						Sign in to manage the website.
+						{t("login.subtitle", "Sign in to manage the website.")}
 					</p>
 				</div>
 				<form
@@ -69,29 +103,35 @@ function LoginPage() {
 					className="rounded-2xl border border-border bg-card p-7 shadow-[var(--shadow-soft)]"
 				>
 					{err && (
-						<div className="mb-4 rounded-lg bg-destructive/10 text-destructive text-sm px-3 py-2">
+						<div
+							id="login-error"
+							role="alert"
+							className="mb-4 rounded-lg bg-destructive/10 text-destructive text-sm px-3 py-2"
+						>
 							{err}
 						</div>
 					)}
 					<div className="space-y-4">
 						<div>
 							<label htmlFor="email" className={label}>
-								Email
+								{t("forms.email", "Email")}
 							</label>
 							<input
 								id="email"
 								className={input}
 								type="email"
 								autoComplete="username"
-								placeholder="you@example.org"
+								placeholder={t("forms.emailPlaceholder", "you@email.org")}
 								value={email}
 								onChange={(e) => setEmail(e.target.value)}
+								aria-invalid={err ? true : undefined}
+								aria-describedby={err ? "login-error" : undefined}
 								required
 							/>
 						</div>
 						<div>
 							<label htmlFor="password" className={label}>
-								Password
+								{t("forms.password", "Password")}
 							</label>
 							<input
 								id="password"
@@ -101,6 +141,8 @@ function LoginPage() {
 								placeholder="••••••••"
 								value={password}
 								onChange={(e) => setPassword(e.target.value)}
+								aria-invalid={err ? true : undefined}
+								aria-describedby={err ? "login-error" : undefined}
 								required
 							/>
 						</div>
@@ -110,12 +152,14 @@ function LoginPage() {
 						disabled={busy}
 						className="mt-6 w-full rounded-full bg-primary text-primary-foreground py-2.5 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition"
 					>
-						{busy ? "Signing in…" : "Sign in"}
+						{busy
+							? t("login.busy", "Signing in…")
+							: t("login.submit", "Sign in")}
 					</button>
 				</form>
 				<p className="mt-5 text-center text-xs text-muted-foreground">
 					<a href="/" className="hover:text-foreground transition">
-						← Back to the site
+						← {t("nav.backSite", "Back to the site")}
 					</a>
 				</p>
 			</div>

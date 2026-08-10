@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { usePdfReader } from "#/components/PdfReader";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { useT } from "#/lib/i18n";
 
 export const Route = createFileRoute("/internalsources/documents")({
 	component: Documents,
@@ -11,6 +12,7 @@ export const Route = createFileRoute("/internalsources/documents")({
 type Doc = Awaited<ReturnType<typeof trpcClient.staff.documents.query>>[number];
 
 function Documents() {
+	const t = useT();
 	const [docs, setDocs] = useState<Doc[]>([]);
 	const [loading, setLoading] = useState(true);
 	const { openPdf, reader } = usePdfReader();
@@ -31,12 +33,16 @@ function Documents() {
 	return (
 		<div>
 			<h1 className="font-display text-2xl font-semibold text-primary mb-6">
-				Internal Documents
+				{t("internal.documents.title", "Internal Documents")}
 			</h1>
 			{loading ? (
-				<p className="text-sm text-muted-foreground">Loading…</p>
+				<p className="text-sm text-muted-foreground">
+					{t("common.loading", "Loading…")}
+				</p>
 			) : docs.length === 0 ? (
-				<p className="text-sm text-muted-foreground">No documents.</p>
+				<p className="text-sm text-muted-foreground">
+					{t("internal.documents.empty", "No documents.")}
+				</p>
 			) : (
 				<div className="space-y-6">
 					{Object.entries(byCategory).map(([cat, list]) => (
@@ -62,11 +68,11 @@ function Documents() {
 												}
 												className="text-[var(--accent)] font-semibold hover:underline"
 											>
-												Open
+												{t("internal.documents.open", "Open")}
 											</a>
 										) : (
 											<span className="text-xs text-muted-foreground">
-												no file
+												{t("internal.documents.nofile", "no file")}
 											</span>
 										)}
 									</li>

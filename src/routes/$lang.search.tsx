@@ -14,6 +14,31 @@ import { searchSite } from "@/server/repo/search";
  * page is linkable, shareable and back-button-able; every result href is
  * language-prefixed for the language being read.
  */
+/**
+ * A result's kind and a detail page's breadcrumb are the same word, so they read
+ * from one key. The search index still labels rows `search.kind.<prefix>`; those
+ * keys were never seeded, and seeding them too would let one word drift into two
+ * translations. Mapped here rather than in the index, which another slice owns.
+ *
+ * Spelled out rather than rewritten with a prefix swap so the dictionary's
+ * "nothing seeded that nothing renders" check can find each key quoted.
+ */
+const COLLECTION_KEY_BY_LABEL_KEY: Record<string, string> = {
+	"search.kind.careers": "collection.careers",
+	"search.kind.events": "collection.events",
+	"search.kind.galleries": "collection.galleries",
+	"search.kind.news": "collection.news",
+	"search.kind.page": "collection.page",
+	"search.kind.projects": "collection.projects",
+	"search.kind.publications": "collection.publications",
+	"search.kind.stories": "collection.stories",
+	"search.kind.team": "collection.team",
+	"search.kind.videos": "collection.videos",
+};
+
+const collectionKey = (labelKey: string) =>
+	COLLECTION_KEY_BY_LABEL_KEY[labelKey] ?? labelKey;
+
 const runSearch = createServerFn({ method: "GET" })
 	.validator((input: { q: string; lang: string }) => ({
 		q: String(input.q ?? ""),
@@ -80,10 +105,9 @@ function SearchPage() {
 						defaultValue={query}
 						// biome-ignore lint/a11y/noAutofocus: the whole page is this one field
 						autoFocus
-						placeholder={t(
-							"search.placeholder",
-							`Search ${siteShortName(settings)}`,
-						)}
+						placeholder={t("search.placeholder", "Search {site}", {
+							site: siteShortName(settings),
+						})}
 						className="min-w-0 flex-1 rounded-full border border-border bg-card px-5 py-3 text-base shadow-[var(--shadow-soft)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
 					/>
 					<button
@@ -104,21 +128,21 @@ function SearchPage() {
 				</p>
 			) : results.length === 0 ? (
 				<p className="mt-10 text-muted-foreground">
-					{t("search.none", "Nothing matched")} “{query}”.
+					{t("search.noneFor", "Nothing matched “{query}”.", { query })}
 				</p>
 			) : (
 				<>
 					<p className="mt-10 text-sm text-muted-foreground">
-						{total} {t("search.results", "results")}
+						{t("search.summary", "{total} results", { total })}
 						{total > limit
-							? ` — ${t("search.showingFirst", "showing the first")} ${limit}`
+							? ` — ${t("search.showingFirstN", "showing the first {limit}", { limit })}`
 							: ""}
 					</p>
 					<ul className="mt-4 divide-y divide-border">
 						{results.map((r) => (
 							<li key={`${r.kind}-${r.id}`} className="py-5">
 								<div className="t-eyebrow text-[var(--accent)]">
-									{t(r.labelKey, r.label)}
+									{t(collectionKey(r.labelKey), r.label)}
 								</div>
 								<h2 className="mt-1 t-subsection">
 									<NavLink
@@ -128,7 +152,9 @@ function SearchPage() {
 										{r.title}
 									</NavLink>
 								</h2>
-								{r.snippet && (
+								{/* the index snippets the best-scoring field, which for most
+								    records is the title itself */}
+								{r.snippet && r.snippet !== r.title && (
 									<p className="mt-1 text-sm text-foreground/80">{r.snippet}</p>
 								)}
 							</li>

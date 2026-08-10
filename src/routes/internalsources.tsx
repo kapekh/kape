@@ -7,6 +7,7 @@ import {
 import { useEffect, useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { useT } from "#/lib/i18n";
 import { staffPortalTitle } from "#/lib/site-identity";
 
 export const Route = createFileRoute("/internalsources")({
@@ -22,6 +23,7 @@ export const Route = createFileRoute("/internalsources")({
 
 function Portal() {
 	const settings = Route.useLoaderData();
+	const t = useT();
 	const navigate = useNavigate();
 	const [ready, setReady] = useState(false);
 	const [name, setName] = useState("");
@@ -53,7 +55,7 @@ function Portal() {
 	if (!ready)
 		return (
 			<div className="min-h-screen grid place-items-center text-muted-foreground">
-				Checking access…
+				{t("internal.checking", "Checking access…")}
 			</div>
 		);
 
@@ -70,7 +72,7 @@ function Portal() {
 					<div className="flex items-center gap-4 text-sm">
 						<span className="opacity-80">{name}</span>
 						<button type="button" onClick={logout} className="hover:underline">
-							Log out
+							{t("internal.logout", "Log out")}
 						</button>
 					</div>
 				</div>
@@ -81,28 +83,28 @@ function Portal() {
 						className={tab}
 						activeProps={{ className: tabActive }}
 					>
-						News Feed
+						{t("internal.news", "News Feed")}
 					</Link>
 					<Link
 						to="/internalsources/calendar"
 						className={tab}
 						activeProps={{ className: tabActive }}
 					>
-						Calendar
+						{t("internal.calendar", "Calendar")}
 					</Link>
 					<Link
 						to="/internalsources/documents"
 						className={tab}
 						activeProps={{ className: tabActive }}
 					>
-						Documents
+						{t("internal.documents", "Documents")}
 					</Link>
 					<Link
 						to="/internalsources/directory"
 						className={tab}
 						activeProps={{ className: tabActive }}
 					>
-						Directory
+						{t("internal.directory", "Directory")}
 					</Link>
 				</nav>
 			</header>

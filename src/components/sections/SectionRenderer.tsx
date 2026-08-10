@@ -246,12 +246,16 @@ type HeroProps = Common & {
 };
 
 function Slideshow({ slides }: { slides: HeroSlide[] }) {
+	const t = useT();
 	const [i, setI] = useState(0);
 	const [paused, setPaused] = useState(false);
 	useEffect(() => {
 		if (paused || slides.length < 2) return;
-		const t = setInterval(() => setI((p) => (p + 1) % slides.length), 4500);
-		return () => clearInterval(t);
+		const rotate = setInterval(
+			() => setI((p) => (p + 1) % slides.length),
+			4500,
+		);
+		return () => clearInterval(rotate);
 	}, [paused, slides.length]);
 	if (!slides.length) return null;
 	return (
@@ -303,7 +307,7 @@ function Slideshow({ slides }: { slides: HeroSlide[] }) {
 							key={idx}
 							type="button"
 							onClick={() => setI(idx)}
-							aria-label={`Slide ${idx + 1}`}
+							aria-label={t("hero.slide", "Slide {n}", { n: idx + 1 })}
 							className="relative h-1 flex-1 overflow-hidden rounded-full bg-white/30"
 						>
 							<span
@@ -321,6 +325,7 @@ function Slideshow({ slides }: { slides: HeroSlide[] }) {
 
 function Hero(p: HeroProps) {
 	const L = useL();
+	const t = useT();
 	const layout = p.layout ?? "banner";
 	const slides: HeroSlide[] = Array.isArray(p.slides) ? p.slides : [];
 	const stats: HeroStat[] = Array.isArray(p.stats) ? p.stats : [];
@@ -334,7 +339,7 @@ function Hero(p: HeroProps) {
 					href={L(p.ctaHref)}
 					className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-6 py-3 text-sm font-semibold shadow-[var(--shadow-lift)] hover:-translate-y-0.5 transition"
 				>
-					{p.ctaLabel || "Learn more"}
+					{p.ctaLabel || t("cta.learnMore", "Learn more")}
 				</NavLink>
 			)}
 			{p.cta2Href && (
@@ -342,7 +347,7 @@ function Hero(p: HeroProps) {
 					href={L(p.cta2Href)}
 					className="inline-flex items-center gap-2 rounded-full border border-primary/30 px-6 py-3 text-sm font-semibold text-primary hover:bg-primary hover:text-primary-foreground transition"
 				>
-					{p.cta2Label || "Learn more"}
+					{p.cta2Label || t("cta.learnMore", "Learn more")}
 				</NavLink>
 			)}
 		</div>
@@ -481,6 +486,7 @@ type CardsProps = Common & { center?: string; items?: CardItem[] };
 
 function Cards(p: CardsProps) {
 	const L = useL();
+	const t = useT();
 	const cols =
 		p.layout === "cols-2"
 			? "md:grid-cols-2"
@@ -494,7 +500,7 @@ function Cards(p: CardsProps) {
 		const btns: CardButton[] = Array.isArray(it.buttons)
 			? it.buttons
 			: it.href
-				? [{ label: "Learn more", href: it.href }]
+				? [{ label: t("cta.learnMore", "Learn more"), href: it.href }]
 				: [];
 		const valid = btns.filter((b) => b?.href);
 		if (!valid.length) return null;
@@ -507,7 +513,7 @@ function Cards(p: CardsProps) {
 						href={L(b.href)}
 						className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition ${light ? "bg-white/15 text-white hover:bg-white/25" : "bg-[var(--accent)]/10 text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white"}`}
 					>
-						{b.label || "Learn more"}
+						{b.label || t("cta.learnMore", "Learn more")}
 					</NavLink>
 				))}
 			</div>
@@ -753,6 +759,7 @@ type CtaProps = Common & {
 
 function Cta(p: CtaProps) {
 	const L = useL();
+	const t = useT();
 	return (
 		<section
 			className="relative overflow-hidden py-24"
@@ -780,7 +787,7 @@ function Cta(p: CtaProps) {
 							href={L(p.ctaHref)}
 							className="inline-flex items-center gap-2 rounded-full bg-warm-foreground text-primary-foreground px-8 py-4 text-base font-semibold shadow-[var(--shadow-lift)] hover:-translate-y-1 transition"
 						>
-							{p.ctaLabel || "Donate now"}
+							{p.ctaLabel || t("cta.donateNow", "Donate now")}
 						</NavLink>
 					)}
 					{p.cta2Href && (
@@ -788,7 +795,7 @@ function Cta(p: CtaProps) {
 							href={L(p.cta2Href)}
 							className="inline-flex items-center gap-2 rounded-full border-2 border-warm-foreground/40 text-warm-foreground px-8 py-4 text-base font-semibold hover:bg-warm-foreground hover:text-primary-foreground transition"
 						>
-							{p.cta2Label || "Learn more"}
+							{p.cta2Label || t("cta.learnMore", "Learn more")}
 						</NavLink>
 					)}
 				</div>
@@ -806,6 +813,7 @@ type ResourceItem = {
 type ResourcesProps = Common & { items?: ResourceItem[] };
 
 function Resources(p: ResourcesProps) {
+	const t = useT();
 	const items: ResourceItem[] = Array.isArray(p.items) ? p.items : [];
 	const cols = p.layout === "cols-2" ? "md:grid-cols-2" : "";
 	const { openPdf, reader } = usePdfReader();
@@ -814,7 +822,7 @@ function Resources(p: ResourcesProps) {
 			<Container>
 				<Heading eyebrow={p.eyebrow} title={p.title} />
 				{items.length === 0 ? (
-					<Empty>No resources published yet.</Empty>
+					<Empty>{t("empty.resources", "No resources published yet.")}</Empty>
 				) : (
 					<div className={`grid grid-cols-1 ${cols} gap-4`}>
 						{items.map((it, n) => {
@@ -827,7 +835,7 @@ function Resources(p: ResourcesProps) {
 									</div>
 									<div className="min-w-0 flex-1">
 										<div className="text-[10px] uppercase tracking-[0.18em] text-[var(--accent)] font-semibold">
-											{it.kind || "file"}
+											{it.kind || t("resources.kindDefault", "file")}
 										</div>
 										<div className="mt-0.5 font-medium text-foreground group-hover:text-[var(--accent)] transition">
 											{it.title}
@@ -985,13 +993,14 @@ function Pills(p: PillsProps) {
 type FormProps = Common & {
 	formSlug?: string;
 	body?: string;
-	submitLabel?: string;
 };
 
 function FormSection(p: FormProps) {
-	const t = useT();
+	// Nothing to post to: no built form and not the contact layout. Rendering the
+	// fields anyway gave a volunteer or an applicant a form that discarded them.
+	if (!p.formSlug && p.layout !== "contact") return null;
 	// A built form carries its own title/intro/submit, so the section's heading
-	// and intro are only used for the quick (contact/subscribe/signup) layouts.
+	// and intro are only used for the quick contact layout.
 	const builtForm = !!p.formSlug;
 	return (
 		<section className={`${PAD} ${toneBg(p.tone)}`}>
@@ -1003,39 +1012,7 @@ function FormSection(p: FormProps) {
 					</p>
 				)}
 				<div className="rounded-3xl border border-border bg-card p-6 md:p-8 shadow-sm">
-					{p.formSlug ? (
-						<FormRenderer slug={p.formSlug} />
-					) : p.layout === "contact" ? (
-						<ContactForm />
-					) : (
-						<form className="space-y-3" onSubmit={(e) => e.preventDefault()}>
-							{p.layout === "signup" && (
-								<input
-									className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
-									placeholder="Your name"
-								/>
-							)}
-							<input
-								type="email"
-								className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
-								placeholder="you@email.org"
-								required
-							/>
-							{p.layout === "signup" && (
-								<textarea
-									className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
-									rows={4}
-									placeholder="Message"
-								/>
-							)}
-							<button
-								type="submit"
-								className="w-full rounded-full bg-primary text-primary-foreground px-6 py-3 text-sm font-semibold hover:opacity-90 transition"
-							>
-								{p.submitLabel || t("forms.submit", "Submit")}
-							</button>
-						</form>
-					)}
+					{p.formSlug ? <FormRenderer slug={p.formSlug} /> : <ContactForm />}
 				</div>
 			</Container>
 		</section>
@@ -1140,7 +1117,7 @@ function PostList(p: PostListProps) {
 					)}
 				</div>
 				{posts.length === 0 ? (
-					<Empty>Nothing published here yet.</Empty>
+					<Empty>{t("empty.posts", "Nothing published here yet.")}</Empty>
 				) : layout === "list" ? (
 					<ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
 						{posts.map((post) => (
@@ -1165,13 +1142,13 @@ function PostList(p: PostListProps) {
 							<thead className="bg-muted/60 text-left">
 								<tr>
 									<th className="px-4 py-3 font-semibold text-foreground/70">
-										Position
+										{t("jobs.col.position", "Position")}
 									</th>
 									<th className="px-4 py-3 font-semibold text-foreground/70">
-										Location
+										{t("jobs.col.location", "Location")}
 									</th>
 									<th className="px-4 py-3 font-semibold text-foreground/70">
-										Deadline
+										{t("jobs.col.deadline", "Deadline")}
 									</th>
 									<th className="px-4 py-3" />
 								</tr>
@@ -1194,7 +1171,7 @@ function PostList(p: PostListProps) {
 													href={link(post.slug)}
 													className="font-semibold text-[var(--accent)] hover:underline"
 												>
-													Apply →
+													{t("jobs.apply", "Apply")} →
 												</NavLink>
 											)}
 										</td>
@@ -1279,7 +1256,7 @@ function PostList(p: PostListProps) {
 	);
 }
 
-function youtubeId(url: string): string | null {
+export function youtubeId(url: string): string | null {
 	const m = String(url || "").match(
 		/(?:youtu\.be\/|v=|\/embed\/|\/shorts\/)([\w-]{6,})/,
 	);
@@ -1311,7 +1288,7 @@ function VideoGrid(p: VideoGridProps) {
 					)}
 				</div>
 				{videos.length === 0 ? (
-					<Empty>No videos yet.</Empty>
+					<Empty>{t("empty.videos", "No videos yet.")}</Empty>
 				) : (
 					<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 						{videos.map((v) => {
@@ -1357,13 +1334,14 @@ type AlbumGridProps = Common & { data?: SourceRow["albums"][] };
 
 function AlbumGrid(p: AlbumGridProps) {
 	const L = useL();
+	const t = useT();
 	const albums: SourceRow["albums"][] = Array.isArray(p.data) ? p.data : [];
 	return (
 		<section className={`${PAD} ${toneBg(p.tone)}`}>
 			<Container>
 				<Heading eyebrow={p.eyebrow} title={p.title} />
 				{albums.length === 0 ? (
-					<Empty>No photo albums yet.</Empty>
+					<Empty>{t("empty.albums", "No photo albums yet.")}</Empty>
 				) : (
 					<div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
 						{albums.map((a) => (
@@ -1382,7 +1360,7 @@ function AlbumGrid(p: AlbumGridProps) {
 								<div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-primary/90 via-primary/20 to-transparent p-5 text-primary-foreground">
 									<div className="t-card-title">{a.title}</div>
 									<div className="mt-0.5 t-meta opacity-85">
-										{a.count} photos
+										{t("albums.count", "{n} photos", { n: a.count })}
 									</div>
 								</div>
 							</NavLink>
@@ -1397,6 +1375,7 @@ function AlbumGrid(p: AlbumGridProps) {
 type PublicationListProps = Common & { data?: SourceRow["publications"][] };
 
 function PublicationList(p: PublicationListProps) {
+	const t = useT();
 	const items: SourceRow["publications"][] = Array.isArray(p.data)
 		? p.data
 		: [];
@@ -1414,7 +1393,9 @@ function PublicationList(p: PublicationListProps) {
 			<Container>
 				<Heading eyebrow={p.eyebrow} title={p.title} />
 				{items.length === 0 ? (
-					<Empty>No publications in this category yet.</Empty>
+					<Empty>
+						{t("empty.publications", "No publications in this category yet.")}
+					</Empty>
 				) : (
 					<div className={`grid gap-4 ${list ? "" : "md:grid-cols-2"}`}>
 						{items.map((it) => {
@@ -1459,7 +1440,13 @@ function PublicationList(p: PublicationListProps) {
 										)}
 										{n != null && (
 											<div className="mt-1 text-xs text-muted-foreground">
-												{n.toLocaleString()} download{n === 1 ? "" : "s"}
+												{t(
+													n === 1
+														? "publications.downloadsOne"
+														: "publications.downloads",
+													n === 1 ? "{n} download" : "{n} downloads",
+													{ n: n.toLocaleString() },
+												)}
 											</div>
 										)}
 									</div>
@@ -1481,6 +1468,7 @@ type PeopleProps = Common & { data?: SourceRow["people"][] };
 
 function People(p: PeopleProps) {
 	const L = useL();
+	const t = useT();
 	const people: SourceRow["people"][] = Array.isArray(p.data) ? p.data : [];
 	const initials = (name: string) =>
 		String(name || "")
@@ -1493,7 +1481,7 @@ function People(p: PeopleProps) {
 			<Container>
 				<Heading eyebrow={p.eyebrow} title={p.title} />
 				{people.length === 0 ? (
-					<Empty>No team members listed yet.</Empty>
+					<Empty>{t("empty.people", "No team members listed yet.")}</Empty>
 				) : (
 					<div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-5">
 						{people.map((person) => (
@@ -1587,6 +1575,7 @@ type DirectoryRow =
 type DirectoryProps = Common & { data?: DirectoryRow[] };
 
 function Directory(p: DirectoryProps) {
+	const t = useT();
 	const rows: Record<string, unknown>[] = Array.isArray(p.data) ? p.data : [];
 	const cols = rows.length
 		? Object.keys(rows[0]).filter((k) => k !== "id")
@@ -1596,7 +1585,7 @@ function Directory(p: DirectoryProps) {
 			<Container>
 				<Heading eyebrow={p.eyebrow} title={p.title} />
 				{rows.length === 0 ? (
-					<Empty>Nothing to list yet.</Empty>
+					<Empty>{t("empty.directory", "Nothing to list yet.")}</Empty>
 				) : (
 					<div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-sm">
 						<table className="w-full text-sm">
@@ -1716,6 +1705,7 @@ function PartnerMarquee({ rows }: { rows: PartnerRow[] }) {
 }
 
 function Partners(p: PartnersProps) {
+	const t = useT();
 	const rows: PartnerRow[] = Array.isArray(p.data) ? p.data : [];
 	const H = useItemHeading(Boolean(p.title || p.eyebrow));
 	if (p.layout === "marquee") {
@@ -1726,7 +1716,7 @@ function Partners(p: PartnersProps) {
 				</Container>
 				{rows.length === 0 ? (
 					<Container>
-						<Empty>No partners listed yet.</Empty>
+						<Empty>{t("empty.partners", "No partners listed yet.")}</Empty>
 					</Container>
 				) : (
 					<PartnerMarquee rows={rows} />
@@ -1736,7 +1726,7 @@ function Partners(p: PartnersProps) {
 	}
 	const byCat = new Map<string, PartnerRow[]>();
 	for (const r of rows) {
-		const k = r.category || "Partners";
+		const k = r.category || t("partners.uncategorised", "Partners");
 		byCat.set(k, [...(byCat.get(k) ?? []), r]);
 	}
 	return (
@@ -1744,7 +1734,7 @@ function Partners(p: PartnersProps) {
 			<Container>
 				<Heading eyebrow={p.eyebrow} title={p.title} />
 				{rows.length === 0 ? (
-					<Empty>No partners listed yet.</Empty>
+					<Empty>{t("empty.partners", "No partners listed yet.")}</Empty>
 				) : (
 					// Category rows: a label column on the left, logos flowing to the right,
 					// hairline-separated. Even, scannable, and no empty cards for small groups.
@@ -1801,6 +1791,7 @@ type ProjectListProps = Common & {
 
 function ProjectList(p: ProjectListProps) {
 	const L = useL();
+	const t = useT();
 	const rows: ProjectRow[] = Array.isArray(p.data) ? p.data : [];
 	const base = p.linkBase ?? "";
 	const cols =
@@ -1815,12 +1806,12 @@ function ProjectList(p: ProjectListProps) {
 							href={L(p.moreHref) ?? "#"}
 							className="text-sm font-semibold text-primary underline underline-offset-8 hover:text-[var(--accent)]"
 						>
-							See all →
+							{t("home.news.all", "See all →")}
 						</NavLink>
 					)}
 				</div>
 				{rows.length === 0 ? (
-					<Empty>No projects listed yet.</Empty>
+					<Empty>{t("empty.projects", "No projects listed yet.")}</Empty>
 				) : p.layout === "list" ? (
 					<ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
 						{rows.map((r) => (
@@ -1894,6 +1885,7 @@ type CertificatesProps = Common & {
 };
 
 function Certificates(p: CertificatesProps) {
+	const t = useT();
 	const items: CertificateItem[] = Array.isArray(p.items) ? p.items : [];
 	const { openPdf, reader } = usePdfReader();
 	const cols =
@@ -1907,7 +1899,9 @@ function Certificates(p: CertificatesProps) {
 			<Container>
 				<Heading eyebrow={p.eyebrow} title={p.title} center={!!p.center} />
 				{items.length === 0 ? (
-					<Empty>No accreditations listed yet.</Empty>
+					<Empty>
+						{t("empty.certificates", "No accreditations listed yet.")}
+					</Empty>
 				) : (
 					<div className={`grid grid-cols-1 gap-6 ${cols}`}>
 						{items.map((it, n) => {
@@ -1988,6 +1982,7 @@ type SiteMapProps = Common & { center?: string };
 /** The published nav tree as an on-page index. Content comes from the nav, not from props. */
 function SiteMap(p: SiteMapProps) {
 	const L = useL();
+	const t = useT();
 	const rootData = useLoaderData({ from: "__root__" }) as { nav?: NavEntry[] };
 	const nav: NavEntry[] = Array.isArray(rootData?.nav) ? rootData.nav : [];
 
@@ -2021,7 +2016,7 @@ function SiteMap(p: SiteMapProps) {
 			<Container>
 				<Heading eyebrow={p.eyebrow} title={p.title} center={!!p.center} />
 				{nav.length === 0 ? (
-					<Empty>No navigation published yet.</Empty>
+					<Empty>{t("empty.sitemap", "No navigation published yet.")}</Empty>
 				) : (
 					<div
 						className={
@@ -2067,6 +2062,7 @@ type OrgChartProps = Common & { data?: SourceRow["orgchart"][] };
 
 /** Hierarchical management tree, rendered as an n8n-style React Flow canvas. */
 function OrgChart(p: OrgChartProps) {
+	const t = useT();
 	const roots: SourceRow["orgchart"][] = Array.isArray(p.data) ? p.data : [];
 	// React Flow is client-only and we no longer render a CSS-tree fallback (it caused
 	// a visible swap on hydration). Until mounted, show a same-sized empty box so the
@@ -2079,7 +2075,7 @@ function OrgChart(p: OrgChartProps) {
 			<section className={`${PAD} ${toneBg(p.tone)}`}>
 				<Container>
 					<Heading eyebrow={p.eyebrow} title={p.title} />
-					<Empty>No organizational chart yet.</Empty>
+					<Empty>{t("empty.orgchart", "No organizational chart yet.")}</Empty>
 				</Container>
 			</section>
 		);

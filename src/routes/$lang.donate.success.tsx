@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { NavLink } from "@/components/NavLink";
 import { Card, Section, SubPage } from "@/components/SubPage";
 import { useLang } from "@/lib/i18n";
@@ -9,16 +9,28 @@ export const Route = createFileRoute("/$lang/donate/success")({
 		order: typeof s.order === "string" ? s.order : "",
 	}),
 	loaderDeps: ({ search }) => ({ order: search.order }),
-	loader: async ({ context, deps }) => {
-		if (!deps.order) return { status: null as string | null };
-		const row = await context.queryClient.ensureQueryData(
-			context.trpc.payments.status.queryOptions({ orderId: deps.order }),
+	loader: async ({ context, deps, params }) => {
+		// Thanking whoever types the URL confirms a payment that may never have
+		// happened, so the page exists only for an order the gateway knows.
+		const row = deps.order
+			? await context.queryClient.ensureQueryData(
+					context.trpc.payments.status.queryOptions({ orderId: deps.order }),
+				)
+			: null;
+		if (!row) throw redirect({ href: localizedHref("/donate", params.lang) });
+		// head() runs outside the LanguageProvider, so the meta title travels with
+		// the loader instead of through useT()
+		const i18n = await context.queryClient.ensureQueryData(
+			context.trpc.i18n.bootstrap.queryOptions({ lang: params.lang }),
 		);
-		return { status: row?.status ?? null };
+		return {
+			status: row.status ?? null,
+			metaTitle: i18n.strings["donate.success.metaTitle"],
+		};
 	},
-	head: () => ({
+	head: ({ loaderData }) => ({
 		meta: [
-			{ title: "Thank you for your donation" },
+			{ title: loaderData?.metaTitle ?? "Thank you for your donation" },
 			{ name: "robots", content: "noindex" },
 		],
 	}),
@@ -27,29 +39,41 @@ export const Route = createFileRoute("/$lang/donate/success")({
 
 function DonateSuccess() {
 	const { status } = Route.useLoaderData();
-	const { lang } = useLang();
+	const { lang, t } = useLang();
 	const paid = status === "paid";
 
 	return (
 		<SubPage
-			section="Donate"
-			title="Thank you"
-			badge="With gratitude"
-			lead="Your generosity helps Cambodian children learn, dream, and rise."
+			section={t("donate.title", "Donate")}
+			title={t("donate.success.title", "Thank you")}
+			badge={t("donate.success.badge", "With gratitude")}
+			lead={t(
+				"donate.success.lead",
+				"Your generosity goes straight into the work this campaign names.",
+			)}
 		>
 			<Section
-				title={paid ? "Your gift is confirmed" : "We've received your donation"}
+				title={
+					paid
+						? t("donate.success.confirmed", "Your gift is confirmed")
+						: t("donate.success.pending", "We've received your donation")
+				}
 			>
 				<Card accent>
 					{paid ? (
 						<p className="text-base">
-							🎉 Your donation has been confirmed. Thank you for your support.
+							🎉{" "}
+							{t(
+								"donate.success.confirmedBody",
+								"Your donation has been confirmed. Thank you for your support.",
+							)}
 						</p>
 					) : (
 						<p className="text-base">
-							Thank you! We're finalising the confirmation of your payment. If
-							it was completed, it will be confirmed shortly — no further action
-							is needed.
+							{t(
+								"donate.success.pendingBody",
+								"Thank you! We're finalising the confirmation of your payment. If it was completed, it will be confirmed shortly — no further action is needed.",
+							)}
 						</p>
 					)}
 				</Card>
@@ -58,13 +82,13 @@ function DonateSuccess() {
 						href={localizedHref("/", lang)}
 						className="inline-flex items-center rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 transition"
 					>
-						Back to home
+						{t("nav.backHome", "Back to home")}
 					</NavLink>
 					<NavLink
 						href={localizedHref("/stories", lang)}
 						className="inline-flex items-center rounded-full border border-border px-6 py-2.5 text-sm font-semibold hover:bg-muted transition"
 					>
-						See the impact
+						{t("donate.success.stories", "See the impact")}
 					</NavLink>
 				</div>
 			</Section>

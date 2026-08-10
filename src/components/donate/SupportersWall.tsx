@@ -1,3 +1,5 @@
+import { useT } from "@/lib/i18n";
+
 import { money } from "./CampaignProgress";
 
 type Supporter = {
@@ -40,10 +42,11 @@ function SupporterAvatar({ name }: { name: string }) {
 
 /** Recent public donors with their messages — social proof for the campaign. */
 export function SupportersWall({ supporters }: { supporters: Supporter[] }) {
+	const t = useT();
 	if (supporters.length === 0) {
 		return (
 			<p className="text-sm text-muted-foreground">
-				Be the first to support this campaign.
+				{t("donate.wall.empty", "Be the first to support this campaign.")}
 			</p>
 		);
 	}

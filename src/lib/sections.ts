@@ -322,24 +322,20 @@ export const SECTION_DEFS: SectionDef[] = [
 		type: "form",
 		label: "Form",
 		kind: "static",
-		description:
-			"Embed a built form, or a quick contact / subscribe / sign-up form.",
+		description: "Embed a built form, or the quick contact form.",
 		layouts: [
 			{ value: "contact", label: "Contact (name, email, phone, message)" },
-			{ value: "subscribe", label: "Subscribe (email)" },
-			{ value: "signup", label: "Sign-up (name, email, message)" },
 		],
 		fields: [
 			{
 				key: "formSlug",
 				label: "Built form",
 				kind: "form",
-				help: "Pick a form from /admin/forms — it brings its own title, intro and submit button. Leave empty to use a quick layout below.",
+				help: "Pick a form from /admin/forms — it brings its own title, intro and submit button. Leave empty for the quick contact form, which emails the site inbox.",
 			},
 			EYEBROW,
 			{ key: "title", label: "Title", kind: "text" },
 			{ key: "body", label: "Intro", kind: "textarea" },
-			{ key: "submitLabel", label: "Submit button", kind: "text" },
 			TONE,
 		],
 	},

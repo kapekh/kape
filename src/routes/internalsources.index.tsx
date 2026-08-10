@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { useT } from "#/lib/i18n";
 
 export const Route = createFileRoute("/internalsources/")({
 	component: NewsFeed,
@@ -10,6 +11,7 @@ export const Route = createFileRoute("/internalsources/")({
 type Item = Awaited<ReturnType<typeof trpcClient.staff.news.query>>[number];
 
 function NewsFeed() {
+	const t = useT();
 	const [items, setItems] = useState<Item[]>([]);
 	const [loading, setLoading] = useState(true);
 
@@ -23,12 +25,16 @@ function NewsFeed() {
 	return (
 		<div>
 			<h1 className="font-display text-2xl font-semibold text-primary mb-6">
-				Internal News Feed
+				{t("internal.news.title", "Internal News Feed")}
 			</h1>
 			{loading ? (
-				<p className="text-sm text-muted-foreground">Loading…</p>
+				<p className="text-sm text-muted-foreground">
+					{t("common.loading", "Loading…")}
+				</p>
 			) : items.length === 0 ? (
-				<p className="text-sm text-muted-foreground">No internal news.</p>
+				<p className="text-sm text-muted-foreground">
+					{t("internal.news.empty", "No internal news.")}
+				</p>
 			) : (
 				<div className="space-y-4">
 					{items.map((n) => (

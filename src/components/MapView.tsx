@@ -28,7 +28,11 @@ const pinHtml = (
 	<div style="width:0;height:0;margin-top:-2px;border-left:6px solid transparent;border-right:6px solid transparent;border-top:9px solid var(--accent)"></div>
 </div>`;
 
-function popupCard(m: MapMarker, href: string | undefined): HTMLElement {
+function popupCard(
+	m: MapMarker,
+	href: string | undefined,
+	t: (key: string, fallback?: string) => string,
+): HTMLElement {
 	const card = document.createElement("div");
 	card.className = "w-56 space-y-1";
 
@@ -41,7 +45,8 @@ function popupCard(m: MapMarker, href: string | undefined): HTMLElement {
 	}
 	if (m.status) {
 		const tag = document.createElement("span");
-		tag.textContent = m.status === "past" ? "Past" : "Current";
+		tag.textContent =
+			m.status === "past" ? t("map.past", "Past") : t("map.current", "Current");
 		tag.className = `inline-block rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-background ${
 			m.status === "past" ? "bg-[var(--muted-foreground)]" : "bg-[var(--palm)]"
 		}`;
@@ -61,7 +66,7 @@ function popupCard(m: MapMarker, href: string | undefined): HTMLElement {
 	if (href) {
 		const link = document.createElement("a");
 		link.href = href;
-		link.textContent = "View project →";
+		link.textContent = `${t("map.viewProject", "View project")} →`;
 		link.className =
 			"mt-1 inline-block text-xs font-semibold text-[var(--accent)] hover:underline";
 		card.append(link);
@@ -85,7 +90,7 @@ export function MapView({
 	logoUrl?: string;
 }) {
 	const ref = useRef<HTMLDivElement>(null);
-	const { lang } = useLang();
+	const { lang, t } = useLang();
 
 	useEffect(() => {
 		if (!ref.current || typeof window === "undefined") return;
@@ -104,7 +109,15 @@ export function MapView({
 			const L = await import("leaflet");
 			if (cancelled || !ref.current) return;
 
-			map = L.map(ref.current).setView(center, zoom);
+			map = L.map(ref.current, { zoomControl: false }).setView(center, zoom);
+			// Leaflet names its own buttons in English; the option sets both the
+			// title and the aria-label
+			L.control
+				.zoom({
+					zoomInTitle: t("map.zoomIn", "Zoom in"),
+					zoomOutTitle: t("map.zoomOut", "Zoom out"),
+				})
+				.addTo(map);
 			L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 				attribution: "&copy; OpenStreetMap contributors",
 				maxZoom: 19,
@@ -123,7 +136,7 @@ export function MapView({
 					: undefined;
 				L.marker([m.lat, m.lng], { icon })
 					.addTo(map)
-					.bindPopup(popupCard(m, href));
+					.bindPopup(popupCard(m, href, t));
 			}
 		})();
 
@@ -131,7 +144,7 @@ export function MapView({
 			cancelled = true;
 			if (map) map.remove();
 		};
-	}, [markers, center, zoom, lang, logoUrl]);
+	}, [markers, center, zoom, lang, logoUrl, t]);
 
 	return (
 		<div

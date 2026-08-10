@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import type { CampaignPublic } from "#/server/repo/campaigns";
 import { CampaignCover } from "@/components/donate/CampaignCover";
 import { money } from "@/components/donate/CampaignProgress";
+import { Slot } from "@/components/donate/Slot";
 import { NavLink } from "@/components/NavLink";
 import { DONATE_DEFAULTS } from "@/lib/donate-defaults";
 import { useLang } from "@/lib/i18n";
@@ -11,21 +12,35 @@ import { siteShortName } from "@/lib/site-identity";
 export const Route = createFileRoute("/$lang/donate/")({
 	loader: async ({ context, location }) => {
 		const lang = detectLang(location.pathname);
-		const [campaigns, settings] = await Promise.all([
+		const [campaigns, settings, i18n] = await Promise.all([
 			context.queryClient.ensureQueryData(
 				context.trpc.campaigns.listActive.queryOptions({ lang }),
 			),
 			context.queryClient.ensureQueryData(
 				context.trpc.site.settings.queryOptions(),
 			),
+			// head() runs outside the LanguageProvider, so the meta title travels
+			// with the loader instead of through useT()
+			context.queryClient.ensureQueryData(
+				context.trpc.i18n.bootstrap.queryOptions({ lang }),
+			),
 		]);
-		return { campaigns, settings };
+		return {
+			campaigns,
+			settings,
+			metaTitle: i18n.strings["donate.metaTitleHub"],
+		};
 	},
 	head: ({ loaderData }) => {
 		const settings = loaderData?.settings ?? {};
 		return {
 			meta: [
-				{ title: `Donate to ${siteShortName(settings)}` },
+				{
+					title: (loaderData?.metaTitle ?? "Donate to {site}").replace(
+						"{site}",
+						siteShortName(settings),
+					),
+				},
 				{
 					name: "description",
 					content:
@@ -39,7 +54,7 @@ export const Route = createFileRoute("/$lang/donate/")({
 
 function DonatePage() {
 	const { campaigns, settings } = Route.useLoaderData();
-	const { lang } = useLang();
+	const { lang, t } = useLang();
 	const s = (key: string) => settings[key] ?? DONATE_DEFAULTS[key] ?? "";
 
 	const featured = campaigns.find((c) => c.featured) ?? campaigns[0] ?? null;
@@ -74,18 +89,28 @@ function DonatePage() {
 					<div className="mt-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-warm-foreground">
 						<Stat
 							value={String(campaigns.length)}
-							label={campaigns.length === 1 ? "campaign" : "campaigns"}
+							label={t(
+								campaigns.length === 1
+									? "donate.stat.campaign"
+									: "donate.stat.campaigns",
+								campaigns.length === 1 ? "campaign" : "campaigns",
+							)}
 						/>
 						{totalRaised > 0 && (
 							<Stat
 								value={money(totalRaised, featured?.currency ?? "USD")}
-								label="raised"
+								label={t("donate.raised", "raised")}
 							/>
 						)}
 						{totalSupporters > 0 && (
 							<Stat
 								value={totalSupporters.toLocaleString()}
-								label={totalSupporters === 1 ? "supporter" : "supporters"}
+								label={t(
+									totalSupporters === 1
+										? "donate.supporter"
+										: "donate.supporters",
+									totalSupporters === 1 ? "supporter" : "supporters",
+								)}
 							/>
 						)}
 					</div>
@@ -95,17 +120,23 @@ function DonatePage() {
 			{campaigns.length === 0 ? (
 				<div className="mx-auto max-w-2xl px-6 py-24 text-center">
 					<h2 className="t-subsection text-primary">
-						No active campaigns right now
+						{t("donate.empty.title", "No active campaigns right now")}
 					</h2>
 					<p className="mt-3 text-muted-foreground">
-						Please check back soon, or{" "}
-						<NavLink
-							href={localizedHref("/who-we-are/about", lang)}
-							className="text-[var(--accent)] hover:underline"
+						<Slot
+							text={t(
+								"donate.empty.body",
+								"Please check back soon, or {link}.",
+							)}
+							name="link"
 						>
-							learn more about our work
-						</NavLink>
-						.
+							<NavLink
+								href={localizedHref("/who-we-are/about", lang)}
+								className="text-[var(--accent)] hover:underline"
+							>
+								{t("donate.empty.link", "learn more about our work")}
+							</NavLink>
+						</Slot>
 					</p>
 				</div>
 			) : (
@@ -115,7 +146,9 @@ function DonatePage() {
 						{rest.length > 0 && (
 							<div>
 								<h2 className="mb-6 t-subsection text-primary">
-									{featured ? "More campaigns" : "Campaigns"}
+									{featured
+										? t("donate.more", "More campaigns")
+										: t("donate.campaigns", "Campaigns")}
 								</h2>
 								<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 									{rest.map((c) => (
@@ -150,7 +183,7 @@ function pctOf(c: CampaignPublic) {
 
 /** Large highlighted card for the featured campaign — split cover / details. */
 function FeaturedSpotlight({ campaign }: { campaign: CampaignPublic }) {
-	const { lang } = useLang();
+	const { lang, t } = useLang();
 	const pct = pctOf(campaign);
 	return (
 		<NavLink
@@ -166,7 +199,7 @@ function FeaturedSpotlight({ campaign }: { campaign: CampaignPublic }) {
 					iconClass="h-24 w-24"
 				/>
 				<span className="absolute left-4 top-4 rounded-full bg-[var(--gold)] px-3 py-1 text-xs font-bold uppercase tracking-wide text-warm-foreground">
-					★ Featured
+					★ {t("donate.featured", "Featured")}
 				</span>
 			</div>
 			<div className="flex flex-col justify-center p-7 md:p-9">
@@ -191,17 +224,23 @@ function FeaturedSpotlight({ campaign }: { campaign: CampaignPublic }) {
 								<span className="font-semibold text-foreground tabular-nums">
 									{money(campaign.raised, campaign.currency)}
 									<span className="font-normal text-muted-foreground">
-										{campaign.goalAmount ? (
-											<> of {money(campaign.goalAmount, campaign.currency)}</>
-										) : (
-											<> raised</>
-										)}
+										{" "}
+										{campaign.goalAmount
+											? t("donate.ofGoal", "of {goal}", {
+													goal: money(campaign.goalAmount, campaign.currency),
+												})
+											: t("donate.raised", "raised")}
 									</span>
 								</span>
 								{campaign.supporters > 0 && (
 									<span className="text-muted-foreground">
 										{campaign.supporters}{" "}
-										{campaign.supporters === 1 ? "supporter" : "supporters"}
+										{t(
+											campaign.supporters === 1
+												? "donate.supporter"
+												: "donate.supporters",
+											campaign.supporters === 1 ? "supporter" : "supporters",
+										)}
 									</span>
 								)}
 							</div>
@@ -210,18 +249,21 @@ function FeaturedSpotlight({ campaign }: { campaign: CampaignPublic }) {
 						// No donations yet — an empty $0 / 0% bar reads as failing, so lead
 						// with the goal and an invitation instead.
 						<div className="text-sm font-semibold text-[var(--accent)]">
-							Be the first to give
+							{t("donate.beFirst", "Be the first to give")}
 							{campaign.goalAmount ? (
 								<span className="font-normal text-muted-foreground">
 									{" "}
-									· {money(campaign.goalAmount, campaign.currency)} goal
+									·{" "}
+									{t("donate.goal", "{amount} goal", {
+										amount: money(campaign.goalAmount, campaign.currency),
+									})}
 								</span>
 							) : null}
 						</div>
 					)}
 				</div>
 				<span className="mt-6 inline-flex w-fit items-center gap-2 rounded-full bg-[var(--accent)] px-6 py-2.5 text-sm font-semibold text-accent-foreground shadow-[var(--shadow-lift)] transition group-hover:-translate-y-0.5">
-					♡ Donate to this campaign →
+					♡ {t("donate.cta.campaign", "Donate to this campaign")} →
 				</span>
 			</div>
 		</NavLink>
@@ -229,7 +271,7 @@ function FeaturedSpotlight({ campaign }: { campaign: CampaignPublic }) {
 }
 
 function CampaignCard({ campaign }: { campaign: CampaignPublic }) {
-	const { lang } = useLang();
+	const { lang, t } = useLang();
 	const pct = pctOf(campaign);
 	return (
 		<NavLink
@@ -269,13 +311,20 @@ function CampaignCard({ campaign }: { campaign: CampaignPublic }) {
 								<span className="font-semibold text-foreground tabular-nums">
 									{money(campaign.raised, campaign.currency)}{" "}
 									<span className="font-normal text-muted-foreground">
-										raised
+										{t("donate.raised", "raised")}
 									</span>
 								</span>
 								<span className="font-semibold text-[var(--accent)]">
-									{campaign.supporters > 0
-										? `${campaign.supporters} ${campaign.supporters === 1 ? "donor" : "donors"}`
-										: "Give →"}
+									{campaign.supporters > 0 ? (
+										`${campaign.supporters} ${t(
+											campaign.supporters === 1
+												? "donate.donor"
+												: "donate.donors",
+											campaign.supporters === 1 ? "donor" : "donors",
+										)}`
+									) : (
+										<>{t("donate.give", "Give")} →</>
+									)}
 								</span>
 							</div>
 						</>
@@ -284,11 +333,13 @@ function CampaignCard({ campaign }: { campaign: CampaignPublic }) {
 						<div className="flex items-center justify-between text-sm">
 							<span className="text-muted-foreground">
 								{campaign.goalAmount
-									? `${money(campaign.goalAmount, campaign.currency)} goal`
-									: "New campaign"}
+									? t("donate.goal", "{amount} goal", {
+											amount: money(campaign.goalAmount, campaign.currency),
+										})
+									: t("donate.new", "New campaign")}
 							</span>
 							<span className="font-semibold text-[var(--accent)]">
-								Be the first →
+								{t("donate.beFirstShort", "Be the first")} →
 							</span>
 						</div>
 					)}
