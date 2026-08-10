@@ -28,11 +28,12 @@ lovable.zip
 graphify-out/
 prerender-paths.json
 # stray screenshots / scratch artifacts
-/image*.png
+/*.png
 *.pptx
 lovable.zip
 /kapecambodia-main/
 .review-shots/
+.playwright-mcp/
 .work/ux-shots/
 .work/j16-shots/
 .work/j18-shots/
@@ -40,6 +41,12 @@ lovable.zip
 .work/j22-shots/
 .work/j23-shots/
 .work/scratch/
+.work/*-shots/
+.work/i18n/*-shots/
+.work/ui-audit/shots/
+.work/ui-audit/fix*/
+# UAT instance: its own database copy and a multi-gigabyte dev log
+.work/uat/
 
 .lavish/
 

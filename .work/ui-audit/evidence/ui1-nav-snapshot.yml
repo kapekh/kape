@@ -1,0 +1,223 @@
+- generic [active] [ref=f56e1]:
+  - generic [ref=f56e2]:
+    - link "Skip to main content" [ref=f56e3] [cursor=pointer]:
+      - /url: "#admin-main"
+    - complementary [ref=f56e4]:
+      - generic [ref=f56e5]:
+        - img "KAPE" [ref=f56e6]
+        - generic [ref=f56e7]:
+          - generic [ref=f56e8]: KAPE
+          - generic [ref=f56e9]: Admin
+      - navigation [ref=f56e10]:
+        - generic [ref=f56e12]:
+          - link "Dashboard" [ref=f56e13] [cursor=pointer]:
+            - /url: /admin
+          - link "Messages" [ref=f56e17] [cursor=pointer]:
+            - /url: /admin/messages
+          - link "Forms" [ref=f56e21] [cursor=pointer]:
+            - /url: /admin/forms
+        - generic [ref=f56e25]:
+          - button "Content" [ref=f56e26]
+          - generic [ref=f56e29]:
+            - link "Pages" [ref=f56e30] [cursor=pointer]:
+              - /url: /admin/pages
+            - link "Projects" [ref=f56e34] [cursor=pointer]:
+              - /url: /admin/projects
+            - link "Media" [ref=f56e38] [cursor=pointer]:
+              - /url: /admin/media
+        - generic [ref=f56e42]:
+          - button "Posts" [ref=f56e43]
+          - generic [ref=f56e46]:
+            - link "All posts" [ref=f56e47] [cursor=pointer]:
+              - /url: /admin/posts
+            - link "News" [ref=f56e51] [cursor=pointer]:
+              - /url: /admin/posts?type=news
+            - link "Stories" [ref=f56e55] [cursor=pointer]:
+              - /url: /admin/posts?type=story
+            - link "Videos" [ref=f56e59] [cursor=pointer]:
+              - /url: /admin/posts?type=video
+            - link "Galleries" [ref=f56e63] [cursor=pointer]:
+              - /url: /admin/posts?type=album
+            - link "Publications" [ref=f56e67] [cursor=pointer]:
+              - /url: /admin/posts?type=publication
+            - link "Careers" [ref=f56e71] [cursor=pointer]:
+              - /url: /admin/posts?type=job
+            - link "Events" [ref=f56e75] [cursor=pointer]:
+              - /url: /admin/posts?type=event
+            - link "Documents" [ref=f56e79] [cursor=pointer]:
+              - /url: /admin/posts?type=document
+            - link "Announcements" [ref=f56e83] [cursor=pointer]:
+              - /url: /admin/posts?type=announcement
+            - link "Internal news" [ref=f56e87] [cursor=pointer]:
+              - /url: /admin/posts?type=internal_news
+        - generic [ref=f56e91]:
+          - button "Fundraising" [ref=f56e92]
+          - generic [ref=f56e95]:
+            - link "Campaigns" [ref=f56e96] [cursor=pointer]:
+              - /url: /admin/campaigns
+            - link "Donations" [ref=f56e100] [cursor=pointer]:
+              - /url: /admin/donations
+        - generic [ref=f56e104]:
+          - button "Records" [ref=f56e105]
+          - generic [ref=f56e108]:
+            - link "Schools" [ref=f56e109] [cursor=pointer]:
+              - /url: /admin/schools
+            - link "People" [ref=f56e113] [cursor=pointer]:
+              - /url: /admin/people
+            - link "Partners" [ref=f56e117] [cursor=pointer]:
+              - /url: /admin/partners
+            - link "Donors" [ref=f56e121] [cursor=pointer]:
+              - /url: /admin/donors
+            - link "Offices" [ref=f56e125] [cursor=pointer]:
+              - /url: /admin/offices
+        - generic [ref=f56e129]:
+          - button "Site" [ref=f56e130]
+          - generic [ref=f56e133]:
+            - link "Header" [ref=f56e134] [cursor=pointer]:
+              - /url: /admin/nav
+            - link "Footer" [ref=f56e138] [cursor=pointer]:
+              - /url: /admin/footer
+            - link "Org Chart" [ref=f56e142] [cursor=pointer]:
+              - /url: /admin/org-chart
+            - link "Languages" [ref=f56e146] [cursor=pointer]:
+              - /url: /admin/languages
+            - link "UI Strings" [ref=f56e150] [cursor=pointer]:
+              - /url: /admin/ui-strings
+            - link "Users" [ref=f56e154] [cursor=pointer]:
+              - /url: /admin/users
+            - link "Roles" [ref=f56e158] [cursor=pointer]:
+              - /url: /admin/roles
+            - link "Settings" [ref=f56e162] [cursor=pointer]:
+              - /url: /admin/settings
+            - link "Modules" [ref=f56e166] [cursor=pointer]:
+              - /url: /admin/modules
+        - generic [ref=f56e170]:
+          - button "Lists" [ref=f56e171]
+          - generic [ref=f56e174]:
+            - link "Locations" [ref=f56e175] [cursor=pointer]:
+              - /url: /admin/locations
+            - link "Publication categories" [ref=f56e179] [cursor=pointer]:
+              - /url: /admin/publication-categories
+            - link "Document categories" [ref=f56e183] [cursor=pointer]:
+              - /url: /admin/doc-categories
+            - link "Partner categories" [ref=f56e187] [cursor=pointer]:
+              - /url: /admin/partner-categories
+    - generic [ref=f56e191]:
+      - banner [ref=f56e192]:
+        - generic [ref=f56e193]:
+          - link "View site ↗" [ref=f56e194] [cursor=pointer]:
+            - /url: /
+          - generic [ref=f56e196]:
+            - generic [ref=f56e197]: ad
+            - generic [ref=f56e198]:
+              - generic [ref=f56e199]: admin@kapekh.org
+              - generic [ref=f56e200]: Administrator
+            - link "My account" [ref=f56e201] [cursor=pointer]:
+              - /url: /admin/account
+            - button "Log out" [ref=f56e202]
+      - main [ref=f56e203]:
+        - generic [ref=f56e206]:
+          - generic [ref=f56e207]:
+            - heading "Header" [level=1] [ref=f56e208]
+            - paragraph [ref=f56e209]: The site header — its menu, the donate button and the top-bar links.
+          - generic [ref=f56e211]:
+            - generic [ref=f56e212]:
+              - heading "Header settings" [level=2] [ref=f56e213]
+              - paragraph [ref=f56e214]: The donate button and the top-bar utility links. A site path (/…) or full URL; “#donate” jumps to an on-page anchor.
+            - generic [ref=f56e215]:
+              - generic [ref=f56e216]:
+                - generic [ref=f56e218]:
+                  - generic [ref=f56e219]: Donate button label
+                  - textbox "Donate button label" [ref=f56e220]: ♡ Donate
+                - generic [ref=f56e222]:
+                  - generic [ref=f56e223]: Donate button link
+                  - textbox "Donate button link" [ref=f56e224]: /donate
+                - generic [ref=f56e226]:
+                  - generic [ref=f56e227]: Top-bar “Search” link
+                  - textbox "Top-bar “Search” link" [ref=f56e228]: /sitemap.xml
+                - generic [ref=f56e230]:
+                  - generic [ref=f56e231]: Top-bar “Sitemap” link
+                  - textbox "Top-bar “Sitemap” link" [ref=f56e232]: /sitemap.xml
+              - button "Save header settings" [ref=f56e234]
+          - generic [ref=f56e235]:
+            - heading "Menu" [level=2] [ref=f56e236]
+            - button "+ Top-level item" [ref=f56e237]
+          - paragraph [ref=f56e238]:
+            - text: Build the mega-menu. An item links to a
+            - code [ref=f56e239]: page
+            - text: ","
+            - code [ref=f56e240]: post
+            - text: or
+            - code [ref=f56e241]: url
+            - text: ; give it child items to make a dropdown; reorder with ↑↓; add nested items with “+ child”.
+          - generic [ref=f56e242]:
+            - button "Expand all" [ref=f56e243]
+            - generic [ref=f56e244]: ·
+            - button "Collapse all" [ref=f56e245]
+          - generic [ref=f56e246]:
+            - generic [ref=f56e248]:
+              - button "Home page" [ref=f56e250]:
+                - generic [ref=f56e251]: Home
+                - generic [ref=f56e252]: page
+              - generic [ref=f56e253]:
+                - button "↑" [ref=f56e254]
+                - button "↓" [ref=f56e255]
+                - button "＋" [ref=f56e256]
+                - button "✎" [ref=f56e257]
+                - button "✕" [ref=f56e258]
+            - generic [ref=f56e260]:
+              - button "Expand" [ref=f56e261]
+              - button "Who We Are 7" [ref=f56e264]:
+                - generic [ref=f56e265]: Who We Are
+                - generic [ref=f56e266]: "7"
+              - generic [ref=f56e267]:
+                - button "↑" [ref=f56e268]
+                - button "↓" [ref=f56e269]
+                - button "＋" [ref=f56e270]
+                - button "✎" [ref=f56e271]
+                - button "✕" [ref=f56e272]
+            - generic [ref=f56e274]:
+              - button "Expand" [ref=f56e275]
+              - button "What We Do 5" [ref=f56e278]:
+                - generic [ref=f56e279]: What We Do
+                - generic [ref=f56e280]: "5"
+              - generic [ref=f56e281]:
+                - button "↑" [ref=f56e282]
+                - button "↓" [ref=f56e283]
+                - button "＋" [ref=f56e284]
+                - button "✎" [ref=f56e285]
+                - button "✕" [ref=f56e286]
+            - generic [ref=f56e288]:
+              - button "Expand" [ref=f56e289]
+              - button "Media & Publications 4" [ref=f56e292]:
+                - generic [ref=f56e293]: Media & Publications
+                - generic [ref=f56e294]: "4"
+              - generic [ref=f56e295]:
+                - button "↑" [ref=f56e296]
+                - button "↓" [ref=f56e297]
+                - button "＋" [ref=f56e298]
+                - button "✎" [ref=f56e299]
+                - button "✕" [ref=f56e300]
+            - generic [ref=f56e302]:
+              - button "Expand" [ref=f56e303]
+              - button "Opportunities 5" [ref=f56e306]:
+                - generic [ref=f56e307]: Opportunities
+                - generic [ref=f56e308]: "5"
+              - generic [ref=f56e309]:
+                - button "↑" [ref=f56e310]
+                - button "↓" [ref=f56e311]
+                - button "＋" [ref=f56e312]
+                - button "✎" [ref=f56e313]
+                - button "✕" [ref=f56e314]
+            - generic [ref=f56e316]:
+              - 'button "Contact page: contact" [ref=f56e318]':
+                - generic [ref=f56e319]: Contact
+                - generic [ref=f56e320]: "page: contact"
+              - generic [ref=f56e321]:
+                - button "↑" [ref=f56e322]
+                - button "↓" [ref=f56e323]
+                - button "＋" [ref=f56e324]
+                - button "✎" [ref=f56e325]
+                - button "✕" [ref=f56e326]
+  - button "Open TanStack Devtools" [ref=f56e327] [cursor=pointer]:
+    - img "TanStack Devtools" [ref=f56e328]

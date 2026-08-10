@@ -1,0 +1,11 @@
+Total messages: 11 (Errors: 0, Warnings: 2)
+Returning 8 messages for level "error"
+
+[ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3011/api/trpc/adminPages.list?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%2C%22meta%22%3A%7B%22values%22%3A%5B%22undefined%22%5D%2C%22v%22%3A1%7D%7D%7D:0
+[ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3011/api/trpc/adminUsers.list?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%2C%22meta%22%3A%7B%22values%22%3A%5B%22undefined%22%5D%2C%22v%22%3A1%7D%7D%7D:0
+[ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3011/api/trpc/adminMedia.list?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%2C%22meta%22%3A%7B%22values%22%3A%5B%22undefined%22%5D%2C%22v%22%3A1%7D%7D%7D:0
+[ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3011/api/trpc/adminSettings.all?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%2C%22meta%22%3A%7B%22values%22%3A%5B%22undefined%22%5D%2C%22v%22%3A1%7D%7D%7D:0
+[ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3011/api/trpc/adminRoles.list?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%2C%22meta%22%3A%7B%22values%22%3A%5B%22undefined%22%5D%2C%22v%22%3A1%7D%7D%7D:0
+[ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3011/api/media/upload:0
+[ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://localhost:3011/api/trpc/adminPages.delete?batch=1:0
+The user aborted a request.
