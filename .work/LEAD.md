@@ -16,9 +16,9 @@ Gates now, re-measured in this pane at 16:02 after FIX-F, FIX-G and the dictiona
 `noArrayIndexKey` sites, unchanged all round. Baseline at round start was 313 over 30; it was 370
 over 38 before this wave. `bun run build` green, measured here at 13:37.
 
-**The whole round is uncommitted.** `HEAD` is still `9ff196c`, roughly 60 files in the working tree.
-Nothing here has a commit to point at yet; every job's evidence is its `.work/<id>-report.md`.
-Graph after this round: 3598 nodes / 6791 edges.
+**The round is committed**, eight commits over `9ff196c` up to `36da871`, split by theme rather
+than by job because the jobs overlapped files. Every job's evidence is still its
+`.work/<id>-report.md`. Graph after this round: 3955 nodes / 7354 edges.
 
 Prior round - the CMS-core extraction - is closed; its ledger lives in the worklog.
 
