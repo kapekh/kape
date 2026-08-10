@@ -1,4 +1,5 @@
 /** Shared building blocks so every admin create/edit form looks the same. */
+import { useId } from "react";
 
 export const fieldInput =
 	"w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/25 transition";
@@ -92,6 +93,106 @@ export function FormSection({
 			</div>
 			<div className="p-5">{children}</div>
 		</section>
+	);
+}
+
+/** What `Field` hands its control so the label, hint and error actually bind. */
+export type FieldControlProps = {
+	id: string;
+	required?: boolean;
+	"aria-invalid"?: true;
+	"aria-describedby"?: string;
+};
+
+/**
+ * One labelled form field: the label, the required marker, an optional hint and
+ * an optional error, with the id plumbing that ties them to the control.
+ *
+ * The control is a render prop rather than a fixed `<input>` because admin forms
+ * use inputs, textareas, selects and the media picker in the same slot. Spread
+ * what it gives you onto whatever you render:
+ *
+ *     <Field label="URL segment" required hint="Lowercase, no spaces." error={err}>
+ *       {(p) => <input {...p} className={fieldInput} value={v} onChange={…} />}
+ *     </Field>
+ *
+ * The marker is an `*` with a text alternative, not `*` alone: an asterisk is
+ * punctuation to a screen reader, and `required` on the control is what a form
+ * actually reads. Both are set, so it lands for sighted and non-sighted users.
+ */
+export function Field({
+	label,
+	required,
+	hint,
+	error,
+	children,
+}: {
+	label: string;
+	required?: boolean;
+	hint?: string;
+	error?: string | null;
+	children: (props: FieldControlProps) => React.ReactNode;
+}) {
+	const base = useId();
+	const id = `${base}-field`;
+	const hintId = `${base}-hint`;
+	const errorId = `${base}-error`;
+	// error first: a screen reader reads the description in order, and the
+	// problem matters more than the guidance that failed to prevent it
+	const describedBy =
+		[error ? errorId : null, hint ? hintId : null].filter(Boolean).join(" ") ||
+		undefined;
+
+	return (
+		<div>
+			<label htmlFor={id} className={fieldLabel}>
+				{label}
+				{required && (
+					<>
+						<span aria-hidden="true" className="ml-0.5 text-destructive">
+							*
+						</span>
+						<span className="sr-only"> (required)</span>
+					</>
+				)}
+			</label>
+			{children({
+				id,
+				required,
+				"aria-invalid": error ? true : undefined,
+				"aria-describedby": describedBy,
+			})}
+			{hint && (
+				<p id={hintId} className="mt-1 text-xs text-muted-foreground">
+					{hint}
+				</p>
+			)}
+			{error && (
+				<p id={errorId} className="mt-1 text-xs font-medium text-destructive">
+					{error}
+				</p>
+			)}
+		</div>
+	);
+}
+
+/** `Field` with the control every other admin field turns out to be. */
+export function TextField({
+	label,
+	required,
+	hint,
+	error,
+	...input
+}: {
+	label: string;
+	required?: boolean;
+	hint?: string;
+	error?: string | null;
+} & React.InputHTMLAttributes<HTMLInputElement>) {
+	return (
+		<Field label={label} required={required} hint={hint} error={error}>
+			{(p) => <input {...p} {...input} className={fieldInput} />}
+		</Field>
 	);
 }
 

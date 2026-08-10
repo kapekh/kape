@@ -7,7 +7,8 @@ import {
 	fieldLabel,
 } from "#/components/admin/form-ui";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
-import { confirm } from "@/components/Dialogs";
+import { saveErrorMessage } from "#/lib/save-error";
+import { confirm, toast } from "@/components/Dialogs";
 
 type Term = Awaited<
 	ReturnType<typeof trpcClient.adminTerms.list.query>
@@ -43,30 +44,60 @@ export function TermsManager({
 			rs.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
 		);
 	}
+	// Keyed by row id so only the row being written disables; "add" is its own key
+	// because the Add button is not attached to any row.
+	const [busy, setBusy] = useState<number | "add" | null>(null);
+
 	async function save(r: Term) {
-		await trpcClient.adminTerms.update.mutate({
-			id: r.id,
-			taxonomy,
-			key: r.key,
-			label: r.label,
-			sort: r.sort,
-		});
+		setBusy(r.id);
+		try {
+			await trpcClient.adminTerms.update.mutate({
+				id: r.id,
+				taxonomy,
+				key: r.key,
+				label: r.label,
+				sort: r.sort,
+			});
+			toast(`Saved ${r.label || r.key}.`, "success");
+		} catch (e) {
+			toast(saveErrorMessage(e), "error");
+		} finally {
+			setBusy(null);
+		}
 	}
 	async function create() {
 		if (!add.key.trim() || !add.label.trim()) return;
-		await trpcClient.adminTerms.create.mutate({
-			taxonomy,
-			key: add.key.trim(),
-			label: add.label.trim(),
-			sort: rows.length,
-		});
-		setAdd({ key: "", label: "" });
-		refresh();
+		setBusy("add");
+		try {
+			await trpcClient.adminTerms.create.mutate({
+				taxonomy,
+				key: add.key.trim(),
+				label: add.label.trim(),
+				sort: rows.length,
+			});
+			setAdd({ key: "", label: "" });
+			await refresh();
+			toast(`Added ${add.label.trim()}.`, "success");
+		} catch (e) {
+			toast(saveErrorMessage(e), "error");
+		} finally {
+			setBusy(null);
+		}
 	}
 	async function del(id: number) {
 		if (!(await confirm("Delete this item?"))) return;
-		await trpcClient.adminTerms.delete.mutate({ id });
-		setRows((rs) => rs.filter((r) => r.id !== id));
+		setBusy(id);
+		try {
+			await trpcClient.adminTerms.delete.mutate({ id });
+			// removed from the table only once the server has taken it: dropping it
+			// first makes a refused delete look like it worked until the next reload
+			setRows((rs) => rs.filter((r) => r.id !== id));
+			toast("Item deleted.", "success");
+		} catch (e) {
+			toast(saveErrorMessage(e), "error");
+		} finally {
+			setBusy(null);
+		}
 	}
 
 	const btn = "text-xs rounded border border-border px-2.5 py-1 hover:bg-muted";
@@ -112,9 +143,10 @@ export function TermsManager({
 					<button
 						type="button"
 						onClick={create}
-						className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:opacity-90 transition"
+						disabled={busy === "add"}
+						className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition"
 					>
-						Add
+						{busy === "add" ? "Adding…" : "Add"}
 					</button>
 				</div>
 			</FormSection>
@@ -164,16 +196,20 @@ export function TermsManager({
 										<button
 											type="button"
 											onClick={() => save(r)}
-											className={btn}
+											disabled={busy === r.id}
+											aria-label={`Save ${r.label || r.key}`}
+											className={`${btn} disabled:opacity-40`}
 										>
-											Save
+											{busy === r.id ? "Saving…" : "Save"}
 										</button>
 										<span className="ml-2 inline-flex align-middle">
 											<ActionMenu
+												label={`Actions for ${r.label || r.key}`}
 												items={[
 													{
 														label: "Delete",
 														danger: true,
+														disabled: busy === r.id,
 														onClick: () => del(r.id),
 													},
 												]}

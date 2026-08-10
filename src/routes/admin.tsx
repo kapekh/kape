@@ -8,8 +8,8 @@ import {
 } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { getCookie } from "@tanstack/react-start/server";
-import { ChevronDown } from "lucide-react";
-import { useState } from "react";
+import { ChevronDown, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { AdminHeaderProvider } from "#/components/admin/AdminHeader";
 import { AdminIcon } from "#/components/admin/AdminIcon";
@@ -17,21 +17,50 @@ import { ThemeToggle } from "#/components/ThemeToggle";
 import { adminPathEnabled, MODULES_SETTING } from "#/lib/modules";
 import { NAV_AREA } from "#/lib/permissions";
 import { adminTitle, siteLogo, siteShortName } from "#/lib/site-identity";
+import { useModalPanel } from "#/lib/use-modal-panel";
 import { SESSION_COOKIE, validateToken } from "#/server/auth";
 import { db } from "#/server/db";
 import { resolvePermissions } from "#/server/repo/roles";
 import { getSettings } from "#/server/repo/site";
 
+/**
+ * Where to send someone back to once they have signed in. Only a same-site
+ * absolute path: a protocol-relative "//evil.tld" is another origin to the
+ * browser, and a backslash is one to some of them, so both are refused along
+ * with everything else that is not a plain path.
+ */
+function returnTo(href: string): { redirect?: string } {
+	return /^\/(?![/\\])/.test(href) ? { redirect: href } : {};
+}
+
+type AdminAccess =
+	| { kind: "anon" }
+	| { kind: "forbidden"; email: string }
+	| {
+			kind: "ok";
+			email: string;
+			role: string;
+			isSuperAdmin: boolean;
+			permissions: string[];
+			modules: string | null;
+	  };
+
 // Server-side gate for the admin shell. Runs during SSR so an unauthenticated
 // request is redirected before any admin HTML is generated, instead of shipping
 // the shell and checking in the browser.
+//
+// "no session" and "a session this admin has no areas for" are answered apart:
+// only the first is a sign-in problem, and showing the second a login form asks
+// someone who is already signed in to sign in again.
 const resolveAdminAccess = createServerFn({ method: "GET" }).handler(
-	async () => {
+	async (): Promise<AdminAccess> => {
 		const auth = await validateToken(db, getCookie(SESSION_COOKIE));
-		if (!auth) return null;
+		if (!auth) return { kind: "anon" };
 		const perms = await resolvePermissions(db, auth.user.role);
-		if (!perms.isSuperAdmin && perms.permissions.length === 0) return null;
+		if (!perms.isSuperAdmin && perms.permissions.length === 0)
+			return { kind: "forbidden", email: auth.user.email };
 		return {
+			kind: "ok",
 			email: auth.user.email,
 			role: auth.user.role,
 			isSuperAdmin: perms.isSuperAdmin,
@@ -46,7 +75,14 @@ const resolveAdminAccess = createServerFn({ method: "GET" }).handler(
 export const Route = createFileRoute("/admin")({
 	beforeLoad: async ({ location }) => {
 		const access = await resolveAdminAccess();
-		if (!access) throw redirect({ to: "/login" });
+		if (access.kind === "anon")
+			throw redirect({ to: "/login", search: returnTo(location.href) });
+		// Answered at /admin, whose only child renders nothing until the shell asks
+		// for it, so no screen's data is fetched on the way to being refused.
+		if (access.kind === "forbidden") {
+			if (location.pathname !== "/admin") throw redirect({ to: "/admin" });
+			return { access };
+		}
 		// A module this install has not turned on has no screens: the path stops
 		// answering here, during SSR, rather than rendering and failing on its data.
 		const modules =
@@ -62,8 +98,63 @@ export const Route = createFileRoute("/admin")({
 	head: ({ loaderData }) => ({
 		meta: [{ title: adminTitle(loaderData ?? {}) }],
 	}),
-	component: AdminLayout,
+	component: AdminShell,
 });
+
+type OkAccess = Extract<AdminAccess, { kind: "ok" }>;
+
+/**
+ * Splits the two shells so neither branch calls the other's hooks: someone with
+ * no admin area gets the no-access screen, not a sidebar with nothing in it.
+ */
+function AdminShell() {
+	const { access } = Route.useRouteContext();
+	if (access.kind === "forbidden") return <NoAccess email={access.email} />;
+	return <AdminLayout access={access} />;
+}
+
+/**
+ * Shown to someone who is signed in but holds no admin area. The refusal itself
+ * is the server's, in the gate above and on every tRPC procedure; this only says
+ * so in words, instead of handing them the sign-in form they already used.
+ */
+function NoAccess({ email }: { email: string }) {
+	const navigate = useNavigate();
+
+	async function logout() {
+		await fetch("/api/auth/logout", { method: "POST" });
+		navigate({ to: "/login" });
+	}
+
+	return (
+		<main className="grid min-h-screen place-items-center bg-card p-6 text-foreground">
+			<div className="w-full max-w-md rounded-2xl border border-border bg-card p-7 text-center shadow-[var(--shadow-soft)]">
+				<h1 className="font-display text-xl font-semibold text-primary">
+					You do not have access to the admin
+				</h1>
+				<p className="mt-3 text-sm text-muted-foreground">
+					You are signed in as <strong>{email}</strong>, and that account has no
+					admin areas. Ask an administrator to grant one.
+				</p>
+				<div className="mt-6 flex flex-wrap justify-center gap-2">
+					<a
+						href="/internalsources"
+						className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+					>
+						Go to Internal Sources
+					</a>
+					<button
+						type="button"
+						onClick={logout}
+						className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
+					>
+						Log out
+					</button>
+				</div>
+			</div>
+		</main>
+	);
+}
 
 type NavItem = {
 	to: string;
@@ -73,6 +164,18 @@ type NavItem = {
 	type?: string;
 };
 type NavGroup = { group: string; items: NavItem[] };
+
+function persistOpenGroup(group: string) {
+	try {
+		localStorage.setItem("admin-nav-open", group);
+	} catch {}
+}
+
+function persistRail(collapsed: boolean) {
+	try {
+		localStorage.setItem("admin-nav-rail", collapsed ? "collapsed" : "open");
+	} catch {}
+}
 
 // `type` items deep-link the Posts list to a single content type (/admin/posts?type=…),
 // so the admin mirrors the public collections (News, Stories, Videos, …).
@@ -158,6 +261,7 @@ const NAV: NavGroup[] = [
 			{ to: "/admin/footer", label: "Footer", icon: "footer" },
 			{ to: "/admin/org-chart", label: "Org Chart", icon: "team" },
 			{ to: "/admin/languages", label: "Languages", icon: "languages" },
+			{ to: "/admin/ui-strings", label: "UI Strings", icon: "languages" },
 			{ to: "/admin/users", label: "Users", icon: "staff" },
 			{ to: "/admin/roles", label: "Roles", icon: "staff" },
 			{ to: "/admin/settings", label: "Settings", icon: "settings" },
@@ -191,9 +295,8 @@ const NAV: NavGroup[] = [
  * Admin layout. Access is enforced server-side in the route's `beforeLoad`, so
  * the identity is already resolved by the time this renders.
  */
-function AdminLayout() {
+function AdminLayout({ access }: { access: OkAccess }) {
 	const navigate = useNavigate();
-	const { access } = Route.useRouteContext();
 	const settings = Route.useLoaderData();
 	const email = access.email;
 	const isSuper = access.isSuperAdmin;
@@ -216,23 +319,52 @@ function AdminLayout() {
 			);
 		return pathname === it.to || pathname.startsWith(`${it.to}/`);
 	};
-	// Each group is foldable; the collapsed set is remembered in localStorage.
-	const [folded, setFolded] = useState<Record<string, boolean>>(() => {
-		if (typeof window === "undefined") return {};
-		try {
-			return JSON.parse(localStorage.getItem("admin-nav-folded") || "{}");
-		} catch {
-			return {};
-		}
-	});
-	const toggleGroup = (g: string) =>
-		setFolded((f) => {
-			const next = { ...f, [g]: !f[g] };
-			try {
-				localStorage.setItem("admin-nav-folded", JSON.stringify(next));
-			} catch {}
-			return next;
+	// One group open at a time, remembered in localStorage. `null` is "nothing
+	// stored yet", which falls back to the group holding the current route; `""`
+	// is a deliberate all-shut. Starts null on both sides of hydration - reading
+	// storage during the first client render disagrees with the server and React
+	// throws the whole nav away.
+	const [openGroup, setOpenGroup] = useState<string | null>(null);
+	const toggleGroup = (g: string, isOpen: boolean) => {
+		const next = isOpen ? "" : g;
+		setOpenGroup(next);
+		persistOpenGroup(next);
+	};
+
+	// From `lg` up the rail narrows to icons and gives the width back to the
+	// content column. Below `lg` it is a drawer, which is never narrowed.
+	// Same hydration rule as the open group: the server cannot see storage, so the
+	// rail starts wide and narrows on mount.
+	const [railCollapsed, setRailCollapsed] = useState(false);
+	useEffect(() => {
+		setRailCollapsed(localStorage.getItem("admin-nav-rail") === "collapsed");
+	}, []);
+	const toggleRail = () =>
+		setRailCollapsed((c) => {
+			persistRail(!c);
+			return !c;
 		});
+
+	// Below `lg` the rail leaves the layout and becomes a drawer, so the content
+	// column gets the whole viewport instead of the 104px the 256px rail left it.
+	const [drawerOpen, setDrawerOpen] = useState(false);
+	const closeDrawer = () => setDrawerOpen(false);
+	const drawerRef = useModalPanel(closeDrawer, drawerOpen);
+	// Starts true so the server-rendered desktop rail is never inert before
+	// hydration; a narrow viewport corrects it on mount.
+	const [isDesktop, setIsDesktop] = useState(true);
+	// Widening past the breakpoint turns the drawer back into the static rail,
+	// and a trap left armed there would hold the keyboard on the desktop layout.
+	useEffect(() => {
+		const desktop = window.matchMedia("(min-width: 1024px)");
+		const sync = () => {
+			setIsDesktop(desktop.matches);
+			if (desktop.matches) setDrawerOpen(false);
+		};
+		sync();
+		desktop.addEventListener("change", sync);
+		return () => desktop.removeEventListener("change", sync);
+	}, []);
 
 	async function logout() {
 		await fetch("/api/auth/logout", { method: "POST" });
@@ -251,6 +383,27 @@ function AdminLayout() {
 		items: s.items.filter(canSee),
 	})).filter((s) => s.items.length > 0);
 
+	const activeGroup =
+		visibleNav.find((s) => s.group && s.items.some(isActive))?.group ?? "";
+	// Landing inside a shut group - a deep link, a redirect after a save - would
+	// otherwise leave the current page's link hidden. Where no group owns the
+	// route, the stored one is adopted here rather than during render.
+	useEffect(() => {
+		if (!activeGroup) {
+			setOpenGroup(localStorage.getItem("admin-nav-open"));
+			return;
+		}
+		setOpenGroup(activeGroup);
+		persistOpenGroup(activeGroup);
+	}, [activeGroup]);
+	// Nothing stored and nothing active - the dashboard - would otherwise show six
+	// shut headers and three links.
+	const shownGroup =
+		openGroup ?? (activeGroup || (visibleNav.find((s) => s.group)?.group ?? ""));
+	// Narrowed, there is no room for a group header, so the accordion steps aside
+	// and every item shows as an icon.
+	const railNarrow = railCollapsed && isDesktop;
+
 	const link =
 		"group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground/70 transition-colors hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/50";
 	const linkActive =
@@ -264,18 +417,36 @@ function AdminLayout() {
 			>
 				Skip to main content
 			</a>
-			{/* Sidebar rail */}
+			{drawerOpen && (
+				<button
+					type="button"
+					aria-label="Close navigation"
+					onClick={closeDrawer}
+					className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm lg:hidden"
+				/>
+			)}
+			{/* Sidebar rail — a drawer below `lg`, the static rail from `lg` up */}
 			<aside
-				className="w-64 shrink-0 sticky top-0 h-screen bg-card border-r border-border flex flex-col"
+				id="admin-sidebar"
+				ref={drawerRef}
+				tabIndex={-1}
+				aria-label="Admin navigation"
+				// Shut, the drawer is only translated off-screen: without this its 43
+				// controls stay in the tab ring and a phone keyboard walks an invisible
+				// menu before reaching the page.
+				inert={!isDesktop && !drawerOpen}
+				className={`fixed lg:sticky left-0 lg:left-auto top-0 z-40 lg:z-auto w-64 shrink-0 h-screen bg-card border-r border-border flex flex-col focus:outline-none transition-transform duration-200 ease-out lg:transition-[width] lg:duration-200 ${drawerOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 ${railNarrow ? "lg:w-[4.5rem]" : "lg:w-64"}`}
 				style={{ viewTransitionName: "admin-sidebar" }}
 			>
-				<div className="flex items-center gap-2.5 px-5 h-16 border-b border-border shrink-0">
+				<div
+					className={`flex items-center gap-2.5 h-16 border-b border-border shrink-0 ${railNarrow ? "justify-center px-0" : "px-5"}`}
+				>
 					<img
 						src={siteLogo(settings)}
 						alt={siteShortName(settings)}
 						className="h-9 w-9 shrink-0 rounded-lg object-cover ring-1 ring-border"
 					/>
-					<div className="leading-tight">
+					<div className={railNarrow ? "sr-only" : "leading-tight"}>
 						<div className="font-display font-semibold text-primary">
 							{siteShortName(settings)}
 						</div>
@@ -285,37 +456,51 @@ function AdminLayout() {
 					</div>
 				</div>
 
-				<nav className="thin-scroll flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-5">
+				<nav className="hide-scroll flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-5">
 					{visibleNav.map((section) => {
-						const collapsed = !!folded[section.group];
+						const open =
+							railNarrow || !section.group || section.group === shownGroup;
+						const panelId = `admin-nav-${section.group.toLowerCase().replace(/\s+/g, "-")}`;
 						return (
 							<div key={section.group || "_top"}>
-								{section.group ? (
+								{section.group && !railNarrow ? (
 									<button
 										type="button"
-										onClick={() => toggleGroup(section.group)}
-										className="flex w-full items-center justify-between px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/70 hover:text-foreground"
+										onClick={() => toggleGroup(section.group, open)}
+										aria-expanded={open}
+										aria-controls={panelId}
+										className="flex w-full items-center justify-between px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/50 rounded"
 									>
 										{section.group}
 										<ChevronDown
-											className={`h-4 w-4 shrink-0 transition-transform duration-200 ${collapsed ? "-rotate-90" : ""}`}
+											className={`h-4 w-4 shrink-0 transition-transform duration-200 ${open ? "" : "-rotate-90"}`}
+											aria-hidden="true"
 										/>
 									</button>
 								) : null}
-								{(!section.group || !collapsed) && (
-									<div className="space-y-0.5">
+								{open && (
+									<div id={panelId} className="space-y-0.5">
 										{section.items.map((it) => (
 											<Link
 												key={`${it.to}:${it.type ?? ""}`}
 												to={it.to}
 												search={it.type ? { type: it.type } : undefined}
-												className={isActive(it) ? linkActive : link}
+												// Left alone the router matches Dashboard on the
+												// `/admin` prefix, so it stays `aria-current="page"`
+												// on every admin screen and two links claim to be
+												// the page.
+												activeOptions={it.exact ? { exact: true } : undefined}
+												onClick={closeDrawer}
+												title={railNarrow ? it.label : undefined}
+												className={`${isActive(it) ? linkActive : link} ${railNarrow ? "justify-center" : ""}`}
 											>
 												<AdminIcon
 													name={it.icon}
 													className="h-4 w-4 shrink-0 opacity-80"
 												/>
-												<span className="truncate">{it.label}</span>
+												<span className={railNarrow ? "sr-only" : "truncate"}>
+													{it.label}
+												</span>
 											</Link>
 										))}
 									</div>
@@ -332,6 +517,32 @@ function AdminLayout() {
 					className="sticky top-0 z-20 h-16 shrink-0 border-b border-border bg-card/85 backdrop-blur flex items-center justify-between gap-4 px-4 lg:px-5"
 					style={{ viewTransitionName: "admin-topbar" }}
 				>
+					<button
+						type="button"
+						onClick={() => setDrawerOpen((o) => !o)}
+						aria-expanded={drawerOpen}
+						aria-controls="admin-sidebar"
+						className="lg:hidden grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border text-foreground/70 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/50"
+					>
+						<Menu className="h-5 w-5" aria-hidden="true" />
+						<span className="sr-only">Menu</span>
+					</button>
+					<button
+						type="button"
+						onClick={toggleRail}
+						aria-expanded={!railCollapsed}
+						aria-controls="admin-sidebar"
+						className="hidden lg:grid h-9 w-9 shrink-0 place-items-center rounded-lg text-foreground/70 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/50"
+					>
+						{railCollapsed ? (
+							<PanelLeftOpen className="h-5 w-5" aria-hidden="true" />
+						) : (
+							<PanelLeftClose className="h-5 w-5" aria-hidden="true" />
+						)}
+						<span className="sr-only">
+							{railCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+						</span>
+					</button>
 					<div
 						ref={setHeaderSlot}
 						className="flex min-w-0 flex-1 items-center gap-3"

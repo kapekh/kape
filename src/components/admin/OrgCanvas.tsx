@@ -120,10 +120,13 @@ function OrgFlowNode({ data }: NodeProps<Node<NodeData>>) {
 					{row.title}
 				</div>
 			)}
+			{/* Every card carries the same three glyphs, so each names its own node.
+			    `title` cannot do that job — a button with text content never takes
+			    its accessible name from it. */}
 			<div className="nodrag mt-2 flex items-center justify-center gap-1 border-t border-border pt-1.5">
 				<button
 					type="button"
-					title="Add report"
+					aria-label={`Add a report under ${row.name}`}
 					onClick={() => onAddChild(row.id)}
 					className="rounded px-1.5 py-0.5 text-xs font-semibold text-[var(--accent)] hover:bg-[var(--accent)]/10"
 				>
@@ -131,7 +134,7 @@ function OrgFlowNode({ data }: NodeProps<Node<NodeData>>) {
 				</button>
 				<button
 					type="button"
-					title="Edit"
+					aria-label={`Edit ${row.name}`}
 					onClick={() => onEdit(row.id)}
 					className="rounded px-1.5 py-0.5 text-xs text-foreground/70 hover:bg-muted"
 				>
@@ -139,7 +142,7 @@ function OrgFlowNode({ data }: NodeProps<Node<NodeData>>) {
 				</button>
 				<button
 					type="button"
-					title="Delete"
+					aria-label={`Delete ${row.name}`}
 					onClick={() => onDelete(row.id)}
 					className="rounded px-1.5 py-0.5 text-xs text-destructive hover:bg-destructive/10"
 				>

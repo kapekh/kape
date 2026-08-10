@@ -271,6 +271,10 @@
   }
   .thin-scroll:hover::-webkit-scrollbar-thumb { background: var(--muted-foreground); }
 
+  /* Scrolls, shows no scrollbar */
+  .hide-scroll { scrollbar-width: none; }
+  .hide-scroll::-webkit-scrollbar { width: 0; height: 0; }
+
   /* subtle paper texture via gradient */
   body::before {
     content: "";

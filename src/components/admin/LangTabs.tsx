@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 
 /**
  * Tabs for multilingual fields. The field VALUES live in the parent form's state
@@ -6,6 +6,10 @@ import { useState } from "react";
  * switching tabs can never lose content. Every language panel stays mounted and
  * is merely hidden when inactive, which also keeps rich-text editors from
  * remounting (no flicker, no lost cursor) on tab change.
+ *
+ * Roving tabindex, `aria-controls` and arrow-key movement are all here because
+ * `role="tab"` promises them: a tablist that only responds to Tab makes a screen
+ * reader announce "tab, 1 of 3" and then not move when the user presses Right.
  */
 export function LangTabs<
 	L extends { code: string; name: string; nativeName?: string },
@@ -17,6 +21,8 @@ export function LangTabs<
 	children: (lang: L) => React.ReactNode;
 }) {
 	const [active, setActive] = useState<string | null>(null);
+	const base = useId();
+	const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
 	const activeCode =
 		active && languages.some((l) => l.code === active)
 			? active
@@ -24,20 +30,57 @@ export function LangTabs<
 
 	if (languages.length === 0) return null;
 
+	const tabId = (code: string) => `${base}-tab-${code}`;
+	const panelId = (code: string) => `${base}-panel-${code}`;
+	const index = languages.findIndex((l) => l.code === activeCode);
+
+	/** Moves selection and focus together, which is the pattern `role="tab"` implies. */
+	const go = (to: number) => {
+		const next = languages[(to + languages.length) % languages.length];
+		if (!next) return;
+		setActive(next.code);
+		tabRefs.current[languages.indexOf(next)]?.focus();
+	};
+
+	function onKeyDown(e: React.KeyboardEvent) {
+		if (e.key === "ArrowRight") {
+			e.preventDefault();
+			go(index + 1);
+		} else if (e.key === "ArrowLeft") {
+			e.preventDefault();
+			go(index - 1);
+		} else if (e.key === "Home") {
+			e.preventDefault();
+			go(0);
+		} else if (e.key === "End") {
+			e.preventDefault();
+			go(languages.length - 1);
+		}
+	}
+
 	return (
 		<div>
 			<div
 				role="tablist"
+				aria-label="Language"
+				onKeyDown={onKeyDown}
 				className="mb-4 flex flex-wrap gap-1 border-b border-border"
 			>
-				{languages.map((l) => {
+				{languages.map((l, i) => {
 					const on = activeCode === l.code;
 					return (
 						<button
 							key={l.code}
+							ref={(el) => {
+								tabRefs.current[i] = el;
+							}}
+							id={tabId(l.code)}
 							type="button"
 							role="tab"
 							aria-selected={on}
+							aria-controls={panelId(l.code)}
+							// only the selected tab is a tab stop; the arrows move within
+							tabIndex={on ? 0 : -1}
 							onClick={() => setActive(l.code)}
 							className={`-mb-px flex items-center gap-1.5 rounded-t-lg border-b-2 px-4 py-2 text-sm font-medium transition ${on ? "border-[var(--accent)] text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
 						>
@@ -50,7 +93,13 @@ export function LangTabs<
 				})}
 			</div>
 			{languages.map((l) => (
-				<div key={l.code} role="tabpanel" hidden={activeCode !== l.code}>
+				<div
+					key={l.code}
+					id={panelId(l.code)}
+					role="tabpanel"
+					aria-labelledby={tabId(l.code)}
+					hidden={activeCode !== l.code}
+				>
 					{children(l)}
 				</div>
 			))}
