@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Plus, SearchX, UserRound } from "lucide-react";
 import { useCallback, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
@@ -11,6 +12,10 @@ import {
 	TableScroll,
 	useListQuery,
 } from "#/components/admin/list-ui";
+import { Badge } from "#/components/ui/badge.tsx";
+import { Button } from "#/components/ui/button.tsx";
+import { PageHeader } from "#/components/ui/page-header.tsx";
+import { Table, TBody, TD, TH, THead, TR } from "#/components/ui/table.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { confirm } from "@/components/Dialogs";
 
@@ -33,6 +38,7 @@ function PeopleList() {
 	const load = useCallback(() => trpcClient.adminPeople.list.query(), []);
 	const { rows, setRows, state, error, reload } = useListQuery<Row>(load);
 	const [q, setQ] = useState("");
+	const [tier, setTier] = useState("");
 
 	async function del(row: Row) {
 		if (!(await confirm("Delete this person?"))) return;
@@ -44,7 +50,9 @@ function PeopleList() {
 		);
 	}
 
-	const shown = rows.filter((r) =>
+	const tiers = [...new Set(rows.map((r) => r.tier))].sort();
+	const ofTier = tier ? rows.filter((r) => r.tier === tier) : rows;
+	const shown = ofTier.filter((r) =>
 		matchesQuery(
 			q,
 			r.nameEn,
@@ -53,151 +61,177 @@ function PeopleList() {
 			TIER_LABELS[r.tier] ?? r.tier,
 		),
 	);
+	const filtered = q !== "" || tier !== "";
 
 	const newPerson = (
-		<Link
-			to="/admin/people/new"
-			className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold hover:opacity-90 transition"
+		<Button asChild>
+			<Link to="/admin/people/new">
+				<Plus aria-hidden="true" />
+				New person
+			</Link>
+		</Button>
+	);
+
+	const clearFilters = (
+		<Button
+			type="button"
+			variant="secondary"
+			onClick={() => {
+				setQ("");
+				setTier("");
+			}}
 		>
-			+ New person
-		</Link>
+			{tier ? "Clear filters" : "Clear search"}
+		</Button>
 	);
 
 	return (
 		<div>
-			<div className="flex items-center justify-between mb-6">
-				<div>
-					<h1 className="font-display text-2xl font-semibold text-primary">
-						People
-					</h1>
-					<p className="mt-1 text-sm text-muted-foreground">
-						Team, leadership &amp; staff
-						{state === "ready" ? ` — ${rows.length} total.` : "."} Public
-						profiles appear on the Team page &amp; org chart.
-					</p>
-				</div>
-				{newPerson}
-			</div>
+			<PageHeader
+				title="People"
+				description="Board, management and staff. The ones marked public appear on the Team page and the org chart."
+				breadcrumb={[{ label: "Admin", to: "/admin" }, { label: "People" }]}
+				actions={newPerson}
+				toolbar={
+					state === "ready" && rows.length > 0 ? (
+						<>
+							<ListSearch
+								value={q}
+								onChange={setQ}
+								label="Search people"
+								placeholder="Search by name, position or tier…"
+								status={
+									filtered
+										? `${shown.length} of ${rows.length}`
+										: `${rows.length} ${rows.length === 1 ? "person" : "people"}`
+								}
+							/>
+							<fieldset className="mb-4 flex flex-wrap items-center gap-2">
+								<legend className="sr-only">Filter by tier</legend>
+								<Button
+									type="button"
+									size="sm"
+									variant={tier === "" ? "primary" : "secondary"}
+									aria-pressed={tier === ""}
+									onClick={() => setTier("")}
+								>
+									All
+								</Button>
+								{tiers.map((t) => (
+									<Button
+										key={t}
+										type="button"
+										size="sm"
+										variant={tier === t ? "primary" : "secondary"}
+										aria-pressed={tier === t}
+										onClick={() => setTier(t)}
+									>
+										{TIER_LABELS[t] ?? t}
+									</Button>
+								))}
+							</fieldset>
+						</>
+					) : undefined
+				}
+			/>
 
 			{state !== "ready" ? (
 				<ListStatus state={state} error={error} onRetry={reload} />
 			) : rows.length === 0 ? (
 				<EmptyState
+					icon={<UserRound />}
 					title="No people yet"
 					description="People are the board, management and staff. The ones marked public appear on the Team page and the org chart."
 					action={newPerson}
 				/>
+			) : shown.length === 0 ? (
+				<EmptyState
+					icon={<SearchX />}
+					title="No people match your filters"
+					description={
+						q
+							? `Nothing here contains “${q}”.`
+							: "Nobody sits in that tier yet."
+					}
+					action={clearFilters}
+				/>
 			) : (
-				<>
-					<ListSearch
-						value={q}
-						onChange={setQ}
-						label="Search people"
-						placeholder="Search by name, position or tier…"
-						status={q ? `${shown.length} of ${rows.length}` : undefined}
-					/>
-					{shown.length === 0 ? (
-						<EmptyState
-							title="No people match that search"
-							description={`Nothing here contains “${q}”.`}
-							action={
-								<button
-									type="button"
-									onClick={() => setQ("")}
-									className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
-								>
-									Clear search
-								</button>
-							}
-						/>
-					) : (
-						<TableScroll label="People">
-							<table className="w-full text-sm">
-								<thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
-									<tr>
-										<th className="px-4 py-2.5 w-12" />
-										<th className="px-2 py-2.5">Name</th>
-										<th className="px-2 py-2.5">Position</th>
-										<th className="px-2 py-2.5">Tier</th>
-										<th className="px-2 py-2.5">Public</th>
-										<th className="px-3 py-2.5 text-right">Actions</th>
-									</tr>
-								</thead>
-								<tbody className="divide-y divide-border">
-									{shown.map((r) => (
-										<tr key={r.id} className="hover:bg-muted/20">
-											<td className="px-4 py-2">
-												{r.photoUrl ? (
-													<img
-														src={r.photoUrl}
-														alt=""
-														className="h-9 w-9 rounded-full object-cover"
-													/>
-												) : (
-													<span className="grid h-9 w-9 place-items-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
-														{(r.nameEn ?? "?").slice(0, 1)}
-													</span>
-												)}
-											</td>
-											<td className="px-2 py-2">
-												<Link
-													to="/admin/people/$id"
-													params={{ id: String(r.id) }}
-													className="font-medium text-foreground hover:text-[var(--accent)]"
-												>
-													{r.nameEn}
-												</Link>
-												{r.nameKm ? (
-													<span className="ml-2 text-xs text-muted-foreground font-khmer">
-														{r.nameKm}
-													</span>
-												) : null}
-											</td>
-											<td className="px-2 py-2 text-foreground/80">
-												{r.position || "—"}
-											</td>
-											<td className="px-2 py-2 text-foreground/80">
-												{TIER_LABELS[r.tier] ?? r.tier}
-											</td>
-											<td className="px-2 py-2">
-												{r.isPublic ? (
-													<span className="rounded-full bg-[var(--palm)]/10 px-2 py-0.5 text-[10px] font-medium text-[var(--palm)]">
-														Public
-													</span>
-												) : (
-													<span className="text-xs text-muted-foreground">
-														Internal
-													</span>
-												)}
-											</td>
-											<td className="px-3 py-2 text-right whitespace-nowrap">
-												<Link
-													to="/admin/people/$id"
-													params={{ id: String(r.id) }}
-													className="text-xs font-semibold text-[var(--accent)] hover:underline"
-												>
-													Edit
-												</Link>
-												<span className="ml-2 inline-flex align-middle">
-													<ActionMenu
-														label={`Actions for ${r.nameEn}`}
-														items={[
-															{
-																label: "Delete person",
-																danger: true,
-																onClick: () => del(r),
-															},
-														]}
-													/>
-												</span>
-											</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						</TableScroll>
-					)}
-				</>
+				<TableScroll label="People">
+					<Table>
+						<THead>
+							<TR>
+								<TH width={64}>
+									<span className="sr-only">Photo</span>
+								</TH>
+								<TH>Name</TH>
+								<TH>Position</TH>
+								<TH width={150}>Tier</TH>
+								<TH width={120}>Visibility</TH>
+								<TH align="right" width={72}>
+									Actions
+								</TH>
+							</TR>
+						</THead>
+						<TBody>
+							{shown.map((r) => (
+								<TR key={r.id} className="hover:bg-admin-accent-soft/50">
+									<TD>
+										{r.photoUrl ? (
+											<img
+												src={r.photoUrl}
+												alt=""
+												className="size-9 rounded-full object-cover"
+											/>
+										) : (
+											<span className="grid size-9 place-items-center rounded-full bg-admin-neutral-soft text-[13px] font-medium text-admin-ink-muted">
+												{(r.nameEn ?? "?").slice(0, 1)}
+											</span>
+										)}
+									</TD>
+									<TD label="Name">
+										<Link
+											to="/admin/people/$id"
+											params={{ id: String(r.id) }}
+											className="truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+										>
+											{r.nameEn}
+										</Link>
+										{r.nameKm ? (
+											<span className="ml-2 font-khmer text-[13px] text-admin-ink-muted">
+												{r.nameKm}
+											</span>
+										) : null}
+									</TD>
+									<TD label="Position" className="text-admin-ink-muted">
+										{r.position || "—"}
+									</TD>
+									<TD label="Tier" className="text-admin-ink-muted">
+										{TIER_LABELS[r.tier] ?? r.tier}
+									</TD>
+									<TD label="Visibility">
+										{r.isPublic ? (
+											<Badge tone="live">Public</Badge>
+										) : (
+											<Badge tone="neutral">Internal</Badge>
+										)}
+									</TD>
+									<TD align="right" className="max-md:justify-end">
+										<ActionMenu
+											label={`Actions for ${r.nameEn}`}
+											items={[
+												{
+													label: "Delete person",
+													danger: true,
+													onClick: () => del(r),
+												},
+											]}
+										/>
+									</TD>
+								</TR>
+							))}
+						</TBody>
+					</Table>
+				</TableScroll>
 			)}
 		</div>
 	);

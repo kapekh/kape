@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Plus, School, SearchX } from "lucide-react";
 import { useCallback, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
@@ -12,6 +13,9 @@ import {
 	useListQuery,
 } from "#/components/admin/list-ui";
 import { useModules } from "#/components/admin/useModules";
+import { Button } from "#/components/ui/button.tsx";
+import { PageHeader } from "#/components/ui/page-header.tsx";
+import { Table, TBody, TD, TH, THead, TR } from "#/components/ui/table.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { confirm } from "@/components/Dialogs";
 
@@ -56,6 +60,7 @@ function SchoolsList() {
 	}, [modules]);
 	const { rows, setRows, state, error, reload } = useListQuery<Row>(load);
 	const [q, setQ] = useState("");
+	const [level, setLevel] = useState("");
 
 	async function del(row: Row) {
 		if (!(await confirm("Delete this school?"))) return;
@@ -73,7 +78,11 @@ function SchoolsList() {
 		r.province ? (provinces[r.province] ?? r.province) : "";
 	const projectLabel = (r: Row) =>
 		r.projectId != null ? (projects[r.projectId] ?? "") : "";
-	const shown = rows.filter((r) =>
+	const levels = [
+		...new Set(rows.map((r) => r.level).filter((l): l is string => !!l)),
+	].sort();
+	const ofLevel = level ? rows.filter((r) => r.level === level) : rows;
+	const shown = ofLevel.filter((r) =>
 		matchesQuery(
 			q,
 			r.name,
@@ -83,140 +92,173 @@ function SchoolsList() {
 			projectLabel(r),
 		),
 	);
+	const filtered = q !== "" || level !== "";
 
 	const newSchool = (
-		<Link
-			to="/admin/schools/new"
-			className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold hover:opacity-90 transition"
+		<Button asChild>
+			<Link to="/admin/schools/new">
+				<Plus aria-hidden="true" />
+				New school
+			</Link>
+		</Button>
+	);
+
+	const clearFilters = (
+		<Button
+			type="button"
+			variant="secondary"
+			onClick={() => {
+				setQ("");
+				setLevel("");
+			}}
 		>
-			+ New school
-		</Link>
+			{level ? "Clear filters" : "Clear search"}
+		</Button>
 	);
 
 	return (
 		<div>
-			<div className="flex items-center justify-between mb-6">
-				<div>
-					<h1 className="font-display text-2xl font-semibold text-primary">
-						Schools
-					</h1>
-					<p className="mt-1 text-sm text-muted-foreground">
-						Schools supported
-						{state === "ready" ? ` — ${rows.length} total.` : "."}
-					</p>
-				</div>
-				{newSchool}
-			</div>
+			<PageHeader
+				title="Schools"
+				description="The sites this organisation supports, each with a level, a province and an optional project."
+				breadcrumb={[{ label: "Admin", to: "/admin" }, { label: "Schools" }]}
+				actions={newSchool}
+				toolbar={
+					state === "ready" && rows.length > 0 ? (
+						<>
+							<ListSearch
+								value={q}
+								onChange={setQ}
+								label="Search schools"
+								placeholder="Search by name, code, province or project…"
+								status={
+									filtered
+										? `${shown.length} of ${rows.length}`
+										: `${rows.length} ${rows.length === 1 ? "school" : "schools"}`
+								}
+							/>
+							{levels.length > 1 && (
+								<fieldset className="mb-4 flex flex-wrap items-center gap-2">
+									<legend className="sr-only">Filter by level</legend>
+									<Button
+										type="button"
+										size="sm"
+										variant={level === "" ? "primary" : "secondary"}
+										aria-pressed={level === ""}
+										onClick={() => setLevel("")}
+									>
+										All
+									</Button>
+									{levels.map((l) => (
+										<Button
+											key={l}
+											type="button"
+											size="sm"
+											variant={level === l ? "primary" : "secondary"}
+											aria-pressed={level === l}
+											onClick={() => setLevel(l)}
+										>
+											{LEVEL_LABELS[l] ?? l}
+										</Button>
+									))}
+								</fieldset>
+							)}
+						</>
+					) : undefined
+				}
+			/>
 
 			{state !== "ready" ? (
 				<ListStatus state={state} error={error} onRetry={reload} />
 			) : rows.length === 0 ? (
 				<EmptyState
+					icon={<School />}
 					title="No schools yet"
 					description="Schools are the sites this organisation supports, each with a level, a province and an optional project."
 					action={newSchool}
 				/>
+			) : shown.length === 0 ? (
+				<EmptyState
+					icon={<SearchX />}
+					title="No schools match your filters"
+					description={
+						q
+							? `Nothing here contains “${q}”.`
+							: "No school sits at that level yet."
+					}
+					action={clearFilters}
+				/>
 			) : (
-				<>
-					<ListSearch
-						value={q}
-						onChange={setQ}
-						label="Search schools"
-						placeholder="Search by name, code, province or project…"
-						status={q ? `${shown.length} of ${rows.length}` : undefined}
-					/>
-					{shown.length === 0 ? (
-						<EmptyState
-							title="No schools match that search"
-							description={`Nothing here contains “${q}”.`}
-							action={
-								<button
-									type="button"
-									onClick={() => setQ("")}
-									className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
-								>
-									Clear search
-								</button>
-							}
-						/>
-					) : (
-						<TableScroll label="Schools">
-							<table className="w-full text-sm">
-								<thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
-									<tr>
-										<th className="px-4 py-2.5 w-16" />
-										<th className="px-2 py-2.5">Name</th>
-										<th className="px-2 py-2.5">Level</th>
-										<th className="px-2 py-2.5">Province</th>
-										<th className="px-2 py-2.5">Project</th>
-										<th className="px-3 py-2.5 text-right">Actions</th>
-									</tr>
-								</thead>
-								<tbody className="divide-y divide-border">
-									{shown.map((r) => (
-										<tr key={r.id} className="hover:bg-muted/20">
-											<td className="px-4 py-2">
-												<div className="h-10 w-14 rounded-md overflow-hidden bg-muted ring-1 ring-border">
-													{r.coverMediaId && media[r.coverMediaId] ? (
-														<img
-															src={media[r.coverMediaId]}
-															alt=""
-															className="h-full w-full object-cover"
-														/>
-													) : null}
-												</div>
-											</td>
-											<td className="px-2 py-2">
-												<Link
-													to="/admin/schools/$id"
-													params={{ id: String(r.id) }}
-													className="font-medium text-foreground hover:text-[var(--accent)]"
-												>
-													{r.name}
-												</Link>
-												{r.code ? (
-													<span className="ml-2 text-xs text-muted-foreground">
-														{r.code}
-													</span>
-												) : null}
-											</td>
-											<td className="px-2 py-2 text-foreground/80">
-												{levelLabel(r) || "—"}
-											</td>
-											<td className="px-2 py-2 text-foreground/80">
-												{provinceLabel(r) || "—"}
-											</td>
-											<td className="px-2 py-2 text-foreground/80">
-												{projectLabel(r) || "—"}
-											</td>
-											<td className="px-3 py-2 text-right whitespace-nowrap">
-												<Link
-													to="/admin/schools/$id"
-													params={{ id: String(r.id) }}
-													className="text-xs font-semibold text-[var(--accent)] hover:underline"
-												>
-													Edit
-												</Link>
-												<span className="ml-2 inline-flex align-middle">
-													<ActionMenu
-														label={`Actions for ${r.name}`}
-														items={[
-															{
-																label: "Delete school",
-																danger: true,
-																onClick: () => del(r),
-															},
-														]}
-													/>
-												</span>
-											</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						</TableScroll>
-					)}
-				</>
+				<TableScroll label="Schools">
+					<Table>
+						<THead>
+							<TR>
+								<TH width={72}>
+									<span className="sr-only">Cover</span>
+								</TH>
+								<TH>Name</TH>
+								<TH width={160}>Level</TH>
+								<TH>Province</TH>
+								<TH width={140}>Project</TH>
+								<TH align="right" width={72}>
+									Actions
+								</TH>
+							</TR>
+						</THead>
+						<TBody>
+							{shown.map((r) => (
+								<TR key={r.id} className="hover:bg-admin-accent-soft/50">
+									<TD>
+										<div className="h-10 w-14 overflow-hidden rounded-lg bg-admin-neutral-soft ring-1 ring-admin-border">
+											{r.coverMediaId && media[r.coverMediaId] ? (
+												<img
+													src={media[r.coverMediaId]}
+													alt=""
+													className="h-full w-full object-cover"
+												/>
+											) : null}
+										</div>
+									</TD>
+									<TD label="Name">
+										<Link
+											to="/admin/schools/$id"
+											params={{ id: String(r.id) }}
+											className="truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+										>
+											{r.name}
+										</Link>
+										{r.code ? (
+											<span className="ml-2 text-[13px] text-admin-ink-muted">
+												{r.code}
+											</span>
+										) : null}
+									</TD>
+									<TD label="Level" className="text-admin-ink-muted">
+										{levelLabel(r) || "—"}
+									</TD>
+									<TD label="Province" className="text-admin-ink-muted">
+										{provinceLabel(r) || "—"}
+									</TD>
+									<TD label="Project" className="text-admin-ink-muted">
+										{projectLabel(r) || "—"}
+									</TD>
+									<TD align="right" className="max-md:justify-end">
+										<ActionMenu
+											label={`Actions for ${r.name}`}
+											items={[
+												{
+													label: "Delete school",
+													danger: true,
+													onClick: () => del(r),
+												},
+											]}
+										/>
+									</TD>
+								</TR>
+							))}
+						</TBody>
+					</Table>
+				</TableScroll>
 			)}
 		</div>
 	);

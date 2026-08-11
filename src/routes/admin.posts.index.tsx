@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Newspaper, Plus, SearchX } from "lucide-react";
 import { useCallback, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
@@ -11,6 +12,10 @@ import {
 	TableScroll,
 	useListQuery,
 } from "#/components/admin/list-ui";
+import { Badge } from "#/components/ui/badge.tsx";
+import { Button } from "#/components/ui/button.tsx";
+import { PageHeader } from "#/components/ui/page-header.tsx";
+import { Table, TBody, TD, TH, THead, TR } from "#/components/ui/table.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { confirm } from "@/components/Dialogs";
 
@@ -30,6 +35,11 @@ const STATUS_LABELS: Record<string, string> = {
 	draft: "Draft",
 	published: "Published",
 	archived: "Archived",
+};
+const STATUS_TONES: Record<string, "live" | "draft" | "neutral"> = {
+	published: "live",
+	draft: "draft",
+	archived: "neutral",
 };
 
 export const Route = createFileRoute("/admin/posts/")({
@@ -54,6 +64,7 @@ function PostsList() {
 	const load = useCallback(() => trpcClient.adminPosts.list.query(), []);
 	const { rows, setRows, state, error, reload } = useListQuery<Row>(load);
 	const [q, setQ] = useState("");
+	const [status, setStatus] = useState("");
 
 	async function del(row: Row) {
 		if (!(await confirm("Delete this post?"))) return;
@@ -67,137 +78,172 @@ function PostsList() {
 
 	const label = type ? TYPE_LABELS[type] : undefined;
 	const ofType = type ? rows.filter((r) => r.contentType === type) : rows;
-	const shown = ofType.filter((r) =>
+	const statuses = [...new Set(ofType.map((r) => r.status))].sort();
+	const ofStatus = status ? ofType.filter((r) => r.status === status) : ofType;
+	const shown = ofStatus.filter((r) =>
 		matchesQuery(q, r.title, r.slug, TYPE_LABELS[r.contentType], r.status),
 	);
+	const filtered = q !== "" || status !== "";
 	const heading = label ?? "All posts";
 	const noun = label ? label.toLowerCase() : "posts";
 	const singular = label ? label.replace(/s$/, "").toLowerCase() : "post";
 
 	const newPost = (
-		<Link
-			to="/admin/posts/new"
-			search={type ? { type } : undefined}
-			className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold hover:opacity-90"
+		<Button asChild>
+			<Link to="/admin/posts/new" search={type ? { type } : undefined}>
+				<Plus aria-hidden="true" />
+				New {singular}
+			</Link>
+		</Button>
+	);
+
+	const clearFilters = (
+		<Button
+			type="button"
+			variant="secondary"
+			onClick={() => {
+				setQ("");
+				setStatus("");
+			}}
 		>
-			+ New {singular}
-		</Link>
+			{status ? "Clear filters" : "Clear search"}
+		</Button>
 	);
 
 	return (
 		<div>
-			<div className="flex items-center justify-between mb-6">
-				<div>
-					<h1 className="font-display text-2xl font-semibold text-primary">
-						{heading}
-					</h1>
-					{type && (
-						<Link
-							to="/admin/posts"
-							className="mt-0.5 inline-block text-xs text-muted-foreground hover:text-[var(--accent)]"
-						>
-							← All posts
-						</Link>
-					)}
-				</div>
-				{newPost}
-			</div>
+			<PageHeader
+				title={heading}
+				description="Dated content. Each one gets its own public page."
+				breadcrumb={
+					type
+						? [
+								{ label: "Admin", to: "/admin" },
+								{ label: "All posts", to: "/admin/posts" },
+								{ label: heading },
+							]
+						: [{ label: "Admin", to: "/admin" }, { label: heading }]
+				}
+				actions={newPost}
+				toolbar={
+					state === "ready" && ofType.length > 0 ? (
+						<>
+							<ListSearch
+								value={q}
+								onChange={setQ}
+								label={`Search ${noun}`}
+								placeholder="Search by title or slug…"
+								status={
+									filtered
+										? `${shown.length} of ${ofType.length}`
+										: `${ofType.length} ${ofType.length === 1 ? singular : noun}`
+								}
+							/>
+							<fieldset className="mb-4 flex flex-wrap items-center gap-2">
+								<legend className="sr-only">Filter by status</legend>
+								<Button
+									type="button"
+									size="sm"
+									variant={status === "" ? "primary" : "secondary"}
+									aria-pressed={status === ""}
+									onClick={() => setStatus("")}
+								>
+									All
+								</Button>
+								{statuses.map((s) => (
+									<Button
+										key={s}
+										type="button"
+										size="sm"
+										variant={status === s ? "primary" : "secondary"}
+										aria-pressed={status === s}
+										onClick={() => setStatus(s)}
+									>
+										{STATUS_LABELS[s] ?? s}
+									</Button>
+								))}
+							</fieldset>
+						</>
+					) : undefined
+				}
+			/>
 
 			{state !== "ready" ? (
 				<ListStatus state={state} error={error} onRetry={reload} />
 			) : ofType.length === 0 ? (
 				<EmptyState
+					icon={<Newspaper />}
 					title={`No ${noun} yet`}
 					description={`${label ?? "Posts"} are the dated content of the site — each one gets its own public page.`}
 					action={newPost}
 				/>
+			) : shown.length === 0 ? (
+				<EmptyState
+					icon={<SearchX />}
+					title={`No ${noun} match your filters`}
+					description={
+						q
+							? `Nothing here contains “${q}”.`
+							: `No ${singular} carries that status yet.`
+					}
+					action={clearFilters}
+				/>
 			) : (
-				<>
-					<ListSearch
-						value={q}
-						onChange={setQ}
-						label={`Search ${noun}`}
-						placeholder="Search by title or slug…"
-						status={q ? `${shown.length} of ${ofType.length}` : undefined}
-					/>
-					{shown.length === 0 ? (
-						<EmptyState
-							title={`No ${noun} match that search`}
-							description={`Nothing here contains “${q}”.`}
-							action={
-								<button
-									type="button"
-									onClick={() => setQ("")}
-									className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
-								>
-									Clear search
-								</button>
-							}
-						/>
-					) : (
-						<TableScroll label={heading}>
-							<table className="w-full text-sm">
-								<thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
-									<tr>
-										<th className="px-4 py-2.5">Title</th>
-										{!type && <th className="px-4 py-2.5">Type</th>}
-										<th className="px-4 py-2.5">Status</th>
-										<th className="px-4 py-2.5">Slug</th>
-										<th className="px-4 py-2.5" />
-									</tr>
-								</thead>
-								<tbody>
-									{shown.map((r) => (
-										<tr
-											key={r.id}
-											className="border-t border-border hover:bg-muted/30 transition"
+				<TableScroll label={heading}>
+					<Table>
+						<THead>
+							<TR>
+								<TH>Title</TH>
+								{!type && <TH width={140}>Type</TH>}
+								<TH width={140}>Status</TH>
+								<TH>Slug</TH>
+								<TH align="right" width={72}>
+									Actions
+								</TH>
+							</TR>
+						</THead>
+						<TBody>
+							{shown.map((r) => (
+								<TR key={r.id} className="hover:bg-admin-accent-soft/50">
+									<TD label="Title">
+										<Link
+											to="/admin/posts/$id"
+											params={{ id: String(r.id) }}
+											className="block truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
 										>
-											<td className="px-4 py-2.5 font-medium text-foreground">
-												{r.title}
-											</td>
-											{!type && (
-												<td className="px-4 py-2.5 text-foreground/70">
-													{TYPE_LABELS[r.contentType] ?? r.contentType}
-												</td>
-											)}
-											<td className="px-4 py-2.5">
-												<span
-													className={`rounded-full px-2 py-0.5 text-xs ${r.status === "published" ? "bg-[var(--palm)]/15 text-[var(--palm)]" : "bg-muted text-muted-foreground"}`}
-												>
-													{STATUS_LABELS[r.status] ?? r.status}
-												</span>
-											</td>
-											<td className="px-4 py-2.5 text-foreground/60">
-												{r.slug}
-											</td>
-											<td className="px-4 py-2.5 text-right whitespace-nowrap">
-												<Link
-													to="/admin/posts/$id"
-													params={{ id: String(r.id) }}
-													className="text-[var(--accent)] font-semibold hover:underline"
-												>
-													Edit
-												</Link>
-												<span className="ml-3 inline-flex align-middle">
-													<ActionMenu
-														label={`Actions for ${r.title}`}
-														items={[
-															{
-																label: "Delete",
-																danger: true,
-																onClick: () => del(r),
-															},
-														]}
-													/>
-												</span>
-											</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						</TableScroll>
-					)}
-				</>
+											{r.title}
+										</Link>
+									</TD>
+									{!type && (
+										<TD label="Type" className="text-admin-ink-muted">
+											{TYPE_LABELS[r.contentType] ?? r.contentType}
+										</TD>
+									)}
+									<TD label="Status">
+										<Badge tone={STATUS_TONES[r.status] ?? "neutral"}>
+											{STATUS_LABELS[r.status] ?? r.status}
+										</Badge>
+									</TD>
+									<TD label="Slug" className="text-admin-ink-muted">
+										{r.slug}
+									</TD>
+									<TD align="right" className="max-md:justify-end">
+										<ActionMenu
+											label={`Actions for ${r.title}`}
+											items={[
+												{
+													label: "Delete",
+													danger: true,
+													onClick: () => del(r),
+												},
+											]}
+										/>
+									</TD>
+								</TR>
+							))}
+						</TBody>
+					</Table>
+				</TableScroll>
 			)}
 		</div>
 	);

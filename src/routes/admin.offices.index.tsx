@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { MapPin, Plus, SearchX } from "lucide-react";
 import { useCallback, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
@@ -11,6 +12,10 @@ import {
 	TableScroll,
 	useListQuery,
 } from "#/components/admin/list-ui";
+import { Badge } from "#/components/ui/badge.tsx";
+import { Button } from "#/components/ui/button.tsx";
+import { PageHeader } from "#/components/ui/page-header.tsx";
+import { Table, TBody, TD, TH, THead, TR } from "#/components/ui/table.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { confirm } from "@/components/Dialogs";
 
@@ -52,137 +57,128 @@ function OfficesList() {
 	);
 
 	const newOffice = (
-		<Link
-			to="/admin/offices/new"
-			className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold hover:opacity-90 transition"
-		>
-			+ New office
-		</Link>
+		<Button asChild>
+			<Link to="/admin/offices/new">
+				<Plus aria-hidden="true" />
+				New office
+			</Link>
+		</Button>
 	);
 
 	return (
 		<div>
-			<div className="flex items-center justify-between mb-6">
-				<div>
-					<h1 className="font-display text-2xl font-semibold text-primary">
-						Offices
-					</h1>
-					<p className="mt-1 text-sm text-muted-foreground">
-						Office locations
-						{state === "ready" ? ` — ${rows.length} total.` : "."}
-					</p>
-				</div>
-				{newOffice}
-			</div>
+			<PageHeader
+				title="Offices"
+				description="The places the organisation works from. They appear on the contact page and the map."
+				breadcrumb={[{ label: "Admin", to: "/admin" }, { label: "Offices" }]}
+				actions={newOffice}
+				toolbar={
+					state === "ready" && rows.length > 0 ? (
+						<ListSearch
+							value={q}
+							onChange={setQ}
+							label="Search offices"
+							placeholder="Search by name, province or phone…"
+							status={
+								q
+									? `${shown.length} of ${rows.length}`
+									: `${rows.length} ${rows.length === 1 ? "office" : "offices"}`
+							}
+						/>
+					) : undefined
+				}
+			/>
 
 			{state !== "ready" ? (
 				<ListStatus state={state} error={error} onRetry={reload} />
 			) : rows.length === 0 ? (
 				<EmptyState
+					icon={<MapPin />}
 					title="No offices yet"
 					description="Offices are the places the organisation works from. They appear on the contact page and the map."
 					action={newOffice}
 				/>
+			) : shown.length === 0 ? (
+				<EmptyState
+					icon={<SearchX />}
+					title="No offices match that search"
+					description={`Nothing here contains “${q}”.`}
+					action={
+						<Button type="button" variant="secondary" onClick={() => setQ("")}>
+							Clear search
+						</Button>
+					}
+				/>
 			) : (
-				<>
-					<ListSearch
-						value={q}
-						onChange={setQ}
-						label="Search offices"
-						placeholder="Search by name, province or phone…"
-						status={q ? `${shown.length} of ${rows.length}` : undefined}
-					/>
-					{shown.length === 0 ? (
-						<EmptyState
-							title="No offices match that search"
-							description={`Nothing here contains “${q}”.`}
-							action={
-								<button
-									type="button"
-									onClick={() => setQ("")}
-									className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
-								>
-									Clear search
-								</button>
-							}
-						/>
-					) : (
-						<TableScroll label="Offices">
-							<table className="w-full text-sm">
-								<thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
-									<tr>
-										<th className="px-4 py-2.5 w-16" />
-										<th className="px-2 py-2.5">Name</th>
-										<th className="px-2 py-2.5">Province</th>
-										<th className="px-2 py-2.5">Phone</th>
-										<th className="px-2 py-2.5">HQ</th>
-										<th className="px-3 py-2.5 text-right">Actions</th>
-									</tr>
-								</thead>
-								<tbody className="divide-y divide-border">
-									{shown.map((r) => (
-										<tr key={r.id} className="hover:bg-muted/20">
-											<td className="px-4 py-2">
-												<div className="h-10 w-14 rounded-md overflow-hidden bg-muted ring-1 ring-border">
-													{r.imageUrl ? (
-														<img
-															src={r.imageUrl}
-															alt=""
-															className="h-full w-full object-cover"
-														/>
-													) : null}
-												</div>
-											</td>
-											<td className="px-2 py-2">
-												<Link
-													to="/admin/offices/$id"
-													params={{ id: String(r.id) }}
-													className="font-medium text-foreground hover:text-[var(--accent)]"
-												>
-													{r.name}
-												</Link>
-											</td>
-											<td className="px-2 py-2 text-foreground/80">
-												{provinceLabel(r) || "—"}
-											</td>
-											<td className="px-2 py-2 text-foreground/80">
-												{r.phone || "—"}
-											</td>
-											<td className="px-2 py-2">
-												{r.isHq ? (
-													<span className="inline-flex rounded-full bg-[var(--accent)]/15 px-2 py-0.5 text-xs font-semibold text-[var(--accent)]">
-														HQ
-													</span>
-												) : null}
-											</td>
-											<td className="px-3 py-2 text-right whitespace-nowrap">
-												<Link
-													to="/admin/offices/$id"
-													params={{ id: String(r.id) }}
-													className="text-xs font-semibold text-[var(--accent)] hover:underline"
-												>
-													Edit
-												</Link>
-												<span className="ml-2 inline-flex align-middle">
-													<ActionMenu
-														label={`Actions for ${r.name}`}
-														items={[
-															{
-																label: "Delete office",
-																danger: true,
-																onClick: () => del(r),
-															},
-														]}
-													/>
-												</span>
-											</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						</TableScroll>
-					)}
-				</>
+				<TableScroll label="Offices">
+					<Table>
+						<THead>
+							<TR>
+								<TH width={72}>
+									<span className="sr-only">Photo</span>
+								</TH>
+								<TH>Name</TH>
+								<TH>Province</TH>
+								<TH>Phone</TH>
+								<TH width={100}>HQ</TH>
+								<TH align="right" width={72}>
+									Actions
+								</TH>
+							</TR>
+						</THead>
+						<TBody>
+							{shown.map((r) => (
+								<TR key={r.id} className="hover:bg-admin-accent-soft/50">
+									<TD>
+										<div className="h-10 w-14 overflow-hidden rounded-lg bg-admin-neutral-soft ring-1 ring-admin-border">
+											{r.imageUrl ? (
+												<img
+													src={r.imageUrl}
+													alt=""
+													className="h-full w-full object-cover"
+												/>
+											) : null}
+										</div>
+									</TD>
+									<TD label="Name">
+										<Link
+											to="/admin/offices/$id"
+											params={{ id: String(r.id) }}
+											className="block truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+										>
+											{r.name}
+										</Link>
+									</TD>
+									<TD label="Province" className="text-admin-ink-muted">
+										{provinceLabel(r) || "—"}
+									</TD>
+									<TD label="Phone" className="text-admin-ink-muted">
+										{r.phone || "—"}
+									</TD>
+									<TD label="HQ">
+										{r.isHq ? (
+											<Badge tone="accent" dot={false}>
+												HQ
+											</Badge>
+										) : null}
+									</TD>
+									<TD align="right" className="max-md:justify-end">
+										<ActionMenu
+											label={`Actions for ${r.name}`}
+											items={[
+												{
+													label: "Delete office",
+													danger: true,
+													onClick: () => del(r),
+												},
+											]}
+										/>
+									</TD>
+								</TR>
+							))}
+						</TBody>
+					</Table>
+				</TableScroll>
 			)}
 		</div>
 	);

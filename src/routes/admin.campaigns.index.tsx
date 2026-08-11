@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Megaphone, Plus, SearchX } from "lucide-react";
 import { useCallback, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
@@ -11,6 +12,10 @@ import {
 	TableScroll,
 	useListQuery,
 } from "#/components/admin/list-ui";
+import { Badge, type BadgeTone } from "#/components/ui/badge.tsx";
+import { Button } from "#/components/ui/button.tsx";
+import { PageHeader } from "#/components/ui/page-header.tsx";
+import { Table, TBody, TD, TH, THead, TR } from "#/components/ui/table.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { fmtMoney } from "#/lib/format";
 import { useLang } from "#/lib/i18n";
@@ -24,10 +29,10 @@ type Row = Awaited<
 	ReturnType<typeof trpcClient.adminCampaigns.list.query>
 >[number];
 
-const statusStyle: Record<string, string> = {
-	active: "bg-[var(--palm)]/15 text-[var(--palm)]",
-	draft: "bg-muted text-muted-foreground",
-	ended: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+const statusTone: Record<string, BadgeTone> = {
+	active: "live",
+	draft: "draft",
+	ended: "warning",
 };
 
 function CampaignsList() {
@@ -35,6 +40,7 @@ function CampaignsList() {
 	const load = useCallback(() => trpcClient.adminCampaigns.list.query(), []);
 	const { rows, setRows, state, error, reload } = useListQuery<Row>(load);
 	const [q, setQ] = useState("");
+	const [status, setStatus] = useState("");
 
 	async function del(row: Row) {
 		if (
@@ -51,158 +57,203 @@ function CampaignsList() {
 		);
 	}
 
-	const shown = rows.filter((r) => matchesQuery(q, r.title, r.status));
+	const statuses = [...new Set(rows.map((r) => r.status))].sort();
+	const ofStatus = status ? rows.filter((r) => r.status === status) : rows;
+	const shown = ofStatus.filter((r) => matchesQuery(q, r.title, r.status));
+	const filtered = q !== "" || status !== "";
 
 	const newCampaign = (
-		<Link
-			to="/admin/campaigns/new"
-			className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold hover:opacity-90 transition"
+		<Button asChild>
+			<Link to="/admin/campaigns/new">
+				<Plus aria-hidden="true" />
+				New campaign
+			</Link>
+		</Button>
+	);
+
+	const clearFilters = (
+		<Button
+			type="button"
+			variant="secondary"
+			onClick={() => {
+				setQ("");
+				setStatus("");
+			}}
 		>
-			+ New campaign
-		</Link>
+			{status ? "Clear filters" : "Clear search"}
+		</Button>
 	);
 
 	return (
 		<div>
-			<div className="flex items-center justify-between mb-6">
-				<div>
-					<h1 className="font-display text-2xl font-semibold text-primary">
-						Campaigns
-					</h1>
-					<p className="mt-1 text-sm text-muted-foreground">
-						Fundraising campaigns shown on /donate
-						{state === "ready" ? ` — ${rows.length} total.` : "."}
-					</p>
-				</div>
-				{newCampaign}
-			</div>
+			<PageHeader
+				title="Campaigns"
+				description="Fundraising campaigns shown on /donate."
+				breadcrumb={[{ label: "Admin", to: "/admin" }, { label: "Campaigns" }]}
+				actions={newCampaign}
+				toolbar={
+					state === "ready" && rows.length > 0 ? (
+						<>
+							<ListSearch
+								value={q}
+								onChange={setQ}
+								label="Search campaigns"
+								placeholder="Search by title or status…"
+								status={
+									filtered
+										? `${shown.length} of ${rows.length}`
+										: `${rows.length} ${rows.length === 1 ? "campaign" : "campaigns"}`
+								}
+							/>
+							<fieldset className="mb-4 flex flex-wrap items-center gap-2">
+								<legend className="sr-only">Filter by status</legend>
+								<Button
+									type="button"
+									size="sm"
+									variant={status === "" ? "primary" : "secondary"}
+									aria-pressed={status === ""}
+									onClick={() => setStatus("")}
+								>
+									All
+								</Button>
+								{statuses.map((s) => (
+									<Button
+										key={s}
+										type="button"
+										size="sm"
+										variant={status === s ? "primary" : "secondary"}
+										aria-pressed={status === s}
+										onClick={() => setStatus(s)}
+										className="capitalize"
+									>
+										{s}
+									</Button>
+								))}
+							</fieldset>
+						</>
+					) : undefined
+				}
+			/>
 
 			{state !== "ready" ? (
 				<ListStatus state={state} error={error} onRetry={reload} />
 			) : rows.length === 0 ? (
 				<EmptyState
+					icon={<Megaphone />}
 					title="No campaigns yet"
 					description="A campaign is a fundraising goal with its own page on /donate and its own donation record."
 					action={newCampaign}
 				/>
+			) : shown.length === 0 ? (
+				<EmptyState
+					icon={<SearchX />}
+					title="No campaigns match your filters"
+					description={
+						q
+							? `Nothing here contains “${q}”.`
+							: "No campaign carries that status yet."
+					}
+					action={clearFilters}
+				/>
 			) : (
-				<>
-					<ListSearch
-						value={q}
-						onChange={setQ}
-						label="Search campaigns"
-						placeholder="Search by title or status…"
-						status={q ? `${shown.length} of ${rows.length}` : undefined}
-					/>
-					{shown.length === 0 ? (
-						<EmptyState
-							title="No campaigns match that search"
-							description={`Nothing here contains “${q}”.`}
-							action={
-								<button
-									type="button"
-									onClick={() => setQ("")}
-									className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
-								>
-									Clear search
-								</button>
-							}
-						/>
-					) : (
-						<TableScroll label="Campaigns">
-							<table className="w-full text-sm">
-								<thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
-									<tr>
-										<th className="px-4 py-2.5 w-16" />
-										<th className="px-2 py-2.5">Title</th>
-										<th className="px-2 py-2.5">Status</th>
-										<th className="px-2 py-2.5 text-right">Raised</th>
-										<th className="px-2 py-2.5 text-right">Supporters</th>
-										<th className="px-3 py-2.5 text-right">Actions</th>
-									</tr>
-								</thead>
-								<tbody className="divide-y divide-border">
-									{shown.map((r) => (
-										<tr key={r.id} className="hover:bg-muted/20">
-											<td className="px-4 py-2">
-												<div className="h-10 w-14 rounded-md overflow-hidden bg-muted ring-1 ring-border grid place-items-center">
-													{r.coverUrl ? (
-														<img
-															src={r.coverUrl}
-															alt=""
-															className="h-full w-full object-cover"
-														/>
-													) : null}
-												</div>
-											</td>
-											<td className="px-2 py-2">
-												<Link
-													to="/admin/campaigns/$id"
-													params={{ id: String(r.id) }}
-													className="font-medium text-foreground hover:text-[var(--accent)]"
-												>
-													{r.title}
-												</Link>
-												{r.featured ? (
-													<span className="ml-2 text-xs font-semibold text-[var(--accent)]">
-														★ Featured
-													</span>
-												) : null}
-											</td>
-											<td className="px-2 py-2">
-												<span
-													className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${statusStyle[r.status] ?? ""}`}
-												>
-													{r.status}
-												</span>
-											</td>
-											<td className="px-2 py-2 text-right tabular-nums text-foreground/90">
-												{fmtMoney(r.raised, r.currency, lang)}
-												{r.goalAmount ? (
-													<span className="text-muted-foreground">
-														{" "}
-														/ {fmtMoney(r.goalAmount, r.currency, lang)}
-													</span>
-												) : null}
-											</td>
-											<td className="px-2 py-2 text-right tabular-nums text-foreground/80">
-												{r.supporters}
-											</td>
-											<td className="px-3 py-2 text-right whitespace-nowrap">
+				<TableScroll label="Campaigns">
+					<Table>
+						<THead>
+							<TR>
+								<TH width={72}>
+									<span className="sr-only">Cover</span>
+								</TH>
+								<TH>Title</TH>
+								<TH width={120}>Status</TH>
+								<TH align="right" width={180}>
+									Raised
+								</TH>
+								<TH align="right" width={120}>
+									Supporters
+								</TH>
+								<TH align="right" width={140}>
+									Actions
+								</TH>
+							</TR>
+						</THead>
+						<TBody>
+							{shown.map((r) => (
+								<TR key={r.id} className="hover:bg-admin-accent-soft/50">
+									<TD>
+										<div className="grid h-10 w-14 place-items-center overflow-hidden rounded-lg bg-admin-neutral-soft ring-1 ring-admin-border">
+											{r.coverUrl ? (
+												<img
+													src={r.coverUrl}
+													alt=""
+													className="h-full w-full object-cover"
+												/>
+											) : null}
+										</div>
+									</TD>
+									<TD label="Title">
+										<div className="flex min-w-0 items-center gap-2">
+											<Link
+												to="/admin/campaigns/$id"
+												params={{ id: String(r.id) }}
+												className="truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+											>
+												{r.title}
+											</Link>
+											{r.featured ? (
+												<Badge tone="accent" dot={false}>
+													Featured
+												</Badge>
+											) : null}
+										</div>
+									</TD>
+									<TD label="Status">
+										<Badge tone={statusTone[r.status] ?? "neutral"}>
+											<span className="capitalize">{r.status}</span>
+										</Badge>
+									</TD>
+									<TD label="Raised" align="right" className="tabular-nums">
+										{fmtMoney(r.raised, r.currency, lang)}
+										{r.goalAmount ? (
+											<span className="text-admin-ink-muted">
+												{" "}
+												/ {fmtMoney(r.goalAmount, r.currency, lang)}
+											</span>
+										) : null}
+									</TD>
+									<TD
+										label="Supporters"
+										align="right"
+										className="tabular-nums text-admin-ink-muted"
+									>
+										{r.supporters}
+									</TD>
+									<TD align="right" className="max-md:justify-end">
+										<div className="flex items-center justify-end gap-1">
+											<Button asChild variant="ghost" size="sm">
 												<Link
 													to="/admin/campaigns/$id/donations"
 													params={{ id: String(r.id) }}
-													className="text-xs font-semibold text-[var(--accent)] hover:underline"
 												>
 													Donations
 												</Link>
-												<Link
-													to="/admin/campaigns/$id"
-													params={{ id: String(r.id) }}
-													className="ml-3 text-xs font-semibold text-[var(--accent)] hover:underline"
-												>
-													Edit
-												</Link>
-												<span className="ml-2 inline-flex align-middle">
-													<ActionMenu
-														label={`Actions for ${r.title}`}
-														items={[
-															{
-																label: "Delete campaign",
-																danger: true,
-																onClick: () => del(r),
-															},
-														]}
-													/>
-												</span>
-											</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						</TableScroll>
-					)}
-				</>
+											</Button>
+											<ActionMenu
+												label={`Actions for ${r.title}`}
+												items={[
+													{
+														label: "Delete campaign",
+														danger: true,
+														onClick: () => del(r),
+													},
+												]}
+											/>
+										</div>
+									</TD>
+								</TR>
+							))}
+						</TBody>
+					</Table>
+				</TableScroll>
 			)}
 		</div>
 	);

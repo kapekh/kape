@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Plus, SearchX, Users } from "lucide-react";
 import { useCallback, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
@@ -11,6 +12,10 @@ import {
 	TableScroll,
 	useListQuery,
 } from "#/components/admin/list-ui";
+import { Badge } from "#/components/ui/badge.tsx";
+import { Button } from "#/components/ui/button.tsx";
+import { PageHeader } from "#/components/ui/page-header.tsx";
+import { Table, TBody, TD, TH, THead, TR } from "#/components/ui/table.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { fmtDate } from "#/lib/format";
 import { useLang } from "#/lib/i18n";
@@ -25,6 +30,7 @@ function UsersList() {
 	const load = useCallback(() => trpcClient.adminUsers.list.query(), []);
 	const { rows, setRows, state, error, reload } = useListQuery<Row>(load);
 	const [q, setQ] = useState("");
+	const [role, setRole] = useState("");
 
 	async function resetPw(id: number, email: string) {
 		const pw = await prompt({
@@ -70,134 +76,162 @@ function UsersList() {
 		);
 	}
 
-	const shown = rows.filter((r) => matchesQuery(q, r.email, r.name, r.role));
+	const roles = [...new Set(rows.map((r) => r.role))].sort();
+	const ofRole = role ? rows.filter((r) => r.role === role) : rows;
+	const shown = ofRole.filter((r) => matchesQuery(q, r.email, r.name, r.role));
+	const filtered = q !== "" || role !== "";
 
 	const newUser = (
-		<Link
-			to="/admin/users/new"
-			className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold hover:opacity-90 transition"
+		<Button asChild>
+			<Link to="/admin/users/new">
+				<Plus aria-hidden="true" />
+				New user
+			</Link>
+		</Button>
+	);
+
+	const clearFilters = (
+		<Button
+			type="button"
+			variant="secondary"
+			onClick={() => {
+				setQ("");
+				setRole("");
+			}}
 		>
-			+ New user
-		</Link>
+			{role ? "Clear filters" : "Clear search"}
+		</Button>
 	);
 
 	return (
 		<div>
-			<div className="flex items-center justify-between mb-6">
-				<div>
-					<h1 className="font-display text-2xl font-semibold text-primary">
-						Users
-					</h1>
-					<p className="mt-1 text-sm text-muted-foreground">
-						People who can sign in
-						{state === "ready" ? ` — ${rows.length} total.` : "."}
-					</p>
-				</div>
-				{newUser}
-			</div>
+			<PageHeader
+				title="Users"
+				description="People who can sign in. Their role decides what they can reach."
+				breadcrumb={[{ label: "Admin", to: "/admin" }, { label: "Users" }]}
+				actions={newUser}
+				toolbar={
+					state === "ready" && rows.length > 0 ? (
+						<>
+							<ListSearch
+								value={q}
+								onChange={setQ}
+								label="Search users"
+								placeholder="Search by email, name or role…"
+								status={
+									filtered
+										? `${shown.length} of ${rows.length}`
+										: `${rows.length} ${rows.length === 1 ? "user" : "users"}`
+								}
+							/>
+							<fieldset className="mb-4 flex flex-wrap items-center gap-2">
+								<legend className="sr-only">Filter by role</legend>
+								<Button
+									type="button"
+									size="sm"
+									variant={role === "" ? "primary" : "secondary"}
+									aria-pressed={role === ""}
+									onClick={() => setRole("")}
+								>
+									All
+								</Button>
+								{roles.map((r) => (
+									<Button
+										key={r}
+										type="button"
+										size="sm"
+										variant={role === r ? "primary" : "secondary"}
+										aria-pressed={role === r}
+										onClick={() => setRole(r)}
+										className="capitalize"
+									>
+										{r}
+									</Button>
+								))}
+							</fieldset>
+						</>
+					) : undefined
+				}
+			/>
 
 			{state !== "ready" ? (
 				<ListStatus state={state} error={error} onRetry={reload} />
 			) : rows.length === 0 ? (
 				<EmptyState
+					icon={<Users />}
 					title="No users yet"
 					description="Users are the accounts that can sign in to this admin. Their role decides what they can reach."
 					action={newUser}
 				/>
+			) : shown.length === 0 ? (
+				<EmptyState
+					icon={<SearchX />}
+					title="No users match your filters"
+					description={
+						q
+							? `Nothing here contains “${q}”.`
+							: "Nobody carries that role yet."
+					}
+					action={clearFilters}
+				/>
 			) : (
-				<>
-					<ListSearch
-						value={q}
-						onChange={setQ}
-						label="Search users"
-						placeholder="Search by email, name or role…"
-						status={q ? `${shown.length} of ${rows.length}` : undefined}
-					/>
-					{shown.length === 0 ? (
-						<EmptyState
-							title="No users match that search"
-							description={`Nothing here contains “${q}”.`}
-							action={
-								<button
-									type="button"
-									onClick={() => setQ("")}
-									className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
-								>
-									Clear search
-								</button>
-							}
-						/>
-					) : (
-						<TableScroll label="Users">
-							<table className="w-full text-sm">
-								<thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
-									<tr>
-										<th className="px-4 py-2.5">Email</th>
-										<th className="px-2 py-2.5">Name</th>
-										<th className="px-2 py-2.5">Role</th>
-										<th className="px-2 py-2.5">Added</th>
-										<th className="px-3 py-2.5 text-right">Actions</th>
-									</tr>
-								</thead>
-								<tbody className="divide-y divide-border">
-									{shown.map((r) => (
-										<tr key={r.id} className="hover:bg-muted/20">
-											<td className="px-4 py-2.5">
-												<Link
-													to="/admin/users/$id"
-													params={{ id: String(r.id) }}
-													className="font-medium text-foreground hover:text-[var(--accent)]"
-												>
-													{r.email}
-												</Link>
-											</td>
-											<td className="px-2 py-2.5 text-foreground/80">
-												{r.name || (
-													<span className="text-muted-foreground">—</span>
-												)}
-											</td>
-											<td className="px-2 py-2.5">
-												<span
-													className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${r.role === "admin" ? "bg-[var(--accent)]/15 text-[var(--accent)]" : "bg-muted text-muted-foreground"}`}
-												>
-													{r.role}
-												</span>
-											</td>
-											<td className="px-2 py-2.5 text-foreground/70">
-												{fmtDate(r.createdAt, lang)}
-											</td>
-											<td className="px-3 py-2.5 text-right whitespace-nowrap">
-												<Link
-													to="/admin/users/$id"
-													params={{ id: String(r.id) }}
-													className="text-xs font-semibold text-[var(--accent)] hover:underline"
-												>
-													Edit
-												</Link>
-												<span className="ml-2 inline-flex align-middle">
-													<ActionMenu
-														label={`Actions for ${r.email}`}
-														items={[
-															{
-																label: "Reset password",
-																onClick: () => resetPw(r.id, r.email),
-															},
-															{
-																label: "Delete user",
-																danger: true,
-																onClick: () => del(r),
-															},
-														]}
-													/>
-												</span>
-											</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						</TableScroll>
-					)}
-				</>
+				<TableScroll label="Users">
+					<Table>
+						<THead>
+							<TR>
+								<TH>Email</TH>
+								<TH>Name</TH>
+								<TH width={140}>Role</TH>
+								<TH width={140}>Added</TH>
+								<TH align="right" width={72}>
+									Actions
+								</TH>
+							</TR>
+						</THead>
+						<TBody>
+							{shown.map((r) => (
+								<TR key={r.id} className="hover:bg-admin-accent-soft/50">
+									<TD label="Email">
+										<Link
+											to="/admin/users/$id"
+											params={{ id: String(r.id) }}
+											className="block truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+										>
+											{r.email}
+										</Link>
+									</TD>
+									<TD label="Name" className="text-admin-ink-muted">
+										{r.name || "—"}
+									</TD>
+									<TD label="Role">
+										<Badge tone={r.role === "admin" ? "accent" : "neutral"}>
+											<span className="capitalize">{r.role}</span>
+										</Badge>
+									</TD>
+									<TD label="Added" className="text-admin-ink-muted">
+										{fmtDate(r.createdAt, lang)}
+									</TD>
+									<TD align="right" className="max-md:justify-end">
+										<ActionMenu
+											label={`Actions for ${r.email}`}
+											items={[
+												{
+													label: "Reset password",
+													onClick: () => resetPw(r.id, r.email),
+												},
+												{
+													label: "Delete user",
+													danger: true,
+													onClick: () => del(r),
+												},
+											]}
+										/>
+									</TD>
+								</TR>
+							))}
+						</TBody>
+					</Table>
+				</TableScroll>
 			)}
 		</div>
 	);
