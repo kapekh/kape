@@ -1,10 +1,4 @@
 // @vitest-environment jsdom
-//
-// The first test to mount a route file. `Route.options.component` is a lazy
-// reference the Start plugin resolves through a chunk no test server serves, so
-// the split chunk is imported by the plugin's own id instead - the component
-// that actually ships, not a copy of it. If that id ever changes the import
-// throws by name rather than quietly testing nothing.
 import {
 	act,
 	cleanup,
@@ -188,6 +182,29 @@ describe("when a re-read fails after the page has loaded", () => {
 		expect(screen.getByText(/Your session has ended/)).toBeTruthy();
 		expect(screen.getByRole("link", { name: "Sign in again" })).toBeTruthy();
 		expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
+	});
+});
+
+describe("when a stored colour is not written as a hex", () => {
+	it("shows the hex", async () => {
+		await mount();
+		expect(input("theme_primary")?.value).toBe("#002C5E");
+		expect(input("theme_secondary")?.value).toBe("#F3821D");
+	});
+
+	// the hex is a display, not a write: showing it once cost eight untouched oklch() values
+	it("saves only the field that was edited, as typed", async () => {
+		await mount();
+		await type("theme_accent", "#7C3AED");
+		await click(/Save brand/);
+
+		expect(server.writes).toEqual([{ key: "theme_accent", value: "#7C3AED" }]);
+		expect(server.rows.find((r) => r.key === "theme_primary")?.value).toBe(
+			"oklch(0.30 0.10 255)",
+		);
+		expect(server.rows.find((r) => r.key === "theme_secondary")?.value).toBe(
+			"oklch(0.72 0.17 55)",
+		);
 	});
 });
 

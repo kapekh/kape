@@ -35,6 +35,7 @@ Documents: `docs/ui-audit.md` (audit, shown to Rithy and approved), `.work/redes
 | J04 off-pattern lists | this pane | **done** | Commit `7feace0`. Gates: **429/47**, `tsc` silent, lint **8**, build green. Terms CRUD driven through the UI and checked against SQL: 27 terms → 28 on add → 27 on delete, and the rename landed in the row. The contact form was submitted on the **public site** and the message appeared in the inbox, so that surface was exercised by its real producer. Donations were seeded, and I say so: the filter's four states gave 5 / 2 / 3 / 5 rows with totals matching `select sum(amount) group by status,currency` exactly. Alignment snippet clean on donations, messages and roles |
 | J10 media library and pickers | this pane | **done, two items reported not built** | Commit `e876610`. Gates: **429/47**, `tsc` silent, lint **8**, build green. All 13 acceptance items in `.work/redesign/J10-report.md` with pasted output. Uploads driven through the redesigned control (PNG/MP4/PDF served back with the right `Content-Type` and byte count; SVG-with-script, no-extension and 0-byte all refused with their messages on screen). Filters counted against SQL: 126 / 123 / 3. Focus trap and return proved step by step. An image inserted through the picker renders on the public site. **M2's Video filter and the video counter are not built** — both need a new enum and a new aggregate in `router.ts` and `repo/admin.ts`, which J10 does not own. **M3 is delivered as far as the data allows**: `media` has no filename column, so the accessible name is the stored UUID, not the operator's filename |
 | admin tours | this pane | **done** | Commits `d5c5e9e` (written guide, `docs/admin-guide/`) and `d2c74c9` (in-app tour). Rithy asked for both, for generic CMS operators. Tests **433/48**, lint still **8**, `tsc` silent, build green. Not part of the redesign round; see below |
+| J11 settings and modules | this pane | **done, one violation of my own I caught and fixed** | Commit `98ec922`. Gates: **433/48**, `tsc` silent, lint **8**, build green. All 12 acceptance items in `.work/redesign/J11-report.md`. Settings round-trips: 41 keys before, 41 identical after, and the one-field save moves exactly one line of the dump. Both probes reached the public site. Section nav reaches all four sections by click and by scroll. Custom key/value 21 → 22 → 21 rows, DB 41 → 42 → 41. Schools off removes it from the sidebar and `/admin/schools` redirects to `/admin`; back on, everything returns; `Modules saved.` both times. **The violation: my first cut of Brand displayed stored colours as hex and its save wrote that hex back over eight untouched `oklch()` values.** Caught by the round-trip diff, the conversion is deleted, the eight values restored, and the re-proof is in the report. **This commit also carries the sticky fix** below, and one file's worth of the in-flight comment pass, because `admin.tsx` had both |
 | J06-J15 | this pane | queued, contracts written | — |
 
 ## Live now
@@ -128,13 +129,27 @@ Rithy asked for them after J10 and chose both forms, for generic CMS operators r
 
 `docs/admin-guide/` is six task-shaped tours plus a one-page cheat sheet. Screenshots only of J02, J03 and J10 surfaces — **the editors and the settings screens are deliberately unillustrated until J09 and J13 land**, and that is the one thing to revisit when they do.
 
-`src/components/admin/Tour.tsx` and `tours.ts` are the in-app tour: a spotlight, a card, and `useModalPanel` for the focus trap. No new dependency. Two tours defined, `shell` and `media`; adding one is a `TOURS` entry plus a line in `tourForPath`. Auto-runs once per tour per browser (`localStorage`, key `admin-tour-seen:<id>`), and the account panel's **Show me around** replays the tour for the current screen. `tour.test.tsx` guards the selector list, the once-only rule and the no-two-tours-at-once rule.
+`src/components/admin/Tour.tsx` and `tours.ts` are the in-app tour: a spotlight, a card, and `useModalPanel` for the focus trap. No new dependency. Four tours defined — `shell`, `media`, `settings` and `modules`; adding one is a `TOURS` entry plus a line in `tourForPath`. Auto-runs once per tour per browser (`localStorage`, key `admin-tour-seen:<id>`), and the account panel's **Show me around** replays the tour for the current screen. `tour.test.tsx` guards the selector list, the once-only rule and the no-two-tours-at-once rule.
 
 **Every remaining redesign job should add its screen's tour steps** — or say it deliberately did not. A step whose target disappears degrades to a centred card with no spotlight, silently, which is exactly the kind of rot the test's selector check cannot catch.
 
+## Every `sticky` in the admin was dead until `98ec922`
+
+`main` carried `overflow-x: hidden`. `overflow-x: hidden` computes `overflow-y` to `auto`, so `main` was the scrollport for everything inside it — and it never scrolls, the document does. Every `position: sticky` descendant therefore had a scrollport that could not move and quietly did nothing. `EditorGrid`'s `lg:sticky lg:top-6` rail, J01's frozen primitive that **J06, J07, J08 and J09 all consume**, was one of them. Measured before the fix: `mainScrollable: false`, the settings nav rail at top `-432` instead of `80`.
+
+`overflow-x: clip` still clips sideways and creates no scroll container. **The editor jobs inherit a working rail; they did not have one before.**
+
+## What J11 got wrong, so the editors do not repeat it
+
+The Brand section showed stored colours as hex, which meant its save wrote hex back over every untouched `oklch()` field in that section. One edit to `theme_paper_hue` silently rewrote eight values. It was a display convenience with a write attached.
+
+The round-trip diff caught it, which is the whole reason acceptance asks for a full dump before and after rather than a spot check of the field you edited. **A restyle that normalises, formats or settles a stored value is a behaviour change wearing a stylesheet.**
+
+The field shows a hex again, and this time it is only a display. `saveDraft` sends the keys in `draft`, and a key enters `draft` only through that field's `onChange`, so a colour nobody typed in is never written whatever the box shows. `-admin.settings.test.tsx` pins both halves: the stored `oklch()` reads as `#002C5E` on screen, and saving Brand after one edit writes one row and leaves the other two stored values in `oklch()`.
+
 ## Next action
 
-Build **J11** in this pane against `.work/redesign/jobs/J11-settings-modules.md`, on `:3061`. Then the editors J06/J07/J08, then J09, J12, J13, J14, and J15 last or not at all.
+Build the editors **J06/J07/J08** in this pane, then J09, J12, J13, J14, and J15 last or not at all.
 
 `.work/redesign/lead.db` now carries five seeded donations, one seeded campaign, one real contact message (all tagged "Lead Probe") and J10's traffic: **six probe uploads, one deleted media item (id 96, a post cover, whose reference was nulled), and a probe image in the body of posts 3 and 26.** Harmless, but do not read those counts as the client's. `kape.db` is untouched at `e9789f59cb05f9f3426b9aba88001f9a`.
 

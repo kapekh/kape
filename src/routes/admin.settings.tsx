@@ -107,6 +107,11 @@ const SECTIONS = [
 // pending values are kept apart from the server's copy, so a reload refreshes what is stored without discarding what is being typed
 type Draft = Record<string, string>;
 
+// a hex is the code on a brand guide, so it is the one the field speaks; anything
+// with no single sRGB value (transparent, currentColor, a composite) stays as typed
+const asHex = (f: Field, raw: string) =>
+	f.kind === "colour" ? (colourToHex(raw)?.toUpperCase() ?? raw) : raw;
+
 // the key is what the form writes to, not anything an operator types, so it sits on the label's title
 function Fields({
 	fields,
@@ -122,7 +127,8 @@ function Fields({
 	return (
 		<div className="space-y-6">
 			{fields.map((f) => {
-				const value = f.key in draft ? draft[f.key] : (saved[f.key] ?? "");
+				const value =
+					f.key in draft ? draft[f.key] : asHex(f, saved[f.key] ?? "");
 				const problem = f.kind ? checkThemeValue(f.kind, value) : null;
 				const swatch =
 					f.kind === "colour" && !problem ? colourToHex(value) : null;
@@ -492,7 +498,10 @@ function SettingsAdmin() {
 	}
 
 	const brandValues = Object.fromEntries(
-		BRAND.map((f) => [f.key, f.key in draft ? draft[f.key] : (saved?.[f.key] ?? "")]),
+		BRAND.map((f) => [
+			f.key,
+			f.key in draft ? draft[f.key] : asHex(f, saved?.[f.key] ?? ""),
+		]),
 	);
 	const pendingIn = (fields: Field[]) =>
 		fields.filter((f) => f.key in draft).length;

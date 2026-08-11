@@ -24,7 +24,7 @@ export const THEME_FIELDS: ThemeField[] = [
 		cssVar: "brand-primary",
 		label: "Primary colour",
 		kind: "colour",
-		hint: "The brand colour. Headings, the header, the footer and the main buttons. oklch(), rgb(), hsl() or a hex, e.g. oklch(0.30 0.10 255) or #1f4e79.",
+		hint: "The brand colour. Headings, the header, the footer and the main buttons. A hex, e.g. #1F4E79, or oklch(), rgb() and hsl() if you have one.",
 	},
 	{
 		key: "theme_primary_dark",
