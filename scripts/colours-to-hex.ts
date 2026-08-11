@@ -32,8 +32,14 @@ const rows = db
 	)
 	.all();
 
+// a clip always lands a channel on 00 or FF, so this never misses one; a colour genuinely on the
+// boundary is flagged too, which is the right way round for a report nobody can undo
+const mayClip = (hex: string) =>
+	[1, 3, 5].some((i) => ["00", "FF"].includes(hex.slice(i, i + 2)));
+
 let converted = 0;
 let already = 0;
+let lossy = 0;
 const skipped: string[] = [];
 
 for (const { key, value } of rows) {
@@ -46,7 +52,11 @@ for (const { key, value } of rows) {
 		already++;
 		continue;
 	}
-	console.log(`${key}: ${value} -> ${hex}`);
+	const clipped = mayClip(hex);
+	if (clipped) lossy++;
+	console.log(
+		`${key}: ${value} -> ${hex}${clipped ? "   NOT A ROUND TRIP: outside sRGB, this is the clipped colour" : ""}`,
+	);
 	converted++;
 	if (write)
 		db.run("update site_settings set value = ? where key = ?", [hex, key]);
@@ -56,5 +66,9 @@ console.log(
 	`\n${rows.length} colour keys: ${converted} ${write ? "converted" : "would convert"}, ${already} already hex, ${skipped.length} left alone`,
 );
 for (const s of skipped) console.log(`  left alone: ${s}`);
+if (lossy)
+	console.log(
+		`\n${lossy} of them cannot come back. The stored colour is outside sRGB and the hex is the clipped one.`,
+	);
 if (!write && converted) console.log("\nnothing written. re-run with --write");
 db.close();
