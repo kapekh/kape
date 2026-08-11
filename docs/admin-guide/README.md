@@ -64,7 +64,12 @@ install has switched on under Modules. A short sidebar is normal.
 
 - The panel button collapses the sidebar. It remembers.
 - **View site** opens the public site in a new tab. Use it constantly.
-- Your initials open the account panel: your details, the theme toggle, and sign out.
+- Your initials open the account panel: your details, the theme toggle, sign out, and
+  **Show me around**.
+
+**Show me around** walks you through whatever screen you are on, pointing at each control in turn.
+It runs by itself the first time you open the admin and the first time you open the media library,
+and it is there whenever you want it again. Escape ends it.
 
 ### Finding things
 

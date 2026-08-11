@@ -20,6 +20,8 @@ import { useEffect, useState } from "react";
 
 import { AdminHeaderProvider } from "#/components/admin/AdminHeader";
 import { AdminIcon } from "#/components/admin/AdminIcon";
+import { startTour, startTourOnce, TourHost } from "#/components/admin/Tour";
+import { tourForPath } from "#/components/admin/tours";
 import { ThemeToggle } from "#/components/ThemeToggle";
 import { Button } from "#/components/ui/button";
 import { EmptyState } from "#/components/ui/empty-state";
@@ -354,6 +356,12 @@ function AdminLayout({ access }: { access: OkAccess }) {
 	useEffect(() => {
 		setRailCollapsed(localStorage.getItem("admin-nav-rail") === "collapsed");
 	}, []);
+
+	// Once, on the first admin screen anyone opens. The account panel offers it
+	// again afterwards.
+	useEffect(() => {
+		startTourOnce("shell");
+	}, []);
 	// The page builder wants the width, so it narrows the rail on arrival. That
 	// is this visit's answer and never the stored preference: someone who chose a
 	// wide rail still has one when they leave.
@@ -434,7 +442,8 @@ function AdminLayout({ access }: { access: OkAccess }) {
 	// Nothing stored and nothing active - the dashboard - would otherwise show six
 	// shut headers and three links.
 	const shownGroup =
-		openGroup ?? (activeGroup || (visibleNav.find((s) => s.group)?.group ?? ""));
+		openGroup ??
+		(activeGroup || (visibleNav.find((s) => s.group)?.group ?? ""));
 	// Narrowed, there is no room for a group header, so the accordion steps aside
 	// and every item shows as an icon.
 	const railNarrow = railShut && isDesktop;
@@ -641,6 +650,16 @@ function AdminLayout({ access }: { access: OkAccess }) {
 										>
 											My account
 										</Link>
+										<button
+											type="button"
+											onClick={() => {
+												closeAccount();
+												startTour(tourForPath(pathname));
+											}}
+											className={menuItem}
+										>
+											Show me around
+										</button>
 										{darkModeAvailable(settings) && (
 											<div className="flex items-center justify-between gap-3 rounded-lg px-3 py-2">
 												<span className="text-sm text-admin-ink">Theme</span>
@@ -687,6 +706,7 @@ function AdminLayout({ access }: { access: OkAccess }) {
 					)}
 				</AdminHeaderProvider>
 			</div>
+			<TourHost />
 		</div>
 	);
 }

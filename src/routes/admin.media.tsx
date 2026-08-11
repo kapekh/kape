@@ -15,6 +15,7 @@ import {
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { EmptyState, ListSearch } from "#/components/admin/list-ui";
+import { startTourOnce } from "#/components/admin/Tour";
 import { Button, buttonVariants } from "#/components/ui/button.tsx";
 import { inputClass } from "#/components/ui/input.tsx";
 import { PageHeader } from "#/components/ui/page-header.tsx";
@@ -213,6 +214,10 @@ function MediaLibrary() {
 		fetchStats();
 	}, [fetchStats]);
 
+	useEffect(() => {
+		startTourOnce("media");
+	}, []);
+
 	// Infinite-scroll sentinel.
 	useEffect(() => {
 		const el = sentinelRef.current;
@@ -378,6 +383,7 @@ function MediaLibrary() {
 				breadcrumb={[{ label: "Admin", to: "/admin" }, { label: "Media" }]}
 				actions={
 					<label
+						data-tour="media-upload"
 						className={`${buttonVariants({ variant: "primary", size: "md" })} cursor-pointer focus-within:ring-2 focus-within:ring-admin-focus/50`}
 					>
 						<Upload aria-hidden="true" />
@@ -483,12 +489,13 @@ function MediaLibrary() {
 				/>
 			) : (
 				<div className={GRID}>
-					{items.map((m) => {
+					{items.map((m, tile) => {
 						const sel = selected.has(m.id);
 						const name = nameOf(m);
 						return (
 							<div
 								key={m.id}
+								data-tour={tile === 0 ? "media-tile" : undefined}
 								className={`group relative overflow-hidden rounded-xl border bg-admin-panel transition-colors duration-150 ease-out ${sel ? "border-admin-accent ring-2 ring-admin-accent" : "border-admin-border hover:border-admin-border-strong hover:shadow-[var(--shadow-soft)]"}`}
 							>
 								<button
