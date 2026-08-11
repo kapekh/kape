@@ -36,7 +36,8 @@ Documents: `docs/ui-audit.md` (audit, shown to Rithy and approved), `.work/redes
 | J10 media library and pickers | this pane | **done, two items reported not built** | Commit `e876610`. Gates: **429/47**, `tsc` silent, lint **8**, build green. All 13 acceptance items in `.work/redesign/J10-report.md` with pasted output. Uploads driven through the redesigned control (PNG/MP4/PDF served back with the right `Content-Type` and byte count; SVG-with-script, no-extension and 0-byte all refused with their messages on screen). Filters counted against SQL: 126 / 123 / 3. Focus trap and return proved step by step. An image inserted through the picker renders on the public site. **M2's Video filter and the video counter are not built** — both need a new enum and a new aggregate in `router.ts` and `repo/admin.ts`, which J10 does not own. **M3 is delivered as far as the data allows**: `media` has no filename column, so the accessible name is the stored UUID, not the operator's filename |
 | admin tours | this pane | **done** | Commits `d5c5e9e` (written guide, `docs/admin-guide/`) and `d2c74c9` (in-app tour). Rithy asked for both, for generic CMS operators. Tests **433/48**, lint still **8**, `tsc` silent, build green. Not part of the redesign round; see below |
 | J11 settings and modules | this pane | **done, one violation of my own I caught and fixed** | Commit `98ec922`. Gates: **433/48**, `tsc` silent, lint **8**, build green. All 12 acceptance items in `.work/redesign/J11-report.md`. Settings round-trips: 41 keys before, 41 identical after, and the one-field save moves exactly one line of the dump. Both probes reached the public site. Section nav reaches all four sections by click and by scroll. Custom key/value 21 → 22 → 21 rows, DB 41 → 42 → 41. Schools off removes it from the sidebar and `/admin/schools` redirects to `/admin`; back on, everything returns; `Modules saved.` both times. **The violation: my first cut of Brand displayed stored colours as hex and its save wrote that hex back over eight untouched `oklch()` values.** Caught by the round-trip diff, the conversion is deleted, the eight values restored, and the re-proof is in the report. **This commit also carries the sticky fix** below, and one file's worth of the in-flight comment pass, because `admin.tsx` had both |
-| J06-J15 | this pane | queued, contracts written | — |
+| J06 editors A | this pane | **done, two primitives touched deliberately** | Commit `3af6565`. Gates: **435/48**, `tsc` silent, lint **6** (both named `noArrayIndexKey` errors removed, none added), build green. All 15 acceptance items with pasted output in `.work/redesign/J06-report.md`. Eleven post-type field lists before and after, identical; counts identical on all sixteen captured screens; three fields **gained** a name they never had. Create, edit, dirty guard, validation, keyboard path on all four converted selects, and EN+KM round trip all driven through the UI and checked against SQL. **I edited `form-ui.tsx` twice** - `FormSection` gained an opt-in `split`, `EditorGrid` gained two `data-tour` hooks - because E2 names `FormSection` and eleven forms should not each invent a two-column section. Both additive, guard test untouched. **The alignment snippet caught two real defects of mine at 1440**, both fixed; every screen now reports only the documented topbar artefact |
+| J07-J15 | this pane | queued, contracts written | — |
 
 ## Live now
 
@@ -159,11 +160,44 @@ The cost is that hex is the smaller space. `theme_primary`'s own `oklch(0.30 0.1
 
 **Named, not fixed:** for a colour outside sRGB the box shows the clipped hex, so the field can read a shade off what the page paints. No write is attached - only retyping that field replaces it - and the swatch beside it was already clipped before any of this. Revisit if a P3 brand ever turns up.
 
+## What J06 leaves for J07 and J08
+
+**Build on these rather than re-inventing them.** J06's whole point was that the three jobs come
+back with one thing, and two of them have not run yet.
+
+- **`FormSection` takes `split`.** Description column left, fields right, above `lg`. Opt in per
+  section. **Do not split a section holding a rich text editor or a row of three-plus controls** -
+  the main column is ~680px and both wrap. J06 measured it twice.
+- **`useFieldErrors`** renders the browser's own constraint message under its field, sets
+  `aria-invalid`, focuses the first invalid control. Spread `{...invalid("key")}` onto the control
+  and pass `error={errors.key}` to `Field`. It invents no errors, so it stays inside the E3 boundary.
+- **`EditorSkeleton`** is the loading state. Five routes use it; the rest still say "Loading…".
+- **`EditorGrid` marks its columns** `data-tour="editor-main"` and `data-tour="editor-aside"`, and
+  the `editor` tour already points at them. A new editor screen gets the tour for free; add its
+  path to `tourForPath`.
+- **`Field`'s required marker** now appears wherever `required` is passed, with `(required)` for a
+  screen reader and the `*` `aria-hidden`.
+
+**The verification server needs `PORT` as well as `--port`.** `getUrl()` in `root-provider.tsx`
+reads `process.env.PORT` and falls back to 3000, so SSR fetches a port nobody is serving and every
+page 500s with `Unable to connect. Is the computer able to access the url?`. `COMMON.md`'s command
+is missing it. Use:
+
+```bash
+PORT=3061 DATABASE_PATH=.work/redesign/lead.db AUTH_SECRET=redesign-audit-secret-key-0001 \
+  bun --bun vite dev --port 3061
+```
+
+**`chrome-devtools-axi` cannot write a screenshot into the repo** from a sandboxed bash - it
+reports the path and writes nothing. Shoot into `/tmp` and copy. `.work/redesign/j06-shots.sh`
+does that, and marks every tour seen first, because a restarted browser auto-runs the shell tour
+over whatever you were photographing.
+
 ## Next action
 
-Build the editors **J06/J07/J08** in this pane, then J09, J12, J13, J14, and J15 last or not at all.
+Build **J07**, then J08, J09, J12, J13, J14, and J15 last or not at all.
 
-`.work/redesign/lead.db` now carries five seeded donations, one seeded campaign, one real contact message (all tagged "Lead Probe") and J10's traffic: **six probe uploads, one deleted media item (id 96, a post cover, whose reference was nulled), and a probe image in the body of posts 3 and 26.** Harmless, but do not read those counts as the client's. `kape.db` is untouched at `e9789f59cb05f9f3426b9aba88001f9a`.
+`.work/redesign/lead.db` now carries five seeded donations, one seeded campaign, one real contact message (all tagged "Lead Probe"), J10's traffic: **six probe uploads, one deleted media item (id 96, a post cover, whose reference was nulled), and a probe image in the body of posts 3 and 26**, and J06's: **post 30, project 20, campaigns 2 and 3, and project 3 moved to 13.1234 / 104.5678 with USAID added.** Harmless, but do not read those counts as the client's. `kape.db` is untouched at `e9789f59cb05f9f3426b9aba88001f9a`.
 
 Two things every job still owes, whoever runs it: the four gates, and **the alignment snippet from `COMMON.md` on every screen it touched, at 1440 and 390** — read with the caveat above.
 
