@@ -36,12 +36,7 @@ import { db } from "#/server/db";
 import { resolvePermissions } from "#/server/repo/roles";
 import { getSettings } from "#/server/repo/site";
 
-/**
- * Where to send someone back to once they have signed in. Only a same-site
- * absolute path: a protocol-relative "//evil.tld" is another origin to the
- * browser, and a backslash is one to some of them, so both are refused along
- * with everything else that is not a plain path.
- */
+// same-site absolute path only: //evil.tld is another origin, and a backslash is one to some browsers
 function returnTo(href: string): { redirect?: string } {
 	return /^\/(?![/\\])/.test(href) ? { redirect: href } : {};
 }
@@ -58,13 +53,7 @@ type AdminAccess =
 			modules: string | null;
 	  };
 
-// Server-side gate for the admin shell. Runs during SSR so an unauthenticated
-// request is redirected before any admin HTML is generated, instead of shipping
-// the shell and checking in the browser.
-//
-// "no session" and "a session this admin has no areas for" are answered apart:
-// only the first is a sign-in problem, and showing the second a login form asks
-// someone who is already signed in to sign in again.
+// runs during SSR, so no admin HTML ships to an unauthenticated request; "no session" and "no areas" are answered apart, a login form only helps the first
 const resolveAdminAccess = createServerFn({ method: "GET" }).handler(
 	async (): Promise<AdminAccess> => {
 		const auth = await validateToken(db, getCookie(SESSION_COOKIE));
@@ -116,21 +105,14 @@ export const Route = createFileRoute("/admin")({
 
 type OkAccess = Extract<AdminAccess, { kind: "ok" }>;
 
-/**
- * Splits the two shells so neither branch calls the other's hooks: someone with
- * no admin area gets the no-access screen, not a sidebar with nothing in it.
- */
+// split so neither branch calls the other's hooks
 function AdminShell() {
 	const { access } = Route.useRouteContext();
 	if (access.kind === "forbidden") return <NoAccess email={access.email} />;
 	return <AdminLayout access={access} />;
 }
 
-/**
- * Shown to someone who is signed in but holds no admin area. The refusal itself
- * is the server's, in the gate above and on every tRPC procedure; this only says
- * so in words, instead of handing them the sign-in form they already used.
- */
+// the refusal is the server's; this only says so, instead of handing back the sign-in form they already used
 function NoAccess({ email }: { email: string }) {
 	const navigate = useNavigate();
 
@@ -308,10 +290,6 @@ const NAV: NavGroup[] = [
 	},
 ];
 
-/**
- * Admin layout. Access is enforced server-side in the route's `beforeLoad`, so
- * the identity is already resolved by the time this renders.
- */
 function AdminLayout({ access }: { access: OkAccess }) {
 	const navigate = useNavigate();
 	const settings = Route.useLoaderData();
@@ -336,11 +314,7 @@ function AdminLayout({ access }: { access: OkAccess }) {
 			);
 		return pathname === it.to || pathname.startsWith(`${it.to}/`);
 	};
-	// One group open at a time, remembered in localStorage. `null` is "nothing
-	// stored yet", which falls back to the group holding the current route; `""`
-	// is a deliberate all-shut. Starts null on both sides of hydration - reading
-	// storage during the first client render disagrees with the server and React
-	// throws the whole nav away.
+	// starts null on both sides of hydration: reading storage in the first client render disagrees with the server and React throws the nav away
 	const [openGroup, setOpenGroup] = useState<string | null>(null);
 	const toggleGroup = (g: string, isOpen: boolean) => {
 		const next = isOpen ? "" : g;
@@ -348,10 +322,7 @@ function AdminLayout({ access }: { access: OkAccess }) {
 		persistOpenGroup(next);
 	};
 
-	// From `lg` up the rail narrows to icons and gives the width back to the
-	// content column. Below `lg` it is a drawer, which is never narrowed.
-	// Same hydration rule as the open group: the server cannot see storage, so the
-	// rail starts wide and narrows on mount.
+	// same hydration rule: the server cannot see storage, so the rail starts wide and narrows on mount
 	const [railCollapsed, setRailCollapsed] = useState(false);
 	useEffect(() => {
 		setRailCollapsed(localStorage.getItem("admin-nav-rail") === "collapsed");
@@ -362,9 +333,7 @@ function AdminLayout({ access }: { access: OkAccess }) {
 	useEffect(() => {
 		startTourOnce("shell");
 	}, []);
-	// The page builder wants the width, so it narrows the rail on arrival. That
-	// is this visit's answer and never the stored preference: someone who chose a
-	// wide rail still has one when they leave.
+	// this visit's answer only, never the stored preference
 	const [studioRailOpen, setStudioRailOpen] = useState(false);
 	useEffect(() => {
 		if (studio) setStudioRailOpen(false);
@@ -402,9 +371,6 @@ function AdminLayout({ access }: { access: OkAccess }) {
 		return () => desktop.removeEventListener("change", sync);
 	}, []);
 
-	// Email, role, My account, theme and Log out were seven separate topbar
-	// controls; at 390px the three text ones wrapped to two lines each. One
-	// panel now, with the same controls doing the same things inside it.
 	const [accountOpen, setAccountOpen] = useState(false);
 	const closeAccount = () => setAccountOpen(false);
 	const accountRef = useModalPanel(closeAccount, accountOpen);
@@ -428,9 +394,7 @@ function AdminLayout({ access }: { access: OkAccess }) {
 
 	const activeGroup =
 		visibleNav.find((s) => s.group && s.items.some(isActive))?.group ?? "";
-	// Landing inside a shut group - a deep link, a redirect after a save - would
-	// otherwise leave the current page's link hidden. Where no group owns the
-	// route, the stored one is adopted here rather than during render.
+	// a deep link into a shut group would otherwise leave the current page's link hidden
 	useEffect(() => {
 		if (!activeGroup) {
 			setOpenGroup(localStorage.getItem("admin-nav-open"));
@@ -477,9 +441,7 @@ function AdminLayout({ access }: { access: OkAccess }) {
 				ref={drawerRef}
 				tabIndex={-1}
 				aria-label="Admin navigation"
-				// Shut, the drawer is only translated off-screen: without this its 43
-				// controls stay in the tab ring and a phone keyboard walks an invisible
-				// menu before reaching the page.
+				// a shut drawer is only translated off-screen, so without this its controls stay in the tab ring
 				inert={!isDesktop && !drawerOpen}
 				className={`fixed lg:sticky left-0 lg:left-auto top-0 z-40 lg:z-auto w-64 shrink-0 h-screen bg-admin-panel border-r border-admin-border flex flex-col focus:outline-none transition-transform duration-200 ease-out lg:transition-[width] lg:duration-200 ${drawerOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 ${railNarrow ? "lg:w-[4.5rem]" : "lg:w-64"}`}
 				style={{ viewTransitionName: "admin-sidebar" }}
@@ -529,10 +491,7 @@ function AdminLayout({ access }: { access: OkAccess }) {
 												key={`${it.to}:${it.type ?? ""}`}
 												to={it.to}
 												search={it.type ? { type: it.type } : undefined}
-												// Left alone the router matches Dashboard on the
-												// `/admin` prefix, so it stays `aria-current="page"`
-												// on every admin screen and two links claim to be
-												// the page.
+												// the router matches Dashboard on the /admin prefix, so without this two links claim to be the page
 												activeOptions={it.exact ? { exact: true } : undefined}
 												onClick={closeDrawer}
 												title={railNarrow ? it.label : undefined}
@@ -693,12 +652,10 @@ function AdminLayout({ access }: { access: OkAccess }) {
 						<main
 							id="admin-main"
 							tabIndex={-1}
-							className="flex-1 overflow-x-hidden p-4 lg:p-6"
+							// clip, not hidden: overflow-x hidden computes overflow-y to auto, and every sticky descendant then has a scrollport that cannot move
+							className="flex-1 overflow-x-clip p-4 lg:p-6"
 						>
-							{/* Full width by default, for the tables. A surface that is a
-							    column of fields marks its own root `data-admin-width="prose"`
-							    and the shell narrows around it instead of leaving 400px of
-							    empty paper to its right. */}
+							{/* a surface that is a column of fields marks data-admin-width="prose" and the shell narrows around it */}
 							<div className="mx-auto w-full max-w-[1600px] has-[[data-admin-width='prose']]:max-w-3xl">
 								<Outlet />
 							</div>

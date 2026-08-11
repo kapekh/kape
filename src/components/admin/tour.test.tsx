@@ -43,6 +43,8 @@ describe("admin tours", () => {
 
 	it("names a tour for every screen it is asked about", () => {
 		expect(tourForPath("/admin/media")).toBe("media");
+		expect(tourForPath("/admin/settings")).toBe("settings");
+		expect(tourForPath("/admin/modules")).toBe("modules");
 		expect(tourForPath("/admin/pages")).toBe("shell");
 		expect(tourForPath("/admin")).toBe("shell");
 	});

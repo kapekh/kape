@@ -58,11 +58,54 @@ export const TOURS = {
 			},
 		],
 	},
+	settings: {
+		title: "Site settings",
+		steps: [
+			{
+				target: 'nav[aria-label="Settings sections"]',
+				title: "Four sections, one page",
+				body: "The rail follows you as you scroll and marks a section that has unsaved changes.",
+			},
+			{
+				target: '[data-tour="save-bar"]',
+				title: "Each section saves itself",
+				body: "The bar stays with you at the bottom of the screen. Saving Identity leaves everything in Brand alone, and the count tells you how many fields are going.",
+			},
+			{
+				target: "#add-setting",
+				title: "Settings this site invented",
+				body: "A key and a value. Use it when a developer asks for one by name - a typo here makes a second setting rather than changing the first.",
+			},
+			{
+				target: "#all-settings",
+				title: "Everything stored, including the fields above",
+				body: "The same values, raw. Editing here is the long way round for anything that has its own field, and the row menu deletes for good.",
+			},
+		],
+	},
+	modules: {
+		title: "Modules",
+		steps: [
+			{
+				target: '[data-tour="module-card"]',
+				title: "Extras you can switch off",
+				body: "Each card says which screens it owns. Off, they leave the sidebar and the page builder's section list.",
+			},
+			{
+				target: '[data-tour="module-save"]',
+				title: "Nothing moves until you save",
+				body: "A line appears first naming exactly what is about to leave or come back. Records are never deleted, so switching one back on returns everything.",
+			},
+		],
+	},
 } satisfies Record<string, Tour>;
 
 export type TourId = keyof typeof TOURS;
 
 /** The tour that fits the screen someone is on, or the shell tour. */
 export function tourForPath(pathname: string): TourId {
-	return pathname.startsWith("/admin/media") ? "media" : "shell";
+	if (pathname.startsWith("/admin/media")) return "media";
+	if (pathname.startsWith("/admin/settings")) return "settings";
+	if (pathname.startsWith("/admin/modules")) return "modules";
+	return "shell";
 }
