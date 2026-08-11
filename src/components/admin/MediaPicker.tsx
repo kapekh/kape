@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
+import { ExternalLink, FileText, ImagePlus } from "lucide-react";
+import { useEffect, useId, useState } from "react";
 
+import { Button } from "#/components/ui/button.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { type MediaItem, MediaLibraryDialog } from "./MediaLibraryDialog";
 
@@ -37,6 +39,7 @@ export function MediaPicker({
 	const [open, setOpen] = useState(false);
 	const [url, setUrl] = useState("");
 	const [type, setType] = useState<string | null>(null);
+	const chosenId = useId();
 
 	// Resolve an existing id-mode value to a preview URL (one-time per value).
 	useEffect(() => {
@@ -68,6 +71,11 @@ export function MediaPicker({
 	const aspectCls = aspect === "square" ? "aspect-square" : "aspect-video";
 	const placeholder =
 		label ?? (kind === "image" ? "Choose image" : "Choose file");
+	// The field's own <label> names the trigger, so the filename rides along as
+	// its description instead: overriding the name would drop the field caption.
+	const chosenName = previewUrl
+		? (previewUrl.split("/").pop()?.split("?")[0] ?? previewUrl)
+		: "";
 
 	function pick(m: MediaItem) {
 		onChange(mode === "id" ? String(m.id) : (m.url ?? ""));
@@ -87,7 +95,8 @@ export function MediaPicker({
 				id={id}
 				type="button"
 				onClick={() => setOpen(true)}
-				className={`group relative ${aspectCls} w-full grid place-items-center overflow-hidden rounded-xl border border-dashed border-border bg-muted/40 transition hover:border-[var(--accent)] hover:bg-muted`}
+				aria-describedby={chosenName ? chosenId : undefined}
+				className={`group relative ${aspectCls} grid w-full place-items-center overflow-hidden rounded-xl border border-dashed border-admin-border bg-admin-panel transition-colors duration-150 ease-out hover:border-admin-accent hover:bg-admin-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50`}
 			>
 				{previewUrl ? (
 					isImg ? (
@@ -98,45 +107,57 @@ export function MediaPicker({
 								className="h-full w-full object-cover"
 							/>
 							{/* Hover affordance over the larger preview. */}
-							<span className="absolute inset-0 grid place-items-center bg-black/0 text-sm font-medium text-transparent transition group-hover:bg-black/40 group-hover:text-white">
+							<span className="absolute inset-0 grid place-items-center bg-black/0 text-sm font-medium text-transparent transition-colors duration-150 ease-out group-hover:bg-black/40 group-hover:text-white">
 								Change image
 							</span>
 						</>
 					) : (
-						<span className="text-5xl">📄</span>
+						<FileText
+							aria-hidden="true"
+							className="size-12 text-admin-ink-subtle"
+						/>
 					)
 				) : (
-					<span className="px-3 text-center text-sm text-muted-foreground">
-						+ {placeholder}
+					<span className="flex items-center gap-2 px-3 text-center text-sm text-admin-ink-muted">
+						<ImagePlus aria-hidden="true" className="size-4" />
+						{placeholder}
 					</span>
 				)}
 			</button>
 
 			{previewUrl && (
 				<div className="mt-2 flex flex-wrap items-center gap-2">
-					<button
+					<p
+						id={chosenId}
+						className="w-full truncate text-[13px] text-admin-ink-muted"
+						title={chosenName}
+					>
+						{chosenName}
+					</p>
+					<Button
 						type="button"
+						size="sm"
+						variant="secondary"
 						onClick={() => setOpen(true)}
-						className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
 					>
 						Change
-					</button>
-					<button
+					</Button>
+					<Button
 						type="button"
+						size="sm"
+						variant="ghost"
 						onClick={clear}
-						className="rounded-lg px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10"
+						className="text-admin-danger hover:bg-admin-danger-soft hover:text-admin-danger"
 					>
 						Remove
-					</button>
+					</Button>
 					{!isImg && (
-						<a
-							href={previewUrl}
-							target="_blank"
-							rel="noopener noreferrer"
-							className="px-3 text-xs text-[var(--accent)] hover:underline"
-						>
-							Open file ↗
-						</a>
+						<Button asChild size="sm" variant="ghost">
+							<a href={previewUrl} target="_blank" rel="noopener noreferrer">
+								<ExternalLink aria-hidden="true" />
+								Open file
+							</a>
+						</Button>
 					)}
 				</div>
 			)}

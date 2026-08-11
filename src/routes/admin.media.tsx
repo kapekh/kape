@@ -1,6 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
+import {
+	ArrowDownToLine,
+	Check,
+	Copy,
+	ExternalLink,
+	FileText,
+	Images,
+	Play,
+	SearchX,
+	Trash2,
+	Upload,
+	X,
+} from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
+import { EmptyState, ListSearch } from "#/components/admin/list-ui";
+import { Button, buttonVariants } from "#/components/ui/button.tsx";
+import { inputClass } from "#/components/ui/input.tsx";
+import { PageHeader } from "#/components/ui/page-header.tsx";
+import { Skeleton } from "#/components/ui/skeleton.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { useModalPanel } from "#/lib/use-modal-panel";
 import { confirm, toast } from "@/components/Dialogs";
@@ -66,6 +84,15 @@ function fmtDate(s: string | null | undefined) {
 				year: "numeric",
 			});
 }
+
+const GRID =
+	"grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5";
+
+const FILTERS: { value: Filter; label: string }[] = [
+	{ value: "all", label: "All" },
+	{ value: "image", label: "Images" },
+	{ value: "file", label: "Files" },
+];
 
 function MediaLibrary() {
 	const [items, setItems] = useState<MediaRow[]>([]);
@@ -319,9 +346,18 @@ function MediaLibrary() {
 	}
 
 	const previewSize = preview ? fmtBytes(preview.size) : null;
+	const filtered = debounced !== "" || filter !== "all";
 
-	const tab = (active: boolean) =>
-		`rounded-lg px-3 py-1.5 text-sm font-medium transition ${active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`;
+	const summary = stats
+		? [
+				plural(stats.total, "item"),
+				plural(stats.images, "image"),
+				stats.files ? plural(stats.files, "file") : null,
+				fmtBytes(stats.bytes),
+			]
+				.filter(Boolean)
+				.join(" · ")
+		: "Loading…";
 
 	return (
 		// biome-ignore lint/a11y/noStaticElementInteractions: drop target, not a control. Dragging a file here is a shortcut for the Upload button below, which stays keyboard reachable.
@@ -336,149 +372,137 @@ function MediaLibrary() {
 			onDrop={onDrop}
 			className="relative"
 		>
-			{/* Header */}
-			<div className="mb-5 flex flex-wrap items-end justify-between gap-4">
-				<div>
-					<h1 className="font-display text-2xl font-semibold text-primary">
-						Media library
-					</h1>
-					<p className="mt-1 text-sm text-muted-foreground">
-						{stats ? (
-							<>
-								{plural(stats.total, "item")} · {plural(stats.images, "image")}
-								{stats.files ? ` · ${plural(stats.files, "file")}` : ""}
-								{stats.bytes ? ` · ${fmtBytes(stats.bytes)}` : ""}
-							</>
-						) : (
-							"Loading…"
+			<PageHeader
+				title="Media library"
+				description="Every image, video and file uploaded to the site. Drop files anywhere on this page to add them."
+				breadcrumb={[{ label: "Admin", to: "/admin" }, { label: "Media" }]}
+				actions={
+					<label
+						className={`${buttonVariants({ variant: "primary", size: "md" })} cursor-pointer focus-within:ring-2 focus-within:ring-admin-focus/50`}
+					>
+						<Upload aria-hidden="true" />
+						{upload ? `Uploading ${upload.done}/${upload.total}…` : "Upload"}
+						<input
+							ref={fileRef}
+							type="file"
+							multiple
+							className="sr-only"
+							onChange={(e) => e.target.files && uploadFiles(e.target.files)}
+							disabled={!!upload}
+						/>
+					</label>
+				}
+				toolbar={
+					<>
+						<ListSearch
+							value={query}
+							onChange={setQuery}
+							label="Search media"
+							placeholder="Search by name or URL…"
+							status={summary}
+						/>
+						<fieldset className="flex flex-wrap items-center gap-2">
+							<legend className="sr-only">Filter by type</legend>
+							{FILTERS.map((f) => (
+								<Button
+									key={f.value}
+									type="button"
+									size="sm"
+									variant={filter === f.value ? "primary" : "secondary"}
+									aria-pressed={filter === f.value}
+									onClick={() => setFilter(f.value)}
+								>
+									{f.label}
+								</Button>
+							))}
+						</fieldset>
+						{selected.size > 0 && (
+							<div className="flex items-center gap-2 rounded-full border border-admin-danger/40 bg-admin-danger-soft px-2 py-1 sm:ml-auto">
+								<span className="px-2 text-[13px] font-medium text-admin-ink">
+									{selected.size} selected
+								</span>
+								<Button
+									type="button"
+									size="sm"
+									variant="ghost"
+									onClick={() => setSelected(new Set())}
+								>
+									Clear
+								</Button>
+								<Button
+									type="button"
+									size="sm"
+									variant="danger"
+									onClick={bulkDelete}
+									disabled={bulkBusy}
+									disabledReason="Deleting the selected items…"
+								>
+									Delete
+								</Button>
+							</div>
 						)}
-					</p>
-				</div>
-				<label className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:opacity-90 cursor-pointer shadow-[var(--shadow-lift)] focus-within:outline-none focus-within:ring-2 focus-within:ring-[var(--accent)] focus-within:ring-offset-2">
-					{upload ? `Uploading ${upload.done}/${upload.total}…` : "↑ Upload"}
-					<input
-						ref={fileRef}
-						type="file"
-						multiple
-						className="sr-only"
-						onChange={(e) => e.target.files && uploadFiles(e.target.files)}
-						disabled={!!upload}
-					/>
-				</label>
-			</div>
+					</>
+				}
+			/>
 
-			{/* Toolbar */}
-			<div className="mb-5 flex flex-wrap items-center gap-3">
-				<div className="relative flex-1 min-w-[200px] max-w-sm">
-					<svg
-						aria-hidden="true"
-						className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2"
-					>
-						<circle cx="11" cy="11" r="7" />
-						<path d="M21 21l-4-4" strokeLinecap="round" />
-					</svg>
-					<input
-						value={query}
-						onChange={(e) => setQuery(e.target.value)}
-						placeholder="Search by name or URL…"
-						className="w-full rounded-lg border border-border bg-card pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-[var(--accent)]"
-					/>
-				</div>
-				<div className="flex gap-1 rounded-xl border border-border p-1">
-					<button
-						type="button"
-						onClick={() => setFilter("all")}
-						className={tab(filter === "all")}
-					>
-						All
-					</button>
-					<button
-						type="button"
-						onClick={() => setFilter("image")}
-						className={tab(filter === "image")}
-					>
-						Images
-					</button>
-					<button
-						type="button"
-						onClick={() => setFilter("file")}
-						className={tab(filter === "file")}
-					>
-						Files
-					</button>
-				</div>
-				{selected.size > 0 && (
-					<div className="ml-auto flex items-center gap-2 rounded-full border border-destructive/30 bg-destructive/5 px-2 py-1">
-						<span className="px-2 text-sm font-medium text-foreground">
-							{selected.size} selected
-						</span>
-						<button
-							type="button"
-							onClick={() => setSelected(new Set())}
-							className="rounded-full px-3 py-1 text-xs text-muted-foreground hover:bg-muted"
-						>
-							Clear
-						</button>
-						<button
-							type="button"
-							onClick={bulkDelete}
-							className="rounded-full bg-destructive px-3 py-1 text-xs font-semibold text-destructive-foreground hover:opacity-90"
-						>
-							Delete
-						</button>
-					</div>
-				)}
-			</div>
-
-			{/* Grid */}
 			{loading ? (
-				<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-					{Array.from({ length: 10 }).map((_, i) => (
-						<div
+				<div aria-busy="true" className={GRID}>
+					{/* the shapes are aria-hidden, so the word still has to be said once */}
+					<span className="sr-only">Loading…</span>
+					{Array.from({ length: 10 }, (_, i) => (
+						<Skeleton
 							// biome-ignore lint/suspicious/noArrayIndexKey: fixed-length loading skeleton, no data behind it
 							key={i}
-							className="aspect-square animate-pulse rounded-xl bg-muted"
+							className="aspect-square w-full rounded-xl"
 						/>
 					))}
 				</div>
 			) : items.length === 0 ? (
-				<div className="rounded-2xl border border-dashed border-border bg-muted/20 py-20 text-center">
-					<div className="text-4xl">🖼️</div>
-					<p className="mt-3 font-medium text-foreground">
-						{debounced || filter !== "all"
-							? "Nothing matches your filter"
-							: "No media yet"}
-					</p>
-					<p className="mt-1 text-sm text-muted-foreground">
-						{debounced || filter !== "all"
-							? "Try a different search or filter."
-							: "Drag files here or use the Upload button."}
-					</p>
-				</div>
+				<EmptyState
+					icon={filtered ? <SearchX /> : <Images />}
+					title={filtered ? "Nothing matches your filter" : "No media yet"}
+					description={
+						filtered
+							? "Try a different search, or widen the type filter."
+							: "Drag files onto this page, or use the Upload button to add the first one."
+					}
+					action={
+						filtered ? (
+							<Button
+								type="button"
+								variant="secondary"
+								onClick={() => {
+									setQuery("");
+									setFilter("all");
+								}}
+							>
+								{filter !== "all" ? "Clear filters" : "Clear search"}
+							</Button>
+						) : undefined
+					}
+				/>
 			) : (
-				<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+				<div className={GRID}>
 					{items.map((m) => {
 						const sel = selected.has(m.id);
+						const name = nameOf(m);
 						return (
 							<div
 								key={m.id}
-								className={`group relative overflow-hidden rounded-xl border bg-card transition ${sel ? "border-[var(--accent)] ring-2 ring-[var(--accent)]" : "border-border hover:shadow-[var(--shadow-soft)]"}`}
+								className={`group relative overflow-hidden rounded-xl border bg-admin-panel transition-colors duration-150 ease-out ${sel ? "border-admin-accent ring-2 ring-admin-accent" : "border-admin-border hover:border-admin-border-strong hover:shadow-[var(--shadow-soft)]"}`}
 							>
 								<button
 									type="button"
 									onClick={() => setPreview(m)}
-									className="block aspect-square w-full overflow-hidden bg-muted"
+									aria-label={name}
+									className="block aspect-square w-full overflow-hidden bg-admin-neutral-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
 								>
 									{isImage(m) ? (
 										<img
 											src={m.url ?? ""}
-											alt={nameOf(m)}
+											alt={name}
 											loading="lazy"
-											className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+											className="h-full w-full object-cover transition-transform duration-200 ease-out group-hover:scale-105"
 										/>
 									) : isVideo(m) ? (
 										// the frame the browser decodes IS the thumbnail, so a video
@@ -492,93 +516,58 @@ function MediaLibrary() {
 												className="h-full w-full bg-black object-cover"
 											/>
 											<span className="absolute inset-0 grid place-items-center">
-												<span className="grid h-10 w-10 place-items-center rounded-full bg-black/55 text-lg text-white">
-													▶
+												<span className="grid size-9 place-items-center rounded-full bg-black/60 text-white">
+													<Play aria-hidden="true" className="size-4" />
 												</span>
 											</span>
 										</span>
 									) : (
-										<span className="grid h-full w-full place-items-center text-4xl">
-											📄
+										<span className="grid h-full w-full place-items-center text-admin-ink-subtle">
+											<FileText aria-hidden="true" className="size-8" />
 										</span>
 									)}
 								</button>
 								<button
 									type="button"
 									onClick={() => toggle(m.id)}
-									aria-label="Select"
-									className={`absolute left-2 top-2 grid h-6 w-6 place-items-center rounded-md border transition ${sel ? "border-[var(--accent)] bg-[var(--accent)] text-accent-foreground" : "border-white/70 bg-black/30 text-transparent opacity-0 group-hover:opacity-100"}`}
+									aria-label={`Select ${name}`}
+									aria-pressed={sel}
+									className={`absolute left-2 top-2 grid size-9 place-items-center rounded-lg border transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50 ${sel ? "border-admin-accent bg-admin-accent text-accent-foreground" : "border-white/70 bg-black/40 text-transparent opacity-0 group-hover:opacity-100 focus-visible:opacity-100"}`}
 								>
-									<svg
-										aria-hidden="true"
-										viewBox="0 0 24 24"
-										className="h-4 w-4"
-										fill="none"
-										stroke="currentColor"
-										strokeWidth="3"
-									>
-										<path
-											d="M5 13l4 4L19 7"
-											strokeLinecap="round"
-											strokeLinejoin="round"
-										/>
-									</svg>
+									<Check aria-hidden="true" className="size-4" />
 								</button>
-								<span className="absolute right-2 top-2 rounded-md bg-black/55 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-white opacity-0 transition group-hover:opacity-100">
+								<span className="absolute right-2 top-2 rounded-lg bg-black/60 px-2 py-1 text-xs font-medium tracking-wide text-white opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100">
 									{extOf(m)}
 								</span>
-								<div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-black/75 to-transparent p-2 opacity-0 transition group-hover:opacity-100">
+								<div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-black/80 to-transparent p-2 opacity-0 transition-opacity duration-150 ease-out group-focus-within:opacity-100 group-hover:opacity-100">
 									<span
-										className="pointer-events-auto truncate text-xs font-medium text-white"
-										title={nameOf(m)}
+										className="pointer-events-auto truncate text-[13px] font-medium text-white"
+										title={name}
 									>
-										{nameOf(m)}
+										{name}
 									</span>
-									<span className="pointer-events-auto flex flex-none gap-1">
+									<span className="pointer-events-auto flex flex-none gap-2">
 										<button
 											type="button"
 											onClick={() => copy(m)}
-											title="Copy URL"
-											aria-label="Copy URL"
-											className="grid h-7 w-7 place-items-center rounded-md bg-white/15 text-white hover:bg-white/30"
+											title={`Copy URL for ${name}`}
+											aria-label={`Copy URL for ${name}`}
+											className="grid size-9 place-items-center rounded-lg bg-white/15 text-white transition-colors duration-150 ease-out hover:bg-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
 										>
 											{copiedId === m.id ? (
-												"✓"
+												<Check aria-hidden="true" className="size-4" />
 											) : (
-												<svg
-													aria-hidden="true"
-													viewBox="0 0 24 24"
-													className="h-4 w-4"
-													fill="none"
-													stroke="currentColor"
-													strokeWidth="2"
-												>
-													<rect x="9" y="9" width="11" height="11" rx="2" />
-													<path d="M5 15V5a2 2 0 0 1 2-2h10" />
-												</svg>
+												<Copy aria-hidden="true" className="size-4" />
 											)}
 										</button>
 										<button
 											type="button"
 											onClick={() => del(m.id)}
-											title="Delete"
-											aria-label="Delete"
-											className="grid h-7 w-7 place-items-center rounded-md bg-white/15 text-white hover:bg-destructive"
+											title={`Delete ${name}`}
+											aria-label={`Delete ${name}`}
+											className="grid size-9 place-items-center rounded-lg bg-white/15 text-white transition-colors duration-150 ease-out hover:bg-admin-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
 										>
-											<svg
-												aria-hidden="true"
-												viewBox="0 0 24 24"
-												className="h-4 w-4"
-												fill="none"
-												stroke="currentColor"
-												strokeWidth="2"
-											>
-												<path
-													d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13h10l1-13"
-													strokeLinecap="round"
-													strokeLinejoin="round"
-												/>
-											</svg>
+											<Trash2 aria-hidden="true" className="size-4" />
 										</button>
 									</span>
 								</div>
@@ -591,23 +580,26 @@ function MediaLibrary() {
 			{/* Infinite-scroll sentinel + status */}
 			<div ref={sentinelRef} className="h-px" />
 			{loadingMore && (
-				<div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
-					<span className="h-4 w-4 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />{" "}
+				<div className="flex items-center justify-center gap-2 py-6 text-[13px] text-admin-ink-muted">
+					<span className="size-4 rounded-full border-2 border-admin-border-strong border-t-admin-accent motion-safe:animate-spin" />{" "}
 					Loading more…
 				</div>
 			)}
 			{!loading && !hasMore && items.length > 0 && (
-				<p className="py-6 text-center text-xs text-muted-foreground">
-					That's everything — {items.length} shown.
+				<p className="py-6 text-center text-[13px] text-admin-ink-muted">
+					That's everything. {items.length} shown.
 				</p>
 			)}
 
 			{/* Drag overlay */}
 			{dragging && (
-				<div className="pointer-events-none fixed inset-0 z-40 grid place-items-center bg-primary/20 backdrop-blur-sm">
-					<div className="rounded-3xl border-2 border-dashed border-primary bg-card px-10 py-8 text-center shadow-2xl">
-						<div className="text-4xl">⬇</div>
-						<p className="mt-2 font-display text-lg font-semibold text-primary">
+				<div className="pointer-events-none fixed inset-0 z-40 grid place-items-center bg-admin-accent/20 backdrop-blur-sm">
+					<div className="rounded-xl border-2 border-dashed border-admin-accent bg-admin-panel px-8 py-8 text-center shadow-[var(--shadow-lift)]">
+						<ArrowDownToLine
+							aria-hidden="true"
+							className="mx-auto size-8 text-admin-accent"
+						/>
+						<p className="mt-2 text-base font-semibold text-admin-ink">
 							Drop files to upload
 						</p>
 					</div>
@@ -620,7 +612,7 @@ function MediaLibrary() {
 					<button
 						type="button"
 						aria-label="Close"
-						className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+						className="absolute inset-0 bg-foreground/50 backdrop-blur-sm"
 						onClick={() => setPreview(null)}
 					/>
 					<div
@@ -629,9 +621,9 @@ function MediaLibrary() {
 						aria-modal="true"
 						tabIndex={-1}
 						aria-labelledby={previewHeadingId}
-						className="relative grid w-full max-w-4xl overflow-hidden rounded-3xl border border-border bg-card shadow-2xl focus:outline-none md:grid-cols-[1fr_360px]"
+						className="relative grid w-full max-w-4xl min-w-0 overflow-hidden rounded-xl border border-admin-border bg-admin-panel-raised shadow-[var(--shadow-lift)] focus:outline-none md:grid-cols-[1fr_360px]"
 					>
-						<div className="grid min-h-[260px] place-items-center bg-muted">
+						<div className="grid min-h-[260px] place-items-center bg-admin-neutral-soft">
 							{isImage(preview) ? (
 								<img
 									src={preview.url ?? ""}
@@ -648,25 +640,30 @@ function MediaLibrary() {
 									className="max-h-[70vh] w-full bg-black object-contain"
 								/>
 							) : (
-								<span className="text-6xl">📄</span>
+								<FileText
+									aria-hidden="true"
+									className="size-12 text-admin-ink-subtle"
+								/>
 							)}
 						</div>
-						<div className="flex flex-col p-5">
-							<div className="mb-3 flex items-start justify-between gap-2">
+						<div className="flex min-w-0 flex-col p-6">
+							<div className="mb-4 flex items-start justify-between gap-2">
 								<h2
 									id={previewHeadingId}
-									className="font-display text-lg font-semibold text-primary break-words"
+									className="text-base font-semibold break-words text-admin-ink"
 								>
 									{nameOf(preview)}
 								</h2>
-								<button
+								<Button
 									type="button"
+									size="icon"
+									variant="ghost"
 									aria-label="Close"
 									onClick={closePreview}
-									className="grid h-8 w-8 flex-none place-items-center rounded-full border border-border text-foreground/60 hover:bg-muted"
+									className="flex-none"
 								>
-									✕
-								</button>
+									<X aria-hidden="true" />
+								</Button>
 							</div>
 							<dl className="space-y-2 text-sm">
 								<Meta label="Type" value={preview.contentType ?? "—"} />
@@ -679,27 +676,28 @@ function MediaLibrary() {
 								{previewSize ? <Meta label="Size" value={previewSize} /> : null}
 								<Meta label="Added" value={fmtDate(preview.createdAt)} />
 							</dl>
-							<div className="mt-3">
-								<div className="text-xs font-medium text-muted-foreground mb-1">
+							<div className="mt-4">
+								<div className="mb-1 text-[13px] font-medium text-admin-ink-muted">
 									URL
 								</div>
 								<input
 									readOnly
+									aria-label={`URL for ${nameOf(preview)}`}
 									value={preview.url ?? ""}
 									onFocus={(e) => e.currentTarget.select()}
-									className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground/70"
+									className={`${inputClass} h-10 min-w-0 text-admin-ink-muted`}
 								/>
 							</div>
 
 							{/* Where this media is used */}
 							<div className="mt-4">
-								<div className="mb-1.5 flex items-center gap-2">
-									<span className="text-xs font-medium text-muted-foreground">
+								<div className="mb-2 flex items-center gap-2">
+									<span className="text-[13px] font-medium text-admin-ink-muted">
 										Used in
 									</span>
 									{usage && (
 										<span
-											className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${usage.length ? "bg-[var(--accent)]/15 text-[var(--accent)]" : "bg-muted text-muted-foreground"}`}
+											className={`rounded-full px-2 py-1 text-xs font-medium leading-none ${usage.length ? "bg-admin-accent-soft text-admin-accent" : "bg-admin-neutral-soft text-admin-ink-muted"}`}
 										>
 											{usage.length
 												? `${usage.length} place${usage.length > 1 ? "s" : ""}`
@@ -708,37 +706,34 @@ function MediaLibrary() {
 									)}
 								</div>
 								{usage === null ? (
-									<p className="text-xs text-muted-foreground">Checking…</p>
+									<p className="text-[13px] text-admin-ink-muted">Checking…</p>
 								) : usage.length === 0 ? (
-									<p className="text-xs text-muted-foreground">
-										Not referenced anywhere — safe to delete.
+									<p className="text-[13px] text-admin-ink-muted">
+										Not referenced anywhere, so it is safe to delete.
 									</p>
 								) : (
-									<ul className="max-h-40 space-y-1 overflow-y-auto pr-1 thin-scroll">
+									<ul className="thin-scroll max-h-40 space-y-2 overflow-y-auto pr-1">
 										{usage.map((u, i) => (
 											<li
 												// biome-ignore lint/suspicious/noArrayIndexKey: read-only usage list, no reorder or delete while mounted
 												key={i}
-												className="flex items-center justify-between gap-2 rounded-lg border border-border bg-background/40 px-2.5 py-1.5 text-xs"
+												className="flex items-center justify-between gap-2 rounded-lg border border-admin-border bg-admin-panel px-3 py-2 text-[13px]"
 											>
 												<span className="min-w-0">
-													<span className="text-[10px] uppercase tracking-wide text-[var(--accent)] font-semibold">
+													<span className="text-xs font-medium text-admin-ink-muted">
 														{u.kind}
 													</span>
 													<span
-														className="block truncate text-foreground"
+														className="block truncate text-admin-ink"
 														title={u.label}
 													>
 														{u.label}
 													</span>
 												</span>
 												{u.href && (
-													<a
-														href={u.href}
-														className="flex-none rounded-md border border-border px-2 py-1 text-[11px] font-medium hover:bg-muted"
-													>
-														Open
-													</a>
+													<Button asChild size="sm" variant="secondary">
+														<a href={u.href}>Open</a>
+													</Button>
 												)}
 											</li>
 										))}
@@ -746,29 +741,37 @@ function MediaLibrary() {
 								)}
 							</div>
 
-							<div className="mt-auto flex items-center gap-2 pt-5">
-								<button
+							<div className="mt-auto grid gap-2 pt-6 sm:grid-cols-2">
+								<Button
 									type="button"
 									onClick={() => copy(preview)}
-									className="flex-1 whitespace-nowrap rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+									className="sm:col-span-2"
 								>
-									{copiedId === preview.id ? "Copied ✓" : "Copy URL"}
-								</button>
-								<a
-									href={preview.url ?? "#"}
-									target="_blank"
-									rel="noopener noreferrer"
-									className="whitespace-nowrap rounded-full border border-border px-4 py-2 text-sm font-semibold hover:bg-muted"
-								>
-									Open ↗
-								</a>
-								<button
+									{copiedId === preview.id ? (
+										<Check aria-hidden="true" />
+									) : (
+										<Copy aria-hidden="true" />
+									)}
+									{copiedId === preview.id ? "Copied" : "Copy URL"}
+								</Button>
+								<Button asChild variant="secondary">
+									<a
+										href={preview.url ?? "#"}
+										target="_blank"
+										rel="noopener noreferrer"
+									>
+										<ExternalLink aria-hidden="true" />
+										Open
+									</a>
+								</Button>
+								<Button
 									type="button"
+									variant="danger"
 									onClick={() => del(preview.id, usage)}
-									className="whitespace-nowrap rounded-full border border-destructive/40 px-4 py-2 text-sm font-semibold text-destructive hover:bg-destructive/10"
 								>
+									<Trash2 aria-hidden="true" />
 									Delete
-								</button>
+								</Button>
 							</div>
 						</div>
 					</div>
@@ -780,9 +783,9 @@ function MediaLibrary() {
 
 function Meta({ label, value }: { label: string; value: string }) {
 	return (
-		<div className="flex justify-between gap-4 border-b border-border/60 pb-2">
-			<dt className="text-muted-foreground">{label}</dt>
-			<dd className="text-right font-medium text-foreground break-all">
+		<div className="flex justify-between gap-4 border-b border-admin-border pb-2">
+			<dt className="text-admin-ink-muted">{label}</dt>
+			<dd className="text-right font-medium break-all text-admin-ink">
 				{value}
 			</dd>
 		</div>

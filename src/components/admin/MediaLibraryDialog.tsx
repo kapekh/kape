@@ -1,5 +1,9 @@
+import { FileText, Play, Upload, X } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
+import { buttonVariants } from "#/components/ui/button.tsx";
+import { inputClass } from "#/components/ui/input.tsx";
+import { Skeleton } from "#/components/ui/skeleton.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { useModalPanel } from "#/lib/use-modal-panel";
 import { toast } from "@/components/Dialogs";
@@ -18,6 +22,12 @@ export function isImageMedia(m: {
 		? m.contentType.startsWith("image/")
 		: /\.(png|jpe?g|webp|gif|svg|avif)(\?|$)/i.test(m.url ?? "");
 }
+
+const isVideoMedia = (m: MediaItem) => !!m.contentType?.startsWith("video/");
+
+/** The stored file is a UUID, but the URL still ends in the operator's name. */
+const nameOfMedia = (m: MediaItem) =>
+	(m.url ?? "").split("/").pop()?.split("?")[0] || `media-${m.id}`;
 
 const PAGE = 24;
 
@@ -52,6 +62,7 @@ export function MediaLibraryDialog({
 	const [debounced, setDebounced] = useState("");
 	const fileRef = useRef<HTMLInputElement>(null);
 	const headingId = useId();
+	const searchId = useId();
 	const panelRef = useModalPanel(onClose, open);
 
 	const offsetRef = useRef(0);
@@ -168,7 +179,7 @@ export function MediaLibraryDialog({
 	}
 
 	return (
-		<div className="fixed inset-0 z-[60] grid place-items-center bg-foreground/40 backdrop-blur-sm p-4">
+		<div className="fixed inset-0 z-[60] grid place-items-center bg-foreground/50 p-4 backdrop-blur-sm">
 			<button
 				type="button"
 				aria-label="Close media library"
@@ -181,24 +192,29 @@ export function MediaLibraryDialog({
 				aria-modal="true"
 				tabIndex={-1}
 				aria-labelledby={headingId}
-				className="relative flex max-h-[85vh] w-full max-w-3xl flex-col rounded-2xl border border-border bg-card shadow-[var(--shadow-lift)] focus:outline-none"
+				className="relative flex max-h-[85vh] w-full max-w-3xl flex-col rounded-xl border border-admin-border bg-admin-panel-raised shadow-[var(--shadow-lift)] focus:outline-none"
 			>
-				<div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3.5">
-					<h3
-						id={headingId}
-						className="font-display font-semibold text-primary"
-					>
+				<div className="flex flex-wrap items-center justify-between gap-3 border-b border-admin-border px-4 py-3">
+					<h3 id={headingId} className="text-base font-semibold text-admin-ink">
 						Media library
 					</h3>
 					<div className="flex items-center gap-2">
+						<label htmlFor={searchId} className="sr-only">
+							Search media
+						</label>
 						<input
+							id={searchId}
+							type="search"
 							value={q}
 							onChange={(e) => setQ(e.target.value)}
 							placeholder="Search…"
-							className="w-40 rounded-lg border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:border-[var(--accent)]"
+							className={`${inputClass} h-8 w-40`}
 						/>
-						<label className="cursor-pointer rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 focus-within:outline-none focus-within:ring-2 focus-within:ring-[var(--accent)] focus-within:ring-offset-2">
-							{busy ? "Uploading…" : "↑ Upload"}
+						<label
+							className={`${buttonVariants({ variant: "primary", size: "sm" })} cursor-pointer focus-within:ring-2 focus-within:ring-admin-focus/50`}
+						>
+							<Upload aria-hidden="true" />
+							{busy ? "Uploading…" : "Upload"}
 							<input
 								ref={fileRef}
 								type="file"
@@ -212,28 +228,32 @@ export function MediaLibraryDialog({
 							type="button"
 							onClick={onClose}
 							aria-label="Close"
-							className="px-1 text-xl leading-none text-muted-foreground hover:text-foreground"
+							className="grid size-9 shrink-0 place-items-center rounded-lg text-admin-ink-muted transition-colors duration-150 ease-out hover:bg-admin-accent-soft hover:text-admin-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
 						>
-							×
+							<X aria-hidden="true" className="size-4" />
 						</button>
 					</div>
 				</div>
 				<div ref={scrollRef} className="thin-scroll overflow-y-auto p-4">
 					{loading ? (
-						<div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-							{Array.from({ length: 8 }).map((_, i) => (
-								<div
+						<div
+							aria-busy="true"
+							className="grid grid-cols-3 gap-3 sm:grid-cols-4"
+						>
+							<span className="sr-only">Loading…</span>
+							{Array.from({ length: 8 }, (_, i) => (
+								<Skeleton
 									// biome-ignore lint/suspicious/noArrayIndexKey: fixed-length loading skeleton, no data behind it
 									key={i}
-									className="aspect-square animate-pulse rounded-lg bg-muted"
+									className="aspect-square w-full"
 								/>
 							))}
 						</div>
 					) : items.length === 0 ? (
-						<p className="py-10 text-center text-sm text-muted-foreground">
+						<p className="py-12 text-center text-[13px] text-admin-ink-muted">
 							{debounced
-								? "No matches."
-								: "No media yet — upload a file to get started."}
+								? "Nothing matches your search. Try a different word."
+								: "No media yet. Upload a file to get started."}
 						</p>
 					) : (
 						<>
@@ -243,12 +263,15 @@ export function MediaLibraryDialog({
 										selectedId != null
 											? m.id === selectedId
 											: selectedUrl != null && m.url === selectedUrl;
+									const name = nameOfMedia(m);
 									return (
 										<button
 											key={m.id}
 											type="button"
 											onClick={() => onSelect(m)}
-											className={`group relative aspect-square overflow-hidden rounded-lg border text-left transition ${selected ? "border-[var(--accent)] ring-2 ring-[var(--accent)]" : "border-border hover:border-[var(--accent)]"}`}
+											aria-label={`${name} · ${m.contentType ?? "file"}`}
+											aria-pressed={selected}
+											className={`group relative aspect-square overflow-hidden rounded-lg border text-left transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50 ${selected ? "border-admin-accent ring-2 ring-admin-accent" : "border-admin-border hover:border-admin-accent"}`}
 										>
 											{isImageMedia(m) && m.url ? (
 												<img
@@ -257,14 +280,30 @@ export function MediaLibraryDialog({
 													loading="lazy"
 													className="h-full w-full object-cover"
 												/>
+											) : isVideoMedia(m) && m.url ? (
+												// the decoded first frame is the thumbnail, so a clip
+												// reads as a clip without storing a poster for it
+												<span className="relative block h-full w-full">
+													<video
+														src={m.url}
+														muted
+														playsInline
+														preload="metadata"
+														className="h-full w-full bg-black object-cover"
+													/>
+													<span className="absolute inset-0 grid place-items-center">
+														<span className="grid size-8 place-items-center rounded-full bg-black/60 text-white">
+															<Play aria-hidden="true" className="size-4" />
+														</span>
+													</span>
+												</span>
 											) : (
-												<span className="grid h-full w-full place-items-center bg-muted text-3xl">
-													📄
+												<span className="grid h-full w-full place-items-center bg-admin-neutral-soft text-admin-ink-subtle">
+													<FileText aria-hidden="true" className="size-8" />
 												</span>
 											)}
-											<span className="absolute inset-x-0 bottom-0 truncate bg-foreground/70 px-1.5 py-0.5 text-[10px] text-background">
-												#{m.id} ·{" "}
-												{(m.contentType ?? "file").replace("application/", "")}
+											<span className="absolute inset-x-0 bottom-0 truncate bg-admin-ink/75 px-2 py-1 text-xs text-admin-panel">
+												{name}
 											</span>
 										</button>
 									);
@@ -272,7 +311,7 @@ export function MediaLibraryDialog({
 							</div>
 							<div ref={sentinelRef} className="h-px" />
 							{loadingMore && (
-								<p className="py-4 text-center text-xs text-muted-foreground">
+								<p className="py-4 text-center text-[13px] text-admin-ink-muted">
 									Loading more…
 								</p>
 							)}
