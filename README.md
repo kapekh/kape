@@ -223,10 +223,14 @@ src/
   lib/               shared schema/helpers (sections, forms, i18n, richtext)
 drizzle/             SQL migrations + snapshots
 scripts/             seed + one-off migration/prerender scripts
-docs/                CMS-CORE-REFERENCE, CONTENT-MODEL, BUILD-PLAN
+docs/                admin-guide/ (operator tours), CMS-CORE-REFERENCE, CONTENT-MODEL, BUILD-PLAN
 ```
 
 ## Docs
+
+For the people who run a site rather than build one:
+[the admin guide](docs/admin-guide/README.md), six tours from signing in to publishing,
+and a one-page [cheat sheet](docs/admin-guide/CHEATSHEET.md).
 
 Deeper specs live in [`docs/`](docs/):
 [CMS-CORE-REFERENCE](docs/CMS-CORE-REFERENCE.md) is the standard the core is graded against,
