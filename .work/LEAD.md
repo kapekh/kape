@@ -37,7 +37,8 @@ Documents: `docs/ui-audit.md` (audit, shown to Rithy and approved), `.work/redes
 | admin tours | this pane | **done** | Commits `d5c5e9e` (written guide, `docs/admin-guide/`) and `d2c74c9` (in-app tour). Rithy asked for both, for generic CMS operators. Tests **433/48**, lint still **8**, `tsc` silent, build green. Not part of the redesign round; see below |
 | J11 settings and modules | this pane | **done, one violation of my own I caught and fixed** | Commit `98ec922`. Gates: **433/48**, `tsc` silent, lint **8**, build green. All 12 acceptance items in `.work/redesign/J11-report.md`. Settings round-trips: 41 keys before, 41 identical after, and the one-field save moves exactly one line of the dump. Both probes reached the public site. Section nav reaches all four sections by click and by scroll. Custom key/value 21 → 22 → 21 rows, DB 41 → 42 → 41. Schools off removes it from the sidebar and `/admin/schools` redirects to `/admin`; back on, everything returns; `Modules saved.` both times. **The violation: my first cut of Brand displayed stored colours as hex and its save wrote that hex back over eight untouched `oklch()` values.** Caught by the round-trip diff, the conversion is deleted, the eight values restored, and the re-proof is in the report. **This commit also carries the sticky fix** below, and one file's worth of the in-flight comment pass, because `admin.tsx` had both |
 | J06 editors A | this pane | **done, two primitives touched deliberately** | Commit `3af6565`. Gates: **435/48**, `tsc` silent, lint **6** (both named `noArrayIndexKey` errors removed, none added), build green. All 15 acceptance items with pasted output in `.work/redesign/J06-report.md`. Eleven post-type field lists before and after, identical; counts identical on all sixteen captured screens; three fields **gained** a name they never had. Create, edit, dirty guard, validation, keyboard path on all four converted selects, and EN+KM round trip all driven through the UI and checked against SQL. **I edited `form-ui.tsx` twice** - `FormSection` gained an opt-in `split`, `EditorGrid` gained two `data-tour` hooks - because E2 names `FormSection` and eleven forms should not each invent a two-column section. Both additive, guard test untouched. **The alignment snippet caught two real defects of mine at 1440**, both fixed; every screen now reports only the documented topbar artefact |
-| J07-J15 | this pane | queued, contracts written | — |
+| J07 editors B | this pane | **done, one primitive touched deliberately** | Commit `a1bae23`. Gates: **435/48**, `tsc` silent, lint **6**, build green. All 15 acceptance items with pasted output in `.work/redesign/J07-report.md`. Field counts identical on all eight screens; create, edit, dirty guard, validation, keyboard on all three converted selects, EN+KM bio round trip, both maps and a photo upload all driven through the UI and checked against SQL. Module gating proved four ways by stashing back to HEAD with `projects` off. **I edited `MediaPicker.tsx`** - its chosen-file row centred a `w-full` filename against the two buttons it pushed onto the next line, 33.75px out on every editor with an image set, invisible to J06 because none of its records had one. **Item 13's premise is wrong and the report says so**: the org chart shows a person's name and photo, never their title |
+| J08-J15 | this pane | queued, contracts written | — |
 
 ## Live now
 
@@ -193,11 +194,30 @@ reports the path and writes nothing. Shoot into `/tmp` and copy. `.work/redesign
 does that, and marks every tour seen first, because a restarted browser auto-runs the shell tour
 over whatever you were photographing.
 
+## What J07 leaves for J08
+
+**The split rule, so the eleven come back as one thing.** J06 said which sections must not split.
+J07 turned that into the positive rule and J08 should copy it rather than invent a third:
+**split a section when every field in it is a single full-width control, and stack those fields.**
+A split section's fields column is ~440px at 1440, so a `grid sm:grid-cols-2` inside one reads as
+cramped; unsplit the section or drop the grid.
+
+**Radix `Select` rejects `""` as an item value.** Person `Sex` stores `""` for "not recorded", so
+the control shows a sentinel and maps it back on change. State, dirty baseline and payload stay
+`""`. Any remaining editor with an empty-valued option needs the same two lines.
+
+**The `editor` tour now covers all eleven entity editors**, so J08 inherits it and adds nothing.
+Its step bodies were reworded off posts-only language while doing that.
+
+**`/admin/org-chart` is not fed by a person's title.** An `org_nodes` row has its own `name` and
+`title`; `personId` resolves to the person's name, slug and photo only. Do not repeat J07's
+contract's claim in a later one.
+
 ## Next action
 
-Build **J07**, then J08, J09, J12, J13, J14, and J15 last or not at all.
+Build **J08**, then J09, J12, J13, J14, and J15 last or not at all.
 
-`.work/redesign/lead.db` now carries five seeded donations, one seeded campaign, one real contact message (all tagged "Lead Probe"), J10's traffic: **six probe uploads, one deleted media item (id 96, a post cover, whose reference was nulled), and a probe image in the body of posts 3 and 26**, and J06's: **post 30, project 20, campaigns 2 and 3, and project 3 moved to 13.1234 / 104.5678 with USAID added.** Harmless, but do not read those counts as the client's. `kape.db` is untouched at `e9789f59cb05f9f3426b9aba88001f9a`.
+`.work/redesign/lead.db` now carries five seeded donations, one seeded campaign, one real contact message (all tagged "Lead Probe"), J10's traffic: **six probe uploads, one deleted media item (id 96, a post cover, whose reference was nulled), and a probe image in the body of posts 3 and 26**, J06's: **post 30, project 20, campaigns 2 and 3, and project 3 moved to 13.1234 / 104.5678 with USAID added**, and J07's: **person 9 with two bio translations and media 138, school 7, office 6, partner 7, and one `org_nodes` row linked to person 9.** Harmless, but do not read those counts as the client's. `kape.db` is untouched at `e9789f59cb05f9f3426b9aba88001f9a`.
 
 Two things every job still owes, whoever runs it: the four gates, and **the alignment snippet from `COMMON.md` on every screen it touched, at 1440 and 390** — read with the caveat above.
 
