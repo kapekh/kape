@@ -8,15 +8,26 @@ import {
 } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { getCookie } from "@tanstack/react-start/server";
-import { ChevronDown, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import {
+	ChevronDown,
+	ExternalLink,
+	Menu,
+	PanelLeftClose,
+	PanelLeftOpen,
+	ShieldAlert,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { AdminHeaderProvider } from "#/components/admin/AdminHeader";
 import { AdminIcon } from "#/components/admin/AdminIcon";
 import { ThemeToggle } from "#/components/ThemeToggle";
+import { Button } from "#/components/ui/button";
+import { EmptyState } from "#/components/ui/empty-state";
+import { PageHeader } from "#/components/ui/page-header";
 import { adminPathEnabled, MODULES_SETTING } from "#/lib/modules";
 import { NAV_AREA } from "#/lib/permissions";
 import { adminTitle, siteLogo, siteShortName } from "#/lib/site-identity";
+import { darkModeAvailable } from "#/lib/site-theme";
 import { useModalPanel } from "#/lib/use-modal-panel";
 import { SESSION_COOKIE, validateToken } from "#/server/auth";
 import { db } from "#/server/db";
@@ -127,30 +138,34 @@ function NoAccess({ email }: { email: string }) {
 	}
 
 	return (
-		<main className="grid min-h-screen place-items-center bg-card p-6 text-foreground">
-			<div className="w-full max-w-md rounded-2xl border border-border bg-card p-7 text-center shadow-[var(--shadow-soft)]">
-				<h1 className="font-display text-xl font-semibold text-primary">
-					You do not have access to the admin
-				</h1>
-				<p className="mt-3 text-sm text-muted-foreground">
-					You are signed in as <strong>{email}</strong>, and that account has no
-					admin areas. Ask an administrator to grant one.
-				</p>
-				<div className="mt-6 flex flex-wrap justify-center gap-2">
-					<a
-						href="/internalsources"
-						className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
-					>
-						Go to Internal Sources
-					</a>
-					<button
-						type="button"
-						onClick={logout}
-						className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
-					>
-						Log out
-					</button>
-				</div>
+		<main className="admin grid min-h-screen place-items-center bg-admin-bg p-6 text-admin-ink">
+			<div className="w-full max-w-md">
+				<PageHeader
+					className="mb-4 text-center"
+					title="You do not have access to the admin"
+					description={
+						<>
+							You are signed in as{" "}
+							<strong className="font-medium text-admin-ink">{email}</strong>,
+							and that account has no admin areas.
+						</>
+					}
+				/>
+				<EmptyState
+					icon={<ShieldAlert />}
+					title="Ask an administrator to grant one"
+					description="Someone who can reach the Users screen can give this account an area. Until then there is nothing here to show you."
+					action={
+						<div className="flex flex-wrap justify-center gap-2">
+							<Button asChild>
+								<a href="/internalsources">Go to Internal Sources</a>
+							</Button>
+							<Button variant="secondary" onClick={logout}>
+								Log out
+							</Button>
+						</div>
+					}
+				/>
 			</div>
 		</main>
 	);
@@ -339,11 +354,24 @@ function AdminLayout({ access }: { access: OkAccess }) {
 	useEffect(() => {
 		setRailCollapsed(localStorage.getItem("admin-nav-rail") === "collapsed");
 	}, []);
-	const toggleRail = () =>
+	// The page builder wants the width, so it narrows the rail on arrival. That
+	// is this visit's answer and never the stored preference: someone who chose a
+	// wide rail still has one when they leave.
+	const [studioRailOpen, setStudioRailOpen] = useState(false);
+	useEffect(() => {
+		if (studio) setStudioRailOpen(false);
+	}, [studio]);
+	const railShut = studio ? !studioRailOpen : railCollapsed;
+	const toggleRail = () => {
+		if (studio) {
+			setStudioRailOpen((o) => !o);
+			return;
+		}
 		setRailCollapsed((c) => {
 			persistRail(!c);
 			return !c;
 		});
+	};
 
 	// Below `lg` the rail leaves the layout and becomes a drawer, so the content
 	// column gets the whole viewport instead of the 104px the 256px rail left it.
@@ -365,6 +393,13 @@ function AdminLayout({ access }: { access: OkAccess }) {
 		desktop.addEventListener("change", sync);
 		return () => desktop.removeEventListener("change", sync);
 	}, []);
+
+	// Email, role, My account, theme and Log out were seven separate topbar
+	// controls; at 390px the three text ones wrapped to two lines each. One
+	// panel now, with the same controls doing the same things inside it.
+	const [accountOpen, setAccountOpen] = useState(false);
+	const closeAccount = () => setAccountOpen(false);
+	const accountRef = useModalPanel(closeAccount, accountOpen);
 
 	async function logout() {
 		await fetch("/api/auth/logout", { method: "POST" });
@@ -402,18 +437,20 @@ function AdminLayout({ access }: { access: OkAccess }) {
 		openGroup ?? (activeGroup || (visibleNav.find((s) => s.group)?.group ?? ""));
 	// Narrowed, there is no room for a group header, so the accordion steps aside
 	// and every item shows as an icon.
-	const railNarrow = railCollapsed && isDesktop;
+	const railNarrow = railShut && isDesktop;
 
 	const link =
-		"group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground/70 transition-colors hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/50";
+		"group flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-admin-ink-muted transition-colors duration-150 ease-out hover:bg-admin-accent-soft hover:text-admin-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50";
 	const linkActive =
-		"flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-[var(--accent)] bg-[var(--accent)]/10 shadow-[inset_3px_0_0_var(--accent)]";
+		"flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-admin-accent bg-admin-accent-soft shadow-[inset_3px_0_0_var(--admin-accent)]";
+	const menuItem =
+		"block w-full rounded-lg px-3 py-2 text-left text-sm text-admin-ink transition-colors duration-150 ease-out hover:bg-admin-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50";
 
 	return (
-		<div className="admin min-h-screen flex bg-card text-foreground">
+		<div className="admin min-h-screen flex bg-admin-bg text-admin-ink">
 			<a
 				href="#admin-main"
-				className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:border focus:border-border focus:bg-card focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:shadow-[var(--shadow-lift)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+				className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:border focus:border-admin-border focus:bg-admin-panel-raised focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:shadow-[var(--shadow-lift)] focus:outline-none focus:ring-2 focus:ring-admin-focus"
 			>
 				Skip to main content
 			</a>
@@ -422,7 +459,7 @@ function AdminLayout({ access }: { access: OkAccess }) {
 					type="button"
 					aria-label="Close navigation"
 					onClick={closeDrawer}
-					className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm lg:hidden"
+					className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm lg:hidden"
 				/>
 			)}
 			{/* Sidebar rail — a drawer below `lg`, the static rail from `lg` up */}
@@ -435,28 +472,26 @@ function AdminLayout({ access }: { access: OkAccess }) {
 				// controls stay in the tab ring and a phone keyboard walks an invisible
 				// menu before reaching the page.
 				inert={!isDesktop && !drawerOpen}
-				className={`fixed lg:sticky left-0 lg:left-auto top-0 z-40 lg:z-auto w-64 shrink-0 h-screen bg-card border-r border-border flex flex-col focus:outline-none transition-transform duration-200 ease-out lg:transition-[width] lg:duration-200 ${drawerOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 ${railNarrow ? "lg:w-[4.5rem]" : "lg:w-64"}`}
+				className={`fixed lg:sticky left-0 lg:left-auto top-0 z-40 lg:z-auto w-64 shrink-0 h-screen bg-admin-panel border-r border-admin-border flex flex-col focus:outline-none transition-transform duration-200 ease-out lg:transition-[width] lg:duration-200 ${drawerOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 ${railNarrow ? "lg:w-[4.5rem]" : "lg:w-64"}`}
 				style={{ viewTransitionName: "admin-sidebar" }}
 			>
 				<div
-					className={`flex items-center gap-2.5 h-16 border-b border-border shrink-0 ${railNarrow ? "justify-center px-0" : "px-5"}`}
+					className={`flex items-center gap-3 h-16 border-b border-admin-border shrink-0 ${railNarrow ? "justify-center px-0" : "px-4"}`}
 				>
 					<img
 						src={siteLogo(settings)}
 						alt={siteShortName(settings)}
-						className="h-9 w-9 shrink-0 rounded-lg object-cover ring-1 ring-border"
+						className="h-9 w-9 shrink-0 rounded-lg object-cover ring-1 ring-admin-border"
 					/>
-					<div className={railNarrow ? "sr-only" : "leading-tight"}>
-						<div className="font-display font-semibold text-primary">
+					<div className={railNarrow ? "sr-only" : "min-w-0 leading-tight"}>
+						<div className="truncate text-sm font-semibold text-admin-ink">
 							{siteShortName(settings)}
 						</div>
-						<div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-							Admin
-						</div>
+						<div className="text-[13px] text-admin-ink-muted">Admin</div>
 					</div>
 				</div>
 
-				<nav className="hide-scroll flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-5">
+				<nav className="hide-scroll flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-6">
 					{visibleNav.map((section) => {
 						const open =
 							railNarrow || !section.group || section.group === shownGroup;
@@ -469,7 +504,7 @@ function AdminLayout({ access }: { access: OkAccess }) {
 										onClick={() => toggleGroup(section.group, open)}
 										aria-expanded={open}
 										aria-controls={panelId}
-										className="flex w-full items-center justify-between px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/50 rounded"
+										className="flex w-full items-center justify-between rounded-lg px-3 py-1 mb-2 text-[13px] font-medium text-admin-ink-muted transition-colors duration-150 ease-out hover:text-admin-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
 									>
 										{section.group}
 										<ChevronDown
@@ -479,7 +514,7 @@ function AdminLayout({ access }: { access: OkAccess }) {
 									</button>
 								) : null}
 								{open && (
-									<div id={panelId} className="space-y-0.5">
+									<div id={panelId} className="space-y-1">
 										{section.items.map((it) => (
 											<Link
 												key={`${it.to}:${it.type ?? ""}`}
@@ -514,7 +549,7 @@ function AdminLayout({ access }: { access: OkAccess }) {
 			{/* Content column */}
 			<div className="flex-1 min-w-0 flex flex-col">
 				<header
-					className="sticky top-0 z-20 h-16 shrink-0 border-b border-border bg-card/85 backdrop-blur flex items-center justify-between gap-4 px-4 lg:px-5"
+					className="sticky top-0 z-20 h-16 shrink-0 border-b border-admin-border bg-admin-panel/85 backdrop-blur flex items-center justify-between gap-4 px-4"
 					style={{ viewTransitionName: "admin-topbar" }}
 				>
 					<button
@@ -522,7 +557,7 @@ function AdminLayout({ access }: { access: OkAccess }) {
 						onClick={() => setDrawerOpen((o) => !o)}
 						aria-expanded={drawerOpen}
 						aria-controls="admin-sidebar"
-						className="lg:hidden grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border text-foreground/70 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/50"
+						className="lg:hidden grid size-9 shrink-0 place-items-center rounded-lg border border-admin-border text-admin-ink-muted transition-colors duration-150 ease-out hover:bg-admin-accent-soft hover:text-admin-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
 					>
 						<Menu className="h-5 w-5" aria-hidden="true" />
 						<span className="sr-only">Menu</span>
@@ -530,62 +565,98 @@ function AdminLayout({ access }: { access: OkAccess }) {
 					<button
 						type="button"
 						onClick={toggleRail}
-						aria-expanded={!railCollapsed}
+						aria-expanded={!railShut}
 						aria-controls="admin-sidebar"
-						className="hidden lg:grid h-9 w-9 shrink-0 place-items-center rounded-lg text-foreground/70 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/50"
+						className="hidden lg:grid size-9 shrink-0 place-items-center rounded-lg text-admin-ink-muted transition-colors duration-150 ease-out hover:bg-admin-accent-soft hover:text-admin-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
 					>
-						{railCollapsed ? (
+						{railShut ? (
 							<PanelLeftOpen className="h-5 w-5" aria-hidden="true" />
 						) : (
 							<PanelLeftClose className="h-5 w-5" aria-hidden="true" />
 						)}
 						<span className="sr-only">
-							{railCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+							{railShut ? "Expand sidebar" : "Collapse sidebar"}
 						</span>
 					</button>
 					<div
 						ref={setHeaderSlot}
 						className="flex min-w-0 flex-1 items-center gap-3"
 					/>
-					<div className="flex items-center gap-4">
+					<div className="flex shrink-0 items-center gap-1">
 						<a
 							href="/"
 							target="_blank"
 							rel="noopener noreferrer"
-							className="text-sm font-medium text-primary hover:text-[var(--accent)] transition-colors"
+							className="flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium text-admin-ink-muted transition-colors duration-150 ease-out hover:bg-admin-accent-soft hover:text-admin-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
 						>
-							View site ↗
+							View site
+							<ExternalLink className="size-4 shrink-0" aria-hidden="true" />
 						</a>
-						<ThemeToggle
-							settings={settings}
-							className="h-8 w-8 border border-border text-foreground/70 hover:bg-muted"
-						/>
-						<span className="h-5 w-px bg-border" />
-						<div className="flex items-center gap-2.5">
-							<span className="h-8 w-8 rounded-full bg-primary/10 text-primary grid place-items-center text-xs font-semibold uppercase">
-								{email.slice(0, 2)}
-							</span>
-							<div className="hidden sm:block leading-tight">
-								<div className="text-xs font-medium text-foreground max-w-[180px] truncate">
-									{email}
-								</div>
-								<div className="text-[10px] uppercase tracking-wide text-[var(--palm)] capitalize">
-									{roleLabel}
-								</div>
-							</div>
-							<Link
-								to="/admin/account"
-								className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground/70 hover:bg-muted hover:text-foreground transition-colors"
-							>
-								My account
-							</Link>
+						<div className="relative">
 							<button
 								type="button"
-								onClick={logout}
-								className="ml-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground/70 hover:bg-muted hover:text-foreground transition-colors"
+								onClick={() => setAccountOpen((o) => !o)}
+								aria-haspopup="dialog"
+								aria-expanded={accountOpen}
+								aria-label="Account"
+								title={email}
+								className="grid size-9 place-items-center rounded-lg transition-colors duration-150 ease-out hover:bg-admin-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50 aria-expanded:bg-admin-accent-soft"
 							>
-								Log out
+								<span
+									aria-hidden="true"
+									className="grid size-8 place-items-center rounded-full bg-admin-accent-soft text-xs font-semibold uppercase text-admin-accent"
+								>
+									{email.slice(0, 2)}
+								</span>
 							</button>
+							{accountOpen && (
+								<>
+									<button
+										type="button"
+										aria-label="Close account menu"
+										onClick={closeAccount}
+										className="fixed inset-0 z-30 cursor-default"
+									/>
+									<div
+										ref={accountRef}
+										role="dialog"
+										aria-modal="true"
+										aria-label="Account"
+										tabIndex={-1}
+										className="absolute right-0 top-full z-40 mt-2 w-64 rounded-xl border border-admin-border bg-admin-panel-raised p-2 shadow-[var(--shadow-soft)] focus:outline-none"
+									>
+										<div className="px-3 py-2">
+											<div className="truncate text-sm font-medium text-admin-ink">
+												{email}
+											</div>
+											<div className="mt-1 text-[13px] capitalize text-admin-ink-muted">
+												{roleLabel}
+											</div>
+										</div>
+										<div className="my-2 h-px bg-admin-border" />
+										<Link
+											to="/admin/account"
+											onClick={closeAccount}
+											className={menuItem}
+										>
+											My account
+										</Link>
+										{darkModeAvailable(settings) && (
+											<div className="flex items-center justify-between gap-3 rounded-lg px-3 py-2">
+												<span className="text-sm text-admin-ink">Theme</span>
+												<ThemeToggle
+													settings={settings}
+													className="size-9 shrink-0 border border-admin-border text-admin-ink-muted hover:bg-admin-accent-soft hover:text-admin-ink"
+												/>
+											</div>
+										)}
+										<div className="my-2 h-px bg-admin-border" />
+										<button type="button" onClick={logout} className={menuItem}>
+											Log out
+										</button>
+									</div>
+								</>
+							)}
 						</div>
 					</div>
 				</header>
@@ -603,9 +674,13 @@ function AdminLayout({ access }: { access: OkAccess }) {
 						<main
 							id="admin-main"
 							tabIndex={-1}
-							className="flex-1 p-4 lg:p-5 overflow-x-hidden"
+							className="flex-1 overflow-x-hidden p-4 lg:p-6"
 						>
-							<div className="mx-auto max-w-[1600px]">
+							{/* Full width by default, for the tables. A surface that is a
+							    column of fields marks its own root `data-admin-width="prose"`
+							    and the shell narrows around it instead of leaving 400px of
+							    empty paper to its right. */}
+							<div className="mx-auto w-full max-w-[1600px] has-[[data-admin-width='prose']]:max-w-3xl">
 								<Outlet />
 							</div>
 						</main>

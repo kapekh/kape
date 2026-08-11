@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { AlertCircle, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 
 import { useT } from "#/lib/i18n";
@@ -79,35 +80,38 @@ function LoginPage() {
 		}
 	}
 
+	// The admin's own tokens are scoped to `.admin`, which the shell sets and this
+	// screen is outside of. Same geometry and scale as the admin, painted with the
+	// public tokens — the rule Dialogs.tsx follows for the same reason.
 	const input =
-		"w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/30 transition";
-	const label =
-		"block text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5";
+		"h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground transition-colors duration-150 ease-out placeholder:text-muted-foreground focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40";
+	const label = "mb-2 block text-[13px] font-medium text-foreground";
 
 	return (
-		<main className="min-h-screen grid place-items-center p-6">
+		<main className="grid min-h-screen place-items-center p-6">
 			<div className="w-full max-w-sm">
-				<div className="flex flex-col items-center text-center mb-6">
-					<span className="h-12 w-12 rounded-2xl bg-[var(--gold)] text-primary grid place-items-center font-display font-bold text-2xl shadow-[var(--shadow-soft)]">
+				<div className="mb-6 flex flex-col items-center text-center">
+					<span className="grid size-12 place-items-center rounded-xl bg-[var(--gold)] text-2xl font-bold text-primary shadow-[var(--shadow-soft)]">
 						{siteInitial(settings)}
 					</span>
-					<div className="mt-3 font-display font-semibold text-xl text-primary">
+					<h1 className="mt-4 text-xl font-semibold text-foreground">
 						{adminTitle(settings)}
-					</div>
-					<p className="text-sm text-muted-foreground mt-0.5">
+					</h1>
+					<p className="mt-1 text-[13px] text-muted-foreground">
 						{t("login.subtitle", "Sign in to manage the website.")}
 					</p>
 				</div>
 				<form
 					onSubmit={submit}
-					className="rounded-2xl border border-border bg-card p-7 shadow-[var(--shadow-soft)]"
+					className="rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]"
 				>
 					{err && (
 						<div
 							id="login-error"
 							role="alert"
-							className="mb-4 rounded-lg bg-destructive/10 text-destructive text-sm px-3 py-2"
+							className="mb-6 flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-[13px] text-destructive"
 						>
+							<AlertCircle aria-hidden="true" className="size-4 shrink-0" />
 							{err}
 						</div>
 					)}
@@ -150,16 +154,20 @@ function LoginPage() {
 					<button
 						type="submit"
 						disabled={busy}
-						className="mt-6 w-full rounded-full bg-primary text-primary-foreground py-2.5 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition"
+						className="mt-6 grid h-10 w-full place-items-center rounded-lg bg-primary text-sm font-medium text-primary-foreground transition-colors duration-150 ease-out hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/50 disabled:saturate-50"
 					>
 						{busy
 							? t("login.busy", "Signing in…")
 							: t("login.submit", "Sign in")}
 					</button>
 				</form>
-				<p className="mt-5 text-center text-xs text-muted-foreground">
-					<a href="/" className="hover:text-foreground transition">
-						← {t("nav.backSite", "Back to the site")}
+				<p className="mt-6 text-center text-[13px] text-muted-foreground">
+					<a
+						href="/"
+						className="inline-flex items-center gap-2 rounded-lg transition-colors duration-150 ease-out hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/50"
+					>
+						<ArrowLeft aria-hidden="true" className="size-4 shrink-0" />
+						{t("nav.backSite", "Back to the site")}
 					</a>
 				</p>
 			</div>
