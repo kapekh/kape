@@ -37,9 +37,9 @@ function parseContent(value: string): object | string {
 }
 
 /**
- * `label` is the accessible name this button already had when it was a
- * typographic glyph, and it is carried over verbatim: an icon is decoration and
- * a name that changes is a name a screen-reader user has to relearn.
+ * `label` is the accessible name, `text` the visible one. They differ because
+ * four of these six read "Row" or "Col" on screen and the icon is what says
+ * which direction — a name has to carry that itself.
  */
 const TABLE_ACTIONS: [
 	string,
@@ -47,12 +47,12 @@ const TABLE_ACTIONS: [
 	string,
 	(c: ChainedCommands) => ChainedCommands,
 ][] = [
-	["+ Row", Plus, "Row", (c) => c.addRowAfter()],
-	["− Row", Minus, "Row", (c) => c.deleteRow()],
-	["+ Col", Plus, "Col", (c) => c.addColumnAfter()],
-	["− Col", Minus, "Col", (c) => c.deleteColumn()],
-	["Header", null, "Header", (c) => c.toggleHeaderRow()],
-	["✕ Table", X, "Table", (c) => c.deleteTable()],
+	["Add row", Plus, "Row", (c) => c.addRowAfter()],
+	["Delete row", Minus, "Row", (c) => c.deleteRow()],
+	["Add column", Plus, "Col", (c) => c.addColumnAfter()],
+	["Delete column", Minus, "Col", (c) => c.deleteColumn()],
+	["Toggle header row", null, "Header", (c) => c.toggleHeaderRow()],
+	["Delete table", X, "Table", (c) => c.deleteTable()],
 ];
 
 function ToolGroup({
@@ -77,8 +77,11 @@ function ToolDivider() {
 
 /**
  * Icon-only toolbar button. The icon is hidden from the accessibility tree and
- * `label` is the whole accessible name, so the glyph-to-icon swap is invisible
- * to anything that reads the page rather than looks at it.
+ * `label` is the whole accessible name.
+ *
+ * The names read as words, not as the glyphs the buttons used to show. Carrying
+ * "❝" and "▦ Table" across was the letter of the freeze that protected these
+ * names, and nobody sees them now — a screen reader was announcing punctuation.
  */
 function ToolButton({
 	label,
@@ -183,13 +186,13 @@ export function RichTextEditor({
 				<div className="flex flex-wrap items-center gap-1 border-b border-admin-border p-2">
 					<ToolGroup>
 						<ToolButton
-							label="B"
+							label="Bold"
 							icon={Bold}
 							active={marks?.bold}
 							onClick={() => editor.chain().focus().toggleBold().run()}
 						/>
 						<ToolButton
-							label="I"
+							label="Italic"
 							icon={Italic}
 							active={marks?.italic}
 							onClick={() => editor.chain().focus().toggleItalic().run()}
@@ -198,7 +201,7 @@ export function RichTextEditor({
 					<ToolDivider />
 					<ToolGroup>
 						<ToolButton
-							label="H2"
+							label="Heading 2"
 							icon={Heading2}
 							active={marks?.h2}
 							onClick={() =>
@@ -206,7 +209,7 @@ export function RichTextEditor({
 							}
 						/>
 						<ToolButton
-							label="H3"
+							label="Heading 3"
 							icon={Heading3}
 							active={marks?.h3}
 							onClick={() =>
@@ -214,13 +217,13 @@ export function RichTextEditor({
 							}
 						/>
 						<ToolButton
-							label="• List"
+							label="Bulleted list"
 							icon={List}
 							active={marks?.bulletList}
 							onClick={() => editor.chain().focus().toggleBulletList().run()}
 						/>
 						<ToolButton
-							label="❝"
+							label="Quote"
 							icon={Quote}
 							active={marks?.blockquote}
 							onClick={() => editor.chain().focus().toggleBlockquote().run()}
@@ -244,12 +247,12 @@ export function RichTextEditor({
 							}}
 						/>
 						<ToolButton
-							label="🖼 Image"
+							label="Image"
 							icon={ImageIcon}
 							onClick={() => setImgOpen(true)}
 						/>
 						<ToolButton
-							label="▦ Table"
+							label="Table"
 							icon={TableIcon}
 							onClick={() =>
 								editor
@@ -260,7 +263,7 @@ export function RichTextEditor({
 							}
 						/>
 						<ToolButton
-							label="⁝⁝ Terms"
+							label="Terms"
 							icon={ListTree}
 							onClick={() =>
 								editor.chain().focus().insertContent(emptyDescriptionList).run()
@@ -286,7 +289,7 @@ export function RichTextEditor({
 						)}
 						<span className="relative">
 							<ToolButton
-								label="▤ Form"
+								label="Form"
 								icon={FormInput}
 								active={formMenu}
 								state="expanded"
