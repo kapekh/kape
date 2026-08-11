@@ -1,29 +1,4 @@
-/**
- * What the site looks like. The palette, the paper, the corner radius and the
- * typefaces all resolve through here, so an operator re-skins the whole site
- * from /admin/settings and no component is edited.
- *
- * The shape mirrors `site-identity.ts`: every key is optional, and an unset key
- * falls through to the product's own default in `styles.css`. Values are
- * emitted as CSS custom properties into a `<style>` in the document head during
- * SSR, so the first painted frame already carries the operator's brand.
- *
- * What is configurable, and what is not:
- *
- *   Configurable   the four brand colours, the paper tint, the corner radius
- *                  and the three font stacks. These are what an organisation
- *                  owns and what makes a site recognisably theirs.
- *
- *   Not            the neutral lightness ramp, the spacing rhythm and the type
- *                  scale. Those are the product's design. A CMS that lets an
- *                  operator break its own vertical rhythm produces worse sites,
- *                  not more personal ones.
- *
- * Each colour takes an optional dark-mode counterpart. Left unset, the dark
- * value is derived by lifting the light one toward white, which is right often
- * enough to make a one-field re-skin work and wrong often enough to be worth
- * overriding.
- */
+// configurable: the brand colours, the paper, the radius and the fonts; not the neutral ramp, the spacing or the type scale, which are the product's design
 import type { SiteSettings } from "./site-identity";
 
 export type ThemeKind =
@@ -158,39 +133,21 @@ export const THEME_FIELDS: ThemeField[] = [
 	},
 ];
 
-/**
- * The typefaces a fresh install loads. Kept here rather than as an `@import` in
- * styles.css so that setting `theme_font_url` actually replaces it instead of
- * downloading both.
- */
+// here, not an @import in styles.css, or setting theme_font_url downloads both
 export const DEFAULT_FONT_URL =
 	"https://fonts.googleapis.com/css2?family=Battambang:wght@400;700;900&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,800&family=Inter:wght@300;400;500;600;700&family=Noto+Serif+Khmer:wght@500;700&display=swap";
 
-/**
- * The product's own brand colour. Must stay the `--brand-primary` that
- * styles.css declares: `theme-color` and the manifest are read by browser
- * chrome before any stylesheet, so this is the one value that has to be
- * restated outside CSS. site-theme.test.ts reads styles.css and fails on drift.
- */
+// browser chrome reads theme-color and the manifest before any stylesheet, so this one value is restated outside CSS
 export const DEFAULT_PRIMARY = "oklch(0.30 0.03 250)";
 
 /* ---------------------------------------------------------------- */
 /* Validation                                                        */
 /* ---------------------------------------------------------------- */
 
-/**
- * A settings value can only ever become a CSS *value*, never a new declaration
- * or a new element. Settings are admin-writable, so a stray `</style>` here
- * would be stored XSS rather than a typo.
- */
+// settings are admin-writable, so a stray </style> here would be stored XSS
 const BANNED = /[<>{};@\\]/;
 
-/**
- * The half that is not about attack. `oklch(0.5 0.1 250` carries nothing
- * dangerous, but an unclosed bracket makes the CSS tokeniser eat the closing
- * brace and every rule after it, so one typo silently reverts the whole theme.
- * Anything that cannot end where the declaration ends is rejected.
- */
+// an unclosed bracket makes the tokeniser eat the closing brace and every rule after it
 function unbalanced(v: string) {
 	let depth = 0;
 	let quote = "";
@@ -225,17 +182,7 @@ const CHANNELS = new RegExp(
 const FONT_STACK = /^[\w\s,."'-]+$/;
 const HTTPS_URL = /^https:\/\/[^\s"'<>]+$/;
 
-/**
- * The 148 CSS colour names and the sRGB hex each one resolves to. A closed list,
- * because the pattern it replaces was `[a-z]{3,20}` and so accepted `banana`: a
- * custom property holding a word CSS does not know is guaranteed-invalid, every
- * token derived from it then computes to nothing, and the header, the buttons
- * and the stats band paint blank with no error anywhere on the form.
- *
- * The hexes are here and not only the names so a colour typed by name still
- * reaches `theme-color` and the legibility panel. Every name and every hex was
- * diffed against Chrome's own parser; site-theme.test.ts guards the shape.
- */
+// closed list: a custom property holding a word CSS does not know is guaranteed-invalid and paints blank with no error; the hexes are here so a name still reaches theme-color
 const NAMED_COLOURS = new Map(
 	`aliceblue #f0f8ff
 antiquewhite #faebd7
@@ -392,12 +339,7 @@ yellowgreen #9acd32`
 /** Colours with no fixed sRGB value: valid to write, nothing to convert. */
 const COLOUR_KEYWORDS = new Set(["transparent", "currentcolor"]);
 
-/**
- * Refused deliberately. On a custom property these do not mean "the product's
- * default": `--brand-primary: initial` makes the property guaranteed-invalid,
- * which is the same blank page a typo gives. Clearing the field is how an
- * operator asks for the default, and that already works.
- */
+// on a custom property initial/inherit/unset make it guaranteed-invalid, not "the default"
 const CSS_WIDE = new Set([
 	"inherit",
 	"initial",
@@ -410,12 +352,7 @@ const COLOUR_EXAMPLES =
 	"Try oklch(0.30 0.10 255), #1f4e79, rgb(31 78 121) or hsl(207 59% 30%).";
 const NOT_A_COLOUR = `Not a colour. ${COLOUR_EXAMPLES}`;
 
-/**
- * The colour spaces, closed for the same reason the names are. An open
- * `[a-z0-9-]+` accepts `color-mix(in banana, red, blue)`, which is invalid and
- * so paints nothing, and `color(--myprofile 1 0 0)` names an `@color-profile`
- * no browser implements. Only the polar spaces take a hue interpolation method.
- */
+// an open [a-z0-9-]+ accepts color-mix(in banana, …) and an @color-profile no browser implements
 const RECTANGULAR =
 	"srgb|srgb-linear|display-p3|a98-rgb|prophoto-rgb|rec2020|lab|oklab|xyz|xyz-d50|xyz-d65";
 const POLAR = "hsl|hwb|lch|oklch";
@@ -452,11 +389,7 @@ function commaArgs(inner: string) {
 	return out;
 }
 
-/**
- * Why this is not a colour, or `null` when it is. Recursive, because
- * `light-dark()` and `color-mix()` take colours, and a composite whose arguments
- * nobody checked is the same hole one level further down.
- */
+// recursive: light-dark() and color-mix() take colours, and an unchecked argument is the same hole one level down
 function colourProblem(v: string): string | null {
 	if (HEX.test(v) || CHANNELS.test(v)) return null;
 	if (/^[a-z]+$/i.test(v)) {
@@ -529,14 +462,7 @@ export function checkThemeValue(kind: ThemeKind, raw: string): string | null {
 	return HTTPS_URL.test(v) ? null : "Must be an https:// stylesheet address.";
 }
 
-/**
- * The same check, addressed by setting key instead of by kind, for the one
- * caller that has only a key: the tRPC procedure. The form's copy of this runs
- * in the browser and is what makes the error appear as you type, but a caller
- * with a session and no browser reaches the database directly, so a value that
- * would blank the site has to be refused here too. Keys with no `kind` are
- * free-form and unconstrained.
- */
+// a caller with a session and no browser reaches the database directly, so the check runs here too
 export function checkSettingValue(key: string, value: string): string | null {
 	const field = THEME_FIELDS.find((f) => f.key === key);
 	return field ? checkThemeValue(field.kind, value) : null;
@@ -560,13 +486,7 @@ export const toggleOn = (raw: string | undefined) =>
 export const darkModeAvailable = (s: SiteSettings) =>
 	toggleOn(s.theme_dark_mode);
 
-/**
- * The `:root` overrides for this site, or "" when nothing is configured.
- * Only keys the operator actually set are emitted, so every other token keeps
- * falling through to the product default and to the derived dark counterpart.
- * A value that fails `checkThemeValue` is dropped on its own and takes no other
- * declaration with it.
- */
+// only keys the operator set are emitted; a value failing checkThemeValue is dropped on its own
 export function themeCss(s: SiteSettings) {
 	const decls: string[] = [];
 	for (const f of THEME_FIELDS) {
@@ -625,13 +545,7 @@ function hexToLab(hex: string): Lab {
 	};
 }
 
-/**
- * The three channels of `fn(a b c)`, `fn(a, b, c)` or either with a fourth
- * alpha component. A colour that is not fully opaque returns null: what it
- * paints depends on whatever is behind it, so there is no one sRGB value to
- * report, and a ratio measured against the opaque colour would be a number the
- * page never shows.
- */
+// not fully opaque returns null: what it paints depends on whatever is behind it
 function channels(colour: string) {
 	const [body, slashed] = colour
 		.slice(colour.indexOf("(") + 1, colour.lastIndexOf(")"))
@@ -652,12 +566,7 @@ const scaled = (t: string, full: number) =>
 /** A hue in degrees, written with or without the unit the validator allows. */
 const angle = (t: string) => Number(t.replace(/deg$/i, ""));
 
-/**
- * CIE Lab, which `lab()` and `lch()` are written in, is not the OKLab above: it
- * is referred to the D50 white point, so the matrix folds in the Bradford
- * adaptation to D65 that CSS Color 4 specifies. Every constant was diffed
- * against Chrome's own parser through a canvas pixel.
- */
+// CIE Lab is referred to D50, so the matrix folds in the Bradford adaptation to D65 that CSS Color 4 specifies
 const D50: readonly number[] = [
 	0.3457 / 0.3585,
 	1,
@@ -693,14 +602,7 @@ function hslToRgb(h: number, s: number, l: number) {
 	return [f(0), f(8), f(4)];
 }
 
-/**
- * A CSS colour to an sRGB hex. `<meta name="theme-color">` and a web manifest
- * are read by browser chrome and by installers whose colour parsers are older
- * than the page engine's, so this is the one place the brand has to leave the
- * token system. `null` for anything with no one sRGB value - `transparent`,
- * `currentColor`, a composite, a translucent colour - which the settings form
- * reports rather than silently replacing. `colourReach` says which it is.
- */
+// theme-color and the manifest are read by parsers older than the page engine's, so the brand leaves the token system here; null where there is no one sRGB value
 export function colourToHex(raw: string): string | null {
 	const colour = raw.trim().toLowerCase();
 	const named = NAMED_COLOURS.get(colour);
@@ -746,11 +648,7 @@ export function colourToHex(raw: string): string | null {
 	return null;
 }
 
-/**
- * How far a valid colour actually gets, for the three cases the settings form
- * has to describe differently. `null` when the value is empty, invalid, or an
- * ordinary colour that needs no caveat at all.
- */
+// null when the value is empty, invalid, or an ordinary colour that needs no caveat
 export type ColourReach =
 	/** Nothing is painted: `transparent`. */
 	| "invisible"
@@ -776,13 +674,7 @@ export const themeColor = (s: SiteSettings) =>
 /* Contrast                                                          */
 /* ---------------------------------------------------------------- */
 
-/**
- * Where the site stops writing paper on a brand colour and starts writing ink.
- * A saturated colour carries less luminance than its lightness suggests, so
- * chroma pushes the crossover up. styles.css runs the same two numbers inside
- * `clamp(0.16, (0.57 + c * 0.1 - l) * 1000, 0.985)`, and site-theme.test.ts
- * reads the stylesheet, so the two cannot drift apart.
- */
+// chroma pushes the crossover up; styles.css runs the same two numbers and site-theme.test.ts reads the stylesheet
 export const FOREGROUND_CROSSOVER = 0.57;
 export const FOREGROUND_CHROMA_TERM = 0.1;
 const INK = 0.16;
@@ -838,18 +730,7 @@ function bothModes(values: SiteSettings, key: string) {
 	};
 }
 
-/**
- * How legible each brand colour will be, in each of the ways the site uses it.
- *
- * The foreground written *on* a colour follows that colour's lightness, so the
- * derivation can always find a readable one. Everything else is a pairing of two
- * colours the operator chose, which no derivation can rescue without changing
- * the brand: a pale primary makes every heading and link disappear, and only a
- * warning can say so.
- *
- * The dark counterpart is derived when the operator left it empty, so this
- * measures what will ship rather than restating what was typed.
- */
+// a foreground written on a colour follows its lightness, but a pairing the operator chose no derivation can rescue; the dark counterpart is derived, so this measures what ships
 export function themeContrast(values: SiteSettings): ThemeContrast[] {
 	const out: ThemeContrast[] = [];
 	const primary = bothModes(values, "theme_primary");

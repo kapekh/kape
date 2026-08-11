@@ -4,15 +4,7 @@ import { useMemo } from "react";
 import { enabledModules, MODULES_SETTING, type ModuleId } from "#/lib/modules";
 import type { SiteSettings } from "#/lib/site-identity";
 
-/**
- * For the admin screens that read a *neighbouring* module's records: a school
- * form offering projects to link to, a project form offering donors to credit.
- *
- * The modules are independent checkboxes, so those pairings come apart, and a
- * disabled module's router answers FORBIDDEN to everyone. Calling it anyway
- * rejects the whole `Promise.all` and the screen never leaves "Loading…", which
- * is a worse failure than the missing feature. Ask first instead.
- */
+// a disabled module's router answers FORBIDDEN, which rejects the whole Promise.all and hangs the screen
 export function useModules() {
 	const { settings } = useLoaderData({ from: "__root__" }) as {
 		settings?: SiteSettings;

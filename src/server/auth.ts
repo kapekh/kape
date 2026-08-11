@@ -5,13 +5,7 @@ import { env } from "#/env";
 import type { DB } from "./db";
 import { sessions, users } from "./schema";
 
-/**
- * Auth = JWT + revocable sessions.
- *
- * Login creates a `sessions` row and signs a JWT carrying `{ sid, uid }`. The
- * JWT is verified statelessly on each request, then the session row is checked
- * so we can revoke (logout / admin kill) before the JWT naturally expires.
- */
+// the JWT is verified statelessly, then the session row is checked, so logout can revoke before it expires
 
 const SECRET = new TextEncoder().encode(env.AUTH_SECRET);
 export const SESSION_COOKIE = "cms_session";
@@ -91,10 +85,6 @@ export async function revokeSession(db: DB, sessionId: string): Promise<void> {
 		.where(eq(sessions.id, sessionId));
 }
 
-/**
- * Validate a session JWT against the DB: verifies the signature, then confirms
- * the session exists, is unexpired and not revoked, and the user still exists.
- */
 export async function validateToken(
 	db: DB,
 	token: string | undefined,
@@ -138,9 +128,7 @@ export function parseCookies(header: string | null): Record<string, string> {
 	return out;
 }
 
-// browsers discard a Secure cookie set over plain http, which silently breaks
-// sign-in on a LAN deployment - so track the scheme the request arrived on
-// rather than NODE_ENV. x-forwarded-proto covers TLS terminated at a proxy.
+// browsers discard a Secure cookie set over plain http, which breaks LAN sign-in; x-forwarded-proto covers TLS terminated at a proxy
 function secureFlag(request?: Request): string {
 	if (!request) return "; Secure";
 	const forwarded = request.headers

@@ -92,9 +92,7 @@ function LinkRows({
 						value={l.href}
 						onChange={(e) => patch(i, { href: e.target.value })}
 					/>
-					{/* names the row it removes: 19 buttons all called "Remove" tell a
-					    screen reader which control it is on and nothing about which
-					    link goes. An unnamed row falls back to its position. */}
+					{/* names the row it removes: 19 buttons called "Remove" say nothing about which link goes */}
 					<button
 						type="button"
 						onClick={() => setRows((ls) => ls.filter((_, j) => j !== i))}
@@ -201,9 +199,7 @@ function FooterAdmin() {
 					})),
 			),
 		};
-		// Same shape as admin.nav.tsx's save. Without the try, one rejected
-		// `settings.set` left the button on "Saving…" for good, and the only way
-		// out of that was a reload, which threw the edits away.
+		// without the try, one rejected settings.set leaves the button on "Saving…" for good
 		try {
 			await Promise.all(
 				Object.entries(payload).map(([key, value]) =>
@@ -267,11 +263,7 @@ function FooterAdmin() {
 			onSubmit={save}
 			className="max-w-3xl space-y-5 pb-10"
 		>
-			{/* Actions live in the sticky admin top bar (via the header-slot portal, the
-			    same mechanism the Page editor uses) so Save + save-status stay reachable
-			    while the long form scrolls. position:sticky can't be used here because the
-			    content <main> clips overflow, which disables it. The button submits the
-			    form across the portal via the `form` attribute. */}
+			{/* sticky cannot be used here, the content <main> clips overflow and disables it; the button submits across the portal via the form attribute */}
 			<AdminHeader>
 				<div className="ml-auto flex items-center gap-3">
 					{savedAt && (

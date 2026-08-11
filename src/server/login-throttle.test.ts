@@ -2,14 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { resetLimiter } from "./ratelimit-core";
 
-/**
- * These reach the real login handler, not the arithmetic underneath it.
- *
- * The guarantee being protected is "the per-account dimension delays but never
- * refuses". That property lives in the handler: swapping the backoff for a
- * `rateLimit(...)` + 429 there would leave every test of `backoffDelayMs`
- * passing, so the test has to call the handler to be worth anything.
- */
+// reaches the real login handler: swapping the backoff for a 429 there leaves every backoffDelayMs test passing
 
 const CORRECT = "correct-horse-battery";
 const USER = {

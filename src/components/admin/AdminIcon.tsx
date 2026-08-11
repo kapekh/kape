@@ -33,11 +33,6 @@ import {
 	Video,
 } from "lucide-react";
 
-/**
- * The nav's named-icon indirection. `admin.tsx` names an icon; this decides
- * what that name looks like. It used to be 31 hand-drawn 24×24 paths — one
- * of three icon sources in a repo that already depends on lucide.
- */
 const ICONS: Record<string, LucideIcon> = {
 	dashboard: LayoutDashboard,
 	modules: Blocks,

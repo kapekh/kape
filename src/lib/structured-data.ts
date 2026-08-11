@@ -1,12 +1,4 @@
-/**
- * Schema.org JSON-LD builders. Structured data is how AI answer engines
- * (Perplexity, Google AI Overviews, Bing Copilot) and search crawlers reliably
- * understand the organisation and its articles. Absolute URLs are included only
- * when VITE_SITE_URL is configured (relative ones aren't useful in JSON-LD).
- *
- * Identity comes from `site_settings`; a field an operator has not filled in is
- * omitted rather than guessed.
- */
+// absolute URLs only once VITE_SITE_URL is set; an unfilled field is omitted rather than guessed
 import {
 	declaredShortName,
 	type SiteSettings,
@@ -21,9 +13,7 @@ const SITE_URL = (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(
 	"",
 );
 
-// schema.org/telephone holds one number; a site that publishes a switchboard and
-// a second line lists both in the same setting, and two in the field is invalid.
-// An entry with no digits in it is not a number, so nothing is emitted at all.
+// schema.org/telephone holds one number, and two in the field is invalid
 const firstPhone = (v: string) =>
 	v
 		.split(/[/;,·]/)
@@ -39,13 +29,7 @@ const sameArea = (part: string, value: string) =>
 	part.replace(REGION_WORD, "").toLowerCase() ===
 		value.replace(REGION_WORD, "").toLowerCase();
 
-/**
- * The street line alone. One `address` setting holds the whole postal address
- * because that is what a footer prints, so its last components repeat the
- * region and country that have fields of their own here. Dropped from the tail
- * by comparison, never by substring: "Kampong Cham Town" is part of the street
- * line and "Kampong Cham Province" is the region saying itself twice.
- */
+// dropped from the tail by comparison, never by substring: "Kampong Cham Town" is street and "Kampong Cham Province" is the region
 function streetLine(address: string, areas: string[]) {
 	const parts = address
 		.split(",")

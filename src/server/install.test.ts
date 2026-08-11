@@ -9,13 +9,7 @@ import { HEADER_DEFAULTS } from "#/lib/header-defaults";
 import { sectionDef } from "#/lib/sections";
 import { LANDINGS } from "./seed/landings";
 
-/**
- * Runs the real installer against a real empty database, because the thing worth
- * protecting is what lands in the file — and what does not, when the install is
- * interrupted. Presence checks alone let a section type be renamed to garbage, a
- * whole settings block be dropped and every string be filed under the wrong
- * language without a single failure, so these assert shape.
- */
+// asserts shape: presence checks alone let a section type be renamed to garbage and every string be filed under the wrong language
 const dir = mkdtempSync(join(tmpdir(), "install-test-"));
 const dbPath = join(dir, "install.db");
 
@@ -299,9 +293,7 @@ describe("an interrupted install", () => {
 		"translations",
 	];
 
-	// Fails the install at its third write — one past `languages`, the write the
-	// old guard keyed on, so a database left behind here reported itself healthy
-	// on every later boot while serving a 404 home page with no administrator.
+	// fails one write past languages, which the old guard keyed on, so the database reported itself healthy on every later boot
 	const harness = join(dir, "interrupt.ts");
 	writeFileSync(
 		harness,
@@ -399,9 +391,7 @@ describe("a half-installed database", () => {
 });
 
 describe("a database an operator has edited", () => {
-	// Everything below is reachable from the admin in two clicks, and none of it
-	// leaves a site nobody can log in to repair. Refusing to boot over any of it
-	// would take a working site down over something its owner did on purpose.
+	// refusing to boot over any of this would take a working site down over something its owner did on purpose
 	const edited = join(dir, "edited.db");
 
 	// spawnSync, not execFileSync: the warnings go to stderr on a run that succeeds,

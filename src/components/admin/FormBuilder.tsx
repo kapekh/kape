@@ -291,10 +291,7 @@ export function FormBuilder({
 															? "Section title (e.g. Personal information)"
 															: "Field label (e.g. Full name)"
 												}
-												// The key is derived from the label at save time, not per
-												// keystroke — deriving it here froze it to the first letter
-												// typed. A saved field keeps its key so submissions stay
-												// attached to it when the label is reworded.
+												// the key derives at save, not per keystroke, so submissions survive a reworded label
 												onChange={(e) => setField(i, { label: e.target.value })}
 											/>
 											<select
@@ -398,10 +395,7 @@ export function FormBuilder({
 												{(f.type === "select" || f.type === "checkboxes") && (
 													<input
 														className={`${fieldInput} mt-2 text-xs`}
-														// split/join on the bare comma round-trips exactly.
-														// Trimming here made the separator you just typed
-														// vanish, so no comma could ever be entered; the
-														// options are cleaned at save time instead.
+														// no trim here: it ate the comma you just typed; options are cleaned at save
 														value={(f.options ?? []).join(",")}
 														placeholder="Options, comma-separated"
 														onChange={(e) =>

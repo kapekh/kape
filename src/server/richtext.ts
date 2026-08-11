@@ -5,15 +5,7 @@ import {
 	richTextExtensions,
 } from "#/lib/richtext/extensions";
 
-/**
- * Render stored Tiptap/ProseMirror JSON to an HTML string (server-side, no DOM).
- *
- * Accepts the JSON as a string (how it's stored in `translations.value`) or an
- * object. Returns "" for empty/invalid input. Safe because the extension
- * allow-list constrains nodes/marks and links are protocol-restricted; values
- * are HTML-escaped by the renderer. (Add `sanitize-html` here if we ever allow
- * untrusted authors.)
- */
+// safe because the extension allow-list constrains nodes and marks and links are protocol-restricted; add sanitize-html if authors are ever untrusted
 export function renderBody(
 	json: string | JSONContent | null | undefined,
 ): string {
@@ -38,11 +30,7 @@ export function renderBody(
 	}
 }
 
-/**
- * Render UNTRUSTED rich text (public form `richtext` answers) to HTML using the
- * restricted allow-list — text + links only, no images or form embeds. Accepts
- * stringified ProseMirror JSON; returns "" for empty/invalid input.
- */
+// untrusted input: text and links only, no images or form embeds
 export function renderBasicRichText(
 	json: string | JSONContent | null | undefined,
 ): string {

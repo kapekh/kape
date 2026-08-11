@@ -2,16 +2,7 @@ import crypto from "node:crypto";
 
 import { env } from "#/env";
 
-/**
- * Baray payment gateway client (https://baray.io).
- *
- * Server-only. Baray is a redirect + webhook gateway: we POST an AES-256-CBC
- * encrypted payload to create a payment "intent", redirect the donor to the
- * hosted pay page, and later receive a webhook with the encrypted order id to
- * confirm the payment. No card data ever touches this app.
- *
- * Docs: https://baray.io/llm.txt
- */
+// a redirect plus webhook gateway, so no card data touches this app; docs at https://baray.io/llm.txt
 
 export type BarayConfig = { apiKey: string; sk: string; iv: string };
 
@@ -60,10 +51,6 @@ export type IntentInput = {
 
 export type IntentResult = { intentId: string; redirectUrl: string };
 
-/**
- * Create a payment intent and return the hosted pay-page URL to redirect to.
- * Throws on any non-2xx response or misconfiguration.
- */
 export async function createPaymentIntent(
 	input: IntentInput,
 	cfg: BarayConfig,

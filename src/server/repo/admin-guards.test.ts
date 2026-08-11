@@ -4,13 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 
-/**
- * The two rows a two-click mistake in /admin used to take out. `/` is served by
- * looking up one slug with no fallback, and `install_completed_at` is the
- * installer's own bookkeeping sitting in a raw key/value grid that puts a Delete
- * button on every row. Both guards live in the repo layer, so the admin UI, the
- * tRPC procedures and any future caller get them; this drives the repo directly.
- */
+// both guards live in the repo layer, so every caller gets them; this drives the repo directly
 const dir = mkdtempSync(join(tmpdir(), "admin-guards-"));
 const dbPath = join(dir, "guards.db");
 const root = process.cwd();

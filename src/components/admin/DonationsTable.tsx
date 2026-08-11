@@ -70,11 +70,7 @@ export function DonationsTable({
 	emptyText?: string;
 	onMarkPaid: (id: number) => void;
 }) {
-	// `loading` is a boolean here, not the three-state `ListState` the lists use:
-	// both callers own their own fetch and neither reports an error to this
-	// component. Reusing ListStatus for the pending case keeps one skeleton.
-	if (loading)
-		return <ListStatus state="pending" onRetry={() => {}} />;
+	if (loading) return <ListStatus state="pending" onRetry={() => {}} />;
 
 	if (rows.length === 0)
 		return <EmptyState icon={<HandCoins />} title={emptyText} />;

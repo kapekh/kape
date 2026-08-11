@@ -1,8 +1,3 @@
-/**
- * Slice 6: the chrome that wraps content everywhere rather than belonging to one
- * page — the footer and its newsletter and calendar, search, sharing, and the
- * three overlays (announcement, lightbox, PDF reader).
- */
 export const site: Record<string, { en: string; km?: string }> = {
 	"announcement.close": {
 		en: "Close announcement",

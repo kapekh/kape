@@ -7,26 +7,13 @@ import { SkeletonRows } from "#/components/ui/skeleton.tsx";
 import { saveErrorMessage } from "#/lib/save-error";
 import { toast } from "@/components/Dialogs";
 
-/**
- * The parts every admin list needs and each of the nine had its own version of,
- * or none at all. Deliberately not a whole `<ListPage>` component: folding the
- * nine lists into one is a separate job, and this round would have had to write
- * them twice.
- */
-
 /** Lives in `ui/` now so the ten lists are not the only surfaces that can have
  *  one. Re-exported here because those ten import it from this file. */
 export { EmptyState } from "#/components/ui/empty-state.tsx";
 
 export type ListState = "pending" | "error" | "ready";
 
-/**
- * A list query with the three states it actually has. Before this the lists
- * tracked a `loading` boolean and no `.catch`, so a rejected query left the
- * screen saying "Loading…" for as long as anyone cared to look at it.
- *
- * `load` must be stable — wrap it in `useCallback` at the call site.
- */
+// load must be stable; three states, not a loading boolean, or a rejected query sits on "Loading…" forever
 export function useListQuery<T>(load: () => Promise<T[]>) {
 	const [rows, setRows] = useState<T[]>([]);
 	const [state, setState] = useState<ListState>("pending");
@@ -98,16 +85,7 @@ export function ListStatus({
 	);
 }
 
-/**
- * Horizontally scrollable table frame. The old wrapper was `overflow-hidden`,
- * so a table wider than the column clipped the rest with no way to reach it —
- * 70px of a 442px table at 375px wide. `tabIndex` is what lets a keyboard
- * scroll it; a scroll container that only a mouse can move is not reachable.
- * `ActionMenu` positions itself `fixed`, so it still escapes this.
- *
- * Below `md` a `Table` stacks into cards and there is nothing left to scroll,
- * so the frame drops its border there and lets the cards be the surface.
- */
+// tabIndex is what lets a keyboard scroll it; ActionMenu is fixed, so it still escapes
 export function TableScroll({
 	label,
 	children,
@@ -144,9 +122,7 @@ export function ListSearch({
 }) {
 	const id = useId();
 	return (
-		// The input is sized, not `w-full`: filling the wrapper left the count no
-		// room, so it wrapped, and a two-line item next to one-line filter chips is
-		// what pushed the chips off the input's centre line.
+		// sized, not w-full: w-full left the count no room and it wrapped
 		<div className="flex min-w-0 flex-wrap items-center gap-3">
 			<label htmlFor={id} className="sr-only">
 				{label}
@@ -164,11 +140,7 @@ export function ListSearch({
 	);
 }
 
-/**
- * True when every whitespace-separated word in the query appears in one of the
- * fields. Words rather than the whole string, so "hun sen" finds a row that
- * writes the name the other way round.
- */
+// per word, so "hun sen" finds a row that writes the name the other way round
 export function matchesQuery(
 	query: string,
 	...fields: (string | number | null | undefined)[]
@@ -182,12 +154,7 @@ export function matchesQuery(
 	return words.every((w) => hay.includes(w));
 }
 
-/**
- * Drop the row, run the mutation, and put the list back exactly as it was if
- * the server refuses — with the reason on screen. A refused delete used to look
- * like a successful one until the next reload, which is the worst way to be
- * wrong about whether a record still exists.
- */
+// restores the row when the server refuses; a refused delete used to look like a successful one
 export async function removeWithRollback<T>(
 	rows: T[],
 	setRows: Dispatch<SetStateAction<T[]>>,

@@ -12,12 +12,7 @@ function parseContent(value: string): object | string {
 	}
 }
 
-/**
- * Lightweight Tiptap editor for **public** form answers — text formatting and
- * links only (no images, no media library, no form embeds). Emits stringified
- * ProseMirror JSON; the server renders it through the restricted allow-list
- * (`renderBasicRichText`), so untrusted input can't inject images/embeds.
- */
+// public answers only: the server renders these through the restricted allow-list
 export function PublicRichText({
 	value,
 	onChange,

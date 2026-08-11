@@ -1,10 +1,4 @@
-/**
- * What a page's address and title are allowed to be.
- *
- * The segment is the editable last part of a page's path, so anything that
- * changes how a URL parses - a space, a slash, a dot - produces an address the
- * site cannot serve and a `<loc>` crawlers drop from the sitemap.
- */
+// anything that changes how a URL parses gives an address the site cannot serve
 
 const RULES: { broken: (segment: string) => boolean; why: string }[] = [
 	{ broken: (s) => /\s/.test(s), why: "cannot contain spaces" },
@@ -29,11 +23,7 @@ export function toSegment(raw: string): string {
 		.replace(/^-+|-+$/g, "");
 }
 
-/**
- * One sentence naming the first broken rule, or null when the segment is legal.
- * Validate what is about to be written: rows stored before this rule existed
- * keep their segment until someone edits it.
- */
+// validates what is about to be written: rows stored before this rule keep their segment until edited
 export function segmentProblem(segment: string): string | null {
 	if (!segment) return "The URL segment is required.";
 	const rule = RULES.find((r) => r.broken(segment));

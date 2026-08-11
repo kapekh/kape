@@ -37,11 +37,7 @@ import { articleLd } from "@/lib/structured-data";
 // pool, not display count — the current article is filtered out of it
 const RELATED_POOL = 5;
 
-/**
- * A collection's dictionary key, by URL prefix. Spelled out rather than built as
- * `collection.${prefix}`, because the dictionary's "nothing seeded that nothing
- * renders" check proves a key is read by finding it quoted in the source.
- */
+// spelled out, not built from the prefix: the dictionary check proves a key is read by finding it quoted
 const COLLECTION_KEYS: Record<string, string> = {
 	careers: "collection.careers",
 	events: "collection.events",
@@ -54,11 +50,7 @@ const COLLECTION_KEYS: Record<string, string> = {
 	videos: "collection.videos",
 };
 
-/**
- * The resolver hands down the English label rather than the prefix, so the key
- * is found back through `COLLECTIONS`. An unrecognised label renders as it
- * arrived — better a stale English word than a raw key on a live page.
- */
+// an unrecognised label renders as it arrived, a stale English word beats a raw key on a live page
 function collectionLabel(
 	t: (key: string, fallback?: string) => string,
 	label: string,
@@ -68,12 +60,6 @@ function collectionLabel(
 	return key ? t(key, label) : label;
 }
 
-/**
- * The public catch-all + i18n router. Every content URL is language-prefixed
- * (/en/…, /km/…); an unprefixed path 301s to the default-language prefix. The
- * remaining path is resolved by `routes.resolve` into a page, a collection record,
- * a redirect, or not-found. Adding a page or record needs no new route file.
- */
 export const Route = createFileRoute("/$")({
 	loader: async ({ context, params, location }) => {
 		const raw = params._splat ?? "";
@@ -86,9 +72,7 @@ export const Route = createFileRoute("/$")({
 				statusCode: 301,
 			});
 		}
-		// Functional routes (admin, api, …) are never language-prefixed — they live
-		// at fixed paths. A localized URL like /en/admin would otherwise fall
-		// through to content resolution and 404, so redirect it to the canonical path.
+		// /en/admin would otherwise fall through to content resolution and 404
 		if (isFunctional(path)) {
 			throw redirect({ href: path, statusCode: 301 });
 		}
@@ -103,9 +87,7 @@ export const Route = createFileRoute("/$")({
 				statusCode: 301,
 			});
 		}
-		// A miss has to leave the loader as a throw, not as data — rendering a
-		// "not found" body from a resolved loader serves it with HTTP 200 and
-		// search engines index every typo as a real page.
+		// must throw: a resolved loader serves the not-found body as HTTP 200
 		if (resolved.kind === "notfound") throw notFound();
 		if (resolved.kind === "article") {
 			// warm the related rail so it is in the SSR html, not a client-side pop-in
@@ -123,9 +105,7 @@ export const Route = createFileRoute("/$")({
 		return { route: resolved, settings };
 	},
 	head: ({ loaderData, params }) => {
-		// A thrown notFound() leaves loaderData undefined, settings with it. The
-		// root's head already carries the site's own name and description, so
-		// anything returned here would rename every 404 after a site nobody owns.
+		// notFound() leaves loaderData undefined; the root head already names the site
 		if (!loaderData) return {};
 		const { settings, route: r } = loaderData;
 		let title = siteShortName(settings);
@@ -313,10 +293,7 @@ function ResolvedRoute() {
 	if (r.kind === "page") {
 		const page = r.page;
 		if (page.sections && page.sections.length > 0) {
-			// SectionRenderer promotes a hero, or else the first section carrying a
-			// title, to the page h1. Sections with neither used to render alone, and
-			// the page shipped with no h1, no brief and no breadcrumb at all - while
-			// the editor still made the author fill the Title in.
+			// a section set with no hero and no title left the page with no h1 at all
 			const sectionsOwnTitle = page.sections.some(
 				(s) => s.type === "hero" || !!(s.props as { title?: string })?.title,
 			);

@@ -15,11 +15,7 @@ import {
 } from "./description-list";
 import { FormEmbed } from "./form-node";
 
-/**
- * The editor renders tables through prosemirror-tables' own node view, so the
- * scroll container below only exists in server-rendered output — which is the
- * only place a narrow viewport can overflow.
- */
+// the editor uses prosemirror-tables' own node view, so this scroll container only exists server-side
 const ResponsiveTable = Table.extend({
 	renderHTML({ HTMLAttributes }) {
 		return [
@@ -34,17 +30,7 @@ const ResponsiveTable = Table.extend({
 	},
 });
 
-/**
- * The authoritative rich-text extension list.
- *
- * Shared by BOTH the admin editor (Phase 6, `@tiptap/react`) and the server
- * renderer (`renderBody`), so stored ProseMirror JSON always renders the same
- * way it was authored. Changing this list changes how content renders — keep it
- * the single source of truth.
- *
- * StarterKit (v3) already includes Link; Image is added separately. Link is
- * restricted to safe protocols as a first line of XSS defense.
- */
+// one list for the editor and the server renderer, or stored JSON stops rendering the way it was authored; link protocols are restricted as XSS defence
 export const richTextExtensions = [
 	StarterKit.configure({
 		link: {
@@ -73,12 +59,7 @@ export const richTextExtensions = [
 	DescriptionDetails,
 ];
 
-/**
- * Restricted extension set for **untrusted** input (public form `richtext`
- * answers). Text formatting + links only — no Image and no FormEmbed, so a
- * respondent can't embed images or other forms into a submission. Rendering
- * unknown nodes through this allow-list simply drops them.
- */
+// untrusted input: no Image and no FormEmbed, and unknown nodes are dropped
 export const basicRichTextExtensions = [
 	StarterKit.configure({
 		link: {

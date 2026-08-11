@@ -19,18 +19,7 @@ import {
 	rateLimit,
 } from "#/server/ratelimit";
 
-/**
- * Login throttle, in two parts.
- *
- * The address limit is the real defence and is keyed on the socket peer address
- * (see clientIp), which a caller cannot rotate. Generous enough for a whole
- * office behind one NAT address, still far too slow to search an argon2id
- * password space.
- *
- * The per-account part only ever delays, never refuses. Anyone can fail logins
- * in someone else's name, so a per-account block would be a lockout an attacker
- * can aim at a named administrator.
- */
+// the address limit is the real defence and keys on the socket peer, which a caller cannot rotate; the per-account part only ever delays, or it is a lockout aimed at a named administrator
 const IP_LIMIT = 20;
 const IP_WINDOW_MS = 10 * 60_000;
 const ACCOUNT_WINDOW_MS = 15 * 60_000;

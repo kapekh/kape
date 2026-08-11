@@ -4,13 +4,6 @@ import type * as React from "react";
 
 import { cn } from "#/lib/utils.ts";
 
-/**
- * One title treatment for all 57 admin surfaces. There were four: a hand-rolled
- * `<h1>` in 26 routes, `EditorHeader`'s `text-base` variant, and a topbar portal
- * used by two.
- *
- * The breadcrumb is new. From `/admin/pages/1` there was no link back to Pages.
- */
 export type Crumb = { label: string; to?: LinkProps["to"] };
 
 function PageHeader({

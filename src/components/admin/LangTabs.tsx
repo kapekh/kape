@@ -1,16 +1,6 @@
 import { useId, useRef, useState } from "react";
 
-/**
- * Tabs for multilingual fields. The field VALUES live in the parent form's state
- * (read/written inside the `children` render fn), NOT in this component — so
- * switching tabs can never lose content. Every language panel stays mounted and
- * is merely hidden when inactive, which also keeps rich-text editors from
- * remounting (no flicker, no lost cursor) on tab change.
- *
- * Roving tabindex, `aria-controls` and arrow-key movement are all here because
- * `role="tab"` promises them: a tablist that only responds to Tab makes a screen
- * reader announce "tab, 1 of 3" and then not move when the user presses Right.
- */
+// values live in the parent form and every panel stays mounted, so a tab change loses nothing; role="tab" is why the arrow keys and roving tabindex are here
 export function LangTabs<
 	L extends { code: string; name: string; nativeName?: string },
 >({

@@ -1,15 +1,4 @@
-/**
- * Path-based i18n — EVERY language is prefixed, including the default
- * (/en/who-we-are/about, /km/who-we-are/about). An unprefixed content path
- * redirects to the default-language prefix (/about → /en/about, / → /en).
- * Pure helpers shared by the router, links, and the prerenderer.
- *
- * Adding a language: enable it in the admin AND add its code to LANGS.
- * The `languages` table decides which languages a site has, and the build steps
- * that can await a query — the sitemap and the prerenderer — read it. Route
- * definitions are synchronous, so the router still matches this list; the two
- * are kept in step by hand and `reportUnroutable` says so when they drift.
- */
+// LANGS and the languages table are kept in step by hand; reportUnroutable says so when they drift
 export const DEFAULT_LANG = "en";
 export const LANGS = ["en", "km"]; // language prefixes the router matches
 
@@ -22,10 +11,7 @@ export function reportUnroutable(codes: string[], where: string) {
 		);
 }
 
-// Functional routes live at fixed paths and are never language-prefixed: the
-// staff-facing app, the API, and static file routes with an extension
-// (/sitemap.xml, /robots.txt, /manifest.json, …). Public pages are prefixed
-// even when they have their own route file — /km/contact, /km/donate.
+// functional routes sit at fixed paths and are never language-prefixed
 const FUNCTIONAL =
 	/^\/(internalsources|admin|login|api|uploads)(\/|$)|^\/[^/]+\.[a-z0-9]+$/i;
 

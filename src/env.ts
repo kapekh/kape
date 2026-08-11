@@ -1,12 +1,6 @@
 import { z } from "zod";
 
-/**
- * Server-only environment configuration.
- *
- * Import this from server modules only (db, storage, tRPC procedures).
- * Never import it into client/route components — it reads `process.env`
- * and would leak credentials into the browser bundle.
- */
+// server only: it reads process.env and would leak credentials into the client bundle
 const INSECURE_DEFAULT_SECRET = "dev-insecure-secret-change-me-please-32b";
 
 const envSchema = z.object({
@@ -17,12 +11,7 @@ const envSchema = z.object({
 	// constant across restarts — otherwise existing logins are invalidated.
 	AUTH_SECRET: z.string().min(16).default(INSECURE_DEFAULT_SECRET),
 
-	// Name of the proxy header carrying the real client IP (e.g. "cf-connecting-ip"
-	// or "x-forwarded-for"). Rate limiting keys on the client address, and any such
-	// header is caller-controlled, so it is honoured ONLY when set here — meaning
-	// the operator declares a proxy sits in front and the app is not reachable
-	// directly. Unset (the default) uses the socket peer address and ignores all
-	// proxy headers.
+	// caller-controlled header, honoured only when the operator names one; else the socket peer
 	TRUSTED_PROXY_HEADER: z
 		.string()
 		.trim()
@@ -39,10 +28,7 @@ const envSchema = z.object({
 	// Public base URL for serving objects (custom domain or r2.dev), optional.
 	R2_PUBLIC_URL: z.string().url().optional(),
 
-	// SMTP (e.g. Gmail) for the contact form. Optional in dev — when unset,
-	// submissions are stored and the email is logged with a warning instead of
-	// sent. MAIL_TO is the notification recipient; unset, the site's own
-	// `contact_email` setting is used, and mail.ts warns when there is neither.
+	// unset in dev: submissions are stored and the mail is logged, not sent
 	SMTP_HOST: z.string().optional(),
 	SMTP_PORT: z.coerce.number().optional(),
 	SMTP_USER: z.string().optional(),
@@ -50,11 +36,7 @@ const envSchema = z.object({
 	MAIL_FROM: z.string().optional(),
 	MAIL_TO: z.string().default(""),
 
-	// Baray payment gateway (https://baray.io) for donations. All three of
-	// API_KEY/SK/IV are required to accept payments; when unset the donate flow
-	// returns a clear "payments not configured" error and stores nothing.
-	// SK (32-byte) and IV (16-byte) are Base64 and used for AES-256-CBC of the
-	// request payload + webhook order id. Generate them in https://dash.baray.io.
+	// all three required to take payments; SK/IV are base64 AES-256-CBC material from dash.baray.io
 	BARAY_API_KEY: z.string().optional(),
 	BARAY_SK: z.string().optional(),
 	BARAY_IV: z.string().optional(),
@@ -64,9 +46,7 @@ const envSchema = z.object({
 
 export const env = envSchema.parse(process.env);
 
-// The built-in default secret is publicly known (it's in the source), so anyone
-// could forge session tokens. Refuse to boot with it in production; in dev just
-// warn loudly. Set a fixed AUTH_SECRET in .env (see .env.example) to pin it.
+// the default secret is in the source, so anyone could forge session tokens
 if (env.AUTH_SECRET === INSECURE_DEFAULT_SECRET) {
 	if (process.env.NODE_ENV === "production") {
 		throw new Error(

@@ -9,20 +9,8 @@ import { pageTitle, siteShortName } from "@/lib/site-identity";
 import { db } from "@/server/db";
 import { searchSite } from "@/server/repo/search";
 
-/**
- * Public site search. The query lives in the URL (`/km/search?q=…`) so a result
- * page is linkable, shareable and back-button-able; every result href is
- * language-prefixed for the language being read.
- */
-/**
- * A result's kind and a detail page's breadcrumb are the same word, so they read
- * from one key. The search index still labels rows `search.kind.<prefix>`; those
- * keys were never seeded, and seeding them too would let one word drift into two
- * translations. Mapped here rather than in the index, which another slice owns.
- *
- * Spelled out rather than rewritten with a prefix swap so the dictionary's
- * "nothing seeded that nothing renders" check can find each key quoted.
- */
+// the query lives in the URL, so a result page is linkable and back-button-able
+// mapped here, not in the search index another slice owns; spelled out so the dictionary check finds each key quoted
 const COLLECTION_KEY_BY_LABEL_KEY: Record<string, string> = {
 	"search.kind.careers": "collection.careers",
 	"search.kind.events": "collection.events",

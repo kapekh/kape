@@ -10,11 +10,7 @@ type SeedNav = {
 	children?: SeedNav[];
 };
 
-/**
- * Mega-menu card metadata, keyed by `targetRef` (or the EN label for label-only
- * containers). `brief` is the card description; `img` is a picsum seed used for
- * the card background. Single source of truth — also consumed by the nav backfill.
- */
+// single source of truth, also consumed by the nav backfill
 export const NAV_META: Record<string, { brief?: string; img: string }> = {
 	// Top-level sections (used by the mega-menu feature panel)
 	"Who We Are": {

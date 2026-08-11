@@ -21,12 +21,7 @@ import {
 	themeFontUrl,
 } from "./site-theme";
 
-/**
- * The closed list, read out of the module rather than exported for a test. Every
- * name and every hex in it was diffed against Chrome's own parser, which is the
- * only thing that can settle whether the list is right; these assertions keep it
- * well formed after that.
- */
+// read out of the module, not exported for the test; the hexes were diffed against Chrome's parser
 const NAMED_TABLE = (() => {
 	const src = readFileSync(new URL("./site-theme.ts", import.meta.url), "utf8");
 	const block = /const NAMED_COLOURS = new Map\(\n\t`([^`]+)`/.exec(src);
@@ -34,11 +29,7 @@ const NAMED_TABLE = (() => {
 	return block[1].split("\n").map((l) => l.split(" ") as [string, string]);
 })();
 
-/**
- * The example site's palette, read out of the seed rather than copied into the
- * test, so a re-skin of the fixture cannot quietly stop being covered by the
- * check that now runs on the way into the database.
- */
+// read out of the seed, so a re-skin of the fixture cannot stop being covered
 const FIXTURE: Record<string, string> = (() => {
 	const src = readFileSync(
 		new URL("../server/seed/site.ts", import.meta.url),
@@ -63,10 +54,7 @@ describe("the named-colour table", () => {
 		}
 	});
 
-	// A wrong hex on any one of the 148 is invisible to every other assertion
-	// here, because they all read the same table. The table is right because it
-	// was diffed against Chrome's own parser; this pins it to that diff, so an
-	// edit has to be re-checked against a browser rather than reasoned about.
+	// every assertion here reads the same table, so a wrong hex is invisible; this pins it to the Chrome diff
 	it("is the table that was checked against a browser", () => {
 		const src = readFileSync(
 			new URL("./site-theme.ts", import.meta.url),
@@ -122,9 +110,7 @@ describe("themeCss", () => {
 			expect(themeCss({ theme_primary: attack })).toBe("");
 	});
 
-	// The other half. An unclosed bracket carries nothing dangerous, and the CSS
-	// tokeniser still eats the closing brace and every declaration after it, so
-	// one typo used to revert the entire theme to the product default.
+	// an unclosed bracket makes the tokeniser eat the closing brace and every declaration after it
 	it("drops one malformed value without taking the rest with it", () => {
 		expect(
 			themeCss({
@@ -188,11 +174,7 @@ describe("checkThemeValue", () => {
 			expect(checkThemeValue("colour", bad)).toMatch(/Not a colour/);
 	});
 
-	// Every one of these passed as a colour while `[a-z]{3,20}` was the whole
-	// check. `theme_primary: banana` reached the browser as an invalid value, so
-	// --primary, --primary-foreground and --warm-foreground all computed to
-	// rgba(0,0,0,0) and the site painted unbranded with no error on the field.
-	// The message has to name what is wrong, not only that something is.
+	// [a-z]{3,20} accepted banana, which painted every derived token rgba(0,0,0,0) with no error on the field
 	it("refuses a word that is not a colour name, and says which word", () => {
 		const cases: [string, RegExp][] = [
 			["banana", /"banana" is not one of the CSS colour names/],
@@ -209,9 +191,7 @@ describe("checkThemeValue", () => {
 			expect(checkThemeValue("colour", bad), bad).toMatch(says);
 	});
 
-	// COMPOSITE was anchored at the prefix only, so anything could trail it, and
-	// var() was accepted outright: `--brand-primary: var(--primary)` is a cycle
-	// that paints nothing and reports nothing.
+	// COMPOSITE was prefix-anchored and var() passed: --brand-primary: var(--primary) is a cycle
 	it("refuses var(), and refuses anything trailing a composite colour", () => {
 		const cases: [string, RegExp][] = [
 			["var(--brand-primary)", /var\(\) is not accepted here/],
@@ -245,9 +225,7 @@ describe("checkThemeValue", () => {
 			expect(checkThemeValue("colour", bad), bad).toMatch(says);
 	});
 
-	// The name list was closed while the colour-space list beside it was still
-	// `[a-z0-9-]+`, so the same typo moved one word left: `in banana` and a
-	// `--myprofile` no browser implements both passed and both painted nothing.
+	// the colour-space list beside it was still open, so the same typo moved one word left
 	it("refuses a colour space that is not one", () => {
 		const cases: [string, RegExp][] = [
 			["color-mix(in banana, red, blue)", /"in banana" is not a colour space/],
@@ -366,11 +344,7 @@ describe("colourToHex", () => {
 		expect(colourToHex("oklch(100% 0 0)")).toBe("#ffffff");
 	});
 
-	// The alpha used to be read as the lightness, so a half-transparent brand
-	// colour came out near-black. It is not read as a colour either: what a
-	// translucent brand paints depends on what is behind it, so there is no one
-	// hex to report and the panel says that rather than measuring the opaque
-	// colour and calling the number a legibility ratio.
+	// alpha used to be read as lightness; a translucent brand has no one hex to report
 	it("refuses to reduce a translucent colour to one hex", () => {
 		expect(colourToHex("oklch(0.3 0.1 255 / 50%)")).toBeNull();
 		expect(colourToHex("rgba(31, 78, 121, 0.5)")).toBeNull();
@@ -380,9 +354,7 @@ describe("colourToHex", () => {
 		);
 	});
 
-	// Diffed against Chrome's own parser through a canvas pixel: 28 accepted
-	// forms, every channel exact. These pin the four corners of that sweep, which
-	// is the only thing that can settle whether a colour-space transform is right.
+	// the four corners of a 28-form sweep diffed against Chrome through a canvas pixel
 	it("reads the spaces the validator accepts but the panel used to skip", () => {
 		expect(colourToHex("lab(50% 20 -30)")).toBe("#856caa");
 		expect(colourToHex("lab(62% -35 45)")).toBe("#66a53f");
@@ -425,10 +397,7 @@ describe("colourToHex", () => {
 		expect(colourToHex("hsl(207 59% 30%)")).toBe("#1f517a");
 	});
 
-	// A name the validator accepts has to be a name this can read, or theme-color
-	// and the legibility panel silently say nothing about a colour the page is
-	// painting. What is left with no fixed hex is exactly what `colourReach`
-	// classifies, and the form prints a different sentence for each group.
+	// a name the validator accepts has to be a name this can read, or the panel says nothing about a colour the page paints
 	it("reads a colour typed by name", () => {
 		expect(colourToHex("rebeccapurple")).toBe("#663399");
 		expect(colourToHex("RebeccaPurple")).toBe("#663399");
@@ -502,9 +471,7 @@ describe("checkSettingValue", () => {
 			expect(checkSettingValue(key, value), key).toBeNull();
 	});
 
-	// A settings grid is open-ended on purpose: contact_email and whatever else an
-	// install invents have no kind, and refusing them would break the page that
-	// creates them.
+	// a settings grid is open-ended: contact_email has no kind, and refusing it would break the page that creates it
 	it("leaves a key with no theme kind alone", () => {
 		expect(checkSettingValue("contact_email", "hello@example.org")).toBeNull();
 		expect(checkSettingValue("site_name_en", "<script>")).toBeNull();
@@ -547,9 +514,7 @@ describe("themeContrast", () => {
 		for (const c of fixture) expect(c.ratio).toBeGreaterThan(4.5);
 	});
 
-	// oklch(1 0 0) used to give 1.05:1, because the foreground was the page
-	// background whatever the primary was. What the derivation cannot fix is the
-	// same white used as a heading on cream paper, so that has to be reported.
+	// the foreground used to be the page background whatever the primary was; white on cream still has to be reported
 	it("stays legible on a white primary, and says where it will not be", () => {
 		const [onIt, inIt] = themeContrast({ theme_primary: "oklch(1 0 0)" });
 		expect(onIt.ratio).toBeGreaterThan(15);

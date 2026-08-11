@@ -1,12 +1,3 @@
-/**
- * KAPE's page-tree transforms: the collection landing pages, the static section
- * pages extracted from the old site, and the section-built home page. Part of the
- * KAPE fixture (`bun run seed:kape`), and re-runnable against KAPE's live database
- * with `scripts/apply-tree.ts`. Every step is idempotent (upsert by slug).
- *
- * The structural half — building the parent/segment tree and flattening nav
- * targets — is content-free and lives in ./page-tree.ts.
- */
 import { and, eq } from "drizzle-orm";
 
 import { PLACEHOLDER_IMAGE } from "#/lib/placeholder";

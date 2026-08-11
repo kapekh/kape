@@ -28,11 +28,6 @@ export async function getDefaultLang(db: DB): Promise<string> {
 	return row?.code ?? "en";
 }
 
-/**
- * Resolve translations for a set of entities of one type, in one query.
- * Each field resolves to the requested language, falling back to the default
- * language when the requested value is missing.
- */
 export async function resolveTranslations(
 	db: DB,
 	entityType: string,
@@ -121,11 +116,6 @@ export type I18nBootstrap = {
 	strings: Record<string, string>;
 };
 
-/**
- * Everything the client needs to render in one round-trip: the resolved active
- * language (requested if enabled, else default), the enabled language list, and
- * the UI-string dictionary for that language.
- */
 export async function bootstrapI18n(
 	db: DB,
 	requestedLang: string,

@@ -62,9 +62,7 @@ describe("per-account backoff", () => {
 	});
 
 	it("never refuses, however many failures accumulate", () => {
-		// The account dimension may only ever delay. If this ever returns a
-		// boolean/refusal, a stranger can lock a named admin out by failing
-		// logins in their name.
+		// may only ever delay: a refusal here lets a stranger lock a named admin out by failing logins in their name
 		for (const n of [0, 5, 50, 5000]) {
 			const delay = backoffDelayMs(n, 10, 2000);
 			expect(typeof delay).toBe("number");

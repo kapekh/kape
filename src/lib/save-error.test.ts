@@ -2,11 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { saveErrorMessage } from "./save-error";
 
-/**
- * Verbatim `TRPCClientError.message` strings, copied off the wire from a
- * running dev server rather than reconstructed. A tRPC upgrade that changed
- * the serialisation would not fail these — see the report.
- */
+// copied off the wire, not reconstructed: a tRPC serialisation change would not fail these
 const WIRE = {
 	zodTooSmall: `[\n  {\n    "origin": "string",\n    "code": "too_small",\n    "minimum": 1,\n    "inclusive": true,\n    "path": [\n      "segment"\n    ],\n    "message": "Too small: expected string to have >=1 characters"\n  }\n]`,
 	unauthorized: "UNAUTHORIZED",

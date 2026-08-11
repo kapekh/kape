@@ -1,22 +1,4 @@
-/**
- * Who the site says it is. Every brand-bearing string in the app resolves
- * through here, so a fresh install is neutral and an operator rebrands the
- * whole site from /admin/settings without touching code.
- *
- * Keys, all optional:
- *   site_name_en     full name, e.g. "Riverside Community Trust"
- *   site_name_km     full name in Khmer (header/footer lockup only)
- *   site_name_short  brand short form used as a title suffix and in the admin
- *   site_description one line about the organisation, for meta + JSON-LD
- *   og_image         image shown when a page is shared on social media
- *   og_site_name     what social cards call the site, when that is not the brand
- *   logo_url         the organisation's own logo; the product mark otherwise
- *
- * A short name may be *derived* when one is not set, and a derived name is a
- * display convenience. It never reaches a machine-read field: `alternateName`,
- * a publisher and `og:site_name` are claims about what an organisation is
- * actually called, so those read `declaredShortName` and take nothing on trust.
- */
+// a derived short name never reaches alternateName, a publisher or og:site_name, which are claims about what an organisation is called
 export type SiteSettings = Record<string, string | undefined>;
 
 /** Shown when nothing is configured. Neutral, never blank. */
@@ -55,11 +37,7 @@ function acronym(full: string) {
 	return /^[A-Z]{2,6}$/.test(letters) ? letters : "";
 }
 
-/**
- * The leading words that fit, stopping before a minor one so the result is a
- * phrase rather than a cut. Catches the names an acronym cannot: too many
- * words for initials to mean anything, or a script initials do not apply to.
- */
+// stops before a minor word, so the result is a phrase rather than a cut
 function leadingWords(full: string) {
 	const kept: string[] = [];
 	for (const word of full.split(/\s+/).filter(Boolean)) {
@@ -73,11 +51,7 @@ function leadingWords(full: string) {
 /** The short name an operator actually gave. Empty when they gave none. */
 export const declaredShortName = (s: SiteSettings) => val(s, "site_name_short");
 
-/**
- * Short brand for title suffixes and chrome. An operator who has not set one
- * gets their own name back while it still fits a title bar, then its acronym,
- * then the words of it that fit — never a legal name pasted after every page.
- */
+// never a legal name pasted after every page title
 export const siteShortName = (s: SiteSettings) => {
 	const declared = declaredShortName(s);
 	if (declared) return declared;
@@ -99,30 +73,18 @@ export const pageTitle = (title: string, s: SiteSettings) =>
 
 export const siteDescription = (s: SiteSettings) => val(s, "site_description");
 
-/**
- * What a page says about itself to search engines and social cards when it has
- * no description of its own. Stays out of JSON-LD, which should carry the
- * operator's own words or nothing.
- */
+// stays out of JSON-LD, which carries the operator's own words or nothing
 export const metaDescription = (s: SiteSettings) =>
 	siteDescription(s) || `The website of ${siteName(s)}.`;
 
-/**
- * The organisation's logo. `/logo.png` is the product's own neutral mark, so an
- * install that has uploaded nothing still shows something, and it shows nobody
- * else's crest.
- */
+// /logo.png is the product's neutral mark, so an install shows something and nobody else's crest
 export const siteLogo = (s: SiteSettings) => val(s, "logo_url") || "/logo.png";
 
 /** Image for a shared link. Falls back to the logo, which every install has. */
 export const socialImage = (s: SiteSettings) =>
 	val(s, "og_image") || siteLogo(s);
 
-/**
- * The name the site publishes under: `og:site_name`, and the byline on a piece
- * nobody signed. Never derived, because a scraper and a reader both take it as
- * the publication's actual name.
- */
+// never derived: a scraper and a reader both take it as the publication's actual name
 export const socialSiteName = (s: SiteSettings) =>
 	val(s, "og_site_name") || declaredShortName(s) || siteName(s);
 

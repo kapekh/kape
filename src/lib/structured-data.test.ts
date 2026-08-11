@@ -2,11 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { articleLd, organizationLd } from "./structured-data";
 
-/**
- * Structured data is machine-read, so a malformed field is worse than a missing
- * one, and a field we worked out ourselves is worse than either. These assert
- * the shape of the emitted JSON-LD rather than reading it.
- */
+// a malformed field is worse than a missing one, so assert the emitted shape
 const SETTINGS = {
 	site_name_en: "Trust for the Advancement of Learning",
 	contact_email: "hello@example.org",

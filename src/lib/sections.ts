@@ -1,10 +1,3 @@
-/**
- * Page-builder schema (shared by client + server). A page is an ordered list of
- * SectionNodes. Each node names a section template (`type`) + a layout variant,
- * carries static authored `props`, and — for dynamic sections — a `query` that the
- * route loader resolves server-side into `props.data` (keeps SSR + SEO intact).
- */
-
 export type QuerySource =
 	| "posts"
 	| "projects"

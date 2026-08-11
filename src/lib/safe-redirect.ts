@@ -1,16 +1,4 @@
-/**
- * Sanitises a post-login `?redirect=` target.
- *
- * The value arrives from the URL, so it is attacker-controlled: anything that is
- * not a plain same-site path is refused. `//evil.tld` matters as much as
- * `https://evil.tld` — a browser reads a protocol-relative URL as another origin,
- * and every major browser folds a backslash to a slash, so `/\evil.tld` is the
- * same trick spelled differently.
- *
- * Written as a codepoint scan rather than a regex character class: the range
- * that matters here is the control characters, and a mistyped `-` inside a class
- * silently widens it to most of ASCII.
- */
+// attacker-controlled: //evil.tld and /\evil.tld are the same trick, browsers fold a backslash to a slash; a codepoint scan and not a character class, where a mistyped - widens it to most of ASCII
 export function safeRedirect(value: unknown): string | undefined {
 	if (typeof value !== "string") return undefined;
 	if (!value.startsWith("/") || value.startsWith("//")) return undefined;

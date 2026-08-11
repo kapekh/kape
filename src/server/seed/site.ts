@@ -3,18 +3,11 @@ import { db } from "../db";
 import { offices, siteSettings, stats } from "../schema";
 import { addTranslations, TENANT } from "./helpers";
 
-/**
- * Site settings (kv). Spelt out rather than spread from `#/lib/footer-defaults`
- * and `#/lib/header-defaults`: those are the product's neutral defaults for a
- * fresh install, so importing them here would rewrite the client's footer every
- * time the product's defaults move.
- */
+// spelt out, not imported from the product's neutral defaults: importing would rewrite the client's footer every time those move
 export async function seedSiteSettings() {
 	await db.insert(siteSettings).values(
 		Object.entries({
-			// schema.org/telephone wants a dialable number and the product will not
-			// invent a dialling code, so the fixture carries Cambodia's. The first
-			// entry is the one that reaches JSON-LD.
+			// schema.org/telephone wants a dialable number; the first entry is the one that reaches JSON-LD
 			contact_phone: "+855-42-941-481 / +855-42-941-918",
 			contact_email: "kape@kapekh.org",
 			telegram: "t.me/kapemedia",
@@ -28,14 +21,10 @@ export async function seedSiteSettings() {
 			social_facebook: "https://facebook.com/KAPECambodia",
 			site_name_km: "អង្គការសកម្មភាពសម្រាប់ការអប់រំនៅកម្ពុជា",
 			site_name_en: "Kampuchea Action to Promote Education",
-			// Identity the product used to hardcode. site_name_short drives the title
-			// suffix and, being declared rather than derived, the JSON-LD
-			// alternateName and the article publisher.
+			// site_name_short is declared rather than derived, so it reaches the JSON-LD alternateName and the article publisher
 			site_name_short: "KAPE",
 			og_site_name: "KAPE Cambodia",
-			// main hardcoded four descriptions for this one idea; the settings model
-			// has one knob. This is the one it used for schema.org, which is the
-			// field a machine quotes, and it reads as a sentence in the others.
+			// one description knob; this is the one schema.org quotes
 			site_description:
 				"KAPE advances equitable, transformative education for children across Cambodia.",
 			// The client's crest, kept byte for byte at this path; /logo.png is now
@@ -65,10 +54,7 @@ export async function seedSiteSettings() {
 				},
 				{ name: "Telegram", url: "https://t.me/kapemedia", logoUrl: "" },
 			]),
-			// The client's palette. The product's own default is a neutral slate, so
-			// KAPE's navy and saffron live here with the rest of the fixture rather
-			// than in styles.css. Both modes are spelt out: the dark values are the
-			// ones the designer tuned, not the ones the derivation would guess.
+			// the client's palette lives in the fixture, not styles.css; the dark values are the ones the designer tuned, not the ones a derivation would guess
 			theme_primary: "oklch(0.30 0.10 255)",
 			theme_primary_dark: "oklch(0.62 0.13 250)",
 			theme_secondary: "oklch(0.72 0.17 55)",
@@ -86,9 +72,7 @@ export async function seedSiteSettings() {
 			header_donate_link: "/donate",
 			header_search_link: "/search",
 			header_sitemap_link: "/sitemap.xml",
-			// KAPE is the organisation the domain features were built for, so the
-			// fixture turns all of them on. A fresh install writes no row and gets a
-			// plain CMS: see src/lib/modules.ts.
+			// the fixture turns every module on; a fresh install writes no row and gets a plain CMS
 			[MODULES_SETTING]: serializeModules(MODULES.map((m) => m.id)),
 		}).map(([key, value]) => ({ tenantId: TENANT, key, value })),
 	);

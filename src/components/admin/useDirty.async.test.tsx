@@ -1,20 +1,17 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+	act,
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+} from "@testing-library/react";
 import { useEffect, useState } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { useDirty } from "./useDirty";
 
-/**
- * The /admin/footer shape, which is what M10 was filed against: state starts
- * EMPTY and is filled by a query after mount, so the snapshot the form reports
- * changes on its own. A baseline captured at mount describes a form the data
- * has not reached, and every field the query fills reads as an unsaved edit —
- * "Unsaved changes, leave and lose the edits?" on a page nobody had touched.
- *
- * Both directions are asserted here, because the cheap fix (never report dirty
- * until something forces it) passes the first test and loses people's work.
- */
+// state starts empty and a query fills it, so a baseline fixed at mount reads every filled field as an edit
 function FakeFooterForm({ savedAt }: { savedAt?: string | null }) {
 	const [vals, setVals] = useState<Record<string, string>>({});
 	const [loading, setLoading] = useState(true);

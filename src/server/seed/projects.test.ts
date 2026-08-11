@@ -4,11 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 
-/**
- * Runs in a Bun subprocess: the seed module imports `../db`, and `bun:sqlite`
- * has no Node equivalent. Pointed at a throwaway file so importing it cannot
- * migrate the real database.
- */
+// a Bun subprocess: the seed imports ../db and bun:sqlite has no Node equivalent; pointed at a throwaway file so importing cannot migrate the real database
 const dir = mkdtempSync(join(tmpdir(), "project-body-test-"));
 
 const probe = `

@@ -4,14 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 
-/**
- * A delete that spans several tables has to survive its own refusal. Both cases
- * here used to leave the record gutted or unremovable: the project delete
- * cleared translations, donors and pins before the foreign key from `schools`
- * stopped it, and the user delete revoked sessions that then blocked the row for
- * good. Driven through the repo functions against a real installed database,
- * because what is being tested is the transaction the driver runs, not our code.
- */
+// driven through the repo against a real installed database: what is tested is the transaction the driver runs
 const dir = mkdtempSync(join(tmpdir(), "delete-integrity-"));
 const dbPath = join(dir, "integrity.db");
 const root = process.cwd();

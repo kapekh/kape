@@ -1,11 +1,3 @@
-/**
- * Single entry point for the public catch-all route. Resolves any URL path to one
- * of: a page (tree), a collection record (/<prefix>/<slug>, or
- * /projects/<parent>/<slug> for a sub-project), a 301 redirect
- * (renamed page slug or a legacy nested path), or not-found. The `$` route renders
- * whatever this returns — so adding a page or a content record needs no new route.
- */
-
 import { and, eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 import {
@@ -48,11 +40,7 @@ export type ResolvedRoute =
 
 const TENANT = 1;
 
-/**
- * The record slug inside a `/projects/…` path. Projects are the one collection
- * that nests: `<parent-slug>/<slug>` resolves only when that parent link really
- * exists, so a two-segment path can never reach an unrelated project.
- */
+// projects are the one collection that nests, so the parent link has to really exist
 async function projectRecordSlug(db: DB, rest: string): Promise<string | null> {
 	const parts = rest.split("/");
 	if (parts.length === 1) return parts[0];
@@ -81,9 +69,7 @@ export async function resolveRoute(
 ): Promise<ResolvedRoute> {
 	const path = rawPath.replace(/^\/+|\/+$/g, ""); // trim slashes
 
-	// 1. Exact page by full-path slug (the page tree). Runs before the legacy
-	// rules so an admin can author a page at a legacy path — the redirect is the
-	// fallback for paths nobody has authored, not a veto on authoring them.
+	// before the legacy rules, so an admin can author a page at a legacy path
 	const page = await getPageBySlug(db, path, lang);
 	if (page) return { kind: "page", page };
 
@@ -145,11 +131,7 @@ function tagsFor(r: ResolvedRoute): string[] {
 	return [];
 }
 
-/**
- * Read-through cached resolver (incremental SSG). Page/record results are cached
- * by `lang::path` and tagged for precise invalidation; redirects/not-found are not
- * cached so new or moved content surfaces immediately.
- */
+// redirects and not-found are not cached, so new or moved content surfaces immediately
 export async function resolveRouteCached(
 	db: DB,
 	rawPath: string,

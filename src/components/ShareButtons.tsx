@@ -7,12 +7,7 @@ const SITE_URL =
 	(import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/$/, "") ??
 	"";
 
-/**
- * Facebook + Telegram share for a content detail page. The shared address is the
- * live language-prefixed pathname, so /km/… shares the Khmer URL. Origin comes
- * from VITE_SITE_URL when configured and from the browser otherwise — SSR has no
- * origin to guess.
- */
+// origin from VITE_SITE_URL when set, SSR has none to guess
 export function ShareButtons({ title }: { title: string }) {
 	const t = useT();
 	const pathname = useRouterState({ select: (s) => s.location.pathname });

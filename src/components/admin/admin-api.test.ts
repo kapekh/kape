@@ -4,17 +4,7 @@ import * as ActionMenuModule from "./ActionMenu";
 import * as formUi from "./form-ui";
 import * as listUi from "./list-ui";
 
-/**
- * `form-ui`, `list-ui` and `ActionMenu` have 23, 10 and 17 consumers. The
- * redesign round restyles all three and none of those consumers were opened,
- * so the exported surface is frozen: same names, same arity, same kind.
- *
- * Arity is a coarse check and deliberately so — a React component takes one
- * props object, so what this really pins is "still a component, still a
- * function, still a string". The type checker covers the shape of the props;
- * this covers the thing a type checker cannot see, which is a rename or a
- * quiet deletion in a file nobody imported during the change.
- */
+// pins names, arity and kind: a type checker cannot see a rename in a file nobody imported
 function surface(mod: Record<string, unknown>) {
 	return Object.keys(mod)
 		.sort()

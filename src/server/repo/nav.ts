@@ -54,13 +54,7 @@ function classifyTarget(
 	return null;
 }
 
-/**
- * The full visible navigation tree for `lang`. Each item's card title/brief/image
- * is consumed from its target entity (page/post/project) — the source of truth that
- * also powers SEO — falling back to the nav item's own stored fields (used for
- * label-only groups, external URLs, and list routes that have no backing entity).
- * The nav `label`, when set, overrides the target title for the menu text.
- */
+// card fields come from the target entity, falling back to the nav item's own for label-only groups and external URLs
 export async function getNavTree(db: DB, lang: string): Promise<NavNode[]> {
 	const items = await db
 		.select()

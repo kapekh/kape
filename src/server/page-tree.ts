@@ -1,9 +1,3 @@
-/**
- * Structural transforms over the `pages` and `nav_items` tables: the bits that
- * make a flat list of slugs into an addressable tree. No site content here —
- * KAPE's landings, static pages and home page live in ./migrate-tree.ts.
- * Every step is idempotent (upsert by slug).
- */
 import { and, eq } from "drizzle-orm";
 
 import { legacyRedirect } from "#/lib/collections";

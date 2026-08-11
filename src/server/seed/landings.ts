@@ -1,11 +1,4 @@
-/**
- * The listing page each shipped collection needs to be reachable at all.
- *
- * `resolveRoute` serves `/news/my-post` from the record table but `/news` only
- * from a page row, so a site with a `news` content type and no `news` page has a
- * breadcrumb and a sitemap entry pointing at a 404. These are structure, not
- * content: no editorial copy, one listing section bound to the collection.
- */
+// resolveRoute serves /news only from a page row, so a collection with no landing has a breadcrumb and a sitemap entry pointing at a 404
 import { COLLECTIONS, NON_PUBLIC_CONTENT_TYPES } from "#/lib/collections";
 import type { QuerySource, SectionNode } from "#/lib/sections";
 

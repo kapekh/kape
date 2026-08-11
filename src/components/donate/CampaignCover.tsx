@@ -1,9 +1,3 @@
-/**
- * A campaign's visual. Uses the uploaded cover photo when present; otherwise
- * renders an on-brand gradient with a thematic education icon chosen
- * deterministically from the slug — so a cover is never bare or broken.
- */
-
 // Paths are 24×24 stroke icons (currentColor).
 const ICONS: string[] = [
 	"M3 5l9-2 9 2v3l-9 2-9-2zM12 10v8M7 11v5l5 2 5-2v-5", // graduation cap

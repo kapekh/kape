@@ -46,9 +46,7 @@ export function RoleForm({
 		settings?: SiteSettings;
 	};
 	const areas = useMemo(() => visibleAreas(settings ?? {}), [settings]);
-	// A role may still hold an area whose module is off. That grant is kept on save,
-	// so turning the module back on restores it, but the counter must only speak for
-	// the boxes on screen.
+	// the counter speaks only for the boxes on screen; grants for off modules survive a save
 	const shown = useMemo(() => new Set(areas.map((a) => a.key)), [areas]);
 
 	const groups = useMemo(() => {

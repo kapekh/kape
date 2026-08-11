@@ -14,11 +14,7 @@ export type MapMarker = {
 	status?: string | null;
 };
 
-/**
- * Pass the site's own logo where a marker *is* the organisation, such as its
- * offices. On a map of places it merely works in, the plain product mark is the
- * more honest pin, and that is the default.
- */
+// site logo only where a marker is the organisation itself
 const pinHtml = (
 	logo: string,
 ) => `<div style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%)">
@@ -74,10 +70,7 @@ function popupCard(
 	return card;
 }
 
-/**
- * Keyless map via Leaflet + OpenStreetMap tiles. Client-only: Leaflet touches
- * `window`, so we dynamically import it inside an effect (never on the server).
- */
+// leaflet touches window, so it is imported inside an effect, never on the server
 export function MapView({
 	markers,
 	center,

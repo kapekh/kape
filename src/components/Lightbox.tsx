@@ -4,12 +4,7 @@ import { useT } from "@/lib/i18n";
 
 export type LightboxPhoto = { id: number; url: string; caption?: string };
 
-/**
- * Full-screen photo viewer. Built on the native `<dialog>` so the focus trap,
- * Esc-to-close and focus-return-to-trigger are the browser's, not ours — the
- * element stays mounted while closed because unmounting it would skip the
- * native focus restore.
- */
+// stays mounted while closed: unmounting skips the native focus restore
 export function Lightbox({
 	photos,
 	index,

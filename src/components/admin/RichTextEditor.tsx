@@ -36,11 +36,7 @@ function parseContent(value: string): object | string {
 	}
 }
 
-/**
- * `label` is the accessible name, `text` the visible one. They differ because
- * four of these six read "Row" or "Col" on screen and the icon is what says
- * which direction — a name has to carry that itself.
- */
+// label is the accessible name: four of these read "Row" or "Col" and the icon carries the direction
 const TABLE_ACTIONS: [
 	string,
 	typeof Plus | null,
@@ -70,19 +66,10 @@ function ToolGroup({
 }
 
 function ToolDivider() {
-	return (
-		<span aria-hidden="true" className="mx-1 h-6 w-px bg-admin-border" />
-	);
+	return <span aria-hidden="true" className="mx-1 h-6 w-px bg-admin-border" />;
 }
 
-/**
- * Icon-only toolbar button. The icon is hidden from the accessibility tree and
- * `label` is the whole accessible name.
- *
- * The names read as words, not as the glyphs the buttons used to show. Carrying
- * "❝" and "▦ Table" across was the letter of the freeze that protected these
- * names, and nobody sees them now — a screen reader was announcing punctuation.
- */
+// the icon is hidden from the a11y tree, so label is the whole accessible name
 function ToolButton({
 	label,
 	icon: Icon,
@@ -109,9 +96,7 @@ function ToolButton({
 					: { "aria-pressed": active })}
 			onClick={onClick}
 			className={
-				active
-					? "bg-admin-accent-soft text-admin-ink"
-					: "text-admin-ink-muted"
+				active ? "bg-admin-accent-soft text-admin-ink" : "text-admin-ink-muted"
 			}
 		>
 			<Icon aria-hidden="true" />
@@ -119,20 +104,13 @@ function ToolButton({
 	);
 }
 
-/**
- * Tiptap editor. Emits ProseMirror JSON (stringified) via onChange — the same
- * format the server renders with `renderBody`. `immediatelyRender: false` keeps
- * it SSR-safe.
- */
+// immediatelyRender: false keeps it SSR-safe
 export function RichTextEditor({
 	ariaLabelledBy,
 	value,
 	onChange,
 }: {
-	/**
-	 * Id of the caption naming this editor. A contenteditable is not a labelable
-	 * element, so `<label for>` resolves to it and still names nothing.
-	 */
+	// a contenteditable is not labelable, so <label for> names nothing
 	ariaLabelledBy?: string;
 	value: string;
 	onChange: (json: string) => void;

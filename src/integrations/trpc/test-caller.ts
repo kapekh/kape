@@ -1,11 +1,4 @@
-/**
- * An in-process tRPC caller, run under Bun because `bun:sqlite` cannot load in a
- * vitest worker. Reads a plan on stdin, executes it against a scratch database
- * built by the real migrations, and prints the results after RESULT_MARKER.
- *
- * The context comes from `createTRPCContext` with a cookie this script signs, so
- * a call goes through the same auth and permission checks a browser request does.
- */
+// runs under Bun because bun:sqlite cannot load in a vitest worker; the cookie it signs goes through the real auth
 import { createSession, sessionCookie } from "#/server/auth";
 import { db } from "#/server/db";
 import { createTRPCContext } from "./init";

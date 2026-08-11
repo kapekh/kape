@@ -4,15 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 
-/**
- * Calls tRPC procedures for real. The browser is not a trust boundary, so a
- * check that only the page performs is no check at all — and until this existed
- * nothing could reach a procedure to find out.
- *
- * `bun:sqlite` cannot load inside a vitest worker, so the caller runs under Bun
- * in `test-caller.ts` and reports back as JSON. Same reason install.test.ts
- * shells out.
- */
+// the browser is not a trust boundary; bun:sqlite cannot load in a vitest worker, so the caller shells out
 const MARKER = "__C10_RESULT__"; // must match test-caller.ts
 
 type Step = { call: string; input?: unknown } | { sql: string };
@@ -248,7 +240,10 @@ describe("a publication and a video resolve with what they are for", () => {
 				(1, 'news', 'c10-plain', 'published', '2024-01-01', json_object())
 				RETURNING id`,
 		},
-		{ call: "routes.resolve", input: { path: "publications/c10-doc", lang: "en" } },
+		{
+			call: "routes.resolve",
+			input: { path: "publications/c10-doc", lang: "en" },
+		},
 		{ call: "routes.resolve", input: { path: "videos/c10-clip", lang: "en" } },
 		{ call: "routes.resolve", input: { path: "news/c10-plain", lang: "en" } },
 	]);
@@ -256,9 +251,13 @@ describe("a publication and a video resolve with what they are for", () => {
 	// the detail page used to fetch the whole collection listing to find one
 	// record's own file, so the record has to carry it
 	const post = (r: Result) => {
-		if (!("ok" in r) || !r.ok) throw new Error(`call failed: ${JSON.stringify(r)}`);
-		return (r.value as { post?: { fileUrl: string | null; youtubeUrl: string | null } })
-			.post;
+		if (!("ok" in r) || !r.ok)
+			throw new Error(`call failed: ${JSON.stringify(r)}`);
+		return (
+			r.value as {
+				post?: { fileUrl: string | null; youtubeUrl: string | null };
+			}
+		).post;
 	};
 
 	it("hands the publication its file", () => {

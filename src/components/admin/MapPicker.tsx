@@ -1,11 +1,7 @@
 import type * as LType from "leaflet";
 import { useEffect, useRef, useState } from "react";
 
-/**
- * Click-to-pick location map (keyless Leaflet + OSM). Click to drop a pin or
- * drag it; emits lat/lng as fixed-6 strings. Stays in sync when the linked
- * text inputs change. Client-only — Leaflet is imported inside an effect.
- */
+// leaflet is imported inside an effect, client-only
 export function MapPicker({
 	lat,
 	lng,

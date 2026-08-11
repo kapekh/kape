@@ -1,12 +1,4 @@
-/**
- * Which modules a database that predates them should have.
- *
- * `enabled_modules` absent means legacy, and a legacy install keeps everything so
- * nobody loses an admin screen on a deploy. That is safe but too generous: a site
- * that never kept a donor list does not want a Fundraising group. Once, on the
- * first boot that finds no row, the answer is derived from the only evidence that
- * cannot be wrong - whether the module's own tables hold anything.
- */
+// derived once, on the first boot that finds no row, from whether the module's own tables hold anything
 import { count } from "drizzle-orm";
 import type { SQLiteTable } from "drizzle-orm/sqlite-core";
 
@@ -30,10 +22,7 @@ import {
 } from "../schema";
 import { TENANT } from "../seed/helpers";
 
-/**
- * The tables behind each module. `Record<ModuleId, …>` rather than a lookup, so
- * adding a module is a type error here until its tables are named.
- */
+// Record<ModuleId, …> rather than a lookup, so adding a module is a type error here until its tables are named
 export const MODULE_TABLES: Record<ModuleId, SQLiteTable[]> = {
 	projects: [projects, projectLocations],
 	schools: [schools],

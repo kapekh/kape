@@ -2,13 +2,7 @@ import type * as React from "react";
 
 import { cn } from "#/lib/utils.ts";
 
-/**
- * One status pill, six tones. Fourteen shells said "published" before this.
- *
- * A dot and a label rather than a filled pill: at list density a column of
- * saturated blocks is louder than the rows they belong to, and the dot means
- * the state is not carried by colour alone — the word is always there.
- */
+// dot plus label, not a filled pill: the state is not carried by colour alone
 export type BadgeTone =
 	| "live"
 	| "draft"

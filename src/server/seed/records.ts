@@ -206,11 +206,7 @@ export async function seedNews() {
 	}
 }
 
-/**
- * Impact / success stories (type=story). The subject's name and role go in the
- * excerpt (the only short bilingual field a post has) and the pull quote opens
- * the body as a blockquote, so both stay editable in /admin.
- */
+// the excerpt is the only short bilingual field a post has, so the name and role go there
 export async function seedStories() {
 	const stories: {
 		slug: string;
@@ -636,12 +632,7 @@ export async function seedVideos() {
 	}
 }
 
-/**
- * Leadership people (unified `people` table; public team/leadership).
- * `tier` is read straight off the client's group heading: Board of Directors →
- * board, Senior Management Team → smt, "Program Managers, Team Leaders &
- * Supervisors" → pm. `position` has no Khmer column, so it ships English-only.
- */
+// position has no Khmer column, so it ships English-only
 export async function seedLeadership() {
 	const bioSoon = {
 		en: ["Biography coming soon."],
@@ -921,10 +912,7 @@ export async function seedLeadership() {
 	}
 }
 
-/**
- * Partners (grouped by category term), in the client's own group order.
- * `partners.name` has no Khmer column, so these are English-only by schema.
- */
+// partners.name has no Khmer column, so these are English-only by schema
 export async function seedPartners() {
 	const roster: [string, string, string | null][] = [
 		["MoEYS", "government", "https://www.moeys.gov.kh/"],
@@ -973,11 +961,7 @@ export async function seedPartners() {
 	);
 }
 
-/**
- * Announcements are posts (contentType=announcement). meta.deadline drives the
- * floating homepage card and hides it once past; the card links to the notice's
- * own detail page under /careers. One active, one evergreen.
- */
+// meta.deadline drives the homepage card and hides it once past
 export async function seedAnnouncements() {
 	const announcementPosts: {
 		slug: string;

@@ -12,9 +12,7 @@ export const Route = createFileRoute("/login")({
 		const redirect = safeRedirect(search.redirect);
 		return redirect ? { redirect } : {};
 	},
-	// The dictionary is loaded here as well as in the root because `head` runs
-	// outside React and cannot reach the provider. Same query key as the root's,
-	// so it is a cache hit rather than a second round trip.
+	// head runs outside React and cannot reach the provider; same query key, so a cache hit
 	loader: async ({ context, location }) => {
 		const [settings, boot] = await Promise.all([
 			context.queryClient.ensureQueryData(
@@ -80,9 +78,7 @@ function LoginPage() {
 		}
 	}
 
-	// The admin's own tokens are scoped to `.admin`, which the shell sets and this
-	// screen is outside of. Same geometry and scale as the admin, painted with the
-	// public tokens — the rule Dialogs.tsx follows for the same reason.
+	// outside .admin, so it paints with the public tokens, the rule Dialogs.tsx follows
 	const input =
 		"h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground transition-colors duration-150 ease-out placeholder:text-muted-foreground focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40";
 	const label = "mb-2 block text-[13px] font-medium text-foreground";

@@ -1,10 +1,4 @@
-/**
- * Default footer content, seeded into `site_settings` so it's editable in
- * /admin/settings. The Footer falls back to these when a key is unset. Shared by
- * the Footer component and the seed script (no React imports here).
- *
- * These are placeholders for an unconfigured install, not anyone's branding.
- */
+// placeholders for an unconfigured install, not anyone's branding
 export const FOOTER_DEFAULTS: Record<string, string> = {
 	site_name_km: "",
 	site_name_en: "",

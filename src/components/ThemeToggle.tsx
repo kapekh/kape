@@ -3,12 +3,7 @@ import { useT } from "@/lib/i18n";
 import type { SiteSettings } from "@/lib/site-identity";
 import { darkModeAvailable } from "@/lib/site-theme";
 
-/**
- * Light/dark toggle. The actual class is set pre-paint by the inline script in
- * __root (no flash); this button reflects + flips it and persists the choice.
- * Renders nothing where the operator turned dark mode off, so no call site has
- * to remember to ask.
- */
+// the class is set pre-paint by the root's inline script; this only flips it
 export function ThemeToggle({
 	settings,
 	className = "",
@@ -50,7 +45,9 @@ export function ThemeToggle({
 					? t("theme.toLight", "Switch to light mode")
 					: t("theme.toDark", "Switch to dark mode")
 			}
-			title={dark ? t("theme.light", "Light mode") : t("theme.dark", "Dark mode")}
+			title={
+				dark ? t("theme.light", "Light mode") : t("theme.dark", "Dark mode")
+			}
 			className={`grid place-items-center rounded-full transition hover:text-[var(--gold)] ${className}`}
 		>
 			{dark ? (

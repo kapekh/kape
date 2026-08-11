@@ -43,9 +43,7 @@ const STATUS_TONES: Record<string, "live" | "draft" | "neutral"> = {
 };
 
 export const Route = createFileRoute("/admin/posts/")({
-	// A type nobody defined is dropped rather than honoured, so the screen falls
-	// back to all posts. It used to be printed straight into the h1 and offered a
-	// "+ New …" button for a content type that does not exist.
+	// an undefined type is dropped, not printed into the h1
 	validateSearch: (s: Record<string, unknown>): { type?: string } => {
 		const type = typeof s.type === "string" ? s.type : undefined;
 		return type && type in TYPE_LABELS ? { type } : {};
@@ -57,9 +55,7 @@ type Row = Awaited<ReturnType<typeof trpcClient.adminPosts.list.query>>[number];
 
 function PostsList() {
 	const { type: requested } = Route.useSearch();
-	// A type nobody defined means "all posts", not "a type with nothing in it".
-	// Normalised here as well as in `validateSearch` so the screen behaves the
-	// same whether the value arrives from a typed link or straight off the URL.
+	// normalised here as well as in validateSearch, so a typed link and a raw URL behave the same
 	const type = requested && requested in TYPE_LABELS ? requested : undefined;
 	const load = useCallback(() => trpcClient.adminPosts.list.query(), []);
 	const { rows, setRows, state, error, reload } = useListQuery<Row>(load);

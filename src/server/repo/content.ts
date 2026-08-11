@@ -52,9 +52,7 @@ export type ResolvedPage = {
 	bodyHtml: string; // server-rendered HTML
 	sections: SectionNode[] | null; // page-builder sections (dynamic ones already resolved)
 	parentTitle: string | null; // breadcrumb: the structural parent's own title
-	// Published child pages — only populated when this page has no content of its
-	// own (no sections, empty body), so a parent/hub page renders a child index
-	// instead of a blank card.
+	// only when the page has no content of its own, so a hub renders a child index
 	children?: ChildLink[];
 };
 
@@ -227,10 +225,7 @@ export async function listPosts(
 	}));
 }
 
-/**
- * A publication carries everything a post-card needs plus its file and counter,
- * so the same list renders whether or not a category filter was applied.
- */
+// carries the file and counter too, so one list renders with or without a category filter
 export type PublicationItem = PostListItem & {
 	year: string;
 	fileUrl: string | null;

@@ -1,12 +1,4 @@
-/**
- * Slice 3: the contact page, the two public forms (ContactForm.tsx,
- * FormRenderer.tsx) and the map popup — `contact.`, `forms.`, `map.`, plus the
- * generic error and loading strings those three render (`error.`, `common.`).
- *
- * `forms.message` is also read by the SectionRenderer form section, which slice
- * 4 wires against this definition. `forms.email` runs the other way: slice 1's
- * sign-in form defines it in pages.ts and the contact form reads it there.
- */
+// forms.email runs the other way: the sign-in form defines it in pages.ts and the contact form reads it there
 export const forms: Record<string, { en: string; km?: string }> = {
 	"common.loading": { en: "Loading…" },
 

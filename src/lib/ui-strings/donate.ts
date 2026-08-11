@@ -1,17 +1,4 @@
-/**
- * Slice 5: the donate hub, a campaign page, the giving form and the receipt.
- *
- * Mostly `donate.`, plus the three keys only this slice renders: `dialog.close`
- * and `dialog.back` from the confirm modal, and `forms.yourName` from the donor
- * field. The module is storage, not a namespace — a key lives with the slice
- * that renders it, whatever it is called.
- *
- * Singular/plural ship as two keys because `{ en, km }` has no plural forms; the
- * call site picks. Khmer needs only one of each pair.
- *
- * English only. A key with no `km` falls back to English, which is honest;
- * invented Khmer is not.
- */
+// singular and plural ship as two keys, { en, km } has no plural forms; a key with no km falls back to English
 export const donate: Record<string, { en: string; km?: string }> = {
 	"dialog.back": { en: "Back" },
 	"dialog.close": { en: "Close" },

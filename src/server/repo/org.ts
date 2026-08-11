@@ -18,11 +18,6 @@ export type OrgNode = {
 	children: OrgNode[];
 };
 
-/**
- * The org chart as a hierarchical tree. Nodes linked to a `person` post inherit
- * that profile's (translated) name, photo and slug; standalone nodes use their
- * own typed name/title.
- */
 export async function getOrgTree(db: DB, lang: string): Promise<OrgNode[]> {
 	const rows = await db
 		.select()

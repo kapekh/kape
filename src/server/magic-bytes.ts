@@ -1,17 +1,4 @@
-/**
- * Leading-signature check for uploads. The upload endpoint's allow-list is
- * extension-only and `file.type` is client-supplied, so a script renamed `.png`
- * sails through; this rejects a file whose first bytes are not the signature its
- * extension implies.
- *
- * It checks the signature, not the file. Container formats are identified by
- * their header alone, so a crafted polyglot carrying a valid `ftyp`, ZIP or GIF
- * header passes here. Full container validation is a separate job; the
- * extension allow-list and the served content-type are what keep that narrow.
- *
- * Pure and dependency-free so it runs under vitest (Node), which cannot import
- * bun:sqlite. Server-only in practice, but safe to import anywhere.
- */
+// the allow-list is extension-only and file.type is client-supplied; this checks the signature and not the file, so a crafted polyglot still passes; pure so it runs under vitest
 
 export type SniffedType =
 	| "png"

@@ -1,8 +1,4 @@
-/**
- * Server-side resolution of page-builder sections. Dynamic sections carry a
- * `query`; we run it here (in the route loader) and inline the result as
- * `props.data`, so the client renderer is pure and SSR/SEO stay intact.
- */
+// dynamic queries run in the route loader and inline as props.data, so the client renderer stays pure
 import { NON_PUBLIC_CONTENT_TYPES } from "#/lib/collections";
 import type { QuerySource, SectionNode, SectionQuery } from "#/lib/sections";
 import type { DB } from "../db";
@@ -30,21 +26,10 @@ import {
 import { listOffices, listPartners } from "./site";
 import { staffDirectory, staffDocuments, staffEvents } from "./staff";
 
-/**
- * `allowSource` is for callers that resolve sections the client just handed them
- * rather than sections the site has stored — the page-builder preview. Without it
- * that procedure is a read path into every domain table, module or no module.
- * Stored pages resolve unfiltered, so a section placed while a module was on keeps
- * rendering after it goes off.
- */
+// allowSource is for sections the client just handed us; without it the preview procedure is a read path into every domain table
 export type ResolveOptions = { allowSource?: (s: QuerySource) => boolean };
 
-/**
- * The row a section receives for each `query.source` — the one place the renderer
- * can read what `props.data` holds, since the resolved rows reach it as untyped
- * JSON. `resolveQuery` returns rows of this union, so a source whose repo function
- * changes shape fails here rather than in a section template.
- */
+// resolved rows reach the renderer as untyped JSON, so a source whose repo function changes shape fails here
 export type SourceRow = {
 	posts: PostListItem | JobItem;
 	videos: VideoItem;
@@ -117,10 +102,6 @@ const POST_LINK_BASE: Record<string, string> = {
 	job: "/careers",
 };
 
-/**
- * Resolve sections for rendering: pre-render any rich-text body server-side and,
- * for dynamic sections, run the query and inline the result as `props.data`.
- */
 export async function resolveSections(
 	db: DB,
 	sections: SectionNode[],
@@ -131,10 +112,7 @@ export async function resolveSections(
 	return Promise.all(
 		sections.map(async (s) => {
 			let props: Record<string, unknown> = { ...(s?.props ?? {}) };
-			// Per-language text overlay: authored translations for this section's text
-			// props (eyebrow/title/lead/body/…) live under props.i18n[lang]. Overlay them
-			// so /km etc. render translated headings/body; structural props (images,
-			// links, query) stay language-agnostic. Falls back to the default text.
+			// per-language text overlay; structural props stay language-agnostic
 			const i18n = props.i18n as
 				| Record<string, Record<string, unknown>>
 				| undefined;

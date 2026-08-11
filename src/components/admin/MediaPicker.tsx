@@ -9,13 +9,6 @@ export type MediaLite = MediaItem;
 
 const IMG_EXT = /\.(png|jpe?g|webp|gif|svg|avif)(\?|$)/i;
 
-/**
- * File field backed by the media library. Shows a preview; click to open the
- * library (grid + upload) and pick. Self-contained — just give it value/onChange.
- *
- * mode="url" → emits the file URL (e.g. post meta.fileUrl)
- * mode="id"  → emits the media id as a string (e.g. school.coverMediaId)
- */
 export function MediaPicker({
 	id,
 	value,

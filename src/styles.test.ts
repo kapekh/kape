@@ -3,27 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { THEME_FIELDS } from "./lib/site-theme";
 
-/**
- * The rule the design system runs on: a token that describes how something
- * *looks* has to say what it looks like in both modes, and it has to say it
- * once. The bug this catches is the one the CTA and stats bands shipped with:
- * a token written in light values and silently reused on a dark page.
- *
- * Checking that the token's *name* turns up in a dark block does not catch it:
- * the same light navy copied verbatim into a second block passes that check and
- * renders the bug. So this reads values.
- *
- * A token is one of two things:
- *
- *   mode-varying   it names a literal colour, so it must be written as
- *                  light-dark(<light>, <dark>) with the two halves different
- *   derived        every colour in it comes from another token, so it follows
- *                  whatever that one resolved to and needs nothing else
- *
- * Operator inputs are the one exemption, and the list of them is closed: a new
- * token cannot join it by being named the right way, because the test asserts
- * the exact set.
- */
+// a mode-varying token must be light-dark() with the halves different; a name check passes on a light navy copied verbatim into a dark block, so this reads values; the operator-input exemption is a closed set
 const css = readFileSync(new URL("./styles.css", import.meta.url), "utf8");
 
 /** Declared once, by the operator, and the same whichever mode is showing. */
@@ -84,9 +64,7 @@ describe("design tokens", () => {
 	});
 
 	it("exempts exactly the fields the settings form offers", () => {
-		// The exemption is a list of names, not a prefix. A new --brand-* token
-		// that describes an appearance rather than taking an operator's value
-		// cannot join it by being named the right way.
+		// the exemption is a list of names, not a prefix
 		const offered = THEME_FIELDS.map((f) => `--${f.cssVar}`)
 			.filter((v) => v !== "--" && !v.endsWith("-dark"))
 			.sort();

@@ -5,10 +5,6 @@ import { media } from "../schema";
 
 const TENANT = 1;
 
-/**
- * Resolve a media-id column on a set of rows into a public URL field, with one
- * batched query. e.g. attachMediaUrl(db, partners, "logoMediaId", "logoUrl").
- */
 export async function attachMediaUrl<
 	T extends Record<string, unknown>,
 	U extends string,

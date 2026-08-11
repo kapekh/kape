@@ -7,11 +7,6 @@ export type SelectOption = { value: string; label: string };
 const OPTION =
 	"flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors duration-150 ease-out";
 
-/**
- * Reusable searchable single-select (combobox). Type to filter; click or Enter
- * to choose. Use anywhere a list of options is picked — projects, provinces,
- * categories, content types, etc. Value/onChange are plain strings.
- */
 export function SearchableSelect({
 	id,
 	value,
@@ -62,11 +57,7 @@ export function SearchableSelect({
 		);
 	});
 
-	/**
-	 * Focus goes back to the trigger on every keyboard exit. Without it the
-	 * search field unmounts under the caret and focus falls to `<body>`, which
-	 * puts a keyboard user back at the top of the page.
-	 */
+	// without this the search field unmounts under the caret and focus falls to body
 	function close() {
 		setOpen(false);
 		triggerRef.current?.focus();
@@ -109,9 +100,7 @@ export function SearchableSelect({
 				onClick={() => setOpen((o) => !o)}
 				className={`${inputClass} flex h-10 items-center justify-between gap-2 text-left`}
 			>
-				<span
-					className={`truncate ${display ? "" : "text-admin-ink-subtle"}`}
-				>
+				<span className={`truncate ${display ? "" : "text-admin-ink-subtle"}`}>
 					{display || placeholder}
 				</span>
 				<ChevronDown

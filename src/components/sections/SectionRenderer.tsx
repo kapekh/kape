@@ -17,12 +17,6 @@ import { usePdfReader } from "../PdfReader";
 import { PublicOrgChart } from "../PublicOrgChart";
 import { RichBody } from "../RichBody";
 
-/**
- * What every section is authored with: the layout variant picked in the editor
- * plus the heading fields `SECTION_DEFS` gives all of them. Each template adds
- * its own fields, and a dynamic one adds the `data` its `query.source` resolves
- * to — see `SourceRow` in src/server/repo/sections.ts.
- */
 type Common = {
 	layout?: string;
 	eyebrow?: string;
@@ -181,9 +175,7 @@ const Icon = {
 };
 
 function useCount(target: number, run: boolean, duration = 1800) {
-	// Start AT the target so the server-rendered / no-JS / pre-scroll DOM shows the
-	// real number (crawlers and prerendered static pages otherwise captured "0").
-	// The from-0 count-up plays once the band scrolls into view.
+	// start at the target so the SSR / no-JS DOM shows the real number, not 0
 	const [n, setN] = useState(target);
 	const played = useRef(false);
 	useEffect(() => {
@@ -1023,12 +1015,7 @@ function FormSection(p: FormProps) {
 /* Dynamic templates                                                   */
 /* ------------------------------------------------------------------ */
 
-/**
- * A postList binds to news/stories or to jobs — one `posts` source, two row
- * shapes — and the renderer is not told which. So a row carries whichever fields
- * its own source filled: the table layout reads the job pair, the rest read the
- * post fields.
- */
+// one posts source, two row shapes: a row carries whichever fields its own source filled
 type PostRow = Partial<PostListItem & JobItem> &
 	Pick<PostListItem, "id" | "slug" | "title">;
 type PostListProps = Common & {
@@ -1564,10 +1551,7 @@ function MapSection(p: MapProps) {
 	);
 }
 
-/**
- * A directory table is column-generic: it prints whatever keys its source's rows
- * carry, which is why the three sources below need nothing in common.
- */
+// column-generic: it prints whatever keys its source's rows carry
 type DirectoryRow =
 	| SourceRow["staff"]
 	| SourceRow["events"]
@@ -1679,9 +1663,7 @@ function PartnerLogo({ row, linked }: { row: PartnerRow; linked: boolean }) {
 }
 
 function PartnerMarquee({ rows }: { rows: PartnerRow[] }) {
-	// The `marquee` keyframe travels -50%, so the track holds the list twice and the
-	// seam lands where it started. The second copy is decorative: hidden from AT and
-	// unlinked, so it adds no duplicate tab stops.
+	// the marquee keyframe travels -50%, so the track holds the list twice; the copy is hidden from AT
 	return (
 		<div className="relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
 			<div
@@ -2064,9 +2046,7 @@ type OrgChartProps = Common & { data?: SourceRow["orgchart"][] };
 function OrgChart(p: OrgChartProps) {
 	const t = useT();
 	const roots: SourceRow["orgchart"][] = Array.isArray(p.data) ? p.data : [];
-	// React Flow is client-only and we no longer render a CSS-tree fallback (it caused
-	// a visible swap on hydration). Until mounted, show a same-sized empty box so the
-	// canvas simply fades into an already-present container — no reflow, no jump.
+	// same-sized box until mount: a CSS fallback swapped visibly on hydration
 	const [mounted, setMounted] = useState(false);
 	useEffect(() => setMounted(true), []);
 
@@ -2115,11 +2095,7 @@ export const sectionRegistry = {
 	orgChart: OrgChart,
 };
 
-/**
- * A stored section names its template with a plain string and carries its props
- * as authored JSON, so this lookup is the one place the two are tied together —
- * past it, each template's own props type applies.
- */
+// the one place a stored template string is tied to its props type
 type SectionTemplate = (props: Record<string, unknown>) => React.ReactNode;
 
 const templateFor = (type: string): SectionTemplate | undefined =>

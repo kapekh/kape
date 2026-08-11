@@ -1,20 +1,4 @@
-/**
- * Create the /calendar hub and its three table pages — Cambodia's public
- * holidays, KAPE's institutional calendar, and the international days KAPE
- * marks — plus the footer buttons that link to them.
- *
- * The bodies are ordinary rich-text tables, so /admin/pages edits them with the
- * table controls already in the editor. Slugs carry no year: the year lives in
- * the title, and the footer links keep working when 2026 becomes 2027.
- *
- * Idempotent: upserts by slug and rewrites the bodies. The 2026 holiday dates
- * are Sub-Decree No. 167 of 18 September 2025 — 21 paid days. Re-check the whole
- * list against the new sub-decree each September; the lunar days move by about
- * three weeks between years.
- *
- * Part of the KAPE fixture (`bun run seed:kape`); `bun scripts/seed-calendar-pages.ts`
- * re-runs just this module against an existing database.
- */
+// slugs carry no year, so the footer links keep working when 2026 becomes 2027; the 2026 dates are Sub-Decree No. 167 of 18 September 2025, re-check each September
 import { and, eq } from "drizzle-orm";
 
 import { db } from "../db";

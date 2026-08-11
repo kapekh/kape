@@ -2,13 +2,7 @@ import type * as React from "react";
 
 import { cn } from "#/lib/utils.ts";
 
-/**
- * The one panel. Sixteen class strings described this same object across the
- * admin, in three radii and eight paddings.
- *
- * Tone is the status vocabulary the rest of the admin already speaks, so a
- * card and the badge inside it cannot disagree about what "warning" looks like.
- */
+// tone is the status vocabulary the badges speak, so a card and its badge cannot disagree
 export type CardTone =
 	| "neutral"
 	| "accent"

@@ -1,18 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-/**
- * The admin got its own token layer. This is the guard that says the public
- * site did not come along for the ride.
- *
- * The client signed off on how the site looks. Twelve redesign jobs are about
- * to work on the admin, and none of them should have to re-check the public
- * palette by eye to know they did not disturb it. So the value of every layer-1
- * and layer-2 token is frozen here, character for character.
- *
- * If this fails, a public token moved. That is either a mistake, or a decision
- * that belongs to the client — it is never a test to relax on the way past.
- */
+// every layer-1 and layer-2 public token is frozen character for character; a failure is a mistake or the client's decision, never a test to relax on the way past
 const css = readFileSync(new URL("./styles.css", import.meta.url), "utf8");
 
 /** `--name: value` pairs of a block, normalised to single spaces. */
@@ -57,8 +46,7 @@ const PUBLIC_TOKENS: Record<string, string> = {
 	"--card":
 		"light-dark( oklch(1 0 0), oklch(0.235 calc(0.018 * var(--paper-chroma)) calc(60 + var(--paper-hue))) )",
 	"--card-foreground": "var(--foreground)",
-	"--destructive":
-		"light-dark(oklch(0.577 0.245 27.325), oklch(0.70 0.19 22))",
+	"--destructive": "light-dark(oklch(0.577 0.245 27.325), oklch(0.70 0.19 22))",
 	"--destructive-foreground":
 		"oklch(from var(--destructive) clamp(0.16, (0.57 + c * 0.1 - l) * 1000, 0.985) calc(0.012 * var(--paper-chroma)) calc(80 + var(--paper-hue)))",
 	"--foreground":
@@ -116,7 +104,9 @@ describe("the public site did not move", () => {
 
 	it("keeps the paper texture and the serif headings on the site", () => {
 		expect(css).toMatch(/\n\s*body::before\s*\{/);
-		expect(css).toMatch(/\n\s*h1, h2, h3, h4 \{\s*\n\s*font-family: var\(--font-display\)/);
+		expect(css).toMatch(
+			/\n\s*h1, h2, h3, h4 \{\s*\n\s*font-family: var\(--font-display\)/,
+		);
 	});
 });
 
@@ -179,7 +169,9 @@ describe("admin token layer", () => {
 	});
 
 	it("drops the paper texture and the serif headings under .admin", () => {
-		expect(css).toMatch(/body:has\(\.admin\)::before\s*\{\s*\n?\s*display: none/);
+		expect(css).toMatch(
+			/body:has\(\.admin\)::before\s*\{\s*\n?\s*display: none/,
+		);
 		expect(css).toMatch(
 			/\.admin :is\(h1, h2, h3, h4\) \{\s*\n\s*font-family: var\(--font-sans\)/,
 		);

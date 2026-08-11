@@ -15,16 +15,7 @@ export type SeedRole = {
 
 const EDITOR_AREAS: PermissionArea[] = ["pages", "posts", "projects", "media"];
 
-/**
- * `admin` and `staff` are code built-ins (see lib/permissions.ts and
- * trpc/init.ts) but the rest of the admin reads roles from this table — the
- * user form's role picker, the roles list, the delete guard. Without rows they
- * are invisible, so a new account cannot be given a role at all.
- *
- * `admin` short-circuits to every area in resolvePermissions, so its stored
- * permissions are display only. `staff` holds none: the staff portal is gated
- * by role, not by area.
- */
+// admin and staff are code built-ins, but the rest of the admin reads roles from this table; without rows a new account cannot be given a role at all
 export const SEED_ROLES: SeedRole[] = [
 	{
 		key: "admin",

@@ -351,12 +351,7 @@ const termInput = z.object({
 	sort: z.number(),
 });
 
-/**
- * The terms router is core, because most taxonomies categorise content types every
- * install has. A taxonomy that only categorises a module's records goes with the
- * module: otherwise a role holding `lists` still writes partner categories on a
- * site whose partner register is switched off and unreachable.
- */
+// a taxonomy that only categorises a module's records goes with the module, or a role writes categories on a register that is switched off
 async function assertTaxonomiesAllowed(
 	db: DB,
 	...taxonomies: (string | undefined)[]
@@ -379,9 +374,7 @@ const adminTermsRouter = {
 	update: adminProcedure
 		.input(termInput.extend({ id: z.number() }))
 		.mutation(async ({ ctx, input }) => {
-			// Both taxonomies: the stored one, or a disabled module's row can be moved
-			// out of it and edited, and turning the module back on no longer returns
-			// what it had; and the incoming one, or a row can be moved into it.
+			// both taxonomies: a row can be moved out of a disabled one, or into it
 			const row = (await adminListTerms(ctx.db)).find((t) => t.id === input.id);
 			await assertTaxonomiesAllowed(ctx.db, row?.taxonomy, input.taxonomy);
 			return updateTerm(ctx.db, input.id, input);
@@ -534,9 +527,7 @@ const campaignsRouter = {
 		),
 } satisfies TRPCRouterRecord;
 
-// Donations: the create-intent + webhook live in the /api/pay route (they need
-// the raw Request for origin/IP/webhook body). This exposes only read-back of a
-// donation's status by its order id, for the post-payment success page.
+// intent and webhook live in /api/pay, they need the raw Request; this is read-back only
 const paymentsRouter = {
 	status: publicProcedure
 		.input(z.object({ orderId: z.string().min(1) }))
@@ -653,9 +644,7 @@ const postsRouter = {
 		.query(({ ctx, input }) =>
 			listPublications(ctx.db, input.lang, input.category),
 		),
-	// Public mutations skip adminProcedure's blanket cache bust, so this one drops
-	// just the publication listings — otherwise a page keeps serving the count it
-	// was cached with and two pages disagree about the same document.
+	// public mutation, so no blanket bust: drop just the publication listings
 	trackDownload: publicProcedure
 		.input(z.object({ id: z.number() }))
 		.mutation(async ({ ctx, input }) => {
@@ -725,15 +714,7 @@ const adminPostsRouter = {
 		.mutation(({ ctx, input }) => deletePost(ctx.db, input.id)),
 } satisfies TRPCRouterRecord;
 
-/**
- * `sections` is free-form JSON from the client, so the picker filtering the
- * catalogue is a convenience and this is the boundary. Without it a hand-written
- * request places a section bound to a disabled module and the public page renders
- * rows out of a table the operator cannot see.
- *
- * Shapes already stored on the page pass regardless, so a page authored while a
- * module was on stays editable after it goes off.
- */
+// sections is free-form JSON from the client, so this is the boundary and not the picker; shapes already stored still pass
 async function assertSectionsAllowed(
 	db: DB,
 	sections: SectionNode[],
@@ -930,9 +911,7 @@ const adminSettingsRouter = {
 	set: adminProcedure
 		.input(z.object({ key: z.string(), value: z.string() }))
 		.mutation(({ ctx, input }) => {
-			// A theme value that CSS cannot parse blanks the token derived from it
-			// and everything derived from that, so it is refused rather than stored
-			// and stepped over on the way out.
+			// an unparseable theme value blanks every token derived from it, so refuse it
 			const problem = checkSettingValue(input.key, input.value);
 			if (problem)
 				throw new TRPCError({ code: "BAD_REQUEST", message: problem });
@@ -1214,9 +1193,7 @@ const adminMediaRouter = {
 			try {
 				await deleteMedia(ctx.db, input.id);
 			} catch (e) {
-				// the repo refuses rather than unlinking bytes a live page still
-				// points at; BAD_REQUEST is the code that reaches the operator as
-				// the message rather than as a generic server failure
+				// BAD_REQUEST so the repo's message reaches the operator, not a generic failure
 				if (e instanceof MediaInUseError)
 					throw new TRPCError({ code: "BAD_REQUEST", message: e.message });
 				throw e;

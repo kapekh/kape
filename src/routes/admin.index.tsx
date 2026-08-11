@@ -1,5 +1,11 @@
 import { createFileRoute, Link, useLoaderData } from "@tanstack/react-router";
-import { ArrowDown, ArrowUp, CheckCircle2, FileText, Image } from "lucide-react";
+import {
+	ArrowDown,
+	ArrowUp,
+	CheckCircle2,
+	FileText,
+	Image,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Badge, type BadgeTone } from "#/components/ui/badge";
@@ -39,10 +45,7 @@ const STATUS_TONE: Record<string, BadgeTone> = {
 	archived: "neutral",
 };
 
-/**
- * The top of the y-axis, rounded up to a number worth printing: 295 visits
- * gets a 300 axis, not a 295 one.
- */
+// rounded up to a number worth printing: 295 visits gets a 300 axis
 function axisTop(peak: number) {
 	if (peak <= 0) return 1;
 	const p = 10 ** Math.floor(Math.log10(peak));
@@ -213,11 +216,6 @@ function Dashboard() {
 	);
 }
 
-/**
- * What is waiting for the operator, first on the page rather than last: this is
- * what a returning admin came to find out. It replaces the Manage panel, which
- * duplicated seven sidebar links in no particular order.
- */
 function NeedsAttention({
 	drafts,
 	posts,
@@ -233,7 +231,9 @@ function NeedsAttention({
 
 	return (
 		<Card padding="lg" tone={waiting ? "warning" : "neutral"}>
-			<h2 className="text-base font-semibold text-admin-ink">Needs attention</h2>
+			<h2 className="text-base font-semibold text-admin-ink">
+				Needs attention
+			</h2>
 			{posts === null ? (
 				<div className="mt-4 space-y-3">
 					<Skeleton className="h-10 w-full" />
@@ -306,10 +306,6 @@ function NeedsAttention({
 	);
 }
 
-/**
- * Fourteen days of visits. It had no axis, no value and no hover, and every
- * quiet day drew a 2%-tall stub, so a zero read as "a little".
- */
 function Traffic({
 	series,
 	maxV,
@@ -421,11 +417,7 @@ function Traffic({
 	);
 }
 
-/**
- * One shared zero-based scale, and the scale is printed: a full bar means "the
- * largest group", which the reader can only know if the number behind it is on
- * screen.
- */
+// one shared zero-based scale, and the scale is printed: a full bar means "the largest group"
 function ByType({
 	rows,
 	loading,
@@ -438,7 +430,9 @@ function ByType({
 
 	return (
 		<Card padding="lg">
-			<h2 className="text-base font-semibold text-admin-ink">Content by type</h2>
+			<h2 className="text-base font-semibold text-admin-ink">
+				Content by type
+			</h2>
 			{loading ? (
 				<div className="mt-4 space-y-3">
 					{["a", "b", "c", "d", "e"].map((k) => (

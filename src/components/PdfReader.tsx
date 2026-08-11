@@ -18,12 +18,7 @@ function canEmbedPdf(): boolean {
 	return !window.matchMedia?.("(pointer: coarse)").matches;
 }
 
-/**
- * Full-screen PDF viewer over the page, on the browser's own PDF plugin. Built
- * on the native `<dialog>` so the focus trap, Esc-to-close and focus return are
- * the browser's; the element stays mounted while closed because unmounting it
- * would skip that focus restore.
- */
+// stays mounted while closed: unmounting skips the native focus restore
 export function PdfReader({
 	doc,
 	onClose,
@@ -89,11 +84,7 @@ export function PdfReader({
 							)}
 						</p>
 					) : (
-						// <object>, not <iframe>: it is the one embed that reports a missing
-						// file as an error even when the file is on another origin. React
-						// wires no onError for it, so the listener is the DOM's own.
-						// The plugin swallows Esc and never tabs back out, so the keyboard
-						// reads the document through "Open in new tab" instead.
+						// <object> is the one embed that errors on a cross-origin miss; it also swallows Esc, hence the open-in-new-tab link
 						<object
 							key={doc.url}
 							ref={(el) => {
@@ -115,12 +106,7 @@ export function PdfReader({
 	);
 }
 
-/**
- * Wires a list of PDF links to one reader: spread `reader` into the markup and
- * call `openPdf` from each link's onClick. Anything the reader cannot show
- * in-page — a non-PDF href, a browser without the plugin, a modified click —
- * is left to the anchor, so the link keeps working on its own.
- */
+// a non-PDF href, a missing plugin or a modified click is left to the anchor
 export function usePdfReader() {
 	const [doc, setDoc] = useState<PdfDoc | null>(null);
 	const [embeddable, setEmbeddable] = useState(false);

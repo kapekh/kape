@@ -17,10 +17,7 @@ export type TParams = Record<string, string | number>;
 type Ctx = {
 	lang: string;
 	languages: LangInfo[];
-	// `fallback` is shown when the key isn't in the dictionary (e.g. a not-yet-seeded
-	// string), so new UI text degrades to readable English instead of the raw key.
-	// `params` fill `{name}` slots — a whole sentence stays one translatable unit
-	// instead of being concatenated from fragments, which Khmer word order breaks.
+	// params keep a sentence one translatable unit; khmer word order breaks concatenation
 	t: (key: string, fallback?: string, params?: TParams) => string;
 };
 
@@ -42,12 +39,6 @@ const fallbackT = makeT({});
 
 const LangContext = createContext<Ctx | null>(null);
 
-/**
- * Language context. The active language, the enabled language list, and the
- * resolved UI-string dictionary all come from the root route loader (which
- * reads them from the DB via tRPC, server-side for SSR). Language is driven by
- * the `?lang=` search param — see __root.tsx.
- */
 export function LanguageProvider({
 	lang,
 	languages,

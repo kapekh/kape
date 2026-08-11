@@ -2,14 +2,7 @@ import type * as React from "react";
 
 import { cn } from "#/lib/utils.ts";
 
-/**
- * A loading state is the shape of the thing being loaded, not the word
- * "Loading…" where a whole table used to be. Six routes replaced the page with
- * a bare paragraph, so the header vanished and came back.
- *
- * `aria-hidden` because the shapes say nothing: whoever renders these owns the
- * announcement, which in `ListStatus` is an `sr-only` "Loading…".
- */
+// aria-hidden: the shapes say nothing, whoever renders them owns the announcement
 function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
 	return (
 		<div

@@ -1,13 +1,6 @@
 import { createMiddleware, createStart } from "@tanstack/react-start";
 
-/**
- * Global request middleware: attach security headers to every response.
- *
- * The Content-Security-Policy is only applied in production — in dev it would
- * block Vite's HMR (inline eval + websockets). The allow-list reflects what the
- * app actually loads: same-origin assets, inline theme/hydration scripts and
- * Tailwind styles, Google Fonts, and remote images (picsum / R2 / data URIs).
- */
+// CSP is production-only: in dev it blocks Vite's HMR
 const securityHeaders = createMiddleware({ type: "request" }).server(
 	async ({ next }) => {
 		const result = await next();

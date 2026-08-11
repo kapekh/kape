@@ -5,17 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { LanguageProvider, useT } from "./i18n";
 
-/**
- * `t()` has two branches: the dictionary one inside a provider, and the
- * fallback one `useLang` returns when there is no provider at all — which is
- * what the root error and 404 screens hit, since they render outside it.
- * Interpolation has to behave identically on both, so every case below is
- * asserted against both.
- *
- * Keys are held in `KEY` rather than written inline: `no-brand.test.ts` reads a
- * quoted key passed straight to t(), anywhere in src, as proof that the product
- * renders it — and a dictionary built for a unit test is not the product.
- */
+// asserted against both branches: the root error and 404 screens render outside the provider
 const KEY = {
 	a: "test.one",
 	b: "test.two",

@@ -479,11 +479,6 @@ export function PostForm({
 	);
 }
 
-/**
- * Ordered multi-image picker backed by the media library. Holds an array of media
- * ids; resolves their URLs for thumbnails, lets you reorder (←/→) and remove, and
- * opens the library to append more (stays open so you can add several at once).
- */
 function GalleryPicker({
 	value,
 	onChange,

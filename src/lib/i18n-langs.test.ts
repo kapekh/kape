@@ -2,12 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_LANG, LANGS, reportUnroutable } from "./i18n-config";
 
-/**
- * The `languages` table decides which languages a site has and the build steps
- * read it, but the router matches LANGS. Nothing enforces that the two agree,
- * so this warning is what stands between a language enabled in the admin and a
- * sitemap full of URLs that 404.
- */
+// nothing enforces that LANGS and the languages table agree, so this warning is all that stands between them
 describe("routable languages", () => {
 	afterEach(() => vi.restoreAllMocks());
 

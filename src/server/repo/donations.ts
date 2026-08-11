@@ -57,10 +57,7 @@ export async function getDonationByOrderId(db: DB, orderId: string) {
 	return row ?? null;
 }
 
-/**
- * Mark a donation paid (idempotent — repeated webhooks are a no-op once paid).
- * Returns true when a matching pending donation was found.
- */
+// idempotent: a repeated webhook is a no-op once paid
 export async function markDonationPaid(
 	db: DB,
 	orderId: string,

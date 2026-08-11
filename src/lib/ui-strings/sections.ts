@@ -1,13 +1,4 @@
-/**
- * Slice 5: the page-section templates in SectionRenderer.tsx — the collection
- * listings' own chrome, their calls to action, their per-template empty states
- * and their column labels (`home.`, `related.`, `cta.`, `empty.`, `hero.`,
- * `jobs.`, `albums.`, `publications.`, `partners.`, `resources.`), plus the
- * project detail page (`project.`).
- *
- * English only for the keys added here. A key with no `km` falls back to
- * English, which is honest; invented Khmer is not.
- */
+// a key with no km falls back to English; invented Khmer is not honest
 export const sections: Record<string, { en: string; km?: string }> = {
 	"albums.count": { en: "{n} photos" },
 

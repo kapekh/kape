@@ -120,9 +120,7 @@ function OrgFlowNode({ data }: NodeProps<Node<NodeData>>) {
 					{row.title}
 				</div>
 			)}
-			{/* Every card carries the same three glyphs, so each names its own node.
-			    `title` cannot do that job — a button with text content never takes
-			    its accessible name from it. */}
+			{/* title cannot name a button that has text content */}
 			<div className="nodrag mt-2 flex items-center justify-center gap-1 border-t border-border pt-1.5">
 				<button
 					type="button"

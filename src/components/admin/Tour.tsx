@@ -27,11 +27,7 @@ export function startTour(id: TourId) {
 	emit();
 }
 
-/**
- * First visit only, and never over a tour already running: two screens both
- * asking on the same load would leave whichever mounted last talking about a
- * control the other one is pointing at.
- */
+// never over a running tour: two screens asking at once talk over each other
 export function startTourOnce(id: TourId) {
 	if (running) return;
 	try {

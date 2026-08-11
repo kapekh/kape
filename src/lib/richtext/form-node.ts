@@ -1,12 +1,6 @@
 import { mergeAttributes, Node } from "@tiptap/core";
 
-/**
- * A rich-text node that embeds an admin-built form anywhere prose renders —
- * post bodies, page rich-text sections, etc. It is deliberately decoupled: it
- * serializes to a neutral marker `<div data-form-embed="slug">` (both in the
- * editor and the server renderer), and `RichBody` splits authored HTML at those
- * markers to mount a live <FormRenderer/>. Nothing is tied to a host.
- */
+// serialises to a neutral marker so nothing is tied to a host; RichBody splits on it
 
 export const FORM_ATTR = "data-form-embed";
 

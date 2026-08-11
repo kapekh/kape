@@ -1,15 +1,4 @@
-/**
- * The KAPE fixture: the client's whole site as data — languages, UI strings, the
- * full nav tree, every page, project, record and staff-portal entry.
- *
- * This is not what a fresh install gets (see src/server/install.ts). It exists so
- * the site can be stood up from nothing whenever we need to be KAPE again.
- *
- * Modules are composed in the order the foreign keys require (nav before pages,
- * media before the sections that use it).
- *
- * Run: `bun run seed:kape`  (db.ts applies migrations on import first)
- */
+// not what a fresh install gets; modules compose in the order the foreign keys require
 import { db } from "../db";
 import { applyTreeMigrations } from "../migrate-tree";
 import { seedBase } from "./base";
@@ -85,14 +74,9 @@ export async function seedKape() {
 
 	const adminEmail = await seedAdminUser();
 
-	// Transform the base content into the page-tree + flat-collection model:
-	// landing pages, migrated static section pages, the section-built home page,
-	// the parent/segment tree, and flattened nav targets.
 	await applyTreeMigrations(db);
 
-	// After the tree pass: these pages set their own parent and sibling order, and
-	// normalizeTree would resort them by slug. They also own footer_buttons, which
-	// seedSiteSettings writes earlier and which points at exactly these slugs.
+	// these set their own parent and sibling order, which normalizeTree would resort by slug; footer_buttons points at exactly these slugs
 	await seedCalendarPages();
 
 	return adminEmail;

@@ -1,8 +1,4 @@
-/**
- * Pure rate-limiting arithmetic, with no server-runtime imports so it can be
- * unit-tested under vitest (Node), which cannot load Bun-only modules.
- * Import from `./ratelimit` in application code.
- */
+// no server-runtime imports, so it unit-tests under vitest, which cannot load Bun-only modules
 type Bucket = { count: number; reset: number };
 const buckets = new Map<string, Bucket>();
 
@@ -20,10 +16,6 @@ function sweep(now: number): void {
 	for (const [k, b] of buckets) if (b.reset < now) buckets.delete(k);
 }
 
-/**
- * Returns true if the action is allowed, false once the limit is exceeded
- * within the window. `key` should scope the action (e.g. `contact:<ip>`).
- */
 export function rateLimit(
 	key: string,
 	limit: number,
@@ -52,16 +44,7 @@ export function peekCount(key: string): number {
 	return b && b.reset >= Date.now() ? b.count : 0;
 }
 
-/**
- * Escalating delay for repeated failures against one identity. Doubles per
- * failure past `threshold` and saturates at `maxMs`.
- *
- * Deliberately a delay and never a refusal: a per-account hard block is a lockout
- * anyone can trigger for someone else just by failing logins in their name, so it
- * hands an attacker a denial-of-service against a named administrator. Slowing a
- * distributed guessing attack is worth having; being able to shut a colleague out
- * of the admin is not.
- */
+// a delay and never a refusal: a per-account hard block is a lockout anyone can trigger for someone else
 export function backoffDelayMs(
 	failures: number,
 	threshold: number,

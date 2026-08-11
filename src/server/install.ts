@@ -1,15 +1,4 @@
-/**
- * Fresh install: the smallest database an administrator can log into and start
- * building on. No editorial content of any kind, only the structure the shipped
- * content types need to be reachable — see `bun run seed:kape` for a full site.
- *
- * Configuration-driven and non-interactive, because the Docker entrypoint has no
- * terminal. Run: `bun run db:seed` (db.ts applies migrations on import first).
- *
- * The entrypoint runs this on every boot, so two things matter as much as what
- * it writes: it writes all of it or none of it, and it can tell a finished
- * install from an abandoned one.
- */
+// the entrypoint runs this on every boot, so it writes all of it or none, and can tell a finished install from an abandoned one
 import { and, count, eq, sql } from "drizzle-orm";
 import type { SQLiteTable } from "drizzle-orm/sqlite-core";
 
@@ -109,19 +98,7 @@ export type InstallState = {
 const rows = (t: SQLiteTable) =>
 	db.select({ x: sql<number>`1` }).from(t).limit(1);
 
-/**
- * The rows a site cannot run without and an administrator cannot remove through
- * the admin: the tenant, a default language, the string dictionary, the content
- * types, the roles and an account that can log in and repair everything else.
- *
- * Deliberately not: the site name, or a page at `home`. Both are ordinary things
- * an operator edits or renames, and a site missing them is wrong but reachable,
- * so refusing to boot over one would destroy more than it protects. They are
- * reported as warnings instead.
- *
- * The guard this replaced keyed on `languages`, the second of eight writes, so a
- * database abandoned anywhere after it reported itself healthy for ever.
- */
+// refuses to boot only over what an operator cannot repair; a missing site name or home page is a warning, and the guard this replaced keyed on languages, the second of eight writes
 export async function installState(): Promise<InstallState> {
 	const foundations = [
 		["tenant", rows(tenants)],
@@ -228,11 +205,7 @@ const adminEmailTaken = async (email: string) =>
 			.limit(1)
 	).length > 0;
 
-/**
- * Diagnose, then prescribe. An earlier version of this message offered "delete the
- * file" as the recovery whatever the file turned out to hold, which is advice that
- * destroys a working site the moment the state check is wrong about one.
- */
+// "delete the file" as blanket advice destroys a working site the moment the state check is wrong about one
 async function halfInstalled(
 	s: InstallState,
 	adminEmail: string,
@@ -313,13 +286,7 @@ async function writeInstall(config: InstallConfig, passwordHash: string) {
 		role: "admin",
 	});
 
-	// The header and footer components fall back to their *-defaults.ts when a key
-	// is unset, so only the site's own identity needs a row here.
-	//
-	// `enabled_modules` is the exception: it is written empty rather than left out.
-	// A missing row means "this database predates modules, keep everything on", so
-	// a fresh install has to answer "none of them" out loud or a law firm comes up
-	// holding a school register.
+	// enabled_modules is written empty rather than left out: a missing row means "predates modules, keep everything on"
 	await db.insert(siteSettings).values(
 		Object.entries({
 			...HEADER_DEFAULTS,
@@ -329,10 +296,7 @@ async function writeInstall(config: InstallConfig, passwordHash: string) {
 		}).map(([key, value]) => ({ tenantId: TENANT, key, value })),
 	);
 
-	// `/` resolves the slug `home`; without this row a working install 404s on its
-	// own front page. It gets one richtext section, the only kind that needs no
-	// other content behind it: a page with no sections at all falls through to the
-	// sub-page layout and greets the owner with "this section is being updated".
+	// without a home row a working install 404s on its own front page; a page with no sections falls through to the sub-page layout
 	await upsertPage(
 		db,
 		"home",
@@ -372,12 +336,7 @@ async function writeInstall(config: InstallConfig, passwordHash: string) {
 	await markInstalled();
 }
 
-/**
- * Every write or none of them. drizzle's bun-sqlite `transaction()` commits
- * an async callback even when it throws, so the transaction is driven on the raw
- * connection instead; that also covers the process being killed mid-install,
- * because SQLite discards an uncommitted transaction when the file is reopened.
- */
+// drizzle's bun-sqlite transaction() commits an async callback even when it throws, so the raw connection drives it
 export async function install(config: InstallConfig) {
 	if (await adminEmailTaken(config.adminEmail))
 		throw new InstallError(
@@ -414,10 +373,7 @@ if (import.meta.main) {
 	}
 	if (state.state === "complete") {
 		console.log("Already installed - skipping.");
-		// A database from before modules existed answers nothing about them, and the
-		// safe reading of silence is "keep everything". Settle it once, from the rows
-		// the site actually holds, and say so: the operator is about to see an admin
-		// with fewer screens in it than the one they had yesterday.
+		// silence from a pre-modules database means "keep everything"; settle it once from the rows the site holds, and say so
 		const filled = await backfillModules(db);
 		if (filled.state === "written") {
 			const names = filled.enabled.map((id) => moduleDef(id)?.label ?? id);

@@ -9,12 +9,6 @@ import { siteLogo, siteName, siteShortName } from "@/lib/site-identity";
 import { KhmerCalendar } from "./KhmerCalendar";
 import { NavLink } from "./NavLink";
 
-/**
- * Global site footer. Every text/link is driven by `site_settings` (editable in
- * /admin/settings), with FOOTER_DEFAULTS as fallbacks. Visit counts are fetched
- * client-side so prerendered HTML never freezes a stale count.
- */
-
 /** Parse a "Label|/href, Label|/href" string into link objects. */
 function parseLinks(raw: string) {
 	return raw

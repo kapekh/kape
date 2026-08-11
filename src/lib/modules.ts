@@ -1,18 +1,4 @@
-/**
- * Which domain features this install actually asked for.
- *
- * A fresh install is a CMS: pages, posts, media, forms, navigation, users and
- * settings. Everything below is a domain entity some organisations keep and most
- * do not, so it is off until an operator turns it on in /admin/modules. Nothing
- * is deleted by turning one off - the tables, the routes and the rows all stay,
- * and turning it back on returns them.
- *
- * `MODULES` is the only table here. Which nav items disappear, which tRPC routers
- * refuse, which permission areas the role editor still offers and which catalogue
- * sections stay placeable are all derived from it, so there is one list to edit
- * and nothing to keep in step by hand. The keys it points at (`ROUTER_AREA`,
- * `NAV_AREA`, `QuerySource`) are checked against their sources in modules.test.ts.
- */
+// MODULES is the only list to edit; the nav, the routers, the role editor and the catalogue all derive from it
 import {
 	NAV_AREA,
 	PERMISSION_AREAS,
@@ -47,26 +33,11 @@ export type ModuleDef = {
 	sources: QuerySource[];
 	/** `terms.taxonomy` values this module owns. The terms router is core. */
 	taxonomies?: string[];
-	/**
-	 * What this module adds to another area's label while it is on. `people` reads
-	 * "People & org chart" only where there is an org chart to manage.
-	 */
+	// people reads "People & org chart" only where there is an org chart
 	areaSuffix?: { area: PermissionArea; text: string };
 };
 
-/**
- * Routers and admin paths no module owns, and which every install therefore has.
- *
- * Not decoration: `modules.test.ts` asserts this list and `MODULES` between them
- * account for every key in `ROUTER_AREA` and `NAV_AREA` exactly once. Without it,
- * the next domain feature — an area, a router, a screen, and nobody remembering
- * `MODULES` — ships switched on for every install with the suite green.
- *
- * Keyed on `ROUTER_AREA` rather than on the tRPC router itself, because that is
- * what the gate reads and importing the router here would drag the database into
- * a unit test. A router in neither map is already denied to everyone but a super
- * administrator, by `adminProcedure`'s deny-by-default.
- */
+// keyed on ROUTER_AREA, not the router: that is what the gate reads and importing it would drag the database into a unit test
 export const CORE_ROUTERS = [
 	"adminPages",
 	"adminPosts",
@@ -84,16 +55,7 @@ export const CORE_ROUTERS = [
 	"adminPeople",
 ];
 
-/**
- * Query sources no module owns. The third axis, and the only one that reaches the
- * public site: a section in the catalogue can be placed on a public page, so a
- * source nobody owns is a table any install can publish rows out of.
- *
- * `staff`, `events` and `documents` are the staff portal's, and the portal is out
- * of this job's scope, so they are core for now and section 7 of the report says
- * what moving them costs. Naming them here is the point: they are a decision
- * somebody made, not an omission.
- */
+// staff, events and documents are the staff portal's and are core for now, a decision rather than an omission
 export const CORE_SOURCES: QuerySource[] = [
 	"posts",
 	"videos",
@@ -199,17 +161,7 @@ const ALL_MODULE_IDS = MODULES.map((m) => m.id);
 
 export const moduleDef = (id: ModuleId) => MODULES.find((m) => m.id === id);
 
-/**
- * A **missing** row means this database predates modules, so everything it might
- * already hold stays switched on. Losing nine admin screens on the first deploy,
- * with the rows all still there and nothing saying why, reads to an operator as
- * the CMS having eaten their site.
- *
- * An **empty** row means an install that was asked and answered "none of them".
- * The installer writes one, so on a database this product created the absence of
- * a row is never ambiguous; `backfillModules` narrows a legacy install's row down
- * to the features it actually has rows for.
- */
+// a missing row predates modules, so everything stays on; an empty row is an install that answered "none"
 export function enabledModules(s: SiteSettings): Set<ModuleId> {
 	const raw = s[MODULES_SETTING];
 	if (raw === undefined) return new Set(ALL_MODULE_IDS);
@@ -254,27 +206,14 @@ const moduleForSource = (source: QuerySource) =>
 export const sourceEnabled = (s: SiteSettings, source: QuerySource) =>
 	enabledFor(s, moduleForSource(source));
 
-/**
- * The terms router is core, because most taxonomies belong to content types every
- * install has. A taxonomy that exists only to categorise a module's records goes
- * with the module, or a role holding `lists` keeps writing partner categories on a
- * site with no partners.
- */
+// a taxonomy that only categorises a module's records goes with the module
 export const taxonomyEnabled = (s: SiteSettings, taxonomy: string) =>
 	enabledFor(
 		s,
 		MODULES.find((m) => m.taxonomies?.includes(taxonomy)),
 	);
 
-/**
- * Permission areas the role editor should still offer.
- *
- * Derived rather than owned: an area is dropped only when every router and every
- * nav path that maps to it has become unreachable. `partners` covers the partner
- * register and the donor register, which are two modules, and `people` covers the
- * team page, which is core, as well as the org chart, which is not. Neither
- * mapping had to be rewritten to make the modules line up.
- */
+// derived: an area is dropped only when every router and nav path mapping to it is unreachable
 export function visibleAreas(s: SiteSettings) {
 	const on = enabledModules(s);
 	const reachable = new Set<PermissionArea>();
@@ -294,16 +233,7 @@ export function visibleAreas(s: SiteSettings) {
 	}));
 }
 
-/**
- * The page-builder catalogue for this install. A dynamic section whose sources
- * all belong to disabled modules leaves the catalogue; one that keeps a source
- * stays, offering only the sources that still resolve. `map` is the case that
- * matters: project locations and offices are separate modules.
- *
- * Sections already placed on a page keep rendering - the renderer registry is not
- * filtered, only the picker. Turning a module off hides a feature; it never edits
- * anyone's pages.
- */
+// only the picker is filtered, never the renderer, so turning a module off never edits anyone's pages
 export function sectionsFor(s: SiteSettings): SectionDef[] {
 	const out: SectionDef[] = [];
 	for (const def of SECTION_DEFS) {
@@ -320,21 +250,7 @@ export function sectionsFor(s: SiteSettings): SectionDef[] {
 /** What a section node is, for the purpose of deciding whether it may be saved. */
 const nodeShape = (n: SectionNode) => `${n.type}::${n.query?.source ?? ""}`;
 
-/**
- * Whether a page may be saved with these sections, at the point the data enters
- * the database rather than at the point the picker draws a button.
- *
- * The picker is a convenience; `sections` arrives from the client as free-form
- * JSON, so without this a hand-written request places a `projectList` on the home
- * page of an install that has no projects module and the public site renders rows
- * out of a table the operator cannot see. Guarding only the UI made the gate a
- * suggestion.
- *
- * `existing` is the page's stored sections, and shapes already in it are allowed
- * through unchanged. That is the seam holding: a page authored while a module was
- * on stays editable and keeps rendering after the module goes off, and only a
- * *new* binding to a disabled module is refused.
- */
+// sections arrives from the client as free-form JSON, so the picker is a convenience and this is the gate; stored shapes pass, so a page stays editable after its module goes off
 export function disallowedSections(
 	s: SiteSettings,
 	next: SectionNode[],
@@ -350,9 +266,7 @@ export function disallowedSections(
 			continue;
 		}
 		const source = node.query?.source;
-		// A dynamic section with no query at all still belongs to whatever offers it:
-		// `{type:"projectList"}` renders nothing but saves, and the gate is supposed to
-		// refuse the binding rather than trust that it looks empty.
+		// a section with no query still belongs to whatever offers it, so refuse the binding rather than trust that it looks empty
 		if (!source) {
 			if (
 				def.sources?.length &&

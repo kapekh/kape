@@ -201,9 +201,6 @@ function OrgFlow({
 		setReady(false);
 	}, [flow, setNodes, setEdges]);
 
-	// Once nodes are measured: scale the tree to fit the available WIDTH (never upscale
-	// past 1:1), grow the container to the tree's full height so everyone is visible on
-	// a normal page scroll, and place the root centred under the heading — one move.
 	useEffect(() => {
 		if (!inited || ready || !wrapRef.current) return;
 		const W = wrapRef.current.clientWidth;
@@ -217,9 +214,7 @@ function OrgFlow({
 		const zoom = Math.max(0.2, Math.min(1, (W - 2 * PAD) / treeW));
 		setHeight(Math.round(TOP + treeH * zoom + PAD));
 		const rootCenterX = flow.rootX + NODE_W / 2;
-		// Prefer the root centred under the heading, but clamp so the whole tree stays within
-		// the container width. A lopsided tree's root isn't its horizontal midpoint, so pure
-		// root-centring pushes the far branch off-screen and clips edge nodes on narrow screens.
+		// clamp: a lopsided tree's root is not its midpoint, so root-centring clips edge nodes
 		const minVx = -flow.minX * zoom; // tree's left edge flush to x=0
 		const maxVx = W - (flow.maxX + NODE_W) * zoom; // tree's right edge flush to W
 		const idealVx = W / 2 - rootCenterX * zoom;

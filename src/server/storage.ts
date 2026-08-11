@@ -6,15 +6,7 @@ import { env } from "#/env";
 // runtime (see db.ts for why we avoid importing from "bun").
 type S3Client = Bun.S3Client;
 
-/**
- * Object storage backed by Cloudflare R2 via Bun's built-in S3 client.
- *
- * R2 speaks the S3 API, so we point Bun's S3Client at the R2 endpoint
- * (`https://<account_id>.r2.cloudflarestorage.com`) with region "auto".
- *
- * Credentials are optional in dev; `requireStorage()` throws a clear error
- * if you try to use storage without them configured. Server-only.
- */
+// R2 speaks the S3 API, so Bun's S3Client points at the R2 endpoint with region "auto"
 function createR2(): S3Client | null {
 	if (
 		!env.R2_ACCOUNT_ID ||
@@ -54,11 +46,7 @@ export function publicUrl(key: string): string | null {
 
 export type StoredObject = { key: string; url: string };
 
-/**
- * Persist an uploaded file. Uses R2 when configured, otherwise falls back to
- * the local `public/uploads/` directory so media works in development without
- * cloud credentials. Returns the storage key and a servable URL.
- */
+// falls back to public/uploads so media works in development without cloud credentials
 export async function saveUpload(
 	bytes: ArrayBuffer | Uint8Array,
 	contentType: string,
@@ -83,11 +71,7 @@ export async function saveUpload(
 // `seed/…` keys with no file behind them, so only our own uploads are unlinked.
 const LOCAL_KEY = /^uploads\/[A-Za-z0-9-]+\.[a-z0-9]{1,8}$/;
 
-/**
- * Remove a stored object. Idempotent: an already-missing object is not an
- * error. Without this a deleted media row leaves its bytes on disk, still
- * served at the original URL.
- */
+// idempotent; without it a deleted media row leaves its bytes on disk, still served at the original URL
 export async function deleteUpload(key: string): Promise<void> {
 	if (r2) {
 		await r2.delete(key).catch(() => {});

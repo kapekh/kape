@@ -1,8 +1,3 @@
-/**
- * Shared form model — a form is data (a list of fields), stored as JSON on the
- * `forms` row, rendered on the public site and edited in /admin/forms. Used by
- * both server (validation, schema typing) and client (renderer, builder).
- */
 export type FormFieldType =
 	| "text"
 	| "textarea"
@@ -111,10 +106,7 @@ export type FormSectionGroup = {
 	fields: FormField[];
 };
 
-/**
- * Split a flat field list into numbered sections. A `section` field opens a new
- * group and everything after it belongs to that group until the next one.
- */
+// a section field opens a group and everything after it belongs to that group
 export function groupIntoSections(fields: FormField[]): FormSectionGroup[] {
 	const groups: FormSectionGroup[] = [];
 	let n = 0;

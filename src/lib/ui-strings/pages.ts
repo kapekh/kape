@@ -1,19 +1,6 @@
-/**
- * Slice 1: the public routes — the catch-all page/record renderer (`$.tsx`),
- * site search and the staff sign-in screen.
- *
- * Prefixes here: `nav.`, `page.`, `album.`, `error.`, `collection.`, `search.`,
- * `login.` and the two `forms.` fields the sign-in form shares with the rest of
- * the site. The module is storage, not a namespace — a key lives with the slice
- * that renders it, whatever it is called.
- *
- * English only. A key with no `km` falls back to English, which is honest;
- * invented Khmer is not.
- */
+// a key with no km falls back to English; invented Khmer is not honest
 export const pages: Record<string, { en: string; km?: string }> = {
-	// Collections. One key per collection, not one per call site: the breadcrumb
-	// on a detail page, the "More from" rail and the search result kind are the
-	// same word and must not drift into three translations of it.
+	// one key per collection: the breadcrumb, the rail and the search kind must not drift apart
 	"collection.careers": { en: "Careers" },
 	"collection.events": { en: "Events" },
 	"collection.galleries": { en: "Photo Galleries" },

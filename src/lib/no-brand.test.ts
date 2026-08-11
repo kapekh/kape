@@ -4,16 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { defaultUiStrings } from "./ui-strings.default";
 
-/**
- * The shipped source must not know which customer it is running for. Site
- * identity belongs in `site_settings`; example content belongs in the seed
- * fixture under src/server/seed/, which this check skips.
- *
- * A name is only half of it: a customer arrives in the source as their phone
- * number, their address or their name in their own script just as easily. Add
- * every such string here the moment one is onboarded, so the next person who
- * types it into a component finds out before it ships.
- */
+// a customer arrives as a phone number or an address as easily as a name; add each one on onboarding
 const BRANDS = [
 	/kape/i,
 	/kapekh/i,
@@ -45,9 +36,7 @@ function sourceFiles(dir: string): string[] {
 	});
 }
 
-// The fixture's seed command is named after the fixture, and the product is
-// allowed to point at it. Blanked before matching rather than exempting the
-// line, so a brand string sharing that line is still caught.
+// blanked, not exempted, so a brand string sharing the line is still caught
 const withoutFixtureCommand = (line: string) =>
 	line.replace(/seed:[a-z0-9-]+/g, "seed:fixture");
 
@@ -70,9 +59,7 @@ describe("shipped source carries no customer branding", () => {
 		});
 	}
 
-	// The dictionary a blank install writes is where one customer's site leaks
-	// into the next: a key no component reads is, by definition, a menu or a
-	// headline that belonged to somebody's site rather than to the product.
+	// a key no component reads is somebody's headline, not the product's
 	it("seeds no UI string the product does not render", () => {
 		const dictionary = join(ROOT, "lib", "ui-strings.default.ts");
 		const readers = sourceFiles(ROOT).filter((f) => f !== dictionary);
@@ -83,9 +70,7 @@ describe("shipped source carries no customer branding", () => {
 		expect(unused).toEqual([]);
 	});
 
-	// The other direction, and the one that actually bit: a key a component
-	// renders but nobody seeded falls back to its English argument, so a Khmer
-	// install shows English and no test, type or lint notices.
+	// a key a component renders but nobody seeded falls back to English, and nothing notices
 	it("seeds every UI string the product renders", () => {
 		const dictionary = join(ROOT, "lib", "ui-strings.default.ts");
 		const readers = sourceFiles(ROOT).filter((f) => f !== dictionary);
@@ -103,11 +88,7 @@ describe("shipped source carries no customer branding", () => {
 		expect(unseeded).toEqual([]);
 	});
 
-	/**
-	 * `public/logo.png` was the first customer's crest for a year, and no text
-	 * search could see it: the words were in the pixels. These two catch what a
-	 * check over source can, and the rest is on whoever swaps the file.
-	 */
+	// logo.png was a customer's crest for a year: the words were in the pixels, invisible to a text search
 	describe("the shipped assets are the product's own", () => {
 		const PUBLIC = join(ROOT, "..", "public");
 		const FIXTURE_ASSETS = join(PUBLIC, "fixture");

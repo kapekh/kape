@@ -2,9 +2,7 @@ import { useState } from "react";
 
 import { useLang } from "#/lib/i18n";
 
-// Floating-label fields: the label sits inside the control and lifts on focus /
-// when filled, so every field keeps a persistent, visible label (placeholders
-// alone vanish on the first keystroke) without adding a stacked-label row.
+// floating label: a placeholder alone vanishes on the first keystroke
 const input =
 	"peer w-full rounded-xl border border-border bg-background px-4 pt-6 pb-2 text-sm transition placeholder-transparent focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30";
 const floatLabel =

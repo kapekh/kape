@@ -1,12 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { MIN, STEP } from "./DonateForm";
 
-/**
- * A `<input type="number">` accepts a value only when it is `min + n*step` for
- * a whole n. Ship a step that does not divide the gap to a round amount and the
- * browser rejects every round amount with `stepMismatch`, so nobody can donate
- * $25 - which is what `min={0.03} step={1}` did.
- */
+// <input type=number> only accepts min + n*step, so min={0.03} step={1} rejected every round amount
 const roundAmounts: Record<string, number[]> = {
 	USD: [1, 5, 25, 100, 250],
 	KHR: [4000, 20000, 100000, 400000],

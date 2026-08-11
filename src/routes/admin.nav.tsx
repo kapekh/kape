@@ -361,9 +361,7 @@ function NavBuilder() {
 		refresh();
 	}, [refresh]);
 
-	// One in-flight row action at a time. The menu is a tree the server renumbers
-	// on every move, so a second click before the refresh acts on stale sort
-	// positions and lands the item somewhere nobody asked for.
+	// one action at a time: the server renumbers, so a second click acts on stale sort positions
 	const [busyId, setBusyId] = useState<number | "new" | null>(null);
 
 	async function create(parentId: number | null, v: FormValue) {
@@ -480,10 +478,7 @@ function NavBuilder() {
 							</span>
 						)}
 					</button>
-					{/* Each control names the row it acts on: 25 rows of "Move up" tells a
-					    screen reader nothing about which item moved. `title` was carrying
-					    that text and was dead weight — a button with text content never
-					    takes its accessible name from `title`. */}
+					{/* each control names its row; title never names a button that has text content */}
 					<div className="ml-auto flex shrink-0 items-center gap-0.5 opacity-0 transition group-hover/row:opacity-100 focus-within:opacity-100">
 						<button
 							type="button"

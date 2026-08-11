@@ -51,12 +51,7 @@ export function doc(text: string) {
 	});
 }
 
-/**
- * Create a placeholder media row and return its id (used for nav card images).
- * Seeded slots have no client photograph behind them, so they must not be given
- * one: a picsum url here made every empty slot look like a deliberate, wrong
- * editorial choice, and hotlinked a third-party host in production.
- */
+// a picsum url made every empty slot look like a deliberate, wrong editorial choice and hotlinked a third-party host
 export async function createPlaceholderMedia(seed: string): Promise<number> {
 	const [m] = await db
 		.insert(media)

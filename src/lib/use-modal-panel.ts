@@ -3,11 +3,7 @@ import { useEffect, useRef } from "react";
 const FOCUSABLE =
 	'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
 
-/**
- * Focus behaviour for a modal panel: focus moves in on open, Tab stays inside,
- * Esc closes, and the trigger gets focus back on close. Put the returned ref on
- * the panel, which needs role="dialog" aria-modal="true" tabIndex={-1} and a name.
- */
+// the panel needs role="dialog" aria-modal="true" tabIndex={-1} and a name
 export function useModalPanel(onClose?: () => void, active = true) {
 	const ref = useRef<HTMLDivElement>(null);
 	const close = useRef(onClose);

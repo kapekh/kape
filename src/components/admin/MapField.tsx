@@ -7,11 +7,6 @@ import { useModalPanel } from "#/lib/use-modal-panel";
 import { fieldLabel } from "./form-ui";
 import { MapPicker } from "./MapPicker";
 
-/**
- * Compact map location field for table rows / lists: a button showing the
- * current coordinates that opens a modal with the click-to-pick map (the same
- * MapPicker the school editor uses) plus manual lat/lng inputs.
- */
 export function MapField({
 	lat,
 	lng,

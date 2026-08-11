@@ -5,12 +5,7 @@ import { siteName } from "#/lib/site-identity";
 import { db } from "./db";
 import { getSettings } from "./repo/site";
 
-/**
- * Sends mail via SMTP (e.g. Gmail) when configured. Without SMTP credentials the
- * message is stored and logged rather than sent, so the contact form still works
- * in dev - but that is a misconfiguration in production, so say so loudly.
- * Server-only.
- */
+// without SMTP the message is stored and logged, which is a misconfiguration in production, so say so loudly
 const transport =
 	env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS
 		? nodemailer.createTransport({

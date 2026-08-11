@@ -4,16 +4,7 @@ import * as React from "react";
 
 import { cn } from "#/lib/utils.ts";
 
-/**
- * Four variants and three sizes, and that is the whole button vocabulary. The
- * admin used to hold twelve primaries in six sizes, eight secondaries and a
- * third family for icon buttons.
- *
- * `not-disabled:` on every hover rather than `disabled:pointer-events-none`:
- * a disabled button still needs to answer the pointer, because the reason it
- * is disabled is in its `title` and a tooltip on a dead element never opens.
- * A disabled button does not fire click either way.
- */
+// not-disabled: on hover, or a disabled button stops answering the pointer and its title tooltip never opens
 const buttonVariants = cva(
 	"inline-flex shrink-0 items-center justify-center gap-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors duration-150 ease-out outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50 disabled:cursor-not-allowed disabled:opacity-80 disabled:saturate-[0.35] aria-disabled:cursor-not-allowed aria-disabled:opacity-80 aria-disabled:saturate-[0.35] [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
 	{
@@ -51,11 +42,7 @@ function Button({
 }: React.ComponentProps<"button"> &
 	VariantProps<typeof buttonVariants> & {
 		asChild?: boolean;
-		/**
-		 * Why this button is disabled, e.g. "No changes to save." A disabled
-		 * primary that says nothing reads as a failed render rather than a
-		 * deliberate state, which is what Save on every editor looked like.
-		 */
+		// a disabled primary that says nothing reads as a failed render
 		disabledReason?: string;
 	}) {
 	const Comp = asChild ? Slot.Root : "button";

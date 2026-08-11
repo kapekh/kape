@@ -1,12 +1,4 @@
-/**
- * Slice 8: the staff portal at /internalsources (`internal.`). Behind a staff
- * login, so not a visitor surface - the lowest-priority slice, and the one
- * easiest to drop if the round narrows.
- *
- * English only. The audience reads Khmer, but a guessed column header is worse
- * than the honest English fallback - the Khmer lands from a staff translator
- * through /admin/ui-strings. `common.loading` stays the forms slice's key.
- */
+// english only: a guessed column header is worse than the honest fallback
 export const internal: Record<string, { en: string; km?: string }> = {
 	"internal.calendar": { en: "Calendar" },
 	"internal.checking": { en: "Checking access…" },

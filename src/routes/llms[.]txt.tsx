@@ -10,11 +10,7 @@ import { listPosts } from "#/server/repo/content";
 import { getSettings } from "#/server/repo/site";
 import { pages } from "#/server/schema";
 
-/**
- * /llms.txt — the llmstxt.org convention: a curated, plain-markdown map of the
- * site so LLMs can find the important content without crawling everything.
- * Blocked/internal content types are intentionally excluded.
- */
+// the llmstxt.org convention; blocked and internal content types are excluded
 const BLOCKED = new Set(["internal_news", "document", "announcement", "event"]);
 
 async function handler({ request }: { request: Request }) {

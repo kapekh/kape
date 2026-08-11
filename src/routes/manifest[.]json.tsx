@@ -11,11 +11,7 @@ import { themeColor } from "#/lib/site-theme";
 import { db } from "#/server/db";
 import { getSettings } from "#/server/repo/site";
 
-/**
- * The PWA manifest, built from `site_settings` so an install that renames itself
- * renames its home-screen icon too. Served here rather than shipped in public/
- * for that reason.
- */
+// built from site_settings, so an install that renames itself renames its home-screen icon
 async function handler() {
 	const settings = await getSettings(db);
 	const description = siteDescription(settings);

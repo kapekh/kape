@@ -21,11 +21,7 @@ describe("fmtDate", () => {
 		expect(fmtDate("2026-08-10", "en")).toBe("Aug 10, 2026");
 	});
 
-	/**
-	 * The mutation guard for the language argument: break `localeFor` and this is
-	 * the test that goes red, because Khmer and English disagree on both the month
-	 * name and the order.
-	 */
+	// khmer and english disagree on both the month name and the order, so this goes red if localeFor breaks
 	it("reads a date in the active language, not always English", () => {
 		const en = fmtDate("2026-08-10", "en");
 		const km = fmtDate("2026-08-10", "km");

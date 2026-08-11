@@ -8,12 +8,7 @@ export type ActionItem = {
 	disabled?: boolean;
 };
 
-/**
- * Compact overflow menu for table rows. Destructive actions (Delete) live
- * here so they can't be fat-fingered. Positioned `fixed` from the trigger rect
- * so it escapes the table's overflow clipping; closes on outside-click / scroll
- * / Escape.
- */
+// fixed from the trigger rect so it escapes the table's overflow clipping
 export function ActionMenu({
 	items,
 	label = "Row actions",
@@ -136,9 +131,7 @@ export function ActionMenu({
 							tabIndex={i === active ? 0 : -1}
 							disabled={it.disabled}
 							onClick={() => {
-								// focus goes back to the trigger BEFORE the action runs, so a
-								// dialog the action opens has a live element to return to —
-								// unmounting the menu first leaves it nothing but BODY
+								// refocus the trigger before the action, so a dialog it opens has somewhere to return
 								closeToTrigger();
 								it.onClick();
 							}}

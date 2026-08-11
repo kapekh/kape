@@ -2,12 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { siteOrigin } from "#/server/origin";
 
-/**
- * Dynamic robots.txt. Emits an ABSOLUTE Sitemap URL (a relative one is invalid
- * per the protocol and ignored by crawlers). All bots — including AI crawlers
- * (GPTBot, ClaudeBot, PerplexityBot, CCBot, Google-Extended, …) — are allowed
- * the public site via `User-agent: *`; only private/app areas are disallowed.
- */
+// an absolute Sitemap URL: a relative one is invalid per the protocol and ignored by crawlers
 function handler({ request }: { request: Request }) {
 	const origin = siteOrigin(request);
 	const body = [

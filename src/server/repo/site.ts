@@ -79,12 +79,6 @@ export async function listHeroSlides(db: DB, lang: string) {
 	}));
 }
 
-/**
- * The homepage pop-up: announcements are `posts` of type `announcement`. Every
- * notice still open is returned — deadline ones soonest first, then evergreen
- * ones newest first. Past-deadline announcements are hidden. Each one links to
- * its own detail page under /careers.
- */
 export async function listActiveAnnouncements(db: DB, lang: string) {
 	const rows = await db
 		.select({

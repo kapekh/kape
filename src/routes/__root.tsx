@@ -39,9 +39,6 @@ interface MyRouterContext {
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-	// Fetch i18n bootstrap (active language, language list, UI strings) and the
-	// navigation tree once, server-side during SSR, so the first byte is correct.
-	// Language is path-based (/en/…, /km/…) — derived from the URL, not a param.
 	loader: async ({ context, location }) => {
 		const boot = await context.queryClient.ensureQueryData(
 			context.trpc.i18n.bootstrap.queryOptions({
@@ -88,9 +85,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 				{ rel: "apple-touch-icon", href: siteLogo(settings) },
 				{ rel: "manifest", href: "/manifest.json" },
 			],
-			// Server-rendered so the configured palette is in the first painted
-			// frame. Applied by a script after hydration it would flash the default
-			// brand on every hard load.
+			// server-rendered: applied after hydration it flashes the default brand on every hard load
 			styles: brand ? [{ children: brand }] : [],
 			scripts: [
 				{
@@ -194,9 +189,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			suppressHydrationWarning
 		>
 			<head>
-				{/* Set theme before paint to avoid a flash of the wrong mode. Only a
-				    stored choice is written; with none, styles.css follows the
-				    operating system, which is also what happens with no JavaScript. */}
+				{/* set before paint; with no stored choice styles.css follows the OS, same as with no JS */}
 				{dark && (
 					<script
 						// biome-ignore lint/security/noDangerouslySetInnerHtml: trusted inline bootstrap

@@ -31,12 +31,6 @@ const nameOfMedia = (m: MediaItem) =>
 
 const PAGE = 24;
 
-/**
- * Reusable media-library modal: a searchable thumbnail grid + upload. Loads media
- * a page at a time (server-side filter + search) with infinite scroll inside the
- * modal, so it scales to thousands of assets. `onSelect` fires with the chosen
- * item (also after a successful upload); the parent decides what to do and close.
- */
 export function MediaLibraryDialog({
 	open,
 	onClose,
@@ -134,9 +128,7 @@ export function MediaLibraryDialog({
 		if (open) reset();
 	}, [open, reset]);
 
-	// Infinite-scroll sentinel — observed within the modal's own scroll container.
-	// Re-runs when `loading` flips so it attaches once the sentinel is mounted
-	// (the sentinel only renders after the first page loads, past the skeletons).
+	// re-runs on loading, so the sentinel is only attached once it is past the skeletons
 	useEffect(() => {
 		if (!open || loading) return;
 		const el = sentinelRef.current;

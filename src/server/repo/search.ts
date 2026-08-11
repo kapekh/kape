@@ -1,17 +1,4 @@
-/**
- * Site search over the public content: pages, posts (news, stories, videos,
- * galleries, publications, careers) and projects.
- *
- * Content is bilingual at the record level, so the match runs over the
- * `translations` rows themselves — every language a reader of `lang` could be
- * shown (the requested language and the default it falls back to). A Khmer query
- * therefore finds Khmer bodies even though the record's English columns say
- * nothing about it.
- *
- * SQLite `LIKE` narrows; JavaScript ranks. `body` is stored as ProseMirror JSON,
- * so a raw LIKE also matches node names and attribute keys ("paragraph", "href").
- * Every candidate is re-checked against the extracted plain text before it counts.
- */
+// the match runs over the translations rows, so a Khmer query finds Khmer bodies; body is ProseMirror JSON, so every LIKE candidate is re-checked against the extracted plain text
 
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
@@ -29,12 +16,7 @@ export const SEARCH_LIMIT = 30;
 const SNIPPET_LENGTH = 180;
 const SNIPPET_LEAD = 60;
 
-/**
- * The only content types a visitor can reach: a collection prefix exists for
- * them and they are not internal. An allow-list built from the two maps the
- * route resolver uses, so a content type nobody can open cannot be searched
- * into existence either.
- */
+// an allow-list built from the two maps the route resolver uses, so an unreachable type cannot be searched into existence
 export const PUBLIC_POST_TYPES = [
 	...new Set(
 		Object.values(COLLECTIONS)
@@ -86,10 +68,7 @@ export type SearchResults = {
 /** `%` and `_` are LIKE wildcards; a reader typing them means the characters. */
 const escapeLike = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
 
-/**
- * The one place a query string reaches SQL. `${translations.value}` is a column
- * reference and the pattern is a bound parameter — Drizzle never inlines it.
- */
+// the column is a reference and the pattern a bound parameter; Drizzle never inlines it
 const containsQuery = (query: string) =>
 	sql`${translations.value} LIKE ${`%${escapeLike(query)}%`} ESCAPE '\\'`;
 
@@ -111,10 +90,6 @@ export function fieldText(field: string, value: string): string {
 	}
 }
 
-/**
- * How well one field matches, 0 when it does not. Title beats excerpt beats body;
- * an exact or leading match beats one buried mid-sentence.
- */
 export function scoreField(field: string, text: string, query: string): number {
 	const needle = query.trim().toLowerCase();
 	if (!needle) return 0;

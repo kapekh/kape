@@ -1,10 +1,4 @@
-/**
- * KAPE's UI chrome strings (EN + KH), part of the KAPE fixture.
- *
- * A copy, not an import of `#/lib/ui-strings.default`: that file is the product's
- * neutral bootstrap dictionary and is de-branded on purpose, so reading it here
- * would silently rewrite the client's site every time the product's defaults move.
- */
+// a copy, not an import: reading the product's defaults here would rewrite the client's site every time they move
 export const kapeUiStrings: Record<string, { en: string; km?: string }> = {
 	// top bar
 	"top.contact": {

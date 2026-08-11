@@ -5,10 +5,6 @@ import type { SectionNode } from "#/lib/sections";
 
 import { SectionRenderer } from "../sections/SectionRenderer";
 
-/**
- * Live preview of the page-builder sections. Resolves dynamic queries + rich text
- * server-side (debounced) so the preview is faithful to what the public page renders.
- */
 export function PagePreview({ sections }: { sections: SectionNode[] }) {
 	const [resolved, setResolved] = useState<SectionNode[]>(sections);
 	const [loading, setLoading] = useState(false);

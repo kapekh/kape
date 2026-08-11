@@ -2,20 +2,7 @@ import type * as React from "react";
 
 import { cn } from "#/lib/utils.ts";
 
-/**
- * One table. Nine `<th>` strings and twenty-seven `<td>` strings described the
- * same list before this, at two different row heights.
- *
- * Below `md` the whole thing turns into a stacked card list rather than a
- * horizontal scroll: a 6-column table on a 390px phone is 70px of content and
- * a scrollbar nobody finds. The header row goes `sr-only` and each cell prints
- * its own column name from `label`.
- *
- * `display: block` is what stacks it, and it takes the implicit table roles
- * with it — a stacked table reads to a screen reader as a pile of anonymous
- * text. So the roles are written out. They are redundant at desktop and load
- * bearing at 390px.
- */
+// display:block stacks it and takes the implicit table roles with it, so the roles are written out
 type Align = "left" | "center" | "right";
 
 const ALIGN: Record<Align, string> = {

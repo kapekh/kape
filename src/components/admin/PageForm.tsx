@@ -166,9 +166,7 @@ export function PageForm({
 	function submit(e?: React.SyntheticEvent) {
 		e?.preventDefault();
 		const cleaned = segment.trim().replace(/^\/+|\/+$/g, "");
-		// A page stored before the rule existed keeps its address until someone
-		// edits it, the same as the server: refusing to save an untouched legacy
-		// segment would strand the page in its own editor.
+		// a legacy segment keeps its address until edited, same as the server
 		const untouched = !!cleaned && cleaned === initialSegment;
 		const problem = untouched ? null : segmentProblem(cleaned);
 		if (problem) {
@@ -251,9 +249,7 @@ export function PageForm({
 	const panelHead = "font-display text-sm font-semibold text-primary";
 	const panelSub = "mt-0.5 text-xs text-muted-foreground";
 
-	// Not a <form>: the live preview can contain real <form> sections (Contact / built
-	// forms), and nested <form> elements are invalid HTML — React 19 errors on every
-	// render, flooding the console and hanging the tab. Save is an explicit button below.
+	// not a <form>: the preview can hold real <form> sections and React 19 errors on nesting
 	return (
 		<div className="flex flex-col xl:h-[calc(100dvh-4rem)] xl:flex-row">
 			{/* the design gives this editor no title bar, so the h1 is for AT only */}

@@ -1,10 +1,4 @@
-/**
- * Incremental-SSG render cache. Stores resolved route data keyed by `lang::path`,
- * tagged so content mutations can bust exactly the affected entries. The public
- * loaders read through `resolveRouteCached`; admin mutations call `invalidateTags`.
- *
- * Disable entirely with SSG_CACHE=off (useful when debugging).
- */
+// disable with SSG_CACHE=off
 import { like, sql } from "drizzle-orm";
 
 import type { DB } from "./db";
@@ -13,11 +7,7 @@ import { renderCache } from "./schema";
 const ENABLED = process.env.SSG_CACHE !== "off";
 const TTL_SECONDS = 7 * 24 * 60 * 60; // backstop; precise invalidation is the primary mechanism
 
-// Entries hold rendered HTML and the resolved payload's own shape, so a change
-// to how rich text serialises, or a field added to what is cached, makes every
-// existing entry wrong. Bump this when that happens; old rows are then
-// unreachable and age out on the TTL. v3: ResolvedPost gained fileUrl and
-// youtubeUrl, which a v2 entry cannot have.
+// bump when the rendered HTML or the cached payload's shape changes; old rows age out on the TTL
 const FORMAT = "v3";
 
 export const cacheKey = (path: string, lang: string) =>

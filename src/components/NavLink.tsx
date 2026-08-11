@@ -6,11 +6,6 @@ type Props = AnchorHTMLAttributes<HTMLAnchorElement> & {
 	children?: ReactNode;
 };
 
-/**
- * Internal links navigate client-side (SPA, with the router's View Transition);
- * external/hash/mailto/tel and empty hrefs fall back to a plain anchor. Drop-in
- * replacement for `<a href>` across the public site.
- */
 export function NavLink({ href, children, ...rest }: Props) {
 	if (!href || /^(https?:|mailto:|tel:|#)/.test(href)) {
 		return (
@@ -19,9 +14,7 @@ export function NavLink({ href, children, ...rest }: Props) {
 			</a>
 		);
 	}
-	// `to` accepts a fully-resolved path string at runtime; the router matches it
-	// against the route tree (the `$` splat for content, explicit functional routes).
-	// Its static type is the union of authored routes, which a resolved path is not.
+	// a resolved path is a valid runtime target but not in the authored-route union
 	return (
 		<Link to={href as LinkComponentProps<"a">["to"]} {...rest}>
 			{children}

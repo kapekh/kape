@@ -19,10 +19,7 @@ const xmlEscape = (s: string) =>
 	s.replace(/[&<>'"]/g, (c) => `&#${c.charCodeAt(0)};`);
 
 async function handler({ request }: { request: Request }) {
-	// Collect language-agnostic paths, then expand per language below.
-	// Collection landings are ordinary pages, so the pages query below picks up the
-	// ones that exist. Listing every prefix in COLLECTIONS instead advertised a
-	// landing per collection whether or not anyone had authored it.
+	// collection landings are ordinary pages; listing every prefix advertised a landing nobody had authored
 	const paths = new Set<string>(["/"]);
 
 	// The router's prefix list is the fallback, not the source: a site that has

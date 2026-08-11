@@ -71,12 +71,7 @@ describe("module table points at things that exist", () => {
 	});
 });
 
-/**
- * The drift that will actually happen is a *new* domain feature: an `alumni` area,
- * an `adminAlumni` router, an `/admin/alumni` screen, and nobody remembering to add
- * a MODULES entry. Every check above passes in that world, and the feature ships
- * switched on for every install. These two are the reverse direction.
- */
+// the drift that happens is a new feature nobody adds to MODULES, which then ships on for every install
 describe("every area key is claimed, by a module or by the core", () => {
 	const claimedRouters = new Set(MODULES.flatMap((m) => m.routers));
 	const claimedPaths = new Set(MODULES.flatMap((m) => m.navPaths));
@@ -108,12 +103,7 @@ describe("every area key is claimed, by a module or by the core", () => {
 	});
 });
 
-/**
- * The third axis, and the one that reaches the public site. A router or a nav path
- * nobody claims costs an operator a screen they should not have; a *source* nobody
- * claims is a section in the catalogue, placeable on a public page, reading a table
- * out of a feature this install never asked for.
- */
+// a source nobody claims is placeable on a public page, reading a table this install never asked for
 describe("every query source is claimed, by a module or by the core", () => {
 	const claimed = new Set<string>(MODULES.flatMap((m) => m.sources));
 	const offered = [
@@ -196,11 +186,7 @@ describe("every taxonomy is claimed, by a module or by the core", () => {
 	});
 });
 
-/**
- * `canSee` in admin.tsx returns true when a path has no NAV_AREA entry, so a new
- * admin screen nobody mapped is visible to every admin user whatever their role -
- * and, being outside NAV_AREA, invisible to the partition above as well.
- */
+// canSee returns true for a path with no NAV_AREA entry, so an unmapped screen is visible to everyone
 describe("every admin screen has a permission area", () => {
 	const routeDir = join(import.meta.dirname, "..", "routes");
 	const files = readdirSync(routeDir).filter(
@@ -367,10 +353,7 @@ describe("a section keeps the sources that still resolve", () => {
 	});
 });
 
-/**
- * The picker draws buttons; `sections` reaches the database as free-form JSON from
- * the client, so this is the check that actually holds the line.
- */
+// sections reaches the database as free-form JSON, so the picker is not the check
 describe("the saved envelope, not just the picker", () => {
 	const node = (type: string, source?: string): SectionNode => ({
 		id: "x",
@@ -444,16 +427,7 @@ describe("the saved envelope, not just the picker", () => {
 	});
 });
 
-/**
- * Modules are independent checkboxes, so a school form offering projects to link
- * to is a screen from one module reading another's router. A disabled router
- * answers FORBIDDEN, which rejects the whole `Promise.all` and leaves the page on
- * "Loading…" for ever — a worse failure than the missing feature, and invisible to
- * any test that only tries all-on and all-off.
- *
- * So: an admin screen that reaches into another module has to ask first, and the
- * only way to ask is `useModules`.
- */
+// a disabled router answers FORBIDDEN, which rejects the whole Promise.all and hangs the page; all-on and all-off never see it
 describe("no admin screen calls another module's router unguarded", () => {
 	const owner = new Map<string, string>();
 	for (const m of MODULES) for (const r of m.routers) owner.set(r, m.id);
@@ -491,10 +465,7 @@ describe("no admin screen calls another module's router unguarded", () => {
 		if (!cross.length) continue;
 
 		it(`${file} guards ${cross.join(", ")}`, () => {
-			// Remove every call that is wrapped, and named after the module that owns
-			// what it calls; a call still standing is one this screen makes whatever
-			// the install has. Checking for the import instead passed on a file that
-			// imported `useModules` and then called the router anyway.
+			// checking for the import passed a file that imported useModules and called the router anyway
 			const unguarded = src.replace(GUARDED, (whole, id, router) =>
 				owner.get(router) === id ? "" : whole,
 			);

@@ -35,16 +35,9 @@ type ProjectSeed = {
 	location: { schoolName: string; lat: string; lng: string };
 	name: Copy;
 	summary: Copy;
-	/**
-	 * Defaults to TAIL alone. On every source route but dep and iep the meta
-	 * description and the first body paragraph are the same sentence; it is seeded
-	 * once, as the summary, so the page does not print it twice.
-	 */
+	// the meta description and the first body paragraph are the same sentence, so it is seeded once
 	body?: { en: string[]; km: string[] };
-	/**
-	 * Sectioned English body, overriding `body.en`. Khmer keeps whatever `body`
-	 * gives it, so the Khmer page holds today's content until KAPE translates.
-	 */
+	// khmer keeps whatever body gives it, so the Khmer page holds today's content until KAPE translates
 	blocks?: Block[];
 	snapshots?: ProjectSnapshot[];
 };

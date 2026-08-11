@@ -305,9 +305,7 @@ export function Header({
 		if (hoverTimer.current) clearTimeout(hoverTimer.current);
 		hoverTimer.current = null;
 	};
-	// Hover intent: a cursor crossing the nav on its way to Donate should not flash
-	// three panels open. Only the first open waits; switching between triggers while
-	// a panel is already up is instant, and leaving gets a grace period to come back.
+	// hover intent: only the first open waits, so a cursor crossing the nav opens nothing
 	const hoverOpen = (id: number | null) => {
 		cancelHover();
 		if (id == null || openId != null) {
@@ -388,9 +386,7 @@ export function Header({
 				</div>
 			</div>
 
-			{/* Header + mega panel share a hover region so moving into the panel doesn't close it.
-			    The sticky lives HERE (not on <header>) because a sticky element only sticks within
-			    its parent's box — this wrapper's parent is <body>, so it stays pinned page-wide. */}
+			{/* sticky lives here, not on <header>: an element only sticks within its parent's box */}
 			{/* biome-ignore lint/a11y/noStaticElementInteractions: layout wrapper, not a control. The handlers only cancel a hover timer; every menu it opens is also reachable by the nav buttons' onClick and aria-expanded. */}
 			<div
 				onMouseLeave={hoverClose}
@@ -519,9 +515,7 @@ export function Header({
 					</div>
 				</header>
 
-				{/* Mega panel — rendered OUTSIDE the header so its backdrop-filter frosts the PAGE
-				    behind it (not the header's stacking context). Hangs off the header's bottom edge,
-				    same width as the header's own container, only as tall as its contents. */}
+				{/* outside the header so backdrop-filter frosts the page, not the header's stacking context */}
 				{openNode && (
 					<div
 						className="hidden lg:block fixed left-1/2 z-40 w-full max-w-7xl -translate-x-1/2 overflow-y-auto rounded-b-2xl border border-t-0 border-border/60 bg-card/95 backdrop-blur-2xl shadow-[var(--shadow-soft)] thin-scroll animate-[mega-in_0.2s_ease-out] motion-reduce:animate-none"

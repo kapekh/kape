@@ -2,14 +2,7 @@ import type { ReactNode } from "react";
 
 import { cn } from "#/lib/utils.ts";
 
-/**
- * What a list says when it holds nothing. Two cases, because they need
- * different answers: nothing exists yet (offer the create action), or nothing
- * matches what was typed (offer to clear it).
- *
- * Moved here from `list-ui` so the ten lists are not the only surfaces that can
- * have one. `list-ui` re-exports it, so those ten did not notice.
- */
+// two cases: nothing exists yet, or nothing matches what was typed
 export function EmptyState({
 	title,
 	description,

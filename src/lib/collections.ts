@@ -1,10 +1,4 @@
-/**
- * Flat content collections. Every content type owns ONE top-level URL prefix; a
- * record lives at `/<prefix>/<slug>` and the landing at `/<prefix>` (a normal page
- * with a listing section). The path resolver (`resolveRoute`) and the public links
- * both read this single map. Old nested paths 301-redirect here (LEGACY_REDIRECTS),
- * but only while no page has been authored at the old path — the page tree wins.
- */
+// one top-level prefix per content type; the page tree wins over a legacy redirect
 
 export type CollectionKind = "post" | "album" | "project" | "people";
 
@@ -69,13 +63,7 @@ export const COLLECTIONS: Record<string, CollectionDef> = {
 export const collectionFor = (prefix: string): CollectionDef | undefined =>
 	COLLECTIONS[prefix];
 
-/**
- * Content types that are internal-only and never served on the public site:
- * no detail page (route resolver skips them), no page-section listing, and
- * excluded from the sitemap. Single source of truth for all three so the lists
- * can't drift (they previously did — `event` was blocked in the sitemap and in
- * section queries but still resolvable as a detail page).
- */
+// one source of truth for three lists: event was blocked in the sitemap but still resolvable as a detail page
 export const NON_PUBLIC_CONTENT_TYPES = new Set([
 	"internal_news",
 	"document",
@@ -93,11 +81,7 @@ export const resolvesUnder = (col: CollectionDef, contentType: string) =>
 		? !NON_PUBLIC_CONTENT_TYPES.has(contentType)
 		: Boolean(col.alsoResolves?.includes(contentType));
 
-/**
- * Old nested paths → new flat paths (301). Keys are matched as either an exact
- * path or a path prefix (`old` + "/" + tail → `new` + "/" + tail). Order longest
- * first so the most specific old prefix wins.
- */
+// longest first, so the most specific old prefix wins
 export const LEGACY_REDIRECTS: { from: string; to: string }[] = [
 	{ from: "who-we-are/news", to: "news" },
 	{ from: "what-we-do/impact-stories", to: "stories" },

@@ -9,11 +9,6 @@ import { clearCache } from "#/server/render-cache";
 import { resolvePermissions } from "#/server/repo/roles";
 import { getSettings } from "#/server/repo/site";
 
-/**
- * Per-request tRPC context. Exposes the database, the authenticated user
- * (resolved from the session cookie), and the user's effective permission areas
- * (resolved from their role; `admin` is the super-role with everything).
- */
 export async function createTRPCContext(opts?: { req?: Request }) {
 	const cookies = parseCookies(opts?.req?.headers.get("cookie") ?? null);
 	const auth = await validateToken(db, cookies[SESSION_COOKIE]);
@@ -44,11 +39,7 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
 	return next({ ctx: { ...ctx, user: ctx.user } });
 });
 
-/**
- * Requires the admin role. Any admin *mutation* busts the incremental-SSG render
- * cache afterwards, so edits surface on the public site immediately (reads re-warm
- * the cache lazily). Reads pass through untouched.
- */
+// any admin mutation busts the SSG render cache, so edits surface publicly at once
 export const adminProcedure = protectedProcedure.use(
 	async ({ ctx, next, type, path }) => {
 		// `path` is "<routerKey>.<proc>".

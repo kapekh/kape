@@ -2,11 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { PAGE_TITLE_MAX, segmentProblem, toSegment } from "./slug";
 
-/**
- * The two the audit actually saved: `ui1 slug with spaces`, which reaches the
- * sitemap as a raw space in `<loc>` and gets the entry dropped, and
- * `../ui1-escape`, which the editor prints as a URL that 404s.
- */
+// a raw space in <loc> drops the sitemap entry, and ../ui1-escape prints as a URL that 404s
 describe("segmentProblem", () => {
 	it("refuses spaces, and suggests the segment that would have worked", () => {
 		expect(segmentProblem("ui1 slug with spaces")).toBe(

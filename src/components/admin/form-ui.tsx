@@ -5,24 +5,14 @@ import { Button, buttonVariants } from "#/components/ui/button.tsx";
 import { Card } from "#/components/ui/card.tsx";
 import { inputClass } from "#/components/ui/input.tsx";
 
-/**
- * The three class strings 23 files spread onto their own elements. They are the
- * primitives' own strings rather than copies of them, so a hand-rolled
- * `<input>` and an `<Input>` cannot drift apart.
- */
+// the primitives' own strings, so a hand-rolled input and an <Input> cannot drift apart
 export const fieldInput = inputClass;
-export const fieldLabel =
-	"block text-[13px] font-medium text-admin-ink mb-2";
+export const fieldLabel = "block text-[13px] font-medium text-admin-ink mb-2";
 export const cancelButtonClass = buttonVariants({
 	variant: "secondary",
 	size: "md",
 });
 
-/**
- * Sticky editor header: page title on the left, actions on the right (pass the
- * Cancel link as children; the primary Save submit button is rendered here).
- * Sits just below the admin top bar.
- */
 export function EditorHeader({
 	title,
 	saving,
@@ -66,9 +56,7 @@ export function EditorHeader({
 	);
 }
 
-/** Two-column editor body: main content + a sticky settings rail. Capped and
- *  centred so fields don't stretch absurdly wide and the rail never strands a
- *  lone card in a sea of open space on large screens. */
+// capped and centred, or fields stretch and the rail strands a lone card
 export function EditorGrid({
 	main,
 	aside,
@@ -117,22 +105,7 @@ export type FieldControlProps = {
 	"aria-describedby"?: string;
 };
 
-/**
- * One labelled form field: the label, the required marker, an optional hint and
- * an optional error, with the id plumbing that ties them to the control.
- *
- * The control is a render prop rather than a fixed `<input>` because admin forms
- * use inputs, textareas, selects and the media picker in the same slot. Spread
- * what it gives you onto whatever you render:
- *
- *     <Field label="URL segment" required hint="Lowercase, no spaces." error={err}>
- *       {(p) => <input {...p} className={fieldInput} value={v} onChange={…} />}
- *     </Field>
- *
- * The marker is an `*` with a text alternative, not `*` alone: an asterisk is
- * punctuation to a screen reader, and `required` on the control is what a form
- * actually reads. Both are set, so it lands for sighted and non-sighted users.
- */
+// render prop so inputs, textareas, selects and the picker share the slot; the required marker needs a text alternative, an asterisk is punctuation to a screen reader
 export function Field({
 	label,
 	required,

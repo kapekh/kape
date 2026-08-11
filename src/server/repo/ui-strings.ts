@@ -66,10 +66,7 @@ export async function listUiStrings(db: DB): Promise<UiStringList> {
 	};
 }
 
-/**
- * A key outside the shipped dictionary and outside the table is a typo: no
- * component reads it, so the row would sit here for ever changing nothing.
- */
+// no component reads a key outside the shipped dictionary, so the row would sit there changing nothing
 async function requireKnownKey(db: DB, key: string): Promise<void> {
 	if (Object.hasOwn(defaultUiStrings, key)) return;
 	const [row] = await db
@@ -92,11 +89,7 @@ async function requireLanguage(db: DB, lang: string): Promise<void> {
 	if (!row) throw new Error(`"${lang}" is not a language on this site.`);
 }
 
-/**
- * Drop the override so the key falls back to its shipped default again. The row
- * goes rather than being rewritten with that default: a stored copy stops
- * tracking the default, and the next release's wording never reaches the site.
- */
+// the row goes rather than being rewritten with the default: a stored copy stops tracking it
 export async function resetUiString(
 	db: DB,
 	key: string,

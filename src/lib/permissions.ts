@@ -1,11 +1,4 @@
-/**
- * Area-based permissions for custom roles. A "role" (DB row) grants a set of
- * these areas. The `admin` role is a super-role (all areas, always — special-
- * cased in code so new areas are auto-granted and it can never be locked out).
- *
- * Areas are coarse (one per feature area, not per procedure) so they map cleanly
- * to tRPC routers (server enforcement) and admin nav items (client gating).
- */
+// areas are coarse, one per feature area, so they map onto tRPC routers and nav items; admin is special-cased and can never be locked out
 export type PermissionArea =
 	| "pages"
 	| "posts"

@@ -65,9 +65,7 @@ function zodIssues(message: string): ZodIssue[] {
 function constraintSentence(message: string, action: Action): string | null {
 	const m = CONSTRAINT.exec(message);
 	if (!m) return null;
-	// A foreign key fails in opposite directions: saving, something this record
-	// points at is gone; deleting, something still points at this one. Telling a
-	// deleter to "pick it again" sends them nowhere.
+	// an fk fails in both directions; "pick it again" sends a deleter nowhere
 	if (m[1] === "FOREIGN KEY")
 		return action === "delete"
 			? "Something else still points at this record. Remove those links first, then try again."
@@ -82,12 +80,7 @@ function constraintSentence(message: string, action: Action): string | null {
 		: "Another record already uses one of these values. Change it and save again.";
 }
 
-/**
- * A rejected admin save otherwise toasts whatever crossed the wire: a tRPC
- * input rejection arrives as a serialised ZodError array, an auth failure as
- * the bare code "UNAUTHORIZED", a stale reference as a raw SQLite constraint
- * string, and an aborted request as "Failed to fetch".
- */
+// otherwise a save toasts a serialised ZodError, a bare "UNAUTHORIZED" or a raw SQLite constraint string
 export function saveErrorMessage(
 	error: unknown,
 	action: Action = "save",

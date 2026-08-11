@@ -19,14 +19,7 @@ function readDismissed(): number[] {
 	}
 }
 
-/**
- * Announcement modal. Several deadlines can run at once, so
- * every open notice is reachable here, not just the soonest. Client-only
- * (fetched on mount) so prerendered/cached static HTML never freezes a
- * deadline-driven notice. Built on the native `<dialog>` so the focus trap,
- * Esc-to-close and focus restore are the browser's, not ours — the element
- * stays mounted once opened because unmounting skips the native focus restore.
- */
+// stays mounted once opened: unmounting skips the native focus restore
 export function AnnouncementPopup() {
 	const { lang, t } = useLang();
 	const ref = useRef<HTMLDialogElement>(null);

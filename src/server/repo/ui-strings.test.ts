@@ -6,15 +6,7 @@ import { afterAll, describe, expect, it } from "vitest";
 
 import { defaultUiStrings } from "#/lib/ui-strings.default";
 
-/**
- * The editor's guards, driven through the repo rather than the screen: an
- * invented key, and the difference between "back to the default" and "the
- * default, stored". A stored copy of the default no longer tracks it, so the
- * next release's wording never reaches a site that once clicked Reset.
- *
- * `bun:sqlite` is a Bun builtin, so each case runs in a Bun subprocess against
- * a freshly installed database, the same way admin-guards.test.ts does.
- */
+// each case runs in a Bun subprocess: bun:sqlite is a Bun builtin
 const dir = mkdtempSync(join(tmpdir(), "ui-strings-"));
 const dbPath = join(dir, "ui-strings.db");
 const root = process.cwd();

@@ -1,9 +1,4 @@
-/**
- * Abuse control for public endpoints (login, contact form, newsletter, payment
- * webhook). Fixed-window, in-memory: sufficient for a single-instance
- * deployment; swap for a shared store (Redis/DB) if you scale horizontally.
- * Server-only.
- */
+// fixed-window and in-memory, so single-instance only; swap for a shared store to scale horizontally
 import { getRequestIP } from "@tanstack/react-start/server";
 
 import { env } from "#/env";
@@ -39,12 +34,7 @@ function isLocalAddress(ip: string): boolean {
 
 let warnedUndeclaredProxy = false;
 
-/**
- * Every request arriving from a local address means something in front is
- * relaying them, and with no declared header the whole user base shares one
- * rate-limit bucket. That fails closed, so it shows up as a site-wide lockout in
- * production and nowhere else. Say so once, naming the fix.
- */
+// every request from a local address means something in front is relaying them, and with no declared header the whole user base shares one bucket
 function warnIfProxyUndeclared(peer: string): void {
 	if (warnedUndeclaredProxy || env.TRUSTED_PROXY_HEADER) return;
 	// In dev every request is loopback, so the signal means nothing there.
@@ -62,24 +52,7 @@ function warnIfProxyUndeclared(peer: string): void {
 	);
 }
 
-/**
- * The client address to key rate limits on.
- *
- * Defaults to the socket peer address, which the caller cannot forge. Proxy
- * headers (`x-forwarded-for`, `cf-connecting-ip`, …) are caller-controlled: a
- * limiter keyed on one is no limiter at all, because rotating the header buys a
- * fresh bucket per request. So a header is read only when the operator names it
- * in TRUSTED_PROXY_HEADER, declaring that a proxy sets it and that the app
- * cannot be reached around that proxy.
- *
- * Within that header the RIGHTMOST element wins. An appending proxy (Caddy,
- * Traefik, and nginx's usual `$proxy_add_x_forwarded_for` recipe) produces
- * "<what the caller sent>, <real client>", so the leftmost element is the
- * caller's own value and keying on it restores the exact bypass the header was
- * meant to close. The rightmost is the one the nearest trusted proxy appended.
- * A single-value overwriting header (`cf-connecting-ip`) is unaffected: it is
- * both leftmost and rightmost.
- */
+// a proxy header is caller-controlled, so it is read only when the operator names it; the RIGHTMOST element wins, an appending proxy leaves the caller's own value leftmost
 export function clientIp(request: Request): string {
 	const header = env.TRUSTED_PROXY_HEADER;
 	if (header) {

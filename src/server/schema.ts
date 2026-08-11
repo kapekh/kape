@@ -13,16 +13,7 @@ import {
 import type { FormField } from "#/lib/forms";
 import type { SectionNode } from "#/lib/sections";
 
-/**
- * CMS schema — single source of truth (Drizzle / SQLite).
- *
- * Model: blog **posts** (one table, `content_type` + `meta` JSON) + rich-text **pages** +
- * an admin-built **nav_items** tree. All translatable TEXT lives in `translations` so languages
- * can be added at runtime with no migration. See docs/CONTENT-MODEL.md.
- *
- * Part-B seams baked in now: `tenant_id` on every content/config table (single default tenant),
- * and `posts.content_type` is an FK to `content_types` (a seed table), not a hardcoded enum.
- */
+// all translatable text lives in translations, so a language is added at runtime with no migration
 
 const timestamps = {
 	createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
@@ -224,11 +215,7 @@ export const slugRedirects = sqliteTable(
 	(t) => [unique("uq_redirect").on(t.tenantId, t.entityType, t.fromSlug)],
 );
 
-/**
- * Incremental-SSG render cache: resolved route data keyed by path+lang. Populated
- * read-through on first request (and by scripts/prerender.ts); invalidated by tag
- * when content changes. `tags` is a `|`-delimited tag list for LIKE-based busting.
- */
+// tags is a |-delimited list, for LIKE-based busting
 export const renderCache = sqliteTable("render_cache", {
 	key: text("key").primaryKey(), // `${lang}::${path}`
 	data: text("data").notNull(), // JSON-serialized resolved route
@@ -254,13 +241,7 @@ export const staff = sqliteTable("staff", {
 	sort: integer("sort").notNull().default(0),
 });
 
-/**
- * Unified people directory — both the public Team/Leadership and the internal
- * staff roster live here (no more `person` posts + separate `staff` table).
- * `isPublic` controls whether someone appears on the public site; `tier` groups
- * them (board | smt | pm | team | staff). Bio is bilingual rich text in
- * `translations` (entityType "person", field "bio").
- */
+// isPublic controls whether someone appears on the public site; bio is bilingual rich text in translations
 export const people = sqliteTable(
 	"people",
 	{
@@ -295,9 +276,7 @@ export const people = sqliteTable(
 
 /* ---- Fundraising campaigns + donations (Baray payment gateway) ---- */
 
-// A fundraising campaign / project people can donate toward. Every donation
-// belongs to one. Bilingual title/blurb live inline (en/km) like site_settings;
-// `presets` + `impactTiers` are JSON, everything is editable in /admin/campaigns.
+// every donation belongs to one; title and blurb are inline bilingual like site_settings
 export const campaigns = sqliteTable(
 	"campaigns",
 	{
@@ -336,10 +315,7 @@ export const campaigns = sqliteTable(
 	(t) => [unique("uq_campaign_slug").on(t.tenantId, t.slug)],
 );
 
-// One row per donation attempt. Created `pending` when the donor is sent to
-// Baray's hosted page; flipped to `paid` by the Baray webhook (matched on the
-// unique order_id). `bank` records which rail completed it (aba/acleda/spn/wing).
-// `visibility` is how the donor is credited on the public supporters wall.
+// pending when the donor is sent to the hosted page, flipped to paid by the webhook on the unique order_id
 export const donations = sqliteTable(
 	"donations",
 	{
@@ -513,11 +489,7 @@ export const users = sqliteTable(
 	(t) => [unique("uq_user_email").on(t.tenantId, t.email)],
 );
 
-/**
- * Auth sessions. The JWT carries { sid, uid }; this row makes revocation
- * possible — a token is only valid while its session exists, is unexpired,
- * and is not revoked.
- */
+// the row is what makes a JWT revocable
 export const sessions = sqliteTable(
 	"sessions",
 	{
@@ -533,11 +505,6 @@ export const sessions = sqliteTable(
 	(t) => [index("ix_session_user").on(t.userId)],
 );
 
-/**
- * Managed reference lists (taxonomies). e.g. taxonomy="program" → terms NGS,
- * HCC, … Relation meta-fields (event.program, job.location, *.category) select
- * a term `key`; admins manage each list on its own page (e.g. /admin/locations).
- */
 export const terms = sqliteTable(
 	"terms",
 	{
@@ -611,12 +578,7 @@ export const partners = sqliteTable("partners", {
 	sort: integer("sort").notNull().default(0),
 });
 
-/**
- * Hierarchical management / organizational chart. A self-referencing tree:
- * `parentId` is the node this person reports to (null = top of the chart).
- * `personId` optionally links a `people` row so the node shows that profile's
- * photo and links to their page; otherwise `name`/`title` are typed directly.
- */
+// self-referencing: parentId null is the top of the chart, personId links a people row
 export const orgNodes = sqliteTable(
 	"org_nodes",
 	{

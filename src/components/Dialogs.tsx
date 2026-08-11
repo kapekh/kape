@@ -3,13 +3,6 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useT } from "#/lib/i18n";
 import { useModalPanel } from "#/lib/use-modal-panel";
 
-/**
- * In-app replacements for the browser's native dialogs — we never use those.
- * Imperative API so it's a drop-in for the old style: `if (!(await confirm("…")))
- * return;`. Mount <DialogHost/> once (in the root) and call confirm()/prompt()/
- * toast() from anywhere.
- */
-
 type ConfirmOpts = {
 	title?: string;
 	message: string;
@@ -38,24 +31,14 @@ const emit = () => {
 	for (const l of reqListeners) l([...queue]);
 };
 
-// Read at call time, not at mount: a menu item that opens a dialog unmounts
-// itself first, so by the time the modal renders `document.activeElement` is
-// already BODY and there is nothing left to hand focus back to.
+// read at call time: the opener menu unmounts first, so activeElement is already BODY
 function openerNow(): HTMLElement | null {
 	if (typeof document === "undefined") return null;
 	const el = document.activeElement;
 	return el instanceof HTMLElement && el !== document.body ? el : null;
 }
 
-/**
- * Put focus back where the dialog took it from.
- *
- * The opener is often gone by now — confirming a delete removes the row, and
- * the `⋯` button that opened the dialog with it. Falling back to `<main>`
- * rather than letting focus default to BODY is what keeps the next Tab inside
- * the table the row was in, instead of at the top of the document behind the
- * whole sidebar.
- */
+// fall back to <main>, not BODY: keeps the next Tab inside the table the row was in
 function focusMain() {
 	const main = document.querySelector("main");
 	if (!main) return;
@@ -68,12 +51,7 @@ function restoreFocus(opener: HTMLElement | null) {
 	if (opener?.isConnected) opener.focus();
 	else focusMain();
 
-	// The opener usually outlives the dialog by a frame or two and only then
-	// goes: confirming a delete resolves as soon as the mutation returns, and the
-	// row — with the `⋯` button we just handed focus back to — disappears when
-	// the list refetches. The browser drops focus to BODY silently when that
-	// happens, so check again once the list has settled. Only ever fires when
-	// focus is genuinely nowhere, so it cannot steal it from the user.
+	// the opener can vanish when the list refetches, so recheck; only fires when focus is nowhere
 	for (const ms of [250, 1000]) {
 		setTimeout(() => {
 			if (document.activeElement === document.body) focusMain();
@@ -153,25 +131,11 @@ export function DialogHost() {
 
 	return (
 		<>
-			{top && (
-				<Modal key={top.id} req={top} onFinish={finish} toasts={ts} />
-			)}
-			{/*
-			  The `<output>` itself is the live region (implicit role=status,
-			  aria-live=polite) and is mounted from first paint, empty or not. A
-			  region that appears in the same frame as its first message is one the
-			  screen reader was not watching yet and the message goes unread; the
-			  announcement has to land as a text change inside a region already
-			  there. Each toast is a plain div inside it, not its own region.
-
-			  z-300 clears the modal's z-150 so a toast raised while a confirm is
-			  open is on top of it, not behind.
-			*/}
+			{top && <Modal key={top.id} req={top} onFinish={finish} toasts={ts} />}
+			{/* <output> mounted from first paint: a region born in the same frame as its message goes unread */}
 			<output
 				className="pointer-events-none fixed bottom-4 right-4 z-[300] flex w-[min(92vw,22rem)] flex-col gap-2"
-				// while a dialog is open its `aria-modal` hides everything outside it,
-				// so the in-dialog mirror below does the announcing and this copy
-				// stays visual-only — otherwise the toast is read twice
+				// aria-modal hides this copy; the in-dialog mirror announces, or the toast reads twice
 				aria-hidden={top ? true : undefined}
 			>
 				{ts.map((t) => (
@@ -193,12 +157,7 @@ export function DialogHost() {
 	);
 }
 
-/**
- * The announcing half of a toast while a dialog is open. Rendered inside the
- * dialog panel, because `aria-modal="true"` takes everything outside it out of
- * the accessibility tree — including the visible toast host. Text only: the
- * visible toast is still the one on screen.
- */
+// aria-modal takes the visible toast host out of the a11y tree, so announce from inside
 function ToastMirror({ toasts }: { toasts: Toast[] }) {
 	return (
 		<output className="sr-only">
@@ -236,11 +195,7 @@ function Modal({
 	const panelRef = useModalPanel(cancel);
 	const headingId = useId();
 
-	// Covers all four exits at once — Escape, Cancel, Confirm and a backdrop
-	// click all reach here by unmounting. Deferred a microtask because
-	// `useModalPanel` restores focus in its own cleanup to whatever was active
-	// when the panel mounted (BODY, when a menu item opened us), and that runs
-	// synchronously during this unmount; the microtask lands after it.
+	// microtask: useModalPanel restores focus synchronously in its own cleanup first
 	const opener = req.opener;
 	useEffect(
 		() => () => {
@@ -324,7 +279,9 @@ function Modal({
 						className={`inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-medium transition-colors duration-150 ease-out hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/50 ${danger ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}
 					>
 						{o.confirmLabel ??
-							(isPrompt ? t("dialog.ok", "OK") : t("dialog.confirm", "Confirm"))}
+							(isPrompt
+								? t("dialog.ok", "OK")
+								: t("dialog.confirm", "Confirm"))}
 					</button>
 				</div>
 			</div>

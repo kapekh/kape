@@ -1,10 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-/**
- * Serves locally-stored uploads (the dev fallback when R2 isn't configured).
- * In production with R2, media URLs point at R2/its public domain and never
- * hit this route. More specific than the catch-all `/$` page route, so it wins.
- */
+// more specific than the catch-all /$ page route, so it wins; production with R2 never reaches it
 async function handler({ request }: { request: Request }) {
 	const name = new URL(request.url).pathname
 		.replace(/^\/uploads\//, "")

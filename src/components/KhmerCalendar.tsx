@@ -4,9 +4,7 @@ import { useLang } from "@/lib/i18n";
 
 const KM_DIGITS = ["០", "១", "២", "៣", "៤", "៥", "៦", "៧", "៨", "៩"];
 
-// Chrome carries no `km` locale data at all (supportedLocalesOf("km") is empty
-// as of 149), so Intl answers a Khmer request in English. This calendar's own
-// Khmer names have to be spelled out; the Gregorian line below can use Intl.
+// chrome ships no km locale data (149), so Intl answers a Khmer request in English
 const KM_MONTHS = [
 	"មករា",
 	"កុម្ភៈ",

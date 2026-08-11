@@ -326,10 +326,7 @@ function translationRows(entityId: number, input: PostInput) {
 	return rows;
 }
 
-/**
- * The unique index on (tenantId, slug) otherwise surfaces to the editor as
- * "UNIQUE constraint failed: posts.tenant_id, posts.slug".
- */
+// the unique index otherwise surfaces to the editor as a raw constraint string
 async function requireFreeSlug(
 	db: DB,
 	entity: "post" | "page" | "project",
@@ -511,11 +508,7 @@ type SlugMove = { id: number; slug: string; from: string };
 /** A transaction handle; the writes below run inside one, never on their own. */
 type Tx = Parameters<Parameters<DB["transaction"]>[0]>[0];
 
-/**
- * Where every page under `rootId` ends up once that node's path is `newSlug`.
- * Pure, so the walk can be planned before a transaction opens: `bun:sqlite`
- * takes a synchronous callback and nothing async may run inside one.
- */
+// pure, so the walk is planned before a transaction opens: bun:sqlite takes a synchronous callback
 function subtreeMoves(
 	all: PageNode[],
 	rootId: number,
@@ -554,11 +547,6 @@ function applyMoves(tx: Tx, moves: SlugMove[]): void {
 	}
 }
 
-/**
- * Recompute slugs for a subtree after a node's slug changed (rename or reparent),
- * recording a 301 redirect for every page whose URL moved. `newSlug` is the node's
- * freshly-computed path.
- */
 async function recomputeSubtree(
 	db: DB,
 	rootId: number,
@@ -665,12 +653,7 @@ function pageTranslationRows(entityId: number, input: PageInput) {
 	return rows;
 }
 
-/**
- * `resolveRoute` serves `/` by looking up this exact slug and has no fallback, so
- * a page that moves out from under it takes the whole front page with it and
- * nothing in the admin says so. Editing its content, sections and status is fine;
- * only its address is fixed.
- */
+// resolveRoute serves / by this exact slug with no fallback, so a page moving out from under it takes the front page with it
 const FRONT_PAGE_SLUG = "home";
 
 const frontPageSlug = async (db: DB, id: number) => {
@@ -845,11 +828,7 @@ export async function movePage(
 
 export async function deletePage(db: DB, id: number): Promise<void> {
 	if (await frontPageSlug(db, id)) refuseFrontPage("deleting it");
-	// Reparent children up to the deleted node's parent so the subtree isn't orphaned,
-	// recomputing their slugs (with 301s) under the new parent. Planned first and
-	// written in one transaction: it is a dozen statements over three tables, and a
-	// failure partway used to leave the tree half-reparented, carrying slugs that
-	// no longer matched where the pages hung.
+	// planned first and written in one transaction: a failure partway left the tree half-reparented
 	const all = await allPages(db);
 	const self = all.find((p) => p.id === id);
 	const newParentId = self?.parentId ?? null;
@@ -1117,11 +1096,7 @@ type MediaRef = {
 	clearBy?: "row";
 };
 
-/**
- * Every column that points at media.id. The "Used in" panel and deleteMedia
- * both walk this, so anything the panel lists is something the delete clears.
- * media-refs.test.ts fails if the schema grows a reference missing here.
- */
+// the "Used in" panel and deleteMedia both walk this; media-refs.test.ts fails if the schema grows a reference missing here
 export const MEDIA_REFS: MediaRef[] = [
 	{
 		kind: "Post cover",
@@ -1280,11 +1255,7 @@ async function refUsage(
 	return out;
 }
 
-/**
- * Columns holding authored text or JSON that an editor can drop a media URL
- * into. Unlike MEDIA_REFS these are not foreign keys: the URL is a substring of
- * someone's content, so a delete cannot clear it without rewriting that content.
- */
+// not foreign keys: the URL is a substring of someone's content, so a delete cannot clear it
 type MediaTextRef = {
 	kind: string;
 	table: SQLiteTable;
@@ -1363,21 +1334,11 @@ const TRANSLATED_ENTITIES: Record<
 	},
 };
 
-/**
- * A LIKE pattern matching `url` anywhere in a column. `%` and `_` inside the url
- * are escaped, so a stored name containing one cannot widen the match. It is
- * still a substring test: an image whose url is a prefix of another's is
- * reported for both. Uploads are uuid-named, which makes that improbable rather
- * than impossible, and over-reporting only costs a warning the operator can read.
- */
+// % and _ inside the url are escaped, so a stored name cannot widen the match; it is still a substring test
 const contains = (column: SQLiteColumn, url: string) =>
 	sql`${column} LIKE ${`%${url.replace(/[\\%_]/g, "\\$&")}%`} ESCAPE '\\'`;
 
-/**
- * Everywhere `url` appears inside stored content. Synchronous because
- * deleteMedia runs it inside its transaction — checking outside would leave a
- * window where an editor embeds the image between the check and the unlink.
- */
+// synchronous because deleteMedia runs it inside its transaction: checking outside leaves a window to embed the image
 type Queryable = DB | Parameters<Parameters<DB["transaction"]>[0]>[0];
 
 function mediaTextUsage(db: Queryable, url: string): MediaUsage[] {
@@ -1451,12 +1412,7 @@ export async function adminMediaUsage(
 	return out;
 }
 
-/**
- * Thrown instead of deleting when the file is embedded in stored content.
- * A foreign key can be cleared; an `<img src>` inside someone's HTML cannot be
- * removed without rewriting what they wrote, and doing that silently inside a
- * delete would be a worse defect than the broken image it prevents.
- */
+// an <img src> inside someone's HTML cannot be cleared without rewriting what they wrote
 export class MediaInUseError extends Error {
 	constructor(readonly usage: MediaUsage[]) {
 		const shown = usage.slice(0, 3).map((u) => `${u.kind}: ${u.label}`);
@@ -1596,12 +1552,7 @@ export async function deleteStaff(db: DB, id: number): Promise<void> {
 
 /* ---------------- Site settings ---------------- */
 
-/**
- * Bookkeeping the installer keeps in this table. Not site configuration, so it is
- * neither listed for editing nor writable through the admin: the settings screen
- * is a raw key/value grid with a Delete button on every row, and this is the one
- * kind of row where that button means something other than what it says.
- */
+// installer bookkeeping, not site configuration: the settings grid puts a Delete button on every row
 const INTERNAL_SETTINGS = new Set(["install_completed_at"]);
 
 const refuseInternal = (key: string) => {
