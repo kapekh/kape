@@ -1,5 +1,5 @@
 import type * as LType from "leaflet";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * Click-to-pick location map (keyless Leaflet + OSM). Click to drop a pin or
@@ -22,6 +22,9 @@ export function MapPicker({
 	);
 	const onPickRef = useRef(onPick);
 	onPickRef.current = onPick;
+	const [status, setStatus] = useState<"loading" | "ready" | "error">(
+		"loading",
+	);
 
 	// Initialise the map once.
 	// biome-ignore lint/correctness/useExhaustiveDependencies: lat/lng seed the initial centre only; re-running would rebuild the map on every keystroke
@@ -86,7 +89,10 @@ export function MapPicker({
 				onPickRef.current(e.latlng.lat.toFixed(6), e.latlng.lng.toFixed(6));
 			});
 			mapRef.current = map;
-		})();
+			setStatus("ready");
+		})().catch(() => {
+			if (!cancelled) setStatus("error");
+		});
 
 		return () => {
 			cancelled = true;
@@ -108,9 +114,19 @@ export function MapPicker({
 	}, [lat, lng]);
 
 	return (
-		<div
-			ref={ref}
-			className="h-72 w-full rounded-lg border border-border overflow-hidden z-0"
-		/>
+		<div className="relative h-72 w-full overflow-hidden rounded-xl border border-admin-border">
+			<div ref={ref} className="absolute inset-0 z-0" />
+			{status !== "ready" && (
+				<div className="absolute inset-0 z-10 grid place-items-center bg-admin-panel px-6 text-center text-[13px] text-admin-ink-muted">
+					{status === "loading" ? (
+						<span className="motion-safe:animate-pulse">Loading the map…</span>
+					) : (
+						<span>
+							The map could not load. Enter the coordinates by hand instead.
+						</span>
+					)}
+				</div>
+			)}
+		</div>
 	);
 }

@@ -1,6 +1,11 @@
+import { Check, ChevronDown, Search } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { inputClass } from "#/components/ui/input.tsx";
 
 export type SelectOption = { value: string; label: string };
+
+const OPTION =
+	"flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors duration-150 ease-out";
 
 /**
  * Reusable searchable single-select (combobox). Type to filter; click or Enter
@@ -33,6 +38,7 @@ export function SearchableSelect({
 	const [active, setActive] = useState(0);
 	const rootRef = useRef<HTMLDivElement>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
+	const triggerRef = useRef<HTMLButtonElement>(null);
 
 	const selected = options.find((o) => o.value === value);
 	const display = selected?.label ?? (value || "");
@@ -56,16 +62,26 @@ export function SearchableSelect({
 		);
 	});
 
+	/**
+	 * Focus goes back to the trigger on every keyboard exit. Without it the
+	 * search field unmounts under the caret and focus falls to `<body>`, which
+	 * puts a keyboard user back at the top of the page.
+	 */
+	function close() {
+		setOpen(false);
+		triggerRef.current?.focus();
+	}
+
 	function pick(v: string) {
 		onChange(v);
-		setOpen(false);
 		setQ("");
 		setActive(0);
+		close();
 	}
 
 	function onKeyDown(e: React.KeyboardEvent) {
 		if (e.key === "Escape") {
-			setOpen(false);
+			close();
 			return;
 		}
 		if (e.key === "ArrowDown") {
@@ -84,23 +100,33 @@ export function SearchableSelect({
 	return (
 		<div ref={rootRef} className={`relative ${className ?? ""}`}>
 			<button
+				ref={triggerRef}
 				id={id}
 				type="button"
 				disabled={disabled}
 				aria-haspopup="listbox"
 				aria-expanded={open}
 				onClick={() => setOpen((o) => !o)}
-				className="flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-background px-3 py-2 text-left text-sm transition focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/25 disabled:opacity-50"
+				className={`${inputClass} flex h-10 items-center justify-between gap-2 text-left`}
 			>
-				<span className={`truncate ${display ? "" : "text-muted-foreground"}`}>
+				<span
+					className={`truncate ${display ? "" : "text-admin-ink-subtle"}`}
+				>
 					{display || placeholder}
 				</span>
-				<span className="shrink-0 text-muted-foreground">▾</span>
+				<ChevronDown
+					aria-hidden="true"
+					className={`size-4 shrink-0 text-admin-ink-subtle transition-transform duration-200 ease-out ${open ? "rotate-180" : ""}`}
+				/>
 			</button>
 
 			{open && (
-				<div className="absolute z-30 mt-1 w-full min-w-[12rem] rounded-lg border border-border bg-card shadow-[var(--shadow-soft)]">
-					<div className="border-b border-border p-2">
+				<div className="absolute z-30 mt-1 w-full min-w-[12rem] rounded-xl border border-admin-border bg-admin-panel-raised shadow-[var(--shadow-soft)]">
+					<div className="relative border-b border-admin-border p-2">
+						<Search
+							aria-hidden="true"
+							className="pointer-events-none absolute left-5 top-1/2 size-4 -translate-y-1/2 text-admin-ink-subtle"
+						/>
 						<input
 							ref={inputRef}
 							value={q}
@@ -110,24 +136,29 @@ export function SearchableSelect({
 							}}
 							onKeyDown={onKeyDown}
 							placeholder="Search…"
-							className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-sm focus:outline-none focus:border-[var(--accent)]"
+							className={`${inputClass} h-10 pl-9`}
 						/>
 					</div>
-					<div className="thin-scroll max-h-56 overflow-y-auto py-1">
+					<div className="thin-scroll max-h-56 overflow-y-auto p-1">
 						{emptyOption !== undefined && (
 							<button
 								type="button"
 								onMouseDown={(e) => e.preventDefault()}
 								onClick={() => pick("")}
-								className={`block w-full px-3 py-1.5 text-left text-sm hover:bg-muted ${value === "" ? "font-medium text-[var(--accent)]" : "text-muted-foreground"}`}
+								className={`${OPTION} ${value === "" ? "font-medium text-admin-accent" : "text-admin-ink-muted hover:bg-admin-accent-soft"}`}
 							>
-								{emptyOption}
+								<span className="truncate">{emptyOption}</span>
+								{value === "" && (
+									<Check aria-hidden="true" className="ml-auto size-4" />
+								)}
 							</button>
 						)}
 						{filtered.length === 0 ? (
-							<div className="px-3 py-2 text-sm text-muted-foreground">
-								No matches
-							</div>
+							<p className="px-3 py-4 text-[13px] text-admin-ink-muted">
+								{options.length === 0
+									? "Nothing to choose from yet"
+									: `No matches for “${q}”`}
+							</p>
 						) : (
 							filtered.map((o, i) => (
 								<button
@@ -136,9 +167,14 @@ export function SearchableSelect({
 									onMouseDown={(e) => e.preventDefault()}
 									onMouseEnter={() => setActive(i)}
 									onClick={() => pick(o.value)}
-									className={`block w-full truncate px-3 py-1.5 text-left text-sm ${o.value === value ? "bg-[var(--accent)]/10 font-medium text-[var(--accent)]" : i === active ? "bg-muted" : "hover:bg-muted"}`}
+									// selected is the check and the accent text; the background is
+									// the keyboard cursor alone, or the two states cannot be told apart
+									className={`${OPTION} ${o.value === value ? "font-medium text-admin-accent" : "text-admin-ink"} ${i === active ? "bg-admin-accent-soft" : "hover:bg-admin-accent-soft"}`}
 								>
-									{o.label}
+									<span className="truncate">{o.label}</span>
+									{o.value === value && (
+										<Check aria-hidden="true" className="ml-auto size-4" />
+									)}
 								</button>
 							))
 						)}

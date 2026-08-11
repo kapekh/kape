@@ -64,7 +64,7 @@ export function LangTabs<
 				role="tablist"
 				aria-label="Language"
 				onKeyDown={onKeyDown}
-				className="mb-4 flex flex-wrap gap-1 border-b border-border"
+				className="mb-6 flex flex-wrap gap-1 border-b border-admin-border"
 			>
 				{languages.map((l, i) => {
 					const on = activeCode === l.code;
@@ -82,10 +82,12 @@ export function LangTabs<
 							// only the selected tab is a tab stop; the arrows move within
 							tabIndex={on ? 0 : -1}
 							onClick={() => setActive(l.code)}
-							className={`-mb-px flex items-center gap-1.5 rounded-t-lg border-b-2 px-4 py-2 text-sm font-medium transition ${on ? "border-[var(--accent)] text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+							className={`-mb-px flex items-center gap-2 rounded-t-lg border-b-2 px-4 py-2 text-sm font-medium outline-none transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-admin-focus/50 ${on ? "border-admin-accent bg-admin-accent-soft text-admin-ink" : "border-transparent text-admin-ink-muted hover:bg-admin-accent-soft hover:text-admin-ink"}`}
 						>
 							{l.name}
-							<span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+							<span
+								className={`rounded-full px-2 py-1 text-xs font-medium uppercase leading-none ${on ? "bg-admin-accent text-accent-foreground" : "bg-admin-neutral-soft text-admin-ink-muted"}`}
+							>
 								{l.code}
 							</span>
 						</button>
