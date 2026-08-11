@@ -1,63 +1,93 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import { Slot } from "radix-ui";
-import type * as React from "react";
+import * as React from "react";
 
 import { cn } from "#/lib/utils.ts";
 
+/**
+ * Four variants and three sizes, and that is the whole button vocabulary. The
+ * admin used to hold twelve primaries in six sizes, eight secondaries and a
+ * third family for icon buttons.
+ *
+ * `not-disabled:` on every hover rather than `disabled:pointer-events-none`:
+ * a disabled button still needs to answer the pointer, because the reason it
+ * is disabled is in its `title` and a tooltip on a dead element never opens.
+ * A disabled button does not fire click either way.
+ */
 const buttonVariants = cva(
-	"inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+	"inline-flex shrink-0 items-center justify-center gap-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors duration-150 ease-out outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50 disabled:cursor-not-allowed disabled:opacity-80 disabled:saturate-[0.35] aria-disabled:cursor-not-allowed aria-disabled:opacity-80 aria-disabled:saturate-[0.35] [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
 	{
 		variants: {
 			variant: {
-				default: "bg-primary text-primary-foreground hover:bg-primary/90",
-				destructive:
-					"bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40",
-				outline:
-					"border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+				primary:
+					"bg-admin-accent text-accent-foreground not-disabled:hover:bg-admin-accent/90",
 				secondary:
-					"bg-secondary text-secondary-foreground hover:bg-secondary/80",
+					"border border-admin-border bg-admin-panel text-admin-ink not-disabled:hover:border-admin-border-strong not-disabled:hover:bg-admin-accent-soft",
 				ghost:
-					"hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-				link: "text-primary underline-offset-4 hover:underline",
+					"text-admin-ink-muted not-disabled:hover:bg-admin-accent-soft not-disabled:hover:text-admin-ink",
+				danger:
+					"bg-admin-danger text-destructive-foreground not-disabled:hover:bg-admin-danger/90",
 			},
 			size: {
-				default: "h-9 px-4 py-2 has-[>svg]:px-3",
-				xs: "h-6 gap-1 rounded-md px-2 text-xs has-[>svg]:px-1.5 [&_svg:not([class*='size-'])]:size-3",
-				sm: "h-8 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5",
-				lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
+				sm: "h-8 px-3",
+				md: "h-10 px-4",
 				icon: "size-9",
-				"icon-xs": "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3",
-				"icon-sm": "size-8",
-				"icon-lg": "size-10",
 			},
 		},
 		defaultVariants: {
-			variant: "default",
-			size: "default",
+			variant: "primary",
+			size: "md",
 		},
 	},
 );
 
 function Button({
 	className,
-	variant = "default",
-	size = "default",
+	variant = "primary",
+	size = "md",
 	asChild = false,
+	disabledReason,
 	...props
 }: React.ComponentProps<"button"> &
 	VariantProps<typeof buttonVariants> & {
 		asChild?: boolean;
+		/**
+		 * Why this button is disabled, e.g. "No changes to save." A disabled
+		 * primary that says nothing reads as a failed render rather than a
+		 * deliberate state, which is what Save on every editor looked like.
+		 */
+		disabledReason?: string;
 	}) {
 	const Comp = asChild ? Slot.Root : "button";
+	const hintId = React.useId();
+	// asChild hands its props to someone else's element, and a sibling would be
+	// a second child Slot cannot take
+	const reason = !asChild && props.disabled ? disabledReason : undefined;
 
-	return (
+	const button = (
 		<Comp
 			data-slot="button"
 			data-variant={variant}
 			data-size={size}
-			className={cn(buttonVariants({ variant, size, className }))}
 			{...props}
+			title={reason ?? props.title}
+			aria-describedby={
+				reason
+					? [props["aria-describedby"], hintId].filter(Boolean).join(" ")
+					: props["aria-describedby"]
+			}
+			className={cn(buttonVariants({ variant, size, className }))}
 		/>
+	);
+
+	if (!reason) return button;
+	return (
+		<>
+			{button}
+			<span id={hintId} className="sr-only">
+				{reason}
+			</span>
+		</>
 	);
 }
 

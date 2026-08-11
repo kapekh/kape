@@ -1,12 +1,22 @@
 /** Shared building blocks so every admin create/edit form looks the same. */
 import { useId } from "react";
 
-export const fieldInput =
-	"w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/25 transition";
+import { Button, buttonVariants } from "#/components/ui/button.tsx";
+import { Card } from "#/components/ui/card.tsx";
+import { inputClass } from "#/components/ui/input.tsx";
+
+/**
+ * The three class strings 23 files spread onto their own elements. They are the
+ * primitives' own strings rather than copies of them, so a hand-rolled
+ * `<input>` and an `<Input>` cannot drift apart.
+ */
+export const fieldInput = inputClass;
 export const fieldLabel =
-	"block text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5";
-export const cancelButtonClass =
-	"rounded-full border border-border px-5 py-1.5 text-sm font-semibold text-foreground/70 hover:bg-muted transition";
+	"block text-[13px] font-medium text-admin-ink mb-2";
+export const cancelButtonClass = buttonVariants({
+	variant: "secondary",
+	size: "md",
+});
 
 /**
  * Sticky editor header: page title on the left, actions on the right (pass the
@@ -30,24 +40,29 @@ export function EditorHeader({
 	children?: React.ReactNode;
 }) {
 	return (
-		<div className="mx-auto mb-4 flex max-w-5xl flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-2">
-			<h1 className="font-display text-base font-semibold text-primary">
-				{title}
-			</h1>
+		<Card
+			padding="none"
+			className="mx-auto mb-6 flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3"
+		>
+			<h1 className="text-xl font-semibold text-admin-ink">{title}</h1>
 			<div className="flex items-center gap-2">
 				{savedAt && (
-					<span className="text-xs text-[var(--palm)]">Saved {savedAt}</span>
+					<span className="text-[13px] text-admin-live">Saved {savedAt}</span>
 				)}
 				{children}
-				<button
+				<Button
 					type="submit"
 					disabled={saving || dirty === false}
-					className="rounded-full bg-primary text-primary-foreground px-5 py-1.5 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition"
+					// Disabled until the form is dirty is deliberate and was never
+					// legible; a disabled primary that says nothing reads as broken.
+					disabledReason={
+						dirty === false && !saving ? "No changes to save." : undefined
+					}
 				>
 					{saving ? "Saving…" : saveLabel}
-				</button>
+				</Button>
 			</div>
-		</div>
+		</Card>
 	);
 }
 
@@ -63,10 +78,10 @@ export function EditorGrid({
 }) {
 	return (
 		<div className="mx-auto grid max-w-5xl items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-			<div className="min-w-0 space-y-5">{main}</div>
+			<div className="min-w-0 space-y-6">{main}</div>
 			{/* `top` MUST be ≤ the aside's resting offset, else sticky clamps the card
 			    DOWN to `top` and opens a gap above it. `self-start` keeps it top-aligned. */}
-			<aside className="space-y-5 self-start lg:sticky lg:top-6">{aside}</aside>
+			<aside className="space-y-6 self-start lg:sticky lg:top-6">{aside}</aside>
 		</div>
 	);
 }
@@ -82,17 +97,15 @@ export function FormSection({
 	children: React.ReactNode;
 }) {
 	return (
-		<section className="rounded-2xl border border-border bg-card overflow-hidden">
-			<div className="border-b border-border px-5 py-4">
-				<h2 className="font-display text-base font-semibold text-primary">
-					{title}
-				</h2>
+		<Card padding="none" className="overflow-hidden">
+			<div className="border-b border-admin-border px-4 py-4">
+				<h2 className="text-base font-semibold text-admin-ink">{title}</h2>
 				{description && (
-					<p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+					<p className="mt-1 text-[13px] text-admin-ink-muted">{description}</p>
 				)}
 			</div>
-			<div className="p-5">{children}</div>
-		</section>
+			<div className="p-4">{children}</div>
+		</Card>
 	);
 }
 
@@ -149,7 +162,7 @@ export function Field({
 				{label}
 				{required && (
 					<>
-						<span aria-hidden="true" className="ml-0.5 text-destructive">
+						<span aria-hidden="true" className="ml-0.5 text-admin-danger">
 							*
 						</span>
 						<span className="sr-only"> (required)</span>
@@ -163,69 +176,18 @@ export function Field({
 				"aria-describedby": describedBy,
 			})}
 			{hint && (
-				<p id={hintId} className="mt-1 text-xs text-muted-foreground">
+				<p id={hintId} className="mt-2 text-[13px] text-admin-ink-muted">
 					{hint}
 				</p>
 			)}
 			{error && (
-				<p id={errorId} className="mt-1 text-xs font-medium text-destructive">
+				<p
+					id={errorId}
+					className="mt-2 text-[13px] font-medium text-admin-danger"
+				>
 					{error}
 				</p>
 			)}
-		</div>
-	);
-}
-
-/** `Field` with the control every other admin field turns out to be. */
-export function TextField({
-	label,
-	required,
-	hint,
-	error,
-	...input
-}: {
-	label: string;
-	required?: boolean;
-	hint?: string;
-	error?: string | null;
-} & React.InputHTMLAttributes<HTMLInputElement>) {
-	return (
-		<Field label={label} required={required} hint={hint} error={error}>
-			{(p) => <input {...p} {...input} className={fieldInput} />}
-		</Field>
-	);
-}
-
-/** Right-aligned footer action bar. Pass a Cancel link as `children`. */
-export function FormActions({
-	saving,
-	label,
-	savedAt,
-	dirty,
-	children,
-}: {
-	saving?: boolean;
-	label: string;
-	savedAt?: string | null;
-	/** When explicitly `false`, Save is disabled (no unsaved changes). */
-	dirty?: boolean;
-	children?: React.ReactNode;
-}) {
-	return (
-		<div className="flex items-center justify-end gap-3 pt-1">
-			{savedAt && (
-				<span className="mr-auto text-xs text-[var(--palm)]">
-					Saved {savedAt}
-				</span>
-			)}
-			{children}
-			<button
-				type="submit"
-				disabled={saving || dirty === false}
-				className="rounded-full bg-primary text-primary-foreground px-6 py-2.5 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition"
-			>
-				{saving ? "Saving…" : label}
-			</button>
 		</div>
 	);
 }

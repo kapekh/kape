@@ -1,6 +1,9 @@
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { useCallback, useEffect, useId, useState } from "react";
 
+import { Button } from "#/components/ui/button.tsx";
+import { inputClass } from "#/components/ui/input.tsx";
+import { SkeletonRows } from "#/components/ui/skeleton.tsx";
 import { saveErrorMessage } from "#/lib/save-error";
 import { toast } from "@/components/Dialogs";
 
@@ -10,6 +13,10 @@ import { toast } from "@/components/Dialogs";
  * nine lists into one is a separate job, and this round would have had to write
  * them twice.
  */
+
+/** Lives in `ui/` now so the ten lists are not the only surfaces that can have
+ *  one. Re-exported here because those ten import it from this file. */
+export { EmptyState } from "#/components/ui/empty-state.tsx";
 
 export type ListState = "pending" | "error" | "ready";
 
@@ -57,55 +64,36 @@ export function ListStatus({
 	onRetry: () => void;
 }) {
 	if (state === "pending")
-		return <p className="text-sm text-muted-foreground">Loading…</p>;
+		return (
+			<div
+				aria-busy="true"
+				className="overflow-hidden rounded-xl border border-admin-border bg-admin-panel"
+			>
+				{/* the shapes are aria-hidden, so the word still has to be said once */}
+				<span className="sr-only">Loading…</span>
+				<SkeletonRows />
+			</div>
+		);
 	if (state !== "error") return null;
 	return (
 		<div
 			role="alert"
-			className="rounded-xl border border-destructive/40 bg-destructive/5 p-6 text-center"
+			className="rounded-xl border border-admin-danger/40 bg-admin-danger-soft p-6 text-center"
 		>
-			<p className="text-sm font-medium text-destructive">
+			<p className="text-sm font-medium text-admin-danger">
 				This list could not be loaded.
 			</p>
-			<p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+			<p className="mx-auto mt-2 max-w-md text-[13px] text-admin-ink-muted">
 				{saveErrorMessage(error)}
 			</p>
-			<button
+			<Button
 				type="button"
+				variant="secondary"
 				onClick={onRetry}
-				className="mt-4 rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
+				className="mt-4"
 			>
 				Try again
-			</button>
-		</div>
-	);
-}
-
-/**
- * What a list says when it holds nothing. Two cases, because they need
- * different answers: nothing exists yet (offer the create action), or nothing
- * matches what was typed (offer to clear it).
- */
-export function EmptyState({
-	title,
-	description,
-	action,
-}: {
-	title: string;
-	description?: string;
-	action?: ReactNode;
-}) {
-	return (
-		<div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
-			<p className="font-display text-base font-semibold text-primary">
-				{title}
-			</p>
-			{description && (
-				<p className="mx-auto mt-1.5 max-w-md text-sm text-muted-foreground">
-					{description}
-				</p>
-			)}
-			{action && <div className="mt-5">{action}</div>}
+			</Button>
 		</div>
 	);
 }
@@ -116,6 +104,9 @@ export function EmptyState({
  * 70px of a 442px table at 375px wide. `tabIndex` is what lets a keyboard
  * scroll it; a scroll container that only a mouse can move is not reachable.
  * `ActionMenu` positions itself `fixed`, so it still escapes this.
+ *
+ * Below `md` a `Table` stacks into cards and there is nothing left to scroll,
+ * so the frame drops its border there and lets the cards be the surface.
  */
 export function TableScroll({
 	label,
@@ -129,7 +120,7 @@ export function TableScroll({
 			// biome-ignore lint/a11y/noNoninteractiveTabindex: a scroll container has to be focusable or the keyboard cannot reach the columns it hides
 			tabIndex={0}
 			aria-label={label}
-			className="thin-scroll overflow-x-auto rounded-xl border border-border bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/50"
+			className="thin-scroll overflow-x-auto rounded-xl border border-admin-border bg-admin-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50 max-md:rounded-none max-md:border-0 max-md:bg-transparent"
 		>
 			{children}
 		</section>
@@ -163,9 +154,9 @@ export function ListSearch({
 				value={value}
 				onChange={(e) => onChange(e.target.value)}
 				placeholder={placeholder}
-				className="w-full max-w-xs rounded-lg border border-border bg-background px-3 py-2 text-sm transition focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25"
+				className={`${inputClass} max-w-xs`}
 			/>
-			<output className="text-xs text-muted-foreground">{status}</output>
+			<output className="text-[13px] text-admin-ink-muted">{status}</output>
 		</div>
 	);
 }

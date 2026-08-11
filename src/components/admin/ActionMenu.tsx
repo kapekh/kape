@@ -1,3 +1,4 @@
+import { MoreHorizontal } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export type ActionItem = {
@@ -8,7 +9,7 @@ export type ActionItem = {
 };
 
 /**
- * Compact "⋯" overflow menu for table rows. Destructive actions (Delete) live
+ * Compact overflow menu for table rows. Destructive actions (Delete) live
  * here so they can't be fat-fingered. Positioned `fixed` from the trigger rect
  * so it escapes the table's overflow clipping; closes on outside-click / scroll
  * / Escape.
@@ -106,9 +107,9 @@ export function ActionMenu({
 				aria-haspopup="menu"
 				aria-expanded={open}
 				aria-label={label}
-				className="rounded-lg border border-border px-2 py-1 leading-none text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
+				className="grid size-9 place-items-center rounded-lg text-admin-ink-muted transition-colors duration-150 ease-out hover:bg-admin-accent-soft hover:text-admin-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50 aria-expanded:bg-admin-accent-soft aria-expanded:text-admin-ink"
 			>
-				<span className="text-base">⋯</span>
+				<MoreHorizontal aria-hidden="true" className="size-4" />
 			</button>
 			{open && pos && (
 				<div
@@ -122,7 +123,7 @@ export function ActionMenu({
 						left: pos.left,
 						zIndex: 50,
 					}}
-					className="thin-scroll w-36 rounded-lg border border-border bg-card py-1 shadow-[var(--shadow-soft)]"
+					className="thin-scroll w-36 rounded-xl border border-admin-border bg-admin-panel-raised p-1 shadow-[var(--shadow-soft)]"
 				>
 					{items.map((it, i) => (
 						<button
@@ -141,7 +142,7 @@ export function ActionMenu({
 								closeToTrigger();
 								it.onClick();
 							}}
-							className={`block w-full px-3 py-1.5 text-left text-sm hover:bg-muted focus-visible:bg-muted focus-visible:outline-none disabled:opacity-40 ${it.danger ? "text-destructive" : "text-foreground"}`}
+							className={`block w-full rounded-lg px-3 py-2 text-left text-sm transition-colors duration-150 ease-out hover:bg-admin-accent-soft focus-visible:bg-admin-accent-soft focus-visible:outline-none disabled:cursor-not-allowed disabled:text-admin-ink-subtle ${it.danger ? "text-admin-danger" : "text-admin-ink"}`}
 						>
 							{it.label}
 						</button>

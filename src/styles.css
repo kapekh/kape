@@ -133,6 +133,27 @@
   --font-display: var(--brand-font-display);
   --font-sans: var(--brand-font-body);
   --font-khmer: var(--brand-font-script);
+  --color-admin-bg: var(--admin-bg);
+  --color-admin-panel: var(--admin-panel);
+  --color-admin-panel-raised: var(--admin-panel-raised);
+  --color-admin-border: var(--admin-border);
+  --color-admin-border-strong: var(--admin-border-strong);
+  --color-admin-ink: var(--admin-ink);
+  --color-admin-ink-muted: var(--admin-ink-muted);
+  --color-admin-ink-subtle: var(--admin-ink-subtle);
+  --color-admin-accent: var(--admin-accent);
+  --color-admin-accent-soft: var(--admin-accent-soft);
+  --color-admin-focus: var(--admin-focus);
+  --color-admin-live: var(--admin-live);
+  --color-admin-live-soft: var(--admin-live-soft);
+  --color-admin-draft: var(--admin-draft);
+  --color-admin-draft-soft: var(--admin-draft-soft);
+  --color-admin-warning: var(--admin-warning);
+  --color-admin-warning-soft: var(--admin-warning-soft);
+  --color-admin-danger: var(--admin-danger);
+  --color-admin-danger-soft: var(--admin-danger-soft);
+  --color-admin-neutral: var(--admin-neutral);
+  --color-admin-neutral-soft: var(--admin-neutral-soft);
 }
 
 /* ---- Layer 1: the brand. Everything an operator can set. ---- */
@@ -238,6 +259,85 @@
   );
 }
 
+/*
+ * ---- The admin. A tool, not a page. ----
+ *
+ * Scoped to `.admin`, set once on the shell root in src/routes/admin.tsx, so
+ * nothing here can reach the public site. Every value still comes out of the
+ * same operator inputs — a configured tenant is recognisable behind the chrome
+ * rather than wearing a second, unrelated palette.
+ *
+ * Same rules as layer 2 above: declared once, light-dark() only where the two
+ * modes genuinely differ, oklch only, registered in @theme inline.
+ *
+ * The scale the admin is built on, and the whole of it (F09):
+ *
+ *   spacing   1 2 3 4 6 8 12          (4 8 12 16 24 32 48px), nothing else
+ *   radius    rounded-lg  controls    inputs, buttons, menu items
+ *             rounded-xl  containers  cards, panels, tables, dialogs
+ *             rounded-full pills and avatars only
+ *   type      page title 20/600 · section 16/600 · body 14/400
+ *             field label 13/500 · help and meta 13/400
+ *             table header 12/500 uppercase tracking-wide
+ *   density   table row 56px · field 40px · icon button 36px · topbar 64px
+ *   motion    150ms colour and opacity, 200ms transform and size, ease-out
+ */
+.admin {
+  /* A step cooler and flatter than the public paper: this is chrome, and it
+     should recede behind the content sitting on it. */
+  --admin-bg: light-dark(
+    oklch(0.972 calc(0.006 * var(--paper-chroma)) calc(70 + var(--paper-hue))),
+    oklch(0.17 calc(0.012 * var(--paper-chroma)) calc(60 + var(--paper-hue)))
+  );
+  --admin-panel: light-dark(
+    oklch(1 0 0),
+    oklch(0.215 calc(0.014 * var(--paper-chroma)) calc(60 + var(--paper-hue)))
+  );
+  /* Popovers and dialogs sit above the panel, so in dark mode they go lighter,
+     not darker: a menu that is darker than the card it covers reads as a hole. */
+  --admin-panel-raised: light-dark(
+    oklch(1 0 0),
+    oklch(0.255 calc(0.016 * var(--paper-chroma)) calc(60 + var(--paper-hue)))
+  );
+  --admin-border: light-dark(
+    oklch(0.915 calc(0.012 * var(--paper-chroma)) calc(70 + var(--paper-hue))),
+    oklch(0.30 calc(0.012 * var(--paper-chroma)) calc(60 + var(--paper-hue)))
+  );
+  --admin-border-strong: light-dark(
+    oklch(0.855 calc(0.016 * var(--paper-chroma)) calc(70 + var(--paper-hue))),
+    oklch(0.38 calc(0.014 * var(--paper-chroma)) calc(60 + var(--paper-hue)))
+  );
+  --admin-ink: light-dark(
+    oklch(0.22 calc(0.03 * var(--paper-chroma)) calc(50 + var(--paper-hue))),
+    oklch(0.96 calc(0.010 * var(--paper-chroma)) calc(85 + var(--paper-hue)))
+  );
+  --admin-ink-muted: light-dark(
+    oklch(0.50 calc(0.022 * var(--paper-chroma)) calc(55 + var(--paper-hue))),
+    oklch(0.73 calc(0.016 * var(--paper-chroma)) calc(75 + var(--paper-hue)))
+  );
+  --admin-ink-subtle: light-dark(
+    oklch(0.62 calc(0.016 * var(--paper-chroma)) calc(60 + var(--paper-hue))),
+    oklch(0.58 calc(0.014 * var(--paper-chroma)) calc(70 + var(--paper-hue)))
+  );
+  --admin-accent: var(--accent);
+  --admin-accent-soft: oklch(from var(--accent) l c h / 0.12);
+  --admin-focus: var(--accent);
+
+  /* Status tones. Each is a foreground and a background soft enough to sit
+     under 13px text without shouting. Green keeps meaning green and red keeps
+     meaning red, so `live` and `danger` are not brand knobs. */
+  --admin-live: var(--palm);
+  --admin-live-soft: oklch(from var(--palm) l c h / 0.14);
+  --admin-draft: var(--secondary);
+  --admin-draft-soft: oklch(from var(--secondary) l c h / 0.14);
+  --admin-warning: light-dark(oklch(0.60 0.13 72), oklch(0.79 0.15 78));
+  --admin-warning-soft: oklch(from var(--admin-warning) l c h / 0.16);
+  --admin-danger: var(--destructive);
+  --admin-danger-soft: oklch(from var(--destructive) l c h / 0.12);
+  --admin-neutral: var(--admin-ink-muted);
+  --admin-neutral-soft: oklch(from var(--admin-ink-muted) l c h / 0.12);
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
@@ -253,6 +353,12 @@
   h1, h2, h3, h4 {
     font-family: var(--font-display);
     letter-spacing: -0.02em;
+  }
+
+  /* A serif "Overview" over a data table reads as an article, not a tool. */
+  .admin :is(h1, h2, h3, h4) {
+    font-family: var(--font-sans);
+    letter-spacing: normal;
   }
 
   .font-khmer { font-family: var(--font-khmer); }
@@ -284,6 +390,12 @@
       radial-gradient(circle at 80% 90%, oklch(from var(--palm) 0.34 0.06 h / 0.07), transparent 50%);
     pointer-events: none;
     z-index: -1;
+  }
+
+  /* A nice touch on an article, a composited full-viewport paint behind a data
+     table. The admin surface is flat. */
+  body:has(.admin)::before {
+    display: none;
   }
 
   @keyframes float-slow {

@@ -410,7 +410,7 @@ function AdminLayout({ access }: { access: OkAccess }) {
 		"flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-[var(--accent)] bg-[var(--accent)]/10 shadow-[inset_3px_0_0_var(--accent)]";
 
 	return (
-		<div className="min-h-screen flex bg-card text-foreground">
+		<div className="admin min-h-screen flex bg-card text-foreground">
 			<a
 				href="#admin-main"
 				className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:border focus:border-border focus:bg-card focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:shadow-[var(--shadow-lift)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"

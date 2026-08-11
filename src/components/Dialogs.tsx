@@ -177,7 +177,7 @@ export function DialogHost() {
 				{ts.map((t) => (
 					<div
 						key={t.id}
-						className={`pointer-events-auto rounded-xl border px-4 py-3 text-sm shadow-[var(--shadow-lift)] animate-[mega-content-in_0.2s_ease-out] ${
+						className={`pointer-events-auto rounded-xl border px-4 py-3 text-sm shadow-[var(--shadow-soft)] animate-[mega-content-in_0.2s_ease-out] ${
 							t.kind === "error"
 								? "border-destructive/40 bg-destructive/10 text-destructive"
 								: t.kind === "success"
@@ -282,13 +282,13 @@ function Modal({
 				aria-modal="true"
 				tabIndex={-1}
 				aria-labelledby={o.title || o.message ? headingId : undefined}
-				className="relative w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl animate-[mega-content-in_0.18s_ease-out] focus:outline-none"
+				className="relative w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] animate-[mega-content-in_0.18s_ease-out] focus:outline-none"
 			>
 				<ToastMirror toasts={toasts} />
 				{o.title && (
 					<h2
 						id={headingId}
-						className="font-display text-lg font-semibold text-primary"
+						className="text-base font-semibold text-foreground"
 					>
 						{o.title}
 					</h2>
@@ -296,7 +296,7 @@ function Modal({
 				{o.message && (
 					<p
 						id={o.title ? undefined : headingId}
-						className={`whitespace-pre-line text-sm text-foreground/85 ${o.title ? "mt-2" : ""}`}
+						className={`whitespace-pre-line text-sm text-muted-foreground ${o.title ? "mt-2" : ""}`}
 					>
 						{o.message}
 					</p>
@@ -307,21 +307,21 @@ function Modal({
 						value={value}
 						onChange={(e) => setValue(e.target.value)}
 						placeholder={(req.opts as PromptOpts).placeholder}
-						className="mt-4 w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+						className="mt-4 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm transition-colors duration-150 ease-out focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
 					/>
 				)}
-				<div className="mt-6 flex justify-end gap-2">
+				<div className="mt-6 flex justify-end gap-3">
 					<button
 						type="button"
 						onClick={cancel}
-						className="rounded-full border border-border px-5 py-2 text-sm font-semibold text-foreground/70 hover:bg-muted transition"
+						className="inline-flex h-10 items-center justify-center rounded-lg border border-border bg-card px-4 text-sm font-medium text-foreground transition-colors duration-150 ease-out hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/50"
 					>
 						{o.cancelLabel ?? t("dialog.cancel", "Cancel")}
 					</button>
 					<button
 						type="button"
 						onClick={accept}
-						className={`rounded-full px-5 py-2 text-sm font-semibold transition hover:opacity-90 ${danger ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}
+						className={`inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-medium transition-colors duration-150 ease-out hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/50 ${danger ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}
 					>
 						{o.confirmLabel ??
 							(isPrompt ? t("dialog.ok", "OK") : t("dialog.confirm", "Confirm"))}
