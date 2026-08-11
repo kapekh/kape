@@ -139,7 +139,7 @@ function PostsList() {
 										: `${ofType.length} ${ofType.length === 1 ? singular : noun}`
 								}
 							/>
-							<fieldset className="mb-4 flex flex-wrap items-center gap-2">
+							<fieldset className="flex flex-wrap items-center gap-2">
 								<legend className="sr-only">Filter by status</legend>
 								<Button
 									type="button"

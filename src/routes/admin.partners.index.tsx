@@ -107,7 +107,7 @@ function PartnersList() {
 								}
 							/>
 							{categories.length > 1 && (
-								<fieldset className="mb-4 flex flex-wrap items-center gap-2">
+								<fieldset className="flex flex-wrap items-center gap-2">
 									<legend className="sr-only">Filter by category</legend>
 									<Button
 										type="button"

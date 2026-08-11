@@ -105,7 +105,7 @@ function CampaignsList() {
 										: `${rows.length} ${rows.length === 1 ? "campaign" : "campaigns"}`
 								}
 							/>
-							<fieldset className="mb-4 flex flex-wrap items-center gap-2">
+							<fieldset className="flex flex-wrap items-center gap-2">
 								<legend className="sr-only">Filter by status</legend>
 								<Button
 									type="button"

@@ -144,7 +144,10 @@ export function ListSearch({
 }) {
 	const id = useId();
 	return (
-		<div className="mb-4 flex flex-wrap items-center gap-3">
+		// The input is sized, not `w-full`: filling the wrapper left the count no
+		// room, so it wrapped, and a two-line item next to one-line filter chips is
+		// what pushed the chips off the input's centre line.
+		<div className="flex min-w-0 flex-wrap items-center gap-3">
 			<label htmlFor={id} className="sr-only">
 				{label}
 			</label>
@@ -154,7 +157,7 @@ export function ListSearch({
 				value={value}
 				onChange={(e) => onChange(e.target.value)}
 				placeholder={placeholder}
-				className={`${inputClass} max-w-xs`}
+				className={`${inputClass} w-full sm:w-72`}
 			/>
 			<output className="text-[13px] text-admin-ink-muted">{status}</output>
 		</div>

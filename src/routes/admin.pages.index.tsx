@@ -98,7 +98,7 @@ function PagesList() {
 										: `${sorted.length} pages`
 								}
 							/>
-							<fieldset className="mb-4 flex flex-wrap items-center gap-2">
+							<fieldset className="flex flex-wrap items-center gap-2">
 								<legend className="sr-only">Filter by status</legend>
 								<Button
 									type="button"

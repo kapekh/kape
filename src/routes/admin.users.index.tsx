@@ -124,7 +124,7 @@ function UsersList() {
 										: `${rows.length} ${rows.length === 1 ? "user" : "users"}`
 								}
 							/>
-							<fieldset className="mb-4 flex flex-wrap items-center gap-2">
+							<fieldset className="flex flex-wrap items-center gap-2">
 								<legend className="sr-only">Filter by role</legend>
 								<Button
 									type="button"
