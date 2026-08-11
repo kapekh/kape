@@ -6,6 +6,7 @@ import {
 	type PersonFormValue,
 } from "#/components/admin/PeopleForm";
 import type { LangOpt } from "#/components/admin/PostForm";
+import { EditorSkeleton } from "#/components/admin/EditorSkeleton";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { saveErrorMessage } from "#/lib/save-error";
 import { toast } from "@/components/Dialogs";
@@ -53,7 +54,7 @@ function EditPerson() {
 	if (notFound)
 		return <p className="text-sm text-muted-foreground">Person not found.</p>;
 	if (!data || !languages.length)
-		return <p className="text-sm text-muted-foreground">Loading…</p>;
+		return <EditorSkeleton />;
 	return (
 		<PeopleForm
 			initial={data}

@@ -119,39 +119,41 @@ export function MediaPicker({
 			</button>
 
 			{previewUrl && (
-				<div className="mt-2 flex flex-wrap items-center gap-2">
+				<div className="mt-2">
 					<p
 						id={chosenId}
-						className="w-full truncate text-[13px] text-admin-ink-muted"
+						className="truncate text-[13px] text-admin-ink-muted"
 						title={chosenName}
 					>
 						{chosenName}
 					</p>
-					<Button
-						type="button"
-						size="sm"
-						variant="secondary"
-						onClick={() => setOpen(true)}
-					>
-						Change
-					</Button>
-					<Button
-						type="button"
-						size="sm"
-						variant="ghost"
-						onClick={clear}
-						className="text-admin-danger hover:bg-admin-danger-soft hover:text-admin-danger"
-					>
-						Remove
-					</Button>
-					{!isImg && (
-						<Button asChild size="sm" variant="ghost">
-							<a href={previewUrl} target="_blank" rel="noopener noreferrer">
-								<ExternalLink aria-hidden="true" />
-								Open file
-							</a>
+					<div className="mt-2 flex flex-wrap items-center gap-2">
+						<Button
+							type="button"
+							size="sm"
+							variant="secondary"
+							onClick={() => setOpen(true)}
+						>
+							Change
 						</Button>
-					)}
+						<Button
+							type="button"
+							size="sm"
+							variant="ghost"
+							onClick={clear}
+							className="text-admin-danger hover:bg-admin-danger-soft hover:text-admin-danger"
+						>
+							Remove
+						</Button>
+						{!isImg && (
+							<Button asChild size="sm" variant="ghost">
+								<a href={previewUrl} target="_blank" rel="noopener noreferrer">
+									<ExternalLink aria-hidden="true" />
+									Open file
+								</a>
+							</Button>
+						)}
+					</div>
 				</div>
 			)}
 

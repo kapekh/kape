@@ -1,18 +1,20 @@
 import { Link } from "@tanstack/react-router";
 import { useId, useState } from "react";
 
+import { Input } from "#/components/ui/input.tsx";
 import {
 	cancelButtonClass,
 	EditorGrid,
 	EditorHeader,
+	Field,
 	FormSection,
-	fieldInput,
 	fieldLabel,
 } from "./form-ui";
 import { MapPicker } from "./MapPicker";
 import { MediaPicker } from "./MediaPicker";
 import { SearchableSelect } from "./SearchableSelect";
 import { useDirtyGuard } from "./useDirty";
+import { useFieldErrors } from "./useFieldErrors";
 
 export type OfficeFormValue = {
 	name: string;
@@ -67,6 +69,7 @@ export function OfficeForm({
 	const [imageMediaId, setImageMediaId] = useState(
 		initial?.imageMediaId != null ? String(initial.imageMediaId) : "",
 	);
+	const { errors, invalid } = useFieldErrors();
 
 	function submit(e: React.FormEvent) {
 		e.preventDefault();
@@ -114,22 +117,24 @@ export function OfficeForm({
 			</EditorHeader>
 			<EditorGrid
 				main={
-					<div className="space-y-5">
+					<>
 						<FormSection
+							split
 							title="Office details"
 							description="An office location shown on the public Contact page and map."
 						>
-							<div className="space-y-4">
-								<label className="block">
-									<span className={fieldLabel}>Office name</span>
-									<input
-										className={fieldInput}
-										value={name}
-										onChange={(e) => setName(e.target.value)}
-										placeholder="e.g. Head Office (PTTC)"
-										required
-									/>
-								</label>
+							<div className="space-y-6">
+								<Field label="Office name" required error={errors.name}>
+									{(p) => (
+										<Input
+											{...p}
+											{...invalid("name")}
+											value={name}
+											onChange={(e) => setName(e.target.value)}
+											placeholder="e.g. Head Office (PTTC)"
+										/>
+									)}
+								</Field>
 								<div>
 									<label className={fieldLabel} htmlFor={`${uid}-province`}>
 										Province
@@ -146,18 +151,18 @@ export function OfficeForm({
 										}))}
 									/>
 								</div>
-								<label className="flex items-start gap-2.5 cursor-pointer rounded-xl border border-border p-3">
+								<label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-admin-border p-3 transition-colors duration-150 ease-out hover:bg-admin-panel-raised">
 									<input
 										type="checkbox"
 										checked={isHq}
 										onChange={(e) => setIsHq(e.target.checked)}
-										className="mt-0.5 h-4 w-4 rounded border-border accent-[var(--accent)]"
+										className="mt-0.5 h-4 w-4 rounded border-admin-border accent-[var(--admin-accent)]"
 									/>
 									<span>
-										<span className="text-sm font-medium text-foreground">
+										<span className="text-sm font-medium text-admin-ink">
 											Headquarters (HQ)
 										</span>
-										<span className="block text-xs text-muted-foreground">
+										<span className="block text-[13px] text-admin-ink-muted">
 											The main office. Only one office should be the HQ.
 										</span>
 									</span>
@@ -166,28 +171,31 @@ export function OfficeForm({
 						</FormSection>
 
 						<FormSection
+							split
 							title="Contact"
 							description="How visitors reach this office."
 						>
-							<div className="grid sm:grid-cols-2 gap-4">
-								<label className="block">
-									<span className={fieldLabel}>Phone</span>
-									<input
-										className={fieldInput}
-										value={phone}
-										onChange={(e) => setPhone(e.target.value)}
-										placeholder="+855 …"
-									/>
-								</label>
-								<label className="block">
-									<span className={fieldLabel}>Email</span>
-									<input
-										className={fieldInput}
-										value={email}
-										onChange={(e) => setEmail(e.target.value)}
-										placeholder="office@example.org"
-									/>
-								</label>
+							<div className="space-y-6">
+								<Field label="Phone">
+									{(p) => (
+										<Input
+											{...p}
+											value={phone}
+											onChange={(e) => setPhone(e.target.value)}
+											placeholder="+855 …"
+										/>
+									)}
+								</Field>
+								<Field label="Email">
+									{(p) => (
+										<Input
+											{...p}
+											value={email}
+											onChange={(e) => setEmail(e.target.value)}
+											placeholder="office@example.org"
+										/>
+									)}
+								</Field>
 							</div>
 						</FormSection>
 
@@ -195,21 +203,22 @@ export function OfficeForm({
 							title="Location"
 							description="Address and exact map position for the offices map."
 						>
-							<div className="space-y-4">
-								<label className="block">
-									<span className={fieldLabel}>Address</span>
-									<input
-										className={fieldInput}
-										value={address}
-										onChange={(e) => setAddress(e.target.value)}
-										placeholder="Village / commune / district"
-									/>
-								</label>
+							<div className="space-y-6">
+								<Field label="Address">
+									{(p) => (
+										<Input
+											{...p}
+											value={address}
+											onChange={(e) => setAddress(e.target.value)}
+											placeholder="Village / commune / district"
+										/>
+									)}
+								</Field>
 								<fieldset>
 									<legend className={fieldLabel}>Map position</legend>
-									<p className="text-xs text-muted-foreground mb-2">
-										Click the map to drop a pin (or drag it). Coordinates fill
-										in automatically.
+									<p className="mb-3 text-[13px] text-admin-ink-muted">
+										Click the map to drop a pin, or drag it. The coordinates
+										fill in as you go.
 									</p>
 									<MapPicker
 										lat={lat}
@@ -219,34 +228,32 @@ export function OfficeForm({
 											setLng(ln);
 										}}
 									/>
-									<div className="grid grid-cols-2 gap-4 max-w-sm mt-3">
-										<label className="block">
-											<span className="block text-[11px] text-muted-foreground mb-1">
-												Latitude
-											</span>
-											<input
-												className={fieldInput}
-												value={lat}
-												onChange={(e) => setLat(e.target.value)}
-												placeholder="12.245"
-											/>
-										</label>
-										<label className="block">
-											<span className="block text-[11px] text-muted-foreground mb-1">
-												Longitude
-											</span>
-											<input
-												className={fieldInput}
-												value={lng}
-												onChange={(e) => setLng(e.target.value)}
-												placeholder="104.668"
-											/>
-										</label>
+									<div className="mt-4 grid max-w-sm grid-cols-2 gap-4">
+										<Field label="Latitude">
+											{(p) => (
+												<Input
+													{...p}
+													value={lat}
+													onChange={(e) => setLat(e.target.value)}
+													placeholder="12.245"
+												/>
+											)}
+										</Field>
+										<Field label="Longitude">
+											{(p) => (
+												<Input
+													{...p}
+													value={lng}
+													onChange={(e) => setLng(e.target.value)}
+													placeholder="104.668"
+												/>
+											)}
+										</Field>
 									</div>
 								</fieldset>
 							</div>
 						</FormSection>
-					</div>
+					</>
 				}
 				aside={
 					<FormSection

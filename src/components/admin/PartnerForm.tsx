@@ -1,17 +1,19 @@
 import { Link } from "@tanstack/react-router";
 import { useId, useState } from "react";
 
+import { Input } from "#/components/ui/input.tsx";
 import {
 	cancelButtonClass,
 	EditorGrid,
 	EditorHeader,
+	Field,
 	FormSection,
-	fieldInput,
 	fieldLabel,
 } from "./form-ui";
 import { MediaPicker } from "./MediaPicker";
 import { SearchableSelect } from "./SearchableSelect";
 import { useDirtyGuard } from "./useDirty";
+import { useFieldErrors } from "./useFieldErrors";
 
 export type PartnerFormValue = {
 	name: string;
@@ -51,6 +53,7 @@ export function PartnerForm({
 	const [logoMediaId, setLogoMediaId] = useState(
 		initial?.logoMediaId != null ? String(initial.logoMediaId) : "",
 	);
+	const { errors, invalid } = useFieldErrors();
 
 	function submit(e: React.FormEvent) {
 		e.preventDefault();
@@ -84,20 +87,22 @@ export function PartnerForm({
 			<EditorGrid
 				main={
 					<FormSection
+						split
 						title="Partner details"
 						description="Organisations you collaborate with, shown on the Partners page."
 					>
-						<div className="space-y-4">
-							<label className="block">
-								<span className={fieldLabel}>Name</span>
-								<input
-									className={fieldInput}
-									value={name}
-									onChange={(e) => setName(e.target.value)}
-									placeholder="e.g. UNICEF"
-									required
-								/>
-							</label>
+						<div className="space-y-6">
+							<Field label="Name" required error={errors.name}>
+								{(p) => (
+									<Input
+										{...p}
+										{...invalid("name")}
+										value={name}
+										onChange={(e) => setName(e.target.value)}
+										placeholder="e.g. UNICEF"
+									/>
+								)}
+							</Field>
 							<div>
 								<label className={fieldLabel} htmlFor={`${uid}-category`}>
 									Category
@@ -114,15 +119,16 @@ export function PartnerForm({
 									}))}
 								/>
 							</div>
-							<label className="block">
-								<span className={fieldLabel}>Website (optional)</span>
-								<input
-									className={fieldInput}
-									value={url}
-									onChange={(e) => setUrl(e.target.value)}
-									placeholder="https://…"
-								/>
-							</label>
+							<Field label="Website (optional)">
+								{(p) => (
+									<Input
+										{...p}
+										value={url}
+										onChange={(e) => setUrl(e.target.value)}
+										placeholder="https://…"
+									/>
+								)}
+							</Field>
 						</div>
 					</FormSection>
 				}

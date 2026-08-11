@@ -104,12 +104,12 @@ export const TOURS = {
 			{
 				target: '[data-tour="editor-main"] > *:first-child',
 				title: "The words people will read",
-				body: "Each language has its own tab. What you type is kept when you switch, and both are saved together - a tab you never open is not an empty one.",
+				body: "Where a field has language tabs, what you type is kept when you switch and both languages are saved together - a tab you never open is not an empty one.",
 			},
 			{
 				target: '[data-tour="editor-aside"]',
 				title: "How it is filed",
-				body: "Status, the web address and the dates live beside the text rather than under it, so publishing a draft is never a scroll away.",
+				body: "Everything that is not the words themselves - the image, the status, the web address - sits beside them rather than under them, and follows you down the page.",
 			},
 			{
 				target: "form button[type=submit]",
@@ -127,6 +127,11 @@ export function tourForPath(pathname: string): TourId {
 	if (pathname.startsWith("/admin/media")) return "media";
 	if (pathname.startsWith("/admin/settings")) return "settings";
 	if (pathname.startsWith("/admin/modules")) return "modules";
-	if (/^\/admin\/(posts|projects|campaigns)\/./.test(pathname)) return "editor";
+	if (
+		/^\/admin\/(posts|projects|campaigns|people|schools|offices|partners)\/./.test(
+			pathname,
+		)
+	)
+		return "editor";
 	return "shell";
 }

@@ -1,18 +1,27 @@
 import { Link } from "@tanstack/react-router";
 import { useId, useState } from "react";
 
+import { Input } from "#/components/ui/input.tsx";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "#/components/ui/select.tsx";
 import {
 	cancelButtonClass,
 	EditorGrid,
 	EditorHeader,
+	Field,
 	FormSection,
-	fieldInput,
 	fieldLabel,
 } from "./form-ui";
 import { MapPicker } from "./MapPicker";
 import { MediaPicker } from "./MediaPicker";
 import { SearchableSelect } from "./SearchableSelect";
 import { useDirtyGuard } from "./useDirty";
+import { useFieldErrors } from "./useFieldErrors";
 
 export type SchoolFormValue = {
 	name: string;
@@ -80,6 +89,7 @@ export function SchoolForm({
 	const [address, setAddress] = useState(initial?.address ?? "");
 	const [lat, setLat] = useState(initial?.lat ?? "");
 	const [lng, setLng] = useState(initial?.lng ?? "");
+	const { errors, invalid } = useFieldErrors();
 
 	function submit(e: React.FormEvent) {
 		e.preventDefault();
@@ -129,76 +139,83 @@ export function SchoolForm({
 				main={
 					<>
 						<FormSection
+							split
 							title="School details"
 							description="The school's name and where it sits in the programme."
 						>
-							<div className="space-y-4">
-								<label className="block">
-									<span className={fieldLabel}>School name</span>
-									<input
-										className={fieldInput}
-										value={name}
-										onChange={(e) => setName(e.target.value)}
-										placeholder="e.g. Hun Sen Rolea B'ier High School"
-										required
-									/>
-								</label>
-								<div className="grid sm:grid-cols-2 gap-4">
-									<label className="block">
-										<span className={fieldLabel}>School code</span>
-										<input
-											className={fieldInput}
+							<div className="space-y-6">
+								<Field label="School name" required error={errors.name}>
+									{(p) => (
+										<Input
+											{...p}
+											{...invalid("name")}
+											value={name}
+											onChange={(e) => setName(e.target.value)}
+											placeholder="e.g. Hun Sen Rolea B'ier High School"
+										/>
+									)}
+								</Field>
+								<Field label="School code">
+									{(p) => (
+										<Input
+											{...p}
 											value={code}
 											onChange={(e) => setCode(e.target.value)}
 											placeholder="EMIS / internal code"
 										/>
+									)}
+								</Field>
+								<Field label="Level">
+									{(p) => (
+										<Select value={level} onValueChange={setLevel}>
+											<SelectTrigger
+												id={p.id}
+												aria-label="Level"
+												className="w-full"
+											>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												{LEVELS.map((l) => (
+													<SelectItem key={l.value} value={l.value}>
+														{l.label}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									)}
+								</Field>
+								<div>
+									<label className={fieldLabel} htmlFor={`${uid}-province`}>
+										Province
 									</label>
-									<label className="block">
-										<span className={fieldLabel}>Level</span>
-										<select
-											className={fieldInput}
-											value={level}
-											onChange={(e) => setLevel(e.target.value)}
-										>
-											{LEVELS.map((l) => (
-												<option key={l.value} value={l.value}>
-													{l.label}
-												</option>
-											))}
-										</select>
+									<SearchableSelect
+										id={`${uid}-province`}
+										value={province}
+										onChange={setProvince}
+										emptyOption="— Select province —"
+										placeholder="Select province"
+										options={provinces.map((p) => ({
+											value: p.key,
+											label: p.label,
+										}))}
+									/>
+								</div>
+								<div>
+									<label className={fieldLabel} htmlFor={`${uid}-project`}>
+										Project
 									</label>
-									<div>
-										<label className={fieldLabel} htmlFor={`${uid}-province`}>
-											Province
-										</label>
-										<SearchableSelect
-											id={`${uid}-province`}
-											value={province}
-											onChange={setProvince}
-											emptyOption="— Select province —"
-											placeholder="Select province"
-											options={provinces.map((p) => ({
-												value: p.key,
-												label: p.label,
-											}))}
-										/>
-									</div>
-									<div>
-										<label className={fieldLabel} htmlFor={`${uid}-project`}>
-											Project
-										</label>
-										<SearchableSelect
-											id={`${uid}-project`}
-											value={projectId}
-											onChange={setProjectId}
-											emptyOption="— Not linked —"
-											placeholder="Link a project"
-											options={projects.map((p) => ({
-												value: String(p.id),
-												label: `${p.code} — ${p.name}`,
-											}))}
-										/>
-									</div>
+									<SearchableSelect
+										id={`${uid}-project`}
+										value={projectId}
+										onChange={setProjectId}
+										emptyOption="— Not linked —"
+										placeholder="Link a project"
+										options={projects.map((p) => ({
+											value: String(p.id),
+											label: `${p.code} — ${p.name}`,
+										}))}
+									/>
 								</div>
 							</div>
 						</FormSection>
@@ -207,21 +224,22 @@ export function SchoolForm({
 							title="Location"
 							description="Address and exact map position for the schools map."
 						>
-							<div className="space-y-4">
-								<label className="block">
-									<span className={fieldLabel}>Address</span>
-									<input
-										className={fieldInput}
-										value={address}
-										onChange={(e) => setAddress(e.target.value)}
-										placeholder="Village / commune / district"
-									/>
-								</label>
+							<div className="space-y-6">
+								<Field label="Address">
+									{(p) => (
+										<Input
+											{...p}
+											value={address}
+											onChange={(e) => setAddress(e.target.value)}
+											placeholder="Village / commune / district"
+										/>
+									)}
+								</Field>
 								<fieldset>
 									<legend className={fieldLabel}>Map position</legend>
-									<p className="text-xs text-muted-foreground mb-2">
-										Click the map to drop a pin (or drag it). Coordinates fill
-										in automatically.
+									<p className="mb-3 text-[13px] text-admin-ink-muted">
+										Click the map to drop a pin, or drag it. The coordinates
+										fill in as you go.
 									</p>
 									<MapPicker
 										lat={lat}
@@ -231,29 +249,27 @@ export function SchoolForm({
 											setLng(ln);
 										}}
 									/>
-									<div className="grid grid-cols-2 gap-4 max-w-sm mt-3">
-										<label className="block">
-											<span className="block text-[11px] text-muted-foreground mb-1">
-												Latitude
-											</span>
-											<input
-												className={fieldInput}
-												value={lat}
-												onChange={(e) => setLat(e.target.value)}
-												placeholder="12.245"
-											/>
-										</label>
-										<label className="block">
-											<span className="block text-[11px] text-muted-foreground mb-1">
-												Longitude
-											</span>
-											<input
-												className={fieldInput}
-												value={lng}
-												onChange={(e) => setLng(e.target.value)}
-												placeholder="104.668"
-											/>
-										</label>
+									<div className="mt-4 grid max-w-sm grid-cols-2 gap-4">
+										<Field label="Latitude">
+											{(p) => (
+												<Input
+													{...p}
+													value={lat}
+													onChange={(e) => setLat(e.target.value)}
+													placeholder="12.245"
+												/>
+											)}
+										</Field>
+										<Field label="Longitude">
+											{(p) => (
+												<Input
+													{...p}
+													value={lng}
+													onChange={(e) => setLng(e.target.value)}
+													placeholder="104.668"
+												/>
+											)}
+										</Field>
 									</div>
 								</fieldset>
 							</div>

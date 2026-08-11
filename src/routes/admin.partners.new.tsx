@@ -6,6 +6,7 @@ import {
 	type PartnerFormValue,
 	type TermOpt,
 } from "#/components/admin/PartnerForm";
+import { EditorSkeleton } from "#/components/admin/EditorSkeleton";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { saveErrorMessage } from "#/lib/save-error";
 import { toast } from "@/components/Dialogs";
@@ -41,7 +42,7 @@ function NewPartner() {
 		}
 	}
 
-	if (!ready) return <p className="text-sm text-muted-foreground">Loading…</p>;
+	if (!ready) return <EditorSkeleton />;
 	return (
 		<PartnerForm
 			initial={null}

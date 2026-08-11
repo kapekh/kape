@@ -1,12 +1,20 @@
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useId, useState } from "react";
 
+import { Input } from "#/components/ui/input.tsx";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "#/components/ui/select.tsx";
 import {
 	cancelButtonClass,
 	EditorGrid,
 	EditorHeader,
+	Field,
 	FormSection,
-	fieldInput,
 	fieldLabel,
 } from "./form-ui";
 import { LangTabs } from "./LangTabs";
@@ -14,6 +22,7 @@ import { MediaPicker } from "./MediaPicker";
 import type { LangOpt } from "./PostForm";
 import { RichTextEditor } from "./RichTextEditor";
 import { useDirtyGuard } from "./useDirty";
+import { useFieldErrors } from "./useFieldErrors";
 
 export type PersonFormValue = {
 	nameEn: string;
@@ -57,6 +66,14 @@ const TIERS = [
 	{ value: "staff", label: "Staff (internal directory only)" },
 ];
 
+// radix rejects "" as an item value; the stored value is still "" for "not recorded"
+const NO_SEX = "unspecified";
+const SEXES = [
+	{ value: NO_SEX, label: "Not recorded" },
+	{ value: "M", label: "M" },
+	{ value: "F", label: "F" },
+];
+
 export function PeopleForm({
 	initial,
 	languages,
@@ -72,6 +89,7 @@ export function PeopleForm({
 	title: string;
 	savedAt?: string | null;
 }) {
+	const uid = useId();
 	const [nameEn, setNameEn] = useState(initial?.nameEn ?? "");
 	const [nameKm, setNameKm] = useState(initial?.nameKm ?? "");
 	const [position, setPosition] = useState(initial?.position ?? "");
@@ -91,6 +109,7 @@ export function PeopleForm({
 		for (const l of languages) b[l.code] = initial?.bio?.[l.code] ?? "";
 		return b;
 	});
+	const { errors, invalid } = useFieldErrors();
 
 	function submit(e: React.FormEvent) {
 		e.preventDefault();
@@ -148,40 +167,43 @@ export function PeopleForm({
 				main={
 					<>
 						<FormSection
+							split
 							title="Identity"
 							description="Name and role, shown on the public team page and the internal directory."
 						>
-							<div className="space-y-4">
-								<div className="grid sm:grid-cols-2 gap-4">
-									<label className="block">
-										<span className={fieldLabel}>Name (English)</span>
-										<input
-											className={fieldInput}
+							<div className="space-y-6">
+								<Field label="Name (English)" required error={errors.nameEn}>
+									{(p) => (
+										<Input
+											{...p}
+											{...invalid("nameEn")}
 											value={nameEn}
 											onChange={(e) => setNameEn(e.target.value)}
 											placeholder="Chenda Sok"
-											required
 										/>
-									</label>
-									<label className="block">
-										<span className={fieldLabel}>Name (Khmer)</span>
-										<input
-											className={`${fieldInput} font-khmer`}
+									)}
+								</Field>
+								<Field label="Name (Khmer)">
+									{(p) => (
+										<Input
+											{...p}
+											className="font-khmer"
 											value={nameKm}
 											onChange={(e) => setNameKm(e.target.value)}
 											placeholder="សុខ ច័ន្ទដា"
 										/>
-									</label>
-								</div>
-								<label className="block">
-									<span className={fieldLabel}>Position / role</span>
-									<input
-										className={fieldInput}
-										value={position}
-										onChange={(e) => setPosition(e.target.value)}
-										placeholder="Executive Director"
-									/>
-								</label>
+									)}
+								</Field>
+								<Field label="Position / role">
+									{(p) => (
+										<Input
+											{...p}
+											value={position}
+											onChange={(e) => setPosition(e.target.value)}
+											placeholder="Executive Director"
+										/>
+									)}
+								</Field>
 							</div>
 						</FormSection>
 
@@ -191,70 +213,94 @@ export function PeopleForm({
 						>
 							<LangTabs languages={languages}>
 								{(l) => (
-									<RichTextEditor
-										value={bio[l.code] ?? ""}
-										onChange={(v) => setBio((p) => ({ ...p, [l.code]: v }))}
-									/>
+									<div>
+										<span
+											id={`${uid}-bio-${l.code}-label`}
+											className={fieldLabel}
+										>
+											Biography
+										</span>
+										<RichTextEditor
+											ariaLabelledBy={`${uid}-bio-${l.code}-label`}
+											value={bio[l.code] ?? ""}
+											onChange={(v) => setBio((p) => ({ ...p, [l.code]: v }))}
+										/>
+									</div>
 								)}
 							</LangTabs>
 						</FormSection>
 
 						<FormSection
+							split
 							title="Directory details"
 							description="Contact info for the internal staff directory."
 						>
-							<div className="grid sm:grid-cols-2 gap-4">
-								<label className="block">
-									<span className={fieldLabel}>Staff no.</span>
-									<input
-										className={fieldInput}
-										value={staffNo}
-										onChange={(e) => setStaffNo(e.target.value)}
-										placeholder="K001"
-									/>
-								</label>
-								<label className="block">
-									<span className={fieldLabel}>Sex</span>
-									<select
-										className={fieldInput}
-										value={sex}
-										onChange={(e) => setSex(e.target.value)}
-									>
-										<option value="">—</option>
-										<option value="M">M</option>
-										<option value="F">F</option>
-									</select>
-								</label>
-								<label className="block">
-									<span className={fieldLabel}>Phone</span>
-									<input
-										className={fieldInput}
-										value={phone}
-										onChange={(e) => setPhone(e.target.value)}
-										placeholder="012 000 000"
-									/>
-								</label>
-								<label className="block">
-									<span className={fieldLabel}>Email</span>
-									<input
-										className={fieldInput}
-										type="email"
-										value={email}
-										onChange={(e) => setEmail(e.target.value)}
-										placeholder="name@example.org"
-									/>
-								</label>
-								<div className="sm:col-span-2">
-									<label className="block">
-										<span className={fieldLabel}>Program / department</span>
-										<input
-											className={fieldInput}
+							<div className="space-y-6">
+								<Field label="Staff no.">
+									{(p) => (
+										<Input
+											{...p}
+											value={staffNo}
+											onChange={(e) => setStaffNo(e.target.value)}
+											placeholder="K001"
+										/>
+									)}
+								</Field>
+								<Field label="Sex">
+									{(p) => (
+										<Select
+											value={sex || NO_SEX}
+											onValueChange={(v) => setSex(v === NO_SEX ? "" : v)}
+										>
+											<SelectTrigger
+												id={p.id}
+												aria-label="Sex"
+												className="w-full"
+											>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												{SEXES.map((s) => (
+													<SelectItem key={s.value} value={s.value}>
+														{s.label}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									)}
+								</Field>
+								<Field label="Phone">
+									{(p) => (
+										<Input
+											{...p}
+											value={phone}
+											onChange={(e) => setPhone(e.target.value)}
+											placeholder="012 000 000"
+										/>
+									)}
+								</Field>
+								<Field label="Email" error={errors.email}>
+									{(p) => (
+										<Input
+											{...p}
+											{...invalid("email")}
+											type="email"
+											value={email}
+											onChange={(e) => setEmail(e.target.value)}
+											placeholder="name@example.org"
+										/>
+									)}
+								</Field>
+								<Field label="Program / department">
+									{(p) => (
+										<Input
+											{...p}
 											value={program}
 											onChange={(e) => setProgram(e.target.value)}
 											placeholder="NGS"
 										/>
-									</label>
-								</div>
+									)}
+								</Field>
 							</div>
 						</FormSection>
 					</>
@@ -279,44 +325,52 @@ export function PeopleForm({
 							title="Placement"
 							description="Where this person appears."
 						>
-							<div className="space-y-4">
-								<label className="block">
-									<span className={fieldLabel}>Tier</span>
-									<select
-										className={fieldInput}
-										value={tier}
-										onChange={(e) => setTier(e.target.value)}
-									>
-										{TIERS.map((t) => (
-											<option key={t.value} value={t.value}>
-												{t.label}
-											</option>
-										))}
-									</select>
-								</label>
-								<label className="flex items-center gap-2 text-sm">
+							<div className="space-y-6">
+								<Field label="Tier">
+									{(p) => (
+										<Select value={tier} onValueChange={setTier}>
+											<SelectTrigger
+												id={p.id}
+												aria-label="Tier"
+												className="w-full"
+											>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												{TIERS.map((t) => (
+													<SelectItem key={t.value} value={t.value}>
+														{t.label}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									)}
+								</Field>
+								<label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-admin-border p-3 transition-colors duration-150 ease-out hover:bg-admin-panel-raised">
 									<input
 										type="checkbox"
 										checked={isPublic}
 										onChange={(e) => setIsPublic(e.target.checked)}
+										className="mt-0.5 h-4 w-4 rounded border-admin-border accent-[var(--admin-accent)]"
 									/>
-									Show on the public website (Team page, org chart)
+									<span className="text-sm text-admin-ink">
+										Show on the public website (Team page, org chart)
+									</span>
 								</label>
 								{isPublic && (
-									<div>
-										<label className="block">
-											<span className={fieldLabel}>Public URL slug</span>
-											<input
-												className={fieldInput}
+									<Field
+										label="Public URL slug"
+										hint={`Profile lives at /team/${slug || "…"}`}
+									>
+										{(p) => (
+											<Input
+												{...p}
 												value={slug}
 												onChange={(e) => setSlug(e.target.value)}
 												placeholder="chenda-sok"
 											/>
-										</label>
-										<p className="mt-1 text-xs text-muted-foreground">
-											Profile lives at /team/{slug || "…"}
-										</p>
-									</div>
+										)}
+									</Field>
 								)}
 							</div>
 						</FormSection>

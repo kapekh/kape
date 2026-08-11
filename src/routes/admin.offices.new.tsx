@@ -6,6 +6,7 @@ import {
 	type OfficeFormValue,
 	type TermOpt,
 } from "#/components/admin/OfficeForm";
+import { EditorSkeleton } from "#/components/admin/EditorSkeleton";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { saveErrorMessage } from "#/lib/save-error";
 import { toast } from "@/components/Dialogs";
@@ -39,7 +40,7 @@ function NewOffice() {
 		}
 	}
 
-	if (!ready) return <p className="text-sm text-muted-foreground">Loading…</p>;
+	if (!ready) return <EditorSkeleton />;
 	return (
 		<OfficeForm
 			initial={null}

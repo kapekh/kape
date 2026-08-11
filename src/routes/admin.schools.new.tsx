@@ -8,6 +8,7 @@ import {
 	type TermOpt,
 } from "#/components/admin/SchoolForm";
 import { useModules } from "#/components/admin/useModules";
+import { EditorSkeleton } from "#/components/admin/EditorSkeleton";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { saveErrorMessage } from "#/lib/save-error";
 import { toast } from "@/components/Dialogs";
@@ -52,7 +53,7 @@ function NewSchool() {
 		}
 	}
 
-	if (!ready) return <p className="text-sm text-muted-foreground">Loading…</p>;
+	if (!ready) return <EditorSkeleton />;
 	return (
 		<SchoolForm
 			initial={null}
