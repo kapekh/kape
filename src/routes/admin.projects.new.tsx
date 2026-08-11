@@ -8,6 +8,7 @@ import {
 	type ProjectFormValue,
 } from "#/components/admin/ProjectForm";
 import { useModules } from "#/components/admin/useModules";
+import { EditorSkeleton } from "#/components/admin/EditorSkeleton";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { saveErrorMessage } from "#/lib/save-error";
 import { toast } from "@/components/Dialogs";
@@ -52,7 +53,7 @@ function NewProject() {
 		}
 	}
 
-	if (!ready) return <p className="text-sm text-muted-foreground">Loading…</p>;
+	if (!ready) return <EditorSkeleton />;
 	// No languages means no title can be authored, so offer the reason rather than a
 	// form whose save is guaranteed to fail.
 	if (error || !langs.length)

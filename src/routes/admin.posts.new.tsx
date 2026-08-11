@@ -7,6 +7,7 @@ import {
 	type PostFormValue,
 	type TypeOpt,
 } from "#/components/admin/PostForm";
+import { EditorSkeleton } from "#/components/admin/EditorSkeleton";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { saveErrorMessage } from "#/lib/save-error";
 import { toast } from "@/components/Dialogs";
@@ -48,7 +49,7 @@ function NewPost() {
 	}
 
 	if (!langs.length)
-		return <p className="text-sm text-muted-foreground">Loading…</p>;
+		return <EditorSkeleton />;
 
 	return (
 		<PostForm

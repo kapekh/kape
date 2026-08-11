@@ -8,6 +8,7 @@ import {
 	type ProjectFormValue,
 } from "#/components/admin/ProjectForm";
 import { useModules } from "#/components/admin/useModules";
+import { EditorSkeleton } from "#/components/admin/EditorSkeleton";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { saveErrorMessage } from "#/lib/save-error";
 import { toast } from "@/components/Dialogs";
@@ -65,7 +66,7 @@ function EditProject() {
 
 	if (notFound)
 		return <p className="text-sm text-muted-foreground">Project not found.</p>;
-	if (!ready) return <p className="text-sm text-muted-foreground">Loading…</p>;
+	if (!ready) return <EditorSkeleton />;
 	if (error || !data || !langs.length)
 		return (
 			<p className="text-sm text-destructive">

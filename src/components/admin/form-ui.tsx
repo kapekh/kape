@@ -66,10 +66,17 @@ export function EditorGrid({
 }) {
 	return (
 		<div className="mx-auto grid max-w-5xl items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-			<div className="min-w-0 space-y-6">{main}</div>
+			<div data-tour="editor-main" className="min-w-0 space-y-6">
+				{main}
+			</div>
 			{/* `top` MUST be ≤ the aside's resting offset, else sticky clamps the card
 			    DOWN to `top` and opens a gap above it. `self-start` keeps it top-aligned. */}
-			<aside className="space-y-6 self-start lg:sticky lg:top-6">{aside}</aside>
+			<aside
+				data-tour="editor-aside"
+				className="space-y-6 self-start lg:sticky lg:top-6"
+			>
+				{aside}
+			</aside>
 		</div>
 	);
 }
@@ -78,12 +85,32 @@ export function EditorGrid({
 export function FormSection({
 	title,
 	description,
+	split,
 	children,
 }: {
 	title: string;
 	description?: string;
+	/** Title and description beside the fields rather than above them, from `lg` up. */
+	split?: boolean;
 	children: React.ReactNode;
 }) {
+	if (split)
+		return (
+			<Card padding="none" className="overflow-hidden">
+				<div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,12rem)_minmax(0,1fr)] lg:gap-6">
+					<div className="min-w-0">
+						<h2 className="text-base font-semibold text-admin-ink">{title}</h2>
+						{description && (
+							<p className="mt-1 text-[13px] text-admin-ink-muted">
+								{description}
+							</p>
+						)}
+					</div>
+					<div className="min-w-0">{children}</div>
+				</div>
+			</Card>
+		);
+
 	return (
 		<Card padding="none" className="overflow-hidden">
 			<div className="border-b border-admin-border px-4 py-4">

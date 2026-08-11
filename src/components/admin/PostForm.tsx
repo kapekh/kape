@@ -1,13 +1,24 @@
 import { Link } from "@tanstack/react-router";
+import { ArrowLeft, ArrowRight, Image as ImageIcon, X } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 
+import { Button } from "#/components/ui/button.tsx";
+import { Input } from "#/components/ui/input.tsx";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "#/components/ui/select.tsx";
+import { Textarea } from "#/components/ui/textarea.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import {
 	cancelButtonClass,
 	EditorGrid,
 	EditorHeader,
+	Field,
 	FormSection,
-	fieldInput,
 	fieldLabel,
 } from "./form-ui";
 import { LangTabs } from "./LangTabs";
@@ -20,6 +31,7 @@ import { MediaPicker } from "./MediaPicker";
 import { RichTextEditor } from "./RichTextEditor";
 import { SearchableSelect } from "./SearchableSelect";
 import { useDirtyGuard } from "./useDirty";
+import { useFieldErrors } from "./useFieldErrors";
 
 export type LangOpt = { code: string; name: string; nativeName: string };
 export type TypeOpt = { key: string; name: string };
@@ -53,7 +65,6 @@ type Initial = {
 	translations: Record<string, Record<string, string>>;
 } | null;
 
-const input = fieldInput;
 const label = fieldLabel;
 
 type MetaField = {
@@ -232,6 +243,7 @@ export function PostForm({
 	}
 
 	const metaFieldDefs = META_FIELDS[contentType] ?? [];
+	const { errors, invalid } = useFieldErrors();
 
 	const dirty = useDirtyGuard(
 		JSON.stringify({
@@ -270,28 +282,35 @@ export function PostForm({
 					>
 						<LangTabs languages={languages}>
 							{(l) => (
-								<div className="space-y-4">
-									<label className="block">
-										<span className={label}>Title</span>
-										<input
-											className={`${input} ${l.code === "km" ? "font-khmer" : ""}`}
-											value={trans[l.code]?.title ?? ""}
-											onChange={(e) =>
-												setField(l.code, "title", e.target.value)
-											}
-										/>
-									</label>
-									<label className="block">
-										<span className={label}>Excerpt</span>
-										<textarea
-											className={`${input} ${l.code === "km" ? "font-khmer" : ""}`}
-											rows={2}
-											value={trans[l.code]?.excerpt ?? ""}
-											onChange={(e) =>
-												setField(l.code, "excerpt", e.target.value)
-											}
-										/>
-									</label>
+								<div className="space-y-6">
+									<Field label="Title">
+										{(p) => (
+											<Input
+												{...p}
+												className={l.code === "km" ? "font-khmer" : undefined}
+												value={trans[l.code]?.title ?? ""}
+												onChange={(e) =>
+													setField(l.code, "title", e.target.value)
+												}
+											/>
+										)}
+									</Field>
+									<Field
+										label="Excerpt"
+										hint="A sentence or two. Used on cards and in search results."
+									>
+										{(p) => (
+											<Textarea
+												{...p}
+												className={l.code === "km" ? "font-khmer" : undefined}
+												rows={2}
+												value={trans[l.code]?.excerpt ?? ""}
+												onChange={(e) =>
+													setField(l.code, "excerpt", e.target.value)
+												}
+											/>
+										)}
+									</Field>
 									<div>
 										<span id={`${uid}-body-${l.code}-label`} className={label}>
 											Body
@@ -308,6 +327,7 @@ export function PostForm({
 					</FormSection>,
 					<FormSection
 						key="gallery"
+						split
 						title="Gallery"
 						description="Extra images for this post. Galleries (type = Gallery) render these as a grid; other posts show them below the article."
 					>
@@ -333,7 +353,7 @@ export function PostForm({
 							title="Settings"
 							description="Type, status and publishing."
 						>
-							<div className="space-y-4">
+							<div className="space-y-6">
 								<div>
 									<label className={label} htmlFor={`${uid}-content-type`}>
 										Content type
@@ -349,46 +369,63 @@ export function PostForm({
 										}))}
 									/>
 								</div>
-								<label className="block">
-									<span className={label}>Status</span>
-									<select
-										className={input}
-										value={status}
-										onChange={(e) => setStatus(e.target.value as PostStatus)}
-									>
-										<option value="draft">Draft</option>
-										<option value="published">Published</option>
-										<option value="archived">Archived</option>
-									</select>
-								</label>
-								<label className="block">
-									<span className={label}>Slug</span>
-									<input
-										className={input}
-										value={slug}
-										onChange={(e) => setSlug(e.target.value)}
-										placeholder="my-post-slug"
-										required
-									/>
-								</label>
-								<label className="block">
-									<span className={label}>Published at</span>
-									<input
-										className={input}
-										type="date"
-										value={publishedAt}
-										onChange={(e) => setPublishedAt(e.target.value)}
-									/>
-								</label>
-								<label className="block">
-									<span className={label}>Author</span>
-									<input
-										className={input}
-										value={author}
-										onChange={(e) => setAuthor(e.target.value)}
-										placeholder="Author name"
-									/>
-								</label>
+								<Field label="Status">
+									{(p) => (
+										<Select
+											value={status}
+											onValueChange={(v) => setStatus(v as PostStatus)}
+										>
+											<SelectTrigger
+												id={p.id}
+												aria-label="Status"
+												className="w-full"
+											>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="draft">Draft</SelectItem>
+												<SelectItem value="published">Published</SelectItem>
+												<SelectItem value="archived">Archived</SelectItem>
+											</SelectContent>
+										</Select>
+									)}
+								</Field>
+								<Field
+									label="Slug"
+									required
+									hint="The last part of the post's web address."
+									error={errors.slug}
+								>
+									{(p) => (
+										<Input
+											{...p}
+											{...invalid("slug")}
+											value={slug}
+											onChange={(e) => setSlug(e.target.value)}
+											placeholder="my-post-slug"
+										/>
+									)}
+								</Field>
+								<Field label="Published at">
+									{(p) => (
+										<Input
+											{...p}
+											type="date"
+											value={publishedAt}
+											onChange={(e) => setPublishedAt(e.target.value)}
+										/>
+									)}
+								</Field>
+								<Field label="Author">
+									{(p) => (
+										<Input
+											{...p}
+											value={author}
+											onChange={(e) => setAuthor(e.target.value)}
+											placeholder="Author name"
+										/>
+									)}
+								</Field>
 							</div>
 						</FormSection>
 
@@ -397,7 +434,7 @@ export function PostForm({
 								title="Details"
 								description="Fields specific to this content type."
 							>
-								<div className="space-y-4">
+								<div className="space-y-6">
 									{metaFieldDefs.map((f) => (
 										<div key={f.key}>
 											<label className={label} htmlFor={`${uid}-meta-${f.key}`}>
@@ -447,9 +484,8 @@ export function PostForm({
 													);
 												})()
 											) : (
-												<input
+												<Input
 													id={`${uid}-meta-${f.key}`}
-													className={input}
 													type={
 														f.kind === "date"
 															? "date"
@@ -478,6 +514,9 @@ export function PostForm({
 		</form>
 	);
 }
+
+const thumbButton =
+	"grid size-6 place-items-center rounded bg-admin-panel/90 text-admin-ink transition-colors duration-150 ease-out hover:bg-admin-panel disabled:opacity-30";
 
 function GalleryPicker({
 	value,
@@ -525,13 +564,13 @@ function GalleryPicker({
 	}
 
 	return (
-		<div className="space-y-3">
+		<div className="space-y-4">
 			{value.length > 0 && (
 				<ul className="grid grid-cols-3 gap-3 sm:grid-cols-4">
 					{value.map((id, i) => (
 						<li
 							key={id}
-							className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-muted"
+							className="group relative aspect-square overflow-hidden rounded-lg border border-admin-border bg-admin-panel-raised"
 						>
 							{urls[id] ? (
 								<img
@@ -540,54 +579,50 @@ function GalleryPicker({
 									className="h-full w-full object-cover"
 								/>
 							) : (
-								<span className="grid h-full w-full place-items-center text-2xl">
-									🖼️
+								<span className="grid h-full w-full place-items-center text-admin-ink-subtle">
+									<ImageIcon className="size-6" aria-hidden="true" />
 								</span>
 							)}
-							<span className="absolute left-1 top-1 rounded bg-foreground/70 px-1.5 py-0.5 text-[10px] font-semibold text-background">
+							<span className="absolute left-1.5 top-1.5 rounded-full bg-admin-ink/75 px-2 py-0.5 text-xs font-medium text-admin-panel">
 								{i + 1}
 							</span>
-							<div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-foreground/60 px-1.5 py-1 opacity-0 transition group-hover:opacity-100">
+							<div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-admin-ink/70 px-1.5 py-1.5 opacity-0 transition-opacity duration-150 ease-out focus-within:opacity-100 group-hover:opacity-100">
 								<div className="flex gap-1">
 									<button
 										type="button"
 										onClick={() => move(i, -1)}
 										disabled={i === 0}
-										className="rounded bg-background/90 px-1.5 text-xs text-foreground disabled:opacity-30"
+										className={thumbButton}
 										aria-label="Move left"
 									>
-										←
+										<ArrowLeft className="size-3.5" aria-hidden="true" />
 									</button>
 									<button
 										type="button"
 										onClick={() => move(i, 1)}
 										disabled={i === value.length - 1}
-										className="rounded bg-background/90 px-1.5 text-xs text-foreground disabled:opacity-30"
+										className={thumbButton}
 										aria-label="Move right"
 									>
-										→
+										<ArrowRight className="size-3.5" aria-hidden="true" />
 									</button>
 								</div>
 								<button
 									type="button"
 									onClick={() => remove(id)}
-									className="rounded bg-background/90 px-1.5 text-xs text-destructive"
+									className={`${thumbButton} text-admin-danger`}
 									aria-label="Remove"
 								>
-									×
+									<X className="size-3.5" aria-hidden="true" />
 								</button>
 							</div>
 						</li>
 					))}
 				</ul>
 			)}
-			<button
-				type="button"
-				onClick={() => setOpen(true)}
-				className="rounded-lg border border-dashed border-border px-4 py-2 text-sm font-medium text-foreground/70 hover:border-[var(--accent)] hover:bg-muted"
-			>
+			<Button type="button" variant="secondary" onClick={() => setOpen(true)}>
 				+ Add images{value.length > 0 ? ` (${value.length})` : ""}
-			</button>
+			</Button>
 			<MediaLibraryDialog
 				open={open}
 				onClose={() => setOpen(false)}

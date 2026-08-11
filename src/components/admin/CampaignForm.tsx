@@ -1,16 +1,27 @@
 import { Link } from "@tanstack/react-router";
+import { X } from "lucide-react";
 import { useState } from "react";
 
+import { Button } from "#/components/ui/button.tsx";
+import { Input } from "#/components/ui/input.tsx";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "#/components/ui/select.tsx";
+import { Textarea } from "#/components/ui/textarea.tsx";
 import {
 	cancelButtonClass,
 	EditorGrid,
 	EditorHeader,
+	Field,
 	FormSection,
-	fieldInput,
-	fieldLabel,
 } from "./form-ui";
 import { MediaPicker } from "./MediaPicker";
 import { useDirtyGuard } from "./useDirty";
+import { useFieldErrors } from "./useFieldErrors";
 
 export type CampaignFormValue = {
 	slug: string;
@@ -60,17 +71,17 @@ function Check({
 	hint?: string;
 }) {
 	return (
-		<label className="flex items-start gap-2.5 cursor-pointer">
+		<label className="flex cursor-pointer items-start gap-2.5">
 			<input
 				type="checkbox"
 				checked={checked}
 				onChange={(e) => onChange(e.target.checked)}
-				className="mt-0.5 h-4 w-4 rounded border-border accent-[var(--accent)]"
+				className="mt-0.5 size-4 rounded border-admin-border accent-[var(--admin-accent)]"
 			/>
 			<span>
-				<span className="text-sm font-medium text-foreground">{label}</span>
+				<span className="text-sm font-medium text-admin-ink">{label}</span>
 				{hint && (
-					<span className="block text-xs text-muted-foreground">{hint}</span>
+					<span className="block text-[13px] text-admin-ink-muted">{hint}</span>
 				)}
 			</span>
 		</label>
@@ -109,10 +120,15 @@ export function CampaignForm({
 		(initial?.presets ?? []).join(", "),
 	);
 	const [allowCustom, setAllowCustom] = useState(initial?.allowCustom ?? true);
-	const [tiers, setTiers] = useState<{ amount: string; label: string }[]>(
-		(initial?.impactTiers ?? []).map((t) => ({
+	// a row's identity is its own, not its index: removing the first tier must not
+	// hand its React state to the second
+	const [tiers, setTiers] = useState<
+		{ amount: string; label: string; key: string }[]
+	>(
+		(initial?.impactTiers ?? []).map((t, i) => ({
 			amount: String(t.amount),
 			label: t.label,
+			key: `t${i}`,
 		})),
 	);
 	const [showSupporters, setShowSupporters] = useState(
@@ -154,6 +170,8 @@ export function CampaignForm({
 		});
 	}
 
+	const { errors, invalid } = useFieldErrors();
+
 	const dirty = useDirtyGuard(
 		JSON.stringify({
 			slug,
@@ -189,115 +207,134 @@ export function CampaignForm({
 				main={
 					<div className="space-y-5">
 						<FormSection
+							split
 							title="Campaign"
 							description="Title and description shown on the donate page (English + Khmer)."
 						>
-							<div className="space-y-4">
-								<div className="grid sm:grid-cols-2 gap-4">
-									<label className="block">
-										<span className={fieldLabel}>Title (EN)</span>
-										<input
-											className={fieldInput}
-											value={titleEn}
-											onChange={(e) => setTitleEn(e.target.value)}
-											placeholder="Where every child learns"
-											required
-										/>
-									</label>
-									<label className="block">
-										<span className={fieldLabel}>Title (KM)</span>
-										<input
-											className={`${fieldInput} font-khmer`}
-											value={titleKm}
-											onChange={(e) => setTitleKm(e.target.value)}
-										/>
-									</label>
+							<div className="space-y-6">
+								<div className="grid gap-4 sm:grid-cols-2">
+									<Field label="Title (EN)" required error={errors.title}>
+										{(p) => (
+											<Input
+												{...p}
+												{...invalid("title")}
+												value={titleEn}
+												onChange={(e) => setTitleEn(e.target.value)}
+												placeholder="Where every child learns"
+											/>
+										)}
+									</Field>
+									<Field label="Title (KM)">
+										{(p) => (
+											<Input
+												{...p}
+												className="font-khmer"
+												value={titleKm}
+												onChange={(e) => setTitleKm(e.target.value)}
+											/>
+										)}
+									</Field>
 								</div>
-								<div>
-									<label className="block">
-										<span className={fieldLabel}>Slug</span>
-										<input
-											className={`${fieldInput} font-mono`}
+								<Field
+									label="Slug"
+									hint={`URL: /donate/${slug || slugify(titleEn) || "…"}`}
+								>
+									{(p) => (
+										<Input
+											{...p}
+											className="font-mono"
 											value={slug}
 											onChange={(e) => setSlug(slugify(e.target.value))}
 											placeholder="every-child-learns"
 										/>
-									</label>
-									<p className="mt-1 text-xs text-muted-foreground">
-										URL: /donate/{slug || slugify(titleEn) || "…"}
-									</p>
-								</div>
-								<div className="grid sm:grid-cols-2 gap-4">
-									<label className="block">
-										<span className={fieldLabel}>Blurb (EN)</span>
-										<textarea
-											className={fieldInput}
-											rows={3}
-											value={blurb}
-											onChange={(e) => setBlurb(e.target.value)}
-										/>
-									</label>
-									<label className="block">
-										<span className={fieldLabel}>Blurb (KM)</span>
-										<textarea
-											className={`${fieldInput} font-khmer`}
-											rows={3}
-											value={blurbKm}
-											onChange={(e) => setBlurbKm(e.target.value)}
-										/>
-									</label>
+									)}
+								</Field>
+								<div className="grid gap-4 sm:grid-cols-2">
+									<Field label="Blurb (EN)">
+										{(p) => (
+											<Textarea
+												{...p}
+												rows={3}
+												value={blurb}
+												onChange={(e) => setBlurb(e.target.value)}
+											/>
+										)}
+									</Field>
+									<Field label="Blurb (KM)">
+										{(p) => (
+											<Textarea
+												{...p}
+												className="font-khmer"
+												rows={3}
+												value={blurbKm}
+												onChange={(e) => setBlurbKm(e.target.value)}
+											/>
+										)}
+									</Field>
 								</div>
 							</div>
 						</FormSection>
 
 						<FormSection
+							split
 							title="Amounts"
 							description="Preset buttons and the impact each gift unlocks."
 						>
-							<div className="space-y-4">
-								<div className="grid sm:grid-cols-2 gap-4">
-									<label className="block">
-										<span className={fieldLabel}>Currency</span>
-										<select
-											className={fieldInput}
-											value={currency}
-											onChange={(e) =>
-												setCurrency(e.target.value as "USD" | "KHR")
-											}
-										>
-											<option value="USD">USD ($)</option>
-											<option value="KHR">KHR (៛)</option>
-										</select>
-									</label>
-									<label className="block">
-										<span className={fieldLabel}>Goal amount (optional)</span>
-										<input
-											className={fieldInput}
-											type="number"
-											value={goal}
-											onChange={(e) => setGoal(e.target.value)}
-											placeholder="50000"
-										/>
-									</label>
+							<div className="space-y-6">
+								<div className="grid gap-4 sm:grid-cols-2">
+									<Field label="Currency">
+										{(p) => (
+											<Select
+												value={currency}
+												onValueChange={(v) =>
+													setCurrency(v as "USD" | "KHR")
+												}
+											>
+												<SelectTrigger
+													id={p.id}
+													aria-label="Currency"
+													className="w-full"
+												>
+													<SelectValue />
+												</SelectTrigger>
+												<SelectContent>
+													<SelectItem value="USD">USD ($)</SelectItem>
+													<SelectItem value="KHR">KHR (៛)</SelectItem>
+												</SelectContent>
+											</Select>
+										)}
+									</Field>
+									<Field label="Goal amount (optional)">
+										{(p) => (
+											<Input
+												{...p}
+												type="number"
+												value={goal}
+												onChange={(e) => setGoal(e.target.value)}
+												placeholder="50000"
+											/>
+										)}
+									</Field>
 								</div>
-								<label className="block">
-									<span className={fieldLabel}>
-										Preset amounts (comma-separated)
-									</span>
-									<input
-										className={fieldInput}
-										value={presetsText}
-										onChange={(e) => setPresetsText(e.target.value)}
-										placeholder="25, 50, 100, 250"
-									/>
-								</label>
+								<Field label="Preset amounts (comma-separated)">
+									{(p) => (
+										<Input
+											{...p}
+											value={presetsText}
+											onChange={(e) => setPresetsText(e.target.value)}
+											placeholder="25, 50, 100, 250"
+										/>
+									)}
+								</Field>
 								<fieldset>
-									<legend className={fieldLabel}>Impact tiers</legend>
+									<legend className="mb-2 block text-[13px] font-medium text-admin-ink">
+										Impact tiers
+									</legend>
 									<div className="space-y-2">
 										{tiers.map((t, i) => (
-											<div key={i} className="flex gap-2">
-												<input
-													className={`${fieldInput} w-28`}
+											<div key={t.key} className="flex gap-2">
+												<Input
+													className="w-28"
 													type="number"
 													aria-label={`Tier ${i + 1} amount`}
 													value={t.amount}
@@ -310,8 +347,7 @@ export function CampaignForm({
 														)
 													}
 												/>
-												<input
-													className={fieldInput}
+												<Input
 													aria-label={`Tier ${i + 1} label`}
 													value={t.label}
 													placeholder="Textbooks for a classroom"
@@ -323,26 +359,32 @@ export function CampaignForm({
 														)
 													}
 												/>
-												<button
+												<Button
 													type="button"
+													variant="secondary"
+													size="icon"
+													aria-label={`Remove tier ${i + 1}`}
 													onClick={() =>
 														setTiers((ts) => ts.filter((_, n) => n !== i))
 													}
-													className="rounded-lg border border-border px-3 text-sm text-muted-foreground hover:bg-muted"
 												>
-													×
-												</button>
+													<X className="size-4" aria-hidden="true" />
+												</Button>
 											</div>
 										))}
-										<button
+										<Button
 											type="button"
+											variant="secondary"
+											size="sm"
 											onClick={() =>
-												setTiers((ts) => [...ts, { amount: "", label: "" }])
+												setTiers((ts) => [
+													...ts,
+													{ amount: "", label: "", key: crypto.randomUUID() },
+												])
 											}
-											className="text-sm font-semibold text-[var(--accent)] hover:underline"
 										>
 											+ Add tier
-										</button>
+										</Button>
 									</div>
 								</fieldset>
 							</div>
@@ -352,17 +394,23 @@ export function CampaignForm({
 				aside={
 					<div className="space-y-5">
 						<FormSection title="Status">
-							<select
-								className={fieldInput}
+							<Select
 								value={status}
-								onChange={(e) =>
-									setStatus(e.target.value as CampaignFormValue["status"])
+								onValueChange={(v) =>
+									setStatus(v as CampaignFormValue["status"])
 								}
 							>
-								<option value="active">Active — accepting donations</option>
-								<option value="draft">Draft — hidden</option>
-								<option value="ended">Ended — visible, closed</option>
-							</select>
+								<SelectTrigger aria-label="Campaign status" className="w-full">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="active">
+										Active — accepting donations
+									</SelectItem>
+									<SelectItem value="draft">Draft — hidden</SelectItem>
+									<SelectItem value="ended">Ended — visible, closed</SelectItem>
+								</SelectContent>
+							</Select>
 						</FormSection>
 						<FormSection
 							title="Cover image"

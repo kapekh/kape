@@ -5,6 +5,7 @@ import {
 	CampaignForm,
 	type CampaignFormValue,
 } from "#/components/admin/CampaignForm";
+import { EditorSkeleton } from "#/components/admin/EditorSkeleton";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { saveErrorMessage } from "#/lib/save-error";
 import { toast } from "@/components/Dialogs";
@@ -29,6 +30,7 @@ function EditCampaign() {
 		setSaving(true);
 		try {
 			await trpcClient.adminCampaigns.update.mutate({ id: Number(id), ...v });
+			toast("Campaign saved.", "success");
 			navigate({ to: "/admin/campaigns" });
 		} catch (e) {
 			toast(saveErrorMessage(e), "error");
@@ -38,7 +40,7 @@ function EditCampaign() {
 	}
 
 	if (!initial)
-		return <div className="p-6 text-muted-foreground">Loading…</div>;
+		return <EditorSkeleton />;
 	return (
 		<CampaignForm
 			initial={initial}

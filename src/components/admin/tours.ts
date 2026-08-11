@@ -98,6 +98,26 @@ export const TOURS = {
 			},
 		],
 	},
+	editor: {
+		title: "Writing and saving",
+		steps: [
+			{
+				target: '[data-tour="editor-main"] > *:first-child',
+				title: "The words people will read",
+				body: "Each language has its own tab. What you type is kept when you switch, and both are saved together - a tab you never open is not an empty one.",
+			},
+			{
+				target: '[data-tour="editor-aside"]',
+				title: "How it is filed",
+				body: "Status, the web address and the dates live beside the text rather than under it, so publishing a draft is never a scroll away.",
+			},
+			{
+				target: "form button[type=submit]",
+				title: "Save when you are ready",
+				body: "Greyed out means nothing has changed yet. Hover it and it tells you why. Leaving with unsaved work asks first.",
+			},
+		],
+	},
 } satisfies Record<string, Tour>;
 
 export type TourId = keyof typeof TOURS;
@@ -107,5 +127,6 @@ export function tourForPath(pathname: string): TourId {
 	if (pathname.startsWith("/admin/media")) return "media";
 	if (pathname.startsWith("/admin/settings")) return "settings";
 	if (pathname.startsWith("/admin/modules")) return "modules";
+	if (/^\/admin\/(posts|projects|campaigns)\/./.test(pathname)) return "editor";
 	return "shell";
 }

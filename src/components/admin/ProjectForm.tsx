@@ -1,12 +1,22 @@
 import { Link } from "@tanstack/react-router";
 import { useId, useState } from "react";
 
+import { Button } from "#/components/ui/button.tsx";
+import { Input } from "#/components/ui/input.tsx";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "#/components/ui/select.tsx";
+import { Textarea } from "#/components/ui/textarea.tsx";
 import {
 	cancelButtonClass,
 	EditorGrid,
 	EditorHeader,
+	Field,
 	FormSection,
-	fieldInput,
 	fieldLabel,
 } from "./form-ui";
 import { LangTabs } from "./LangTabs";
@@ -15,6 +25,7 @@ import { MediaPicker } from "./MediaPicker";
 import type { LangOpt } from "./PostForm";
 import { RichTextEditor } from "./RichTextEditor";
 import { useDirtyGuard } from "./useDirty";
+import { useFieldErrors } from "./useFieldErrors";
 import { useModules } from "./useModules";
 
 export type DonorOpt = { id: number; name: string };
@@ -79,7 +90,11 @@ export function ProjectForm({
 		(initial?.status as ProjectStatus) ?? "current",
 	);
 	const [donorIds, setDonorIds] = useState<number[]>(initial?.donorIds ?? []);
-	const [locations, setLocations] = useState(initial?.locations ?? []);
+	// a row's identity is its own, not its index: removing the first one must not
+	// hand its React state to the second
+	const [locations, setLocations] = useState<
+		(ProjectLocation & { key: string })[]
+	>(() => (initial?.locations ?? []).map((l, i) => ({ ...l, key: `l${i}` })));
 	const [startDate, setStartDate] = useState(initial?.startDate ?? "");
 	const [endDate, setEndDate] = useState(initial?.endDate ?? "");
 	const [targetAreas, setTargetAreas] = useState(
@@ -151,9 +166,13 @@ export function ProjectForm({
 				.map((s) => ({ value: s.value, label: s.label })),
 			translations: languages.map((l) => ({ lang: l.code, ...trans[l.code] })),
 			donorIds,
-			locations: locations.filter((l) => l.lat && l.lng),
+			locations: locations
+				.filter((l) => l.lat && l.lng)
+				.map(({ key: _key, ...l }) => l),
 		});
 	}
+
+	const { errors, invalid } = useFieldErrors();
 
 	const dirty = useDirtyGuard(
 		JSON.stringify({
@@ -193,28 +212,35 @@ export function ProjectForm({
 						>
 							<LangTabs languages={languages}>
 								{(l) => (
-									<div className="space-y-4">
-										<label className="block">
-											<span className={fieldLabel}>Name</span>
-											<input
-												className={`${fieldInput} ${l.code === "km" ? "font-khmer" : ""}`}
-												value={trans[l.code]?.name ?? ""}
-												onChange={(e) =>
-													setField(l.code, "name", e.target.value)
-												}
-											/>
-										</label>
-										<label className="block">
-											<span className={fieldLabel}>Summary</span>
-											<textarea
-												className={`${fieldInput} ${l.code === "km" ? "font-khmer" : ""}`}
-												rows={2}
-												value={trans[l.code]?.summary ?? ""}
-												onChange={(e) =>
-													setField(l.code, "summary", e.target.value)
-												}
-											/>
-										</label>
+									<div className="space-y-6">
+										<Field label="Name">
+											{(p) => (
+												<Input
+													{...p}
+													className={l.code === "km" ? "font-khmer" : undefined}
+													value={trans[l.code]?.name ?? ""}
+													onChange={(e) =>
+														setField(l.code, "name", e.target.value)
+													}
+												/>
+											)}
+										</Field>
+										<Field
+											label="Summary"
+											hint="One or two sentences, shown on the projects list."
+										>
+											{(p) => (
+												<Textarea
+													{...p}
+													className={l.code === "km" ? "font-khmer" : undefined}
+													rows={2}
+													value={trans[l.code]?.summary ?? ""}
+													onChange={(e) =>
+														setField(l.code, "summary", e.target.value)
+													}
+												/>
+											)}
+										</Field>
 										<div>
 											<span
 												id={`${uid}-body-${l.code}-label`}
@@ -237,11 +263,15 @@ export function ProjectForm({
 							title="Map locations"
 							description="Sites shown for this project on the About-page map."
 						>
-							<div className="space-y-2">
+							<div className="space-y-3">
 								{locations.map((l, i) => (
-									<div key={i} className="flex flex-wrap gap-2 items-center">
-										<input
-											className={`${fieldInput} max-w-[260px]`}
+									<div
+										key={l.key}
+										className="flex flex-wrap items-center gap-2"
+									>
+										<Input
+											className="max-w-[260px]"
+											aria-label={`Site ${i + 1} name`}
 											placeholder="School / site name"
 											value={l.schoolName}
 											onChange={(e) => setLoc(i, "schoolName", e.target.value)}
@@ -269,38 +299,48 @@ export function ProjectForm({
 												}
 											/>
 										</div>
-										<button
+										<Button
 											type="button"
+											variant="ghost"
+											size="sm"
+											className="text-admin-danger"
 											onClick={() =>
 												setLocations((ls) => ls.filter((_, j) => j !== i))
 											}
-											className="text-xs text-destructive hover:underline"
 										>
 											Remove
-										</button>
+										</Button>
 									</div>
 								))}
-								<button
+								<Button
 									type="button"
+									variant="secondary"
+									size="sm"
 									onClick={() =>
 										setLocations((ls) => [
 											...ls,
-											{ schoolName: "", lat: "", lng: "", photoMediaId: null },
+											{
+												schoolName: "",
+												lat: "",
+												lng: "",
+												photoMediaId: null,
+												key: crypto.randomUUID(),
+											},
 										])
 									}
-									className="text-xs rounded border border-border px-3 py-1 hover:bg-muted"
 								>
 									+ Add location
-								</button>
+								</Button>
 							</div>
 						</FormSection>
 
 						<FormSection
+							split
 							title="Target areas"
 							description="Provinces or districts this project works in. One per line."
 						>
-							<textarea
-								className={fieldInput}
+							<Textarea
+								aria-label="Target areas, one per line"
 								rows={4}
 								value={targetAreas}
 								onChange={(e) => setTargetAreas(e.target.value)}
@@ -309,50 +349,56 @@ export function ProjectForm({
 						</FormSection>
 
 						<FormSection
+							split
 							title="Snapshot figures"
 							description="Headline numbers shown as tiles on the project page."
 						>
-							<div className="space-y-2">
+							<div className="space-y-3">
 								{snapshots.map((s, i) => (
 									<div
 										key={s.key}
-										className="flex flex-wrap gap-2 items-center"
+										className="flex flex-wrap items-center gap-2"
 									>
-										<input
-											className={`${fieldInput} max-w-[140px]`}
+										<Input
+											className="max-w-[140px]"
+											aria-label={`Figure ${i + 1} value`}
 											placeholder="385+"
 											value={s.value}
 											onChange={(e) => setSnapshot(i, "value", e.target.value)}
 										/>
-										<input
-											className={`${fieldInput} max-w-[260px]`}
+										<Input
+											className="max-w-[260px]"
+											aria-label={`Figure ${i + 1} label`}
 											placeholder="schools reached"
 											value={s.label}
 											onChange={(e) => setSnapshot(i, "label", e.target.value)}
 										/>
-										<button
+										<Button
 											type="button"
+											variant="ghost"
+											size="sm"
+											className="text-admin-danger"
 											onClick={() =>
 												setSnapshots((ss) => ss.filter((_, j) => j !== i))
 											}
-											className="text-xs text-destructive hover:underline"
 										>
 											Remove
-										</button>
+										</Button>
 									</div>
 								))}
-								<button
+								<Button
 									type="button"
+									variant="secondary"
+									size="sm"
 									onClick={() =>
 										setSnapshots((ss) => [
 											...ss,
 											{ value: "", label: "", key: crypto.randomUUID() },
 										])
 									}
-									className="text-xs rounded border border-border px-3 py-1 hover:bg-muted"
 								>
 									+ Add figure
-								</button>
+								</Button>
 							</div>
 						</FormSection>
 					</>
@@ -363,46 +409,66 @@ export function ProjectForm({
 							title="Project details"
 							description="Code, slug and lifecycle."
 						>
-							<div className="space-y-4">
-								<label className="block">
-									<span className={fieldLabel}>Code</span>
-									<input
-										className={fieldInput}
-										value={code}
-										onChange={(e) => setCode(e.target.value)}
-										placeholder="NGS"
-										required
-									/>
-								</label>
-								<label className="block">
-									<span className={fieldLabel}>Slug</span>
-									<input
-										className={fieldInput}
-										value={slug}
-										onChange={(e) => setSlug(e.target.value)}
-										placeholder="ngs"
-										required
-									/>
-								</label>
-								<label className="block">
-									<span className={fieldLabel}>Status</span>
-									<select
-										className={fieldInput}
-										value={status}
-										onChange={(e) => setStatus(e.target.value as ProjectStatus)}
-									>
-										<option value="current">Current</option>
-										<option value="past">Past</option>
-									</select>
-								</label>
+							<div className="space-y-6">
+								<Field
+									label="Code"
+									required
+									hint="Short identifier, used in reports."
+									error={errors.code}
+								>
+									{(p) => (
+										<Input
+											{...p}
+											{...invalid("code")}
+											value={code}
+											onChange={(e) => setCode(e.target.value)}
+											placeholder="NGS"
+										/>
+									)}
+								</Field>
+								<Field
+									label="Slug"
+									required
+									hint="The last part of the project's web address."
+									error={errors.slug}
+								>
+									{(p) => (
+										<Input
+											{...p}
+											{...invalid("slug")}
+											value={slug}
+											onChange={(e) => setSlug(e.target.value)}
+											placeholder="ngs"
+										/>
+									)}
+								</Field>
+								<Field label="Status">
+									{(p) => (
+										<Select
+											value={status}
+											onValueChange={(v) => setStatus(v as ProjectStatus)}
+										>
+											<SelectTrigger
+												id={p.id}
+												aria-label="Status"
+												className="w-full"
+											>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="current">Current</SelectItem>
+												<SelectItem value="past">Past</SelectItem>
+											</SelectContent>
+										</Select>
+									)}
+								</Field>
 								<div>
 									<label className={fieldLabel} htmlFor="project-start-date">
 										Start date
 									</label>
-									<input
+									<Input
 										id="project-start-date"
 										type="date"
-										className={fieldInput}
 										value={startDate}
 										onChange={(e) => setStartDate(e.target.value)}
 									/>
@@ -411,10 +477,9 @@ export function ProjectForm({
 									<label className={fieldLabel} htmlFor="project-end-date">
 										End date
 									</label>
-									<input
+									<Input
 										id="project-end-date"
 										type="date"
-										className={fieldInput}
 										value={endDate}
 										onChange={(e) => setEndDate(e.target.value)}
 									/>
@@ -426,9 +491,9 @@ export function ProjectForm({
 							title="Donors"
 							description="Funders backing this project."
 						>
-							<div className="space-y-2.5">
+							<div className="space-y-3">
 								{donors.length === 0 ? (
-									<span className="text-sm text-muted-foreground">
+									<span className="text-[13px] text-admin-ink-muted">
 										{modules.has("fundraising")
 											? "No donors yet — add some under Admin → Donors."
 											: "This site does not keep a donor register. Turn on Campaigns, donations and donors under Admin → Modules to credit funders here."}
@@ -437,10 +502,11 @@ export function ProjectForm({
 									donors.map((d) => (
 										<label
 											key={d.id}
-											className="flex items-center gap-2 text-sm"
+											className="flex cursor-pointer items-center gap-2.5 text-sm text-admin-ink"
 										>
 											<input
 												type="checkbox"
+												className="size-4 rounded border-admin-border accent-[var(--admin-accent)]"
 												checked={donorIds.includes(d.id)}
 												onChange={() => toggleDonor(d.id)}
 											/>{" "}
