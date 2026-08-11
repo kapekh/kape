@@ -1,7 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Download, Inbox, SearchX } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
+import {
+	EmptyState,
+	ListSearch,
+	matchesQuery,
+	TableScroll,
+} from "#/components/admin/list-ui";
+import { Button } from "#/components/ui/button.tsx";
+import { PageHeader } from "#/components/ui/page-header.tsx";
+import { Table, TBody, TD, TH, THead, TR } from "#/components/ui/table.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { confirm, toast } from "@/components/Dialogs";
 import { type FormField, isContentField } from "@/lib/forms";
@@ -26,6 +36,7 @@ function Submissions() {
 	const [fields, setFields] = useState<FormField[]>([]);
 	const [rows, setRows] = useState<Sub[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [q, setQ] = useState("");
 
 	// `content` blocks and `section` headings are author text, not inputs — they
 	// have no submission column.
@@ -91,101 +102,122 @@ function Submissions() {
 		toast("CSV exported.", "success");
 	}
 
+	const searchable = (r: Sub) => {
+		const data = (r.data ?? {}) as Record<string, string>;
+		return dataFields.map((f) =>
+			f.type === "richtext" ? stripHtml(data[f.key] ?? "") : (data[f.key] ?? ""),
+		);
+	};
+	const shown = rows.filter((r) =>
+		matchesQuery(q, fmtDate(r.createdAt), ...searchable(r)),
+	);
+
 	return (
 		<div>
-			<div className="mb-6">
-				<Link
-					to="/admin/forms"
-					className="text-xs font-semibold text-muted-foreground hover:text-foreground"
-				>
-					← Forms
-				</Link>
-				<div className="mt-1 flex flex-wrap items-end justify-between gap-4">
-					<div>
-						<h1 className="font-display text-2xl font-semibold text-primary">
-							{title} — responses
-						</h1>
-						<p className="mt-1 text-sm text-muted-foreground">
-							{rows.length} submission{rows.length === 1 ? "" : "s"}.
-						</p>
-					</div>
-					<div className="flex gap-2">
-						<Link
-							to="/admin/forms/$id"
-							params={{ id }}
-							className="rounded-full border border-border px-4 py-2 text-sm font-semibold hover:bg-muted transition"
-						>
-							Edit form
-						</Link>
-						<button
+			<PageHeader
+				title={`${title || "Form"} — responses`}
+				description="What visitors sent through this form."
+				breadcrumb={[
+					{ label: "Admin", to: "/admin" },
+					{ label: "Forms", to: "/admin/forms" },
+					{ label: "Responses" },
+				]}
+				actions={
+					<>
+						<Button asChild variant="secondary">
+							<Link to="/admin/forms/$id" params={{ id }}>
+								Edit form
+							</Link>
+						</Button>
+						<Button
 							type="button"
 							onClick={exportCsv}
 							disabled={rows.length === 0}
-							className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition"
 						>
+							<Download aria-hidden="true" />
 							Export CSV
-						</button>
-					</div>
-				</div>
-			</div>
+						</Button>
+					</>
+				}
+				toolbar={
+					!loading && rows.length > 0 ? (
+						<ListSearch
+							value={q}
+							onChange={setQ}
+							label="Search responses"
+							placeholder="Search what people wrote…"
+							status={
+								q
+									? `${shown.length} of ${rows.length}`
+									: `${rows.length} response${rows.length === 1 ? "" : "s"}`
+							}
+						/>
+					) : undefined
+				}
+			/>
 
-			<div className="overflow-x-auto rounded-xl border border-border bg-card">
-				<table className="w-full text-sm">
-					<thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
-						<tr>
-							<th className="px-4 py-2.5 whitespace-nowrap">Date</th>
-							{dataFields.map((f) => (
-								<th key={f.key} className="px-2 py-2.5 whitespace-nowrap">
-									{f.label}
-								</th>
-							))}
-							<th className="px-3 py-2.5 text-right">Actions</th>
-						</tr>
-					</thead>
-					<tbody className="divide-y divide-border">
-						{loading ? (
-							<tr>
-								<td
-									colSpan={dataFields.length + 2}
-									className="px-4 py-6 text-muted-foreground"
-								>
-									Loading…
-								</td>
-							</tr>
-						) : rows.length === 0 ? (
-							<tr>
-								<td
-									colSpan={dataFields.length + 2}
-									className="px-4 py-6 text-muted-foreground"
-								>
-									No responses yet.
-								</td>
-							</tr>
-						) : (
-							rows.map((r) => {
+			{loading ? (
+				<EmptyState title="Loading responses…" />
+			) : rows.length === 0 ? (
+				<EmptyState
+					icon={<Inbox />}
+					title="No responses yet"
+					description="When someone fills this form in on the public site, their answers land here."
+				/>
+			) : shown.length === 0 ? (
+				<EmptyState
+					icon={<SearchX />}
+					title="No responses match that search"
+					description={`Nothing here contains “${q}”.`}
+					action={
+						<Button type="button" variant="secondary" onClick={() => setQ("")}>
+							Clear search
+						</Button>
+					}
+				/>
+			) : (
+				<TableScroll label={`${title} responses`}>
+					<Table>
+						<THead>
+							<TR>
+								<TH>Date</TH>
+								{dataFields.map((f) => (
+									<TH key={f.key}>{f.label}</TH>
+								))}
+								<TH align="right" width={72}>
+									Actions
+								</TH>
+							</TR>
+						</THead>
+						<TBody>
+							{shown.map((r) => {
 								const data = (r.data ?? {}) as Record<string, string>;
 								return (
-									<tr key={r.id} className="hover:bg-muted/20 align-top">
-										<td className="px-4 py-2.5 whitespace-nowrap text-foreground/70">
+									<TR key={r.id} className="hover:bg-admin-accent-soft/50">
+										<TD
+											label="Date"
+											className="whitespace-nowrap text-admin-ink-muted"
+										>
 											{fmtDate(r.createdAt)}
-										</td>
+										</TD>
 										{dataFields.map((f) => (
-											<td
-												key={f.key}
-												className="px-2 py-2.5 text-foreground/90"
-											>
+											<TD key={f.key} label={f.label}>
 												{f.type === "file" ? (
 													data[f.key] ? (
 														<a
 															href={data[f.key]}
 															target="_blank"
 															rel="noopener noreferrer"
-															className="inline-flex items-center gap-1 font-medium text-[var(--accent)] hover:underline"
+															className="inline-flex items-center gap-1.5 rounded font-medium text-admin-accent transition-colors duration-150 ease-out hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
 														>
-															↓ {data[`${f.key}__name`] || "Download"}
+															<Download
+																aria-hidden="true"
+																className="size-4 shrink-0"
+															/>
+															{data[`${f.key}__name`] || "Download"}
 														</a>
 													) : (
-														<span className="text-muted-foreground">—</span>
+														<span className="text-admin-ink-subtle">—</span>
 													)
 												) : f.type === "richtext" ? (
 													data[f.key] ? (
@@ -195,24 +227,25 @@ function Submissions() {
 															dangerouslySetInnerHTML={{ __html: data[f.key] }}
 														/>
 													) : (
-														<span className="text-muted-foreground">—</span>
+														<span className="text-admin-ink-subtle">—</span>
 													)
 												) : f.type === "email" && data[f.key] ? (
 													<a
 														href={`mailto:${data[f.key]}`}
-														className="hover:text-[var(--accent)]"
+														className="rounded transition-colors duration-150 ease-out hover:text-admin-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
 													>
 														{data[f.key]}
 													</a>
 												) : (
 													data[f.key] || (
-														<span className="text-muted-foreground">—</span>
+														<span className="text-admin-ink-subtle">—</span>
 													)
 												)}
-											</td>
+											</TD>
 										))}
-										<td className="px-3 py-2.5 text-right">
+										<TD align="right" className="max-md:justify-end">
 											<ActionMenu
+												label={`Actions for the response of ${fmtDate(r.createdAt)}`}
 												items={[
 													{
 														label: "Delete response",
@@ -221,14 +254,14 @@ function Submissions() {
 													},
 												]}
 											/>
-										</td>
-									</tr>
+										</TD>
+									</TR>
 								);
-							})
-						)}
-					</tbody>
-				</table>
-			</div>
+							})}
+						</TBody>
+					</Table>
+				</TableScroll>
+			)}
 		</div>
 	);
 }

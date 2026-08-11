@@ -1,7 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { Plus, SearchX, ShieldCheck } from "lucide-react";
+import { useCallback, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
+import {
+	EmptyState,
+	ListSearch,
+	ListStatus,
+	matchesQuery,
+	TableScroll,
+	useListQuery,
+} from "#/components/admin/list-ui";
+import { Badge } from "#/components/ui/badge.tsx";
+import { Button } from "#/components/ui/button.tsx";
+import { PageHeader } from "#/components/ui/page-header.tsx";
+import { Table, TBody, TD, TH, THead, TR } from "#/components/ui/table.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { confirm, toast } from "@/components/Dialogs";
 
@@ -10,16 +23,9 @@ export const Route = createFileRoute("/admin/roles/")({ component: RolesList });
 type Row = Awaited<ReturnType<typeof trpcClient.adminRoles.list.query>>[number];
 
 function RolesList() {
-	const [rows, setRows] = useState<Row[]>([]);
-	const [loading, setLoading] = useState(true);
-
-	const refresh = useCallback(async () => {
-		setRows(await trpcClient.adminRoles.list.query());
-		setLoading(false);
-	}, []);
-	useEffect(() => {
-		refresh();
-	}, [refresh]);
+	const load = useCallback(() => trpcClient.adminRoles.list.query(), []);
+	const { rows, setRows, state, error, reload } = useListQuery<Row>(load);
+	const [q, setQ] = useState("");
 
 	async function del(r: Row) {
 		if (
@@ -41,104 +47,120 @@ function RolesList() {
 		}
 	}
 
+	const access = (r: Row) =>
+		r.key === "admin"
+			? "Full access"
+			: `${r.permissions.length} area${r.permissions.length === 1 ? "" : "s"}`;
+	const shown = rows.filter((r) => matchesQuery(q, r.name, r.key, access(r)));
+
+	const newRole = (
+		<Button asChild>
+			<Link to="/admin/roles/new">
+				<Plus aria-hidden="true" />
+				New role
+			</Link>
+		</Button>
+	);
+
 	return (
 		<div>
-			<div className="flex items-center justify-between mb-6">
-				<div>
-					<h1 className="font-display text-2xl font-semibold text-primary">
-						Roles
-					</h1>
-					<p className="mt-1 text-sm text-muted-foreground">
-						Define what each role can manage — {rows.length} total.
-					</p>
-				</div>
-				<Link
-					to="/admin/roles/new"
-					className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold hover:opacity-90 transition"
-				>
-					+ New role
-				</Link>
-			</div>
+			<PageHeader
+				title="Roles"
+				description="What each role can manage. A user gets their areas from the role they hold."
+				breadcrumb={[{ label: "Admin", to: "/admin" }, { label: "Roles" }]}
+				actions={newRole}
+				toolbar={
+					state === "ready" && rows.length > 0 ? (
+						<ListSearch
+							value={q}
+							onChange={setQ}
+							label="Search roles"
+							placeholder="Search by name or access…"
+							status={
+								q
+									? `${shown.length} of ${rows.length}`
+									: `${rows.length} ${rows.length === 1 ? "role" : "roles"}`
+							}
+						/>
+					) : undefined
+				}
+			/>
 
-			<div className="overflow-hidden rounded-xl border border-border bg-card">
-				<table className="w-full text-sm">
-					<thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
-						<tr>
-							<th className="px-4 py-2.5">Role</th>
-							<th className="px-2 py-2.5">Access</th>
-							<th className="px-2 py-2.5">Users</th>
-							<th className="px-3 py-2.5 text-right">Actions</th>
-						</tr>
-					</thead>
-					<tbody className="divide-y divide-border">
-						{loading ? (
-							<tr>
-								<td colSpan={4} className="px-4 py-6 text-muted-foreground">
-									Loading…
-								</td>
-							</tr>
-						) : rows.length === 0 ? (
-							<tr>
-								<td colSpan={4} className="px-4 py-6 text-muted-foreground">
-									No roles yet.
-								</td>
-							</tr>
-						) : (
-							rows.map((r) => {
-								const isSuper = r.key === "admin";
-								return (
-									<tr key={r.id} className="hover:bg-muted/20">
-										<td className="px-4 py-2.5">
+			{state !== "ready" ? (
+				<ListStatus state={state} error={error} onRetry={reload} />
+			) : rows.length === 0 ? (
+				<EmptyState
+					icon={<ShieldCheck />}
+					title="No roles yet"
+					description="A role is a named set of admin areas. Create one, then assign it to a user."
+					action={newRole}
+				/>
+			) : shown.length === 0 ? (
+				<EmptyState
+					icon={<SearchX />}
+					title="No roles match that search"
+					description={`Nothing here contains “${q}”.`}
+					action={
+						<Button type="button" variant="secondary" onClick={() => setQ("")}>
+							Clear search
+						</Button>
+					}
+				/>
+			) : (
+				<TableScroll label="Roles">
+					<Table>
+						<THead>
+							<TR>
+								<TH>Role</TH>
+								<TH>Access</TH>
+								<TH width={100}>Users</TH>
+								<TH align="right" width={72}>
+									Actions
+								</TH>
+							</TR>
+						</THead>
+						<TBody>
+							{shown.map((r) => (
+								<TR key={r.id} className="hover:bg-admin-accent-soft/50">
+									<TD label="Role">
+										<span className="flex flex-wrap items-center gap-2">
 											<Link
 												to="/admin/roles/$id"
 												params={{ id: String(r.id) }}
-												className="font-medium text-foreground hover:text-[var(--accent)]"
+												className="truncate font-medium text-admin-ink transition-colors duration-150 ease-out hover:text-admin-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50 max-md:whitespace-normal"
 											>
 												{r.name}
 											</Link>
-											{r.isSystem && (
-												<span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-													Built-in
-												</span>
-											)}
-										</td>
-										<td className="px-2 py-2.5 text-foreground/70">
-											{isSuper
-												? "Full access"
-												: `${r.permissions.length} area${r.permissions.length === 1 ? "" : "s"}`}
-										</td>
-										<td className="px-2 py-2.5 text-foreground/70">
-											{r.userCount}
-										</td>
-										<td className="px-3 py-2.5 text-right whitespace-nowrap">
-											<Link
-												to="/admin/roles/$id"
-												params={{ id: String(r.id) }}
-												className="text-xs font-semibold text-[var(--accent)] hover:underline"
-											>
-												Edit
-											</Link>
-											{!r.isSystem && (
-												<span className="ml-2 inline-flex align-middle">
-													<ActionMenu
-														items={[
-															{
-																label: "Delete role",
-																danger: true,
-																onClick: () => del(r),
-															},
-														]}
-													/>
-												</span>
-											)}
-										</td>
-									</tr>
-								);
-							})
-						)}
-					</tbody>
-				</table>
-			</div>
+											{r.isSystem && <Badge dot={false}>Built-in</Badge>}
+										</span>
+									</TD>
+									<TD label="Access" className="text-admin-ink-muted">
+										{access(r)}
+									</TD>
+									<TD label="Users" className="text-admin-ink-muted">
+										{r.userCount}
+									</TD>
+									<TD align="right" className="max-md:justify-end">
+										{/* a built-in role cannot be deleted, so it has no menu */}
+										{r.isSystem ? null : (
+											<ActionMenu
+												label={`Actions for ${r.name}`}
+												items={[
+													{
+														label: "Delete role",
+														danger: true,
+														onClick: () => del(r),
+													},
+												]}
+											/>
+										)}
+									</TD>
+								</TR>
+							))}
+						</TBody>
+					</Table>
+				</TableScroll>
+			)}
 		</div>
 	);
 }

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { Tags } from "lucide-react";
+import { useCallback, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import {
@@ -6,6 +7,15 @@ import {
 	fieldInput,
 	fieldLabel,
 } from "#/components/admin/form-ui";
+import {
+	EmptyState,
+	ListStatus,
+	TableScroll,
+	useListQuery,
+} from "#/components/admin/list-ui";
+import { Button } from "#/components/ui/button.tsx";
+import { PageHeader } from "#/components/ui/page-header.tsx";
+import { Table, TBody, TD, TH, THead, TR } from "#/components/ui/table.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { saveErrorMessage } from "#/lib/save-error";
 import { confirm, toast } from "@/components/Dialogs";
@@ -14,7 +24,7 @@ type Term = Awaited<
 	ReturnType<typeof trpcClient.adminTerms.list.query>
 >[number];
 const cellInput =
-	"w-full bg-transparent px-3 py-2 text-sm focus:outline-none focus:bg-[var(--accent)]/5 rounded";
+	"w-full rounded-lg bg-transparent px-3 py-2 text-sm text-admin-ink transition-colors duration-150 ease-out placeholder:text-admin-ink-subtle hover:bg-admin-neutral-soft focus:bg-admin-panel focus:outline-none focus:ring-2 focus:ring-admin-focus/40";
 
 /** Reusable CRUD for one taxonomy of managed reference terms. */
 export function TermsManager({
@@ -26,18 +36,15 @@ export function TermsManager({
 	title: string;
 	description?: string;
 }) {
-	const [rows, setRows] = useState<Term[]>([]);
-	const [loading, setLoading] = useState(true);
+	const load = useCallback(
+		async () =>
+			(await trpcClient.adminTerms.list.query()).filter(
+				(t) => t.taxonomy === taxonomy,
+			),
+		[taxonomy],
+	);
+	const { rows, setRows, state, error, reload } = useListQuery<Term>(load);
 	const [add, setAdd] = useState({ key: "", label: "" });
-
-	const refresh = useCallback(async () => {
-		const all = await trpcClient.adminTerms.list.query();
-		setRows(all.filter((t) => t.taxonomy === taxonomy));
-		setLoading(false);
-	}, [taxonomy]);
-	useEffect(() => {
-		refresh();
-	}, [refresh]);
 
 	function patch(id: number, field: "key" | "label", value: string) {
 		setRows((rs) =>
@@ -76,7 +83,7 @@ export function TermsManager({
 				sort: rows.length,
 			});
 			setAdd({ key: "", label: "" });
-			await refresh();
+			await reload();
 			toast(`Added ${add.label.trim()}.`, "success");
 		} catch (e) {
 			toast(saveErrorMessage(e), "error");
@@ -100,127 +107,118 @@ export function TermsManager({
 		}
 	}
 
-	const btn = "text-xs rounded border border-border px-2.5 py-1 hover:bg-muted";
-
 	return (
-		<div className="space-y-5">
-			<div>
-				<h1 className="font-display text-2xl font-semibold text-primary">
-					{title}
-				</h1>
-				{description && (
-					<p className="mt-1 text-sm text-muted-foreground">{description}</p>
-				)}
-			</div>
+		<div>
+			<PageHeader
+				title={title}
+				description={description}
+				breadcrumb={[{ label: "Admin", to: "/admin" }, { label: title }]}
+			/>
 
-			<FormSection
-				title="Add item"
-				description="Key is the stored value; label is what's shown."
-			>
-				<div className="flex flex-wrap items-end gap-3">
-					<label className="block">
-						<span className={fieldLabel}>Key</span>
-						<input
-							className={`${fieldInput} w-48 font-mono`}
-							placeholder="annual-report"
-							value={add.key}
-							onChange={(e) => setAdd({ ...add, key: e.target.value })}
-							onKeyDown={(e) => e.key === "Enter" && create()}
-						/>
-					</label>
-					<div className="flex-1 min-w-[200px]">
+			<div className="space-y-6">
+				<FormSection
+					title="Add item"
+					description="The key is what gets stored. The label is what people read."
+				>
+					<div className="flex flex-wrap items-end gap-3">
 						<label className="block">
-							<span className={fieldLabel}>Label</span>
+							<span className={fieldLabel}>Key</span>
 							<input
-								className={fieldInput}
-								placeholder="Annual Report"
-								value={add.label}
-								onChange={(e) => setAdd({ ...add, label: e.target.value })}
+								className={`${fieldInput} w-48 font-mono`}
+								placeholder="annual-report"
+								value={add.key}
+								onChange={(e) => setAdd({ ...add, key: e.target.value })}
 								onKeyDown={(e) => e.key === "Enter" && create()}
 							/>
 						</label>
+						<div className="min-w-[200px] flex-1">
+							<label className="block">
+								<span className={fieldLabel}>Label</span>
+								<input
+									className={fieldInput}
+									placeholder="Annual Report"
+									value={add.label}
+									onChange={(e) => setAdd({ ...add, label: e.target.value })}
+									onKeyDown={(e) => e.key === "Enter" && create()}
+								/>
+							</label>
+						</div>
+						<Button type="button" onClick={create} disabled={busy === "add"}>
+							{busy === "add" ? "Adding…" : "Add"}
+						</Button>
 					</div>
-					<button
-						type="button"
-						onClick={create}
-						disabled={busy === "add"}
-						className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition"
-					>
-						{busy === "add" ? "Adding…" : "Add"}
-					</button>
-				</div>
-			</FormSection>
+				</FormSection>
 
-			<div className="overflow-hidden rounded-xl border border-border bg-card">
-				<table className="w-full text-sm">
-					<thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
-						<tr>
-							<th className="px-3 py-2.5 w-1/3">Key</th>
-							<th className="px-3 py-2.5">Label</th>
-							<th className="px-3 py-2.5 w-32 text-right">Actions</th>
-						</tr>
-					</thead>
-					<tbody className="divide-y divide-border">
-						{loading ? (
-							<tr>
-								<td colSpan={3} className="px-3 py-4 text-muted-foreground">
-									Loading…
-								</td>
-							</tr>
-						) : rows.length === 0 ? (
-							<tr>
-								<td colSpan={3} className="px-3 py-4 text-muted-foreground">
-									No items yet — add one above.
-								</td>
-							</tr>
-						) : (
-							rows.map((r) => (
-								<tr key={r.id} className="hover:bg-muted/20">
-									<td className="px-1">
-										<input
-											className={`${cellInput} font-mono`}
-											aria-label={`Key for ${r.label || r.key}`}
-											value={r.key}
-											onChange={(e) => patch(r.id, "key", e.target.value)}
-										/>
-									</td>
-									<td className="px-1">
-										<input
-											className={cellInput}
-											aria-label={`Label for ${r.key}`}
-											value={r.label}
-											onChange={(e) => patch(r.id, "label", e.target.value)}
-										/>
-									</td>
-									<td className="px-3 py-2 text-right whitespace-nowrap">
-										<button
-											type="button"
-											onClick={() => save(r)}
-											disabled={busy === r.id}
-											aria-label={`Save ${r.label || r.key}`}
-											className={`${btn} disabled:opacity-40`}
-										>
-											{busy === r.id ? "Saving…" : "Save"}
-										</button>
-										<span className="ml-2 inline-flex align-middle">
-											<ActionMenu
-												label={`Actions for ${r.label || r.key}`}
-												items={[
-													{
-														label: "Delete",
-														danger: true,
-														disabled: busy === r.id,
-														onClick: () => del(r.id),
-													},
-												]}
+				{state !== "ready" ? (
+					<ListStatus state={state} error={error} onRetry={reload} />
+				) : rows.length === 0 ? (
+					<EmptyState
+						icon={<Tags />}
+						title="Nothing in this list yet"
+						description="Add the first item above. It becomes a choice everywhere this list is used."
+					/>
+				) : (
+					<TableScroll label={title}>
+						<Table>
+							<THead>
+								<TR>
+									<TH width="33%">Key</TH>
+									<TH>Label</TH>
+									<TH align="right" width={140}>
+										Actions
+									</TH>
+								</TR>
+							</THead>
+							<TBody>
+								{rows.map((r) => (
+									<TR key={r.id}>
+										<TD label="Key" className="px-1">
+											<input
+												className={`${cellInput} font-mono`}
+												aria-label={`Key for ${r.label || r.key}`}
+												value={r.key}
+												onChange={(e) => patch(r.id, "key", e.target.value)}
 											/>
-										</span>
-									</td>
-								</tr>
-							))
-						)}
-					</tbody>
-				</table>
+										</TD>
+										<TD label="Label" className="px-1">
+											<input
+												className={cellInput}
+												aria-label={`Label for ${r.key}`}
+												value={r.label}
+												onChange={(e) => patch(r.id, "label", e.target.value)}
+											/>
+										</TD>
+										<TD align="right" className="max-md:justify-end">
+											<span className="inline-flex items-center gap-2">
+												<Button
+													type="button"
+													variant="secondary"
+													size="sm"
+													onClick={() => save(r)}
+													disabled={busy === r.id}
+													aria-label={`Save ${r.label || r.key}`}
+												>
+													{busy === r.id ? "Saving…" : "Save"}
+												</Button>
+												<ActionMenu
+													label={`Actions for ${r.label || r.key}`}
+													items={[
+														{
+															label: "Delete",
+															danger: true,
+															disabled: busy === r.id,
+															onClick: () => del(r.id),
+														},
+													]}
+												/>
+											</span>
+										</TD>
+									</TR>
+								))}
+							</TBody>
+						</Table>
+					</TableScroll>
+				)}
 			</div>
 		</div>
 	);

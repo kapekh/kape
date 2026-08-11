@@ -1,6 +1,11 @@
 import { Link } from "@tanstack/react-router";
+import { HandCoins } from "lucide-react";
 
+import { EmptyState } from "#/components/ui/empty-state.tsx";
+import { Badge, type BadgeTone } from "#/components/ui/badge.tsx";
+import { Table, TBody, TD, TH, THead, TR } from "#/components/ui/table.tsx";
 import { ActionMenu } from "./ActionMenu";
+import { ListStatus, TableScroll } from "./list-ui";
 
 export type DonationRow = {
 	id: number;
@@ -28,20 +33,11 @@ export function fmtDate(s: string) {
 	return Number.isNaN(d.getTime()) ? s : d.toLocaleString();
 }
 
-function StatusBadge({ status }: { status: string }) {
-	const map: Record<string, string> = {
-		paid: "bg-[var(--palm)]/15 text-[var(--palm)]",
-		pending: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
-		failed: "bg-destructive/15 text-destructive",
-	};
-	return (
-		<span
-			className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${map[status] ?? "bg-muted text-muted-foreground"}`}
-		>
-			{status}
-		</span>
-	);
-}
+const STATUS_TONE: Record<string, BadgeTone> = {
+	paid: "live",
+	pending: "warning",
+	failed: "danger",
+};
 
 export function DonationStat({
 	label,
@@ -51,11 +47,9 @@ export function DonationStat({
 	value: string;
 }) {
 	return (
-		<div className="rounded-xl border border-border bg-card px-4 py-3">
-			<div className="text-[11px] uppercase tracking-wide text-muted-foreground">
-				{label}
-			</div>
-			<div className="mt-1 font-display text-xl font-semibold text-primary tabular-nums">
+		<div className="rounded-xl border border-admin-border bg-admin-panel px-4 py-3">
+			<div className="text-[13px] text-admin-ink-muted">{label}</div>
+			<div className="mt-1 text-xl font-semibold text-admin-ink tabular-nums">
 				{value}
 			</div>
 		</div>
@@ -76,102 +70,108 @@ export function DonationsTable({
 	emptyText?: string;
 	onMarkPaid: (id: number) => void;
 }) {
-	const cols = showCampaign ? 7 : 6;
+	// `loading` is a boolean here, not the three-state `ListState` the lists use:
+	// both callers own their own fetch and neither reports an error to this
+	// component. Reusing ListStatus for the pending case keeps one skeleton.
+	if (loading)
+		return <ListStatus state="pending" onRetry={() => {}} />;
+
+	if (rows.length === 0)
+		return <EmptyState icon={<HandCoins />} title={emptyText} />;
+
 	return (
-		<div className="overflow-hidden rounded-xl border border-border bg-card">
-			<table className="w-full text-sm">
-				<thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
-					<tr>
-						<th className="px-4 py-2.5">Date</th>
-						<th className="px-2 py-2.5">Donor</th>
-						{showCampaign && <th className="px-2 py-2.5">Campaign</th>}
-						<th className="px-2 py-2.5 text-right">Amount</th>
-						<th className="px-2 py-2.5">Status</th>
-						<th className="px-2 py-2.5">Method</th>
-						<th className="px-3 py-2.5 text-right">Actions</th>
-					</tr>
-				</thead>
-				<tbody className="divide-y divide-border">
-					{loading ? (
-						<tr>
-							<td colSpan={cols} className="px-4 py-6 text-muted-foreground">
-								Loading…
-							</td>
-						</tr>
-					) : rows.length === 0 ? (
-						<tr>
-							<td colSpan={cols} className="px-4 py-6 text-muted-foreground">
-								{emptyText}
-							</td>
-						</tr>
-					) : (
-						rows.map((r) => (
-							<tr key={r.id} className="hover:bg-muted/20 align-top">
-								<td className="px-4 py-2.5 whitespace-nowrap text-foreground/80">
-									{fmtDate(r.createdAt)}
-								</td>
-								<td className="px-2 py-2.5">
-									<div className="font-medium text-foreground">
-										{r.donorName || "Anonymous"}
-									</div>
-									{r.donorEmail && (
-										<div className="text-xs text-muted-foreground">
-											{r.donorEmail}
-										</div>
-									)}
-									{r.message && (
-										<div
-											className="mt-0.5 max-w-xs truncate text-xs italic text-muted-foreground"
-											title={r.message}
-										>
-											“{r.message}”
-										</div>
-									)}
-								</td>
-								{showCampaign && (
-									<td className="px-2 py-2.5 text-foreground/80">
-										{r.campaignId != null ? (
-											<Link
-												to="/admin/campaigns/$id"
-												params={{ id: String(r.campaignId) }}
-												className="hover:text-[var(--accent)]"
-											>
-												{r.campaignTitle}
-											</Link>
-										) : (
-											<span className="text-muted-foreground">—</span>
-										)}
-									</td>
+		<TableScroll label="Donations">
+			<Table>
+				<THead>
+					<TR>
+						<TH>Date</TH>
+						<TH>Donor</TH>
+						{showCampaign && <TH>Campaign</TH>}
+						<TH align="right">Amount</TH>
+						<TH width={120}>Status</TH>
+						<TH width={120}>Method</TH>
+						<TH align="right" width={72}>
+							Actions
+						</TH>
+					</TR>
+				</THead>
+				<TBody>
+					{rows.map((r) => (
+						<TR key={r.id} className="hover:bg-admin-accent-soft/50">
+							<TD
+								label="Date"
+								className="whitespace-nowrap text-admin-ink-muted"
+							>
+								{fmtDate(r.createdAt)}
+							</TD>
+							<TD label="Donor">
+								<span className="block font-medium text-admin-ink">
+									{r.donorName || "Anonymous"}
+								</span>
+								{r.donorEmail && (
+									<span className="block text-[13px] text-admin-ink-muted">
+										{r.donorEmail}
+									</span>
 								)}
-								<td className="px-2 py-2.5 text-right font-semibold tabular-nums text-foreground">
-									{fmtMoney(parseFloat(r.amount) || 0, r.currency)}
-								</td>
-								<td className="px-2 py-2.5">
-									<StatusBadge status={r.status} />
-								</td>
-								<td className="px-2 py-2.5 capitalize text-foreground/80">
-									{r.bank || "—"}
-								</td>
-								<td className="px-3 py-2.5 text-right whitespace-nowrap">
-									{r.status === "pending" ? (
-										<ActionMenu
-											items={[
-												{
-													label: "Mark as paid",
-													onClick: () => onMarkPaid(r.id),
-												},
-											]}
-										/>
+								{r.message && (
+									<span
+										className="mt-0.5 block max-w-xs truncate text-[13px] italic text-admin-ink-subtle"
+										title={r.message}
+									>
+										“{r.message}”
+									</span>
+								)}
+							</TD>
+							{showCampaign && (
+								<TD label="Campaign" className="text-admin-ink-muted">
+									{r.campaignId != null ? (
+										<Link
+											to="/admin/campaigns/$id"
+											params={{ id: String(r.campaignId) }}
+											className="rounded transition-colors duration-150 ease-out hover:text-admin-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+										>
+											{r.campaignTitle}
+										</Link>
 									) : (
-										<span className="text-xs text-muted-foreground">—</span>
+										<span className="text-admin-ink-subtle">—</span>
 									)}
-								</td>
-							</tr>
-						))
-					)}
-				</tbody>
-			</table>
-		</div>
+								</TD>
+							)}
+							<TD
+								label="Amount"
+								align="right"
+								className="font-medium tabular-nums text-admin-ink"
+							>
+								{fmtMoney(parseFloat(r.amount) || 0, r.currency)}
+							</TD>
+							<TD label="Status">
+								<Badge tone={STATUS_TONE[r.status] ?? "neutral"}>
+									<span className="capitalize">{r.status}</span>
+								</Badge>
+							</TD>
+							<TD label="Method" className="capitalize text-admin-ink-muted">
+								{r.bank || "—"}
+							</TD>
+							<TD align="right" className="max-md:justify-end">
+								{r.status === "pending" ? (
+									<ActionMenu
+										label={`Actions for the donation from ${r.donorName || "Anonymous"}`}
+										items={[
+											{
+												label: "Mark as paid",
+												onClick: () => onMarkPaid(r.id),
+											},
+										]}
+									/>
+								) : (
+									<span className="text-[13px] text-admin-ink-subtle">—</span>
+								)}
+							</TD>
+						</TR>
+					))}
+				</TBody>
+			</Table>
+		</TableScroll>
 	);
 }
 

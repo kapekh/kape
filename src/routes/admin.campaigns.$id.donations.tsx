@@ -7,6 +7,8 @@ import {
 	donationTotals,
 	fmtMoney,
 } from "#/components/admin/DonationsTable";
+import { Button } from "#/components/ui/button.tsx";
+import { PageHeader } from "#/components/ui/page-header.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { confirm } from "@/components/Dialogs";
 
@@ -56,33 +58,24 @@ function CampaignDonations() {
 
 	return (
 		<div>
-			<div className="mb-6">
-				<Link
-					to="/admin/campaigns"
-					className="text-xs font-semibold text-muted-foreground hover:text-foreground"
-				>
-					← Campaigns
-				</Link>
-				<div className="mt-1 flex flex-wrap items-end justify-between gap-4">
-					<div>
-						<h1 className="font-display text-2xl font-semibold text-primary">
-							{title} — donations
-						</h1>
-						<p className="mt-1 text-sm text-muted-foreground">
-							Gifts owned by this campaign — {rows.length} total.
-						</p>
-					</div>
-					<Link
-						to="/admin/campaigns/$id"
-						params={{ id }}
-						className="rounded-full border border-border px-4 py-2 text-sm font-semibold hover:bg-muted transition"
-					>
-						Edit campaign
-					</Link>
-				</div>
-			</div>
+			<PageHeader
+				title={`${title || "Campaign"} — donations`}
+				description="Every gift this campaign owns."
+				breadcrumb={[
+					{ label: "Admin", to: "/admin" },
+					{ label: "Campaigns", to: "/admin/campaigns" },
+					{ label: "Donations" },
+				]}
+				actions={
+					<Button asChild variant="secondary">
+						<Link to="/admin/campaigns/$id" params={{ id }}>
+							Edit campaign
+						</Link>
+					</Button>
+				}
+			/>
 
-			<div className="mb-6 grid grid-cols-3 gap-3">
+			<div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
 				<DonationStat
 					label={`Raised (${currency})`}
 					value={fmtMoney(raised, currency)}
