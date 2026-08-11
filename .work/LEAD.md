@@ -145,7 +145,19 @@ The Brand section showed stored colours as hex, which meant its save wrote hex b
 
 The round-trip diff caught it, which is the whole reason acceptance asks for a full dump before and after rather than a spot check of the field you edited. **A restyle that normalises, formats or settles a stored value is a behaviour change wearing a stylesheet.**
 
-The field shows a hex again, and this time it is only a display. `saveDraft` sends the keys in `draft`, and a key enters `draft` only through that field's `onChange`, so a colour nobody typed in is never written whatever the box shows. `-admin.settings.test.tsx` pins both halves: the stored `oklch()` reads as `#002C5E` on screen, and saving Brand after one edit writes one row and leaves the other two stored values in `oklch()`.
+The field shows a hex again in `daae2ac`, and this time it is only a display. `saveDraft` sends the keys in `draft`, and a key enters `draft` only through that field's `onChange`, so a colour nobody typed in is never written whatever the box shows. `-admin.settings.test.tsx` pins both halves: the stored `oklch()` reads as `#002C5E` on screen, and saving Brand after one edit writes one row and leaves the other two stored values in `oklch()`.
+
+Driven through the real screen on `:3071` against `lead.db`, not only the mocked test. Five colour fields read `#002C5E #418AD1 #F3821D #F6623D #E6AC3D` while the table held five `oklch()`. `theme_accent` was edited to `#7C3AED` and Brand saved: **41 keys before, 41 after, one line moved.** The other seven colours kept their `oklch()`. Restored, and the dump matches the pre-probe one byte for byte.
+
+## No oklch-to-hex migration, and there will not be one
+
+Asked because the field now speaks hex and the table does not. Nothing needs it, and it would cost something.
+
+Nothing reads a stored colour as text. Every JS consumer - `themeColor`, the swatch, `themeContrast` - goes through `colourToHex` first, and every derived CSS token is `oklch(from var(--brand-primary) …)`, which converts whatever it is handed. Proved on `:3071` with `--brand-primary: #1F4E79` in the table: `--primary-foreground` computed `oklch(0.985 0.012 80)`, and `--warm-foreground` came out `oklch(0.24 0.078 249.105)`, so relative colour syntax read the hue back out of the hex. A mixed table is fine too, because no two values are ever compared.
+
+The cost is that hex is the smaller space. `theme_primary`'s own `oklch(0.30 0.10 255)` is already slightly outside sRGB - linear red `-0.0031` - so a migration would store the clipped 8-bit approximation and throw the authored value away. Rewriting an operator's colour to gain nothing is the J11 mistake with a schedule attached.
+
+**Named, not fixed:** for a colour outside sRGB the box shows the clipped hex, so the field can read a shade off what the page paints. No write is attached - only retyping that field replaces it - and the swatch beside it was already clipped before any of this. Revisit if a P3 brand ever turns up.
 
 ## Next action
 
