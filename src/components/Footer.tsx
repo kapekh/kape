@@ -8,6 +8,7 @@ import { siteLogo, siteName, siteShortName } from "@/lib/site-identity";
 
 import { KhmerCalendar } from "./KhmerCalendar";
 import { NavLink } from "./NavLink";
+import { T } from "./T";
 
 /** Parse a "Label|/href, Label|/href" string into link objects. */
 function parseLinks(raw: string) {
@@ -212,7 +213,7 @@ export function Footer({ settings }: { settings: Record<string, string> }) {
 					)}
 					{status === "sent" ? (
 						<p className="text-sm text-[var(--secondary)] font-semibold">
-							{t("newsletter.thanks", "Thanks for subscribing!")}
+							<T k="newsletter.thanks" fallback="Thanks for subscribing!" />
 						</p>
 					) : (
 						<>
@@ -284,10 +285,14 @@ export function Footer({ settings }: { settings: Record<string, string> }) {
 				<div>{s("copyright") || `© ${siteName(settings)}`}</div>
 				{visits && (
 					<div>
-						{t("footer.visits", "Today: {today} · Total visits: {total}", {
-							today: visits.today.toLocaleString(),
-							total: visits.total.toLocaleString(),
-						})}
+						<T
+							k="footer.visits"
+							fallback="Today: {today} · Total visits: {total}"
+							params={{
+								today: visits.today.toLocaleString(),
+								total: visits.total.toLocaleString(),
+							}}
+						/>
 					</div>
 				)}
 			</div>

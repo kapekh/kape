@@ -3,8 +3,11 @@ import {
 	createContext,
 	Fragment,
 	type ReactNode,
+	useCallback,
 	useContext,
 	useEffect,
+	useMemo,
+	useState,
 } from "react";
 
 import { isFunctional, stripLang } from "./i18n-config";
@@ -21,6 +24,10 @@ type Ctx = {
 	t: (key: string, fallback?: string, params?: TParams) => string;
 	// keys serving the default language: an inline editor must not save over that row
 	stringsFallback: Set<string>;
+	/** Stored values, slots unfilled: what an inline editor puts in its box. */
+	strings: Record<string, string>;
+	/** Show a saved string at once, without a reload the site cannot afford mid-edit. */
+	setString: (key: string, value: string) => void;
 };
 
 // unmatched slot stays on screen: a visible {n} gets reported, `undefined` does not
@@ -54,6 +61,8 @@ export function LanguageProvider({
 	stringsFallback?: string[];
 	children: ReactNode;
 }) {
+	const [edited, setEdited] = useState<Record<string, string>>({});
+
 	useEffect(() => {
 		if (typeof document !== "undefined") {
 			document.documentElement.lang = lang;
@@ -61,14 +70,29 @@ export function LanguageProvider({
 		}
 	}, [lang]);
 
-	const t = makeT(strings);
+	const setString = useCallback(
+		(key: string, value: string) =>
+			setEdited((prev) => ({ ...prev, [key]: value })),
+		[],
+	);
+
+	const value = useMemo<Ctx>(() => {
+		const merged = { ...strings, ...edited };
+		const fallback = new Set(stringsFallback);
+		// a key just written in this language is no longer serving the default one
+		for (const key of Object.keys(edited)) fallback.delete(key);
+		return {
+			lang,
+			languages,
+			t: makeT(merged),
+			stringsFallback: fallback,
+			strings: merged,
+			setString,
+		};
+	}, [lang, languages, strings, stringsFallback, edited, setString]);
 
 	return (
-		<LangContext.Provider
-			value={{ lang, languages, t, stringsFallback: new Set(stringsFallback) }}
-		>
-			{children}
-		</LangContext.Provider>
+		<LangContext.Provider value={value}>{children}</LangContext.Provider>
 	);
 }
 
@@ -80,6 +104,8 @@ export function useLang(): Ctx {
 			languages: [],
 			t: fallbackT,
 			stringsFallback: new Set<string>(),
+			strings: {},
+			setString: () => {},
 		};
 	return ctx;
 }

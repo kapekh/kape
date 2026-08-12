@@ -1,6 +1,6 @@
 # Inline editing on the live site
 
-A plan, not a task list. Job 1 has landed; jobs 2-8 are unstarted.
+A plan, not a task list. Jobs 1, 2 and 5 have landed; jobs 3, 4, 6, 7 and 8 are unstarted.
 This round runs **after** the admin redesign lands, because it needs logic changes that the redesign round explicitly forbids.
 
 ## What it is
@@ -124,10 +124,10 @@ Also: the language switcher does a hard `window.location.assign` (`src/lib/i18n.
 | # | Job | Depends on |
 |---|---|---|
 | 1 | ~~Fallback signal in the resolved payload, both for translations and for section `i18n` overlays~~ **done** | - |
-| 2 | SSR admin identity, client-only affordance gating, prerender safety | - |
+| 2 | ~~Admin identity, client-only affordance gating, prerender safety~~ **done** | - |
 | 3 | Narrow `updateField` procedure, or a documented decision to use the wholesale path | 1 |
 | 4 | Addressing: thread `entityId` and `lang` into `SectionRenderer`, markers in 21 templates | 2 |
-| 5 | Inline editor for UI strings, the easiest, shipped first as the proving ground | 2 |
+| 5 | ~~Inline editor for UI strings, the easiest, shipped first as the proving ground~~ **done** | 2 |
 | 6 | Inline editor for section text fields | 3, 4 |
 | 7 | Inline editor for page and post fields | 3, 4 |
 | 8 | Static prerender invalidation, the second cache the DB bust does not reach (`scripts/prerender-static.ts:20-25`) | 3 |
@@ -135,9 +135,27 @@ Also: the language switcher does a hard `window.location.assign` (`src/lib/i18n.
 Job 5 before 6 and 7 is deliberate.
 UI strings already have a clean single-field mutation, so it proves the identity, addressing and affordance layers with none of the save risk.
 
+## Jobs 2 and 5, as built
+
+Identity is resolved **in the browser, never during SSR**, which is what keeps a cached or prerendered page identical for everyone.
+Login sets a second cookie, `cms_admin=1`, readable by JS and granting nothing; the session cookie stays `HttpOnly`.
+`InlineEditProvider` calls `auth.me` after hydration only when that hint is present, so an anonymous visitor makes no extra request and a forged hint costs one refused lookup.
+Every affordance is gated on the answer, and every save on `adminProcedure`, so the cookie is a hint and not a permission.
+
+`InlineEditBar` is the only chrome: a switch, off until asked, remembered in `localStorage`, plus the box for whatever is selected.
+`<T k="…" />` (`src/components/T.tsx`) is the marked variant of `t()`; `t()` itself is untouched, because half its call sites are `alt`, `title` and `aria-label`.
+It renders bare text unless edit mode is on and the user holds `settings`, and it is a `span[role=button]` rather than a `<button>` because these strings sit inside links.
+
+Two things the browser caught that the plan did not predict:
+
+- A key with **no row in any language** shows its built-in default, so it is absent from `stringsFallback` and the box would have opened empty with nothing said. The editor now quotes whatever the page is showing whenever the row for this language is missing, either way.
+- The quote has to be the **unfilled** string. `footer.visits` reads `Today: {today} · Total visits: {total}`, and quoting the rendered line would have taught the translator to drop the slots.
+
+Converted so far: the header and footer's visible strings. The rest of the site's `t()` call sites still render plain text.
+
 ## Open questions for that round
 
-1. Does an inline edit publish immediately, or does it draft?
-2. What does an editor see on a page whose content falls back to English? Edit the English, or start the Khmer?
-3. Does the affordance appear always, or behind a mode toggle? A permanent overlay on a live site is a support burden.
+1. Does an inline edit publish immediately, or does it draft? **Immediately**, as job 5 shipped: `setUiString` writes the row and `adminProcedure` clears the render cache.
+2. What does an editor see on a page whose content falls back to English? **Always the language in the URL.** On `/km` the box writes a `km` row, starts empty, and quotes the English beside it as reference. Editing the English means going to `/en`.
+3. Does the affordance appear always, or behind a mode toggle? **A mode toggle**, off by default.
 4. Do we build `updateField`, or accept read-modify-write on every save?

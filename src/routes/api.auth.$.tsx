@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import {
+	adminHintCookie,
 	authenticate,
+	clearAdminHintCookie,
 	clearSessionCookie,
 	createSession,
 	parseCookies,
@@ -28,6 +30,20 @@ const ACCOUNT_MAX_DELAY_MS = 2_000;
 
 const sleep = (ms: number) =>
 	ms > 0 ? new Promise((r) => setTimeout(r, ms)) : Promise.resolve();
+
+// two Set-Cookie headers need append; an object literal keeps only the last
+function sessionHeaders(request: Request, token?: string): Headers {
+	const headers = new Headers();
+	headers.append(
+		"set-cookie",
+		token ? sessionCookie(token, request) : clearSessionCookie(request),
+	);
+	headers.append(
+		"set-cookie",
+		token ? adminHintCookie(request) : clearAdminHintCookie(request),
+	);
+	return headers;
+}
 
 export async function handler({ request }: { request: Request }) {
 	const url = new URL(request.url);
@@ -67,20 +83,14 @@ export async function handler({ request }: { request: Request }) {
 			user.id,
 			request.headers.get("user-agent") ?? undefined,
 		);
-		return Response.json(
-			{ user },
-			{ headers: { "set-cookie": sessionCookie(token, request) } },
-		);
+		return Response.json({ user }, { headers: sessionHeaders(request, token) });
 	}
 
 	// POST /api/auth/logout -> revoke session + clear cookie
 	if (request.method === "POST" && action === "logout") {
 		const auth = await validateToken(db, cookies[SESSION_COOKIE]);
 		if (auth) await revokeSession(db, auth.sessionId);
-		return Response.json(
-			{ ok: true },
-			{ headers: { "set-cookie": clearSessionCookie(request) } },
-		);
+		return Response.json({ ok: true }, { headers: sessionHeaders(request) });
 	}
 
 	// GET /api/auth/me -> current user or null

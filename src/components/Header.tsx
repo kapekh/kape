@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import type { NavNode } from "#/server/repo/nav";
-import { LanguageSwitcher, useLang, useT } from "@/lib/i18n";
+import { LanguageSwitcher, useLang } from "@/lib/i18n";
 import { localizedHref } from "@/lib/i18n-config";
 import { siteLogo, siteName, siteShortName } from "@/lib/site-identity";
 import { NavLink } from "./NavLink";
+import { T } from "./T";
 import { ThemeToggle } from "./ThemeToggle";
 
 /** Prefix internal hrefs with the active language (path-based i18n). */
@@ -132,7 +133,6 @@ function MobileNode({
 	onNavigate: () => void;
 }) {
 	const [open, setOpen] = useState(false);
-	const t = useT();
 	const hasChildren = node.children.length > 0;
 	const href = withLang(node.href, lang);
 
@@ -199,7 +199,7 @@ function MobileNode({
 							onClick={onNavigate}
 							className="block rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-[var(--accent)] transition"
 						>
-							{t("nav.overview", "Overview")}
+							<T k="nav.overview" fallback="Overview" />
 						</NavLink>
 					)}
 					{node.children.map((c) => (
@@ -240,7 +240,8 @@ export function Header({
 		.filter(Boolean)
 		.join(" · ");
 	// Header chrome bits (editable in the "Header" admin page via site_settings).
-	const donate = settings.header_donate_label || t("nav.donate");
+	// an operator's own label overrides every language and cannot be edited in place
+	const donate = settings.header_donate_label || <T k="nav.donate" />;
 	const donateHref = withLang(settings.header_donate_link || "#donate", lang);
 	const searchHref = withLang(settings.header_search_link || "#", lang);
 	const sitemapHref = withLang(settings.header_sitemap_link || "#", lang);
@@ -339,7 +340,7 @@ export function Header({
 								href={searchHref}
 								className="hover:text-[var(--secondary)] transition"
 							>
-								{t("top.search")}
+								<T k="top.search" />
 							</a>
 						)}
 						{showSitemap && (
@@ -347,7 +348,7 @@ export function Header({
 								href={sitemapHref}
 								className="hover:text-[var(--secondary)] transition"
 							>
-								{t("top.sitemap")}
+								<T k="top.sitemap" />
 							</a>
 						)}
 						<a
@@ -374,7 +375,7 @@ export function Header({
 								/>
 							</svg>
 							<span className="hidden sm:inline">
-								{t("top.login", "Staff login")}
+								<T k="top.login" fallback="Staff login" />
 							</span>
 						</a>
 						<LanguageSwitcher />
@@ -603,7 +604,7 @@ export function Header({
 					<div className="absolute right-0 top-0 flex h-[100dvh] w-[88%] max-w-sm flex-col bg-card shadow-2xl">
 						<div className="flex items-center justify-between border-b border-border px-4 py-4">
 							<span className="font-display font-semibold text-primary">
-								{t("nav.menu", "Menu")}
+								<T k="nav.menu" fallback="Menu" />
 							</span>
 							<button
 								type="button"

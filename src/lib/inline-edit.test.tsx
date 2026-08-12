@@ -1,0 +1,164 @@
+// @vitest-environment jsdom
+import {
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
+import type { ReactNode } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { InlineEditBar } from "#/components/InlineEditBar";
+import { T } from "#/components/T";
+import { ADMIN_HINT_COOKIE } from "./admin-hint";
+import { InlineEditProvider } from "./inline-edit";
+import { LanguageProvider } from "./i18n";
+
+const state = vi.hoisted(() => ({
+	me: null as { permissions: string[]; isSuperAdmin: boolean } | null,
+	meCalls: 0,
+	saved: [] as { key: string; lang: string; value: string }[],
+}));
+
+vi.mock("#/integrations/tanstack-query/root-provider", () => ({
+	trpcClient: {
+		auth: {
+			me: {
+				query: () => {
+					state.meCalls++;
+					return Promise.resolve(state.me);
+				},
+			},
+		},
+		adminSettings: {
+			setUiString: {
+				mutate: (input: { key: string; lang: string; value: string }) => {
+					state.saved.push(input);
+					return Promise.resolve({ reset: false });
+				},
+			},
+		},
+	},
+}));
+
+const KEY = "test.greeting";
+
+function Page({ lang = "en" }: { lang?: string }): ReactNode {
+	return (
+		<LanguageProvider
+			lang={lang}
+			languages={[
+				{ code: "en", name: "English", nativeName: "English" },
+				{ code: "km", name: "Khmer", nativeName: "ខ្មែរ" },
+			]}
+			strings={{ [KEY]: "Hello" }}
+			stringsFallback={lang === "km" ? [KEY] : []}
+		>
+			<InlineEditProvider>
+				<h1>
+					<T k={KEY} />
+				</h1>
+				<p>
+					<T k="test.unstored" fallback="Built in" />
+				</p>
+				<InlineEditBar />
+			</InlineEditProvider>
+		</LanguageProvider>
+	);
+}
+
+const setHint = (on: boolean) => {
+	// biome-ignore lint/suspicious/noDocumentCookie: the hint cookie is the thing under test
+	document.cookie = `${ADMIN_HINT_COOKIE}=${on ? "1" : ""}; Max-Age=${on ? 60 : 0}`;
+};
+
+afterEach(cleanup);
+
+beforeEach(() => {
+	state.me = null;
+	state.meCalls = 0;
+	state.saved = [];
+	localStorage.clear();
+	setHint(false);
+});
+
+const signIn = () => {
+	state.me = { permissions: ["settings"], isSuperAdmin: false };
+	setHint(true);
+};
+
+describe("inline editing on the public site", () => {
+	it("asks nobody who they are without the hint cookie", async () => {
+		render(<Page />);
+		await screen.findByText("Hello");
+		expect(state.meCalls).toBe(0);
+		expect(screen.queryByLabelText(/edit text/i)).toBeNull();
+		expect(screen.getByRole("heading").innerHTML).toBe("Hello");
+	});
+
+	it("leaves the page untouched for a visitor who forges the hint", async () => {
+		setHint(true);
+		render(<Page />);
+		await waitFor(() => expect(state.meCalls).toBe(1));
+		expect(screen.queryByLabelText(/edit text/i)).toBeNull();
+	});
+
+	it("marks strings only once an admin turns edit mode on", async () => {
+		signIn();
+		render(<Page />);
+		const toggle = await screen.findByLabelText(/edit text/i);
+		expect(screen.queryByRole("button", { name: "Hello" })).toBeNull();
+
+		fireEvent.click(toggle);
+		expect(screen.getByRole("button", { name: "Hello" })).toBeTruthy();
+	});
+
+	it("saves the language in the URL and shows the new text at once", async () => {
+		signIn();
+		render(<Page />);
+		fireEvent.click(await screen.findByLabelText(/edit text/i));
+		fireEvent.click(screen.getByRole("button", { name: "Hello" }));
+
+		const box = screen.getByRole("textbox");
+		expect((box as HTMLInputElement).value).toBe("Hello");
+		fireEvent.change(box, { target: { value: "Hi there" } });
+		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+		await waitFor(() =>
+			expect(state.saved).toEqual([
+				{ key: KEY, lang: "en", value: "Hi there" },
+			]),
+		);
+		expect(screen.getByRole("heading").textContent).toBe("Hi there");
+	});
+
+	it("quotes the built-in text for a key no language has a row for", async () => {
+		signIn();
+		render(<Page />);
+		fireEvent.click(await screen.findByLabelText(/edit text/i));
+		fireEvent.click(screen.getByRole("button", { name: "Built in" }));
+
+		expect((screen.getByRole("textbox") as HTMLInputElement).value).toBe("");
+		expect(screen.getByText(/showing “Built in”/)).toBeTruthy();
+	});
+
+	it("starts empty on a page falling back to English, and writes the asked-for language", async () => {
+		signIn();
+		render(<Page lang="km" />);
+		fireEvent.click(await screen.findByLabelText(/edit text/i));
+		fireEvent.click(screen.getByRole("button", { name: "Hello" }));
+
+		const box = screen.getByRole("textbox");
+		expect((box as HTMLInputElement).value).toBe("");
+		expect(screen.getByText(/showing “Hello”/)).toBeTruthy();
+
+		fireEvent.change(box, { target: { value: "សួស្តី" } });
+		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+		await waitFor(() =>
+			expect(state.saved).toEqual([
+				{ key: KEY, lang: "km", value: "សួស្តី" },
+			]),
+		);
+	});
+});

@@ -13,8 +13,10 @@ import type { TRPCRouter } from "#/integrations/trpc/router";
 import { DialogHost } from "../components/Dialogs";
 import { Footer } from "../components/Footer";
 import { Header } from "../components/Header";
+import { InlineEditBar } from "../components/InlineEditBar";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import { LanguageProvider } from "../lib/i18n";
+import { InlineEditProvider } from "../lib/inline-edit";
 import { detectLang } from "../lib/i18n-config";
 import {
 	metaDescription,
@@ -170,12 +172,15 @@ function RootComponent() {
 			strings={strings}
 			stringsFallback={stringsFallback}
 		>
-			{!chromeless && <Header nav={nav} settings={settings} />}
-			{/* Child routes render here. */}
-			<Outlet />
-			{!chromeless && <Footer settings={settings} />}
-			{/* inside the provider or its labels never see an admin's edit */}
-			<DialogHost />
+			<InlineEditProvider>
+				{!chromeless && <Header nav={nav} settings={settings} />}
+				{/* Child routes render here. */}
+				<Outlet />
+				{!chromeless && <Footer settings={settings} />}
+				{!chromeless && <InlineEditBar />}
+				{/* inside the provider or its labels never see an admin's edit */}
+				<DialogHost />
+			</InlineEditProvider>
 		</LanguageProvider>
 	);
 }

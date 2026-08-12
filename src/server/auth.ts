@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { jwtVerify, SignJWT } from "jose";
 
 import { env } from "#/env";
+import { ADMIN_HINT_COOKIE } from "#/lib/admin-hint";
 import type { DB } from "./db";
 import { sessions, users } from "./schema";
 
@@ -145,4 +146,12 @@ export function sessionCookie(token: string, request?: Request): string {
 }
 export function clearSessionCookie(request?: Request): string {
 	return `${SESSION_COOKIE}=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0${secureFlag(request)}`;
+}
+
+// readable on purpose: it grants nothing, it only tells the public site to go and ask who this is
+export function adminHintCookie(request?: Request): string {
+	return `${ADMIN_HINT_COOKIE}=1; Path=/; SameSite=Lax; Max-Age=${MAX_AGE_S}${secureFlag(request)}`;
+}
+export function clearAdminHintCookie(request?: Request): string {
+	return `${ADMIN_HINT_COOKIE}=; Path=/; SameSite=Lax; Max-Age=0${secureFlag(request)}`;
 }

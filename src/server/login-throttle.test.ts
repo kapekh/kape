@@ -22,6 +22,8 @@ vi.mock("#/server/auth", () => ({
 	createSession: vi.fn(async () => ({ id: "sid", token: "tok" })),
 	sessionCookie: () => "cms_session=tok; Path=/",
 	clearSessionCookie: () => "cms_session=; Path=/; Max-Age=0",
+	adminHintCookie: () => "cms_admin=1; Path=/",
+	clearAdminHintCookie: () => "cms_admin=; Path=/; Max-Age=0",
 	revokeSession: vi.fn(async () => {}),
 	validateToken: vi.fn(async () => null),
 	parseCookies: () => ({}),
