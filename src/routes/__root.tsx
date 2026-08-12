@@ -155,7 +155,8 @@ function RootNotFound() {
 }
 
 function RootComponent() {
-	const { lang, languages, strings, nav, settings } = Route.useLoaderData();
+	const { lang, languages, strings, stringsFallback, nav, settings } =
+		Route.useLoaderData();
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
 	// Admin + login have their own chrome — hide the public header/footer there.
 	const chromeless =
@@ -163,7 +164,12 @@ function RootComponent() {
 		pathname.startsWith("/internalsources") ||
 		pathname === "/login";
 	return (
-		<LanguageProvider lang={lang} languages={languages} strings={strings}>
+		<LanguageProvider
+			lang={lang}
+			languages={languages}
+			strings={strings}
+			stringsFallback={stringsFallback}
+		>
 			{!chromeless && <Header nav={nav} settings={settings} />}
 			{/* Child routes render here. */}
 			<Outlet />

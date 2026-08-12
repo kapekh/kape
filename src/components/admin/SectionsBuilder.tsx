@@ -8,6 +8,7 @@ import {
 	type SectionField,
 	type SectionNode,
 	sectionDef,
+	translatableFields,
 } from "#/lib/sections";
 import type { SiteSettings } from "#/lib/site-identity";
 import { confirm } from "@/components/Dialogs";
@@ -529,8 +530,6 @@ function FieldInput({
 	);
 }
 
-const TEXT_KINDS = new Set(["text", "textarea", "richtext"]);
-
 /** Editor body for a single section: layout + source/query (dynamic) + fields,
  *  plus a per-language tab for translating the section's text props. */
 function SectionEditor({
@@ -564,9 +563,7 @@ function SectionEditor({
 
 	// Per-language text overlay: only text fields translate; images/links/data stay shared.
 	const extraLangs = languages.filter((l) => l.code !== DEFAULT_LANG);
-	const textFields = def.fields.filter(
-		(f) => TEXT_KINDS.has(f.kind) && !(formPicked && f.key !== "formSlug"),
-	);
+	const textFields = translatableFields(node.type, props);
 	const i18n = (
 		props.i18n && typeof props.i18n === "object" ? props.i18n : {}
 	) as Record<string, Record<string, unknown>>;

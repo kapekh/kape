@@ -9,7 +9,7 @@ import {
 	projectLocations,
 	projects,
 } from "../schema";
-import { resolveOne, resolveTranslations } from "./i18n";
+import { resolveOneWithFallback, resolveTranslations } from "./i18n";
 import { attachMediaUrl } from "./media-util";
 
 const TENANT = 1;
@@ -27,6 +27,7 @@ export type ResolvedProject = {
 	targetAreas: string[];
 	snapshots: ProjectSnapshot[];
 	donors: { name: string; logoUrl: string | null }[];
+	i18nFallback: string[];
 };
 
 export async function getProjectBySlug(
@@ -40,7 +41,12 @@ export async function getProjectBySlug(
 		.where(and(eq(projects.tenantId, TENANT), eq(projects.slug, slug)))
 		.limit(1);
 	if (!p) return null;
-	const f = await resolveOne(db, "project", p.id, lang);
+	const { fields: f, fallback } = await resolveOneWithFallback(
+		db,
+		"project",
+		p.id,
+		lang,
+	);
 	const ds = await db
 		.select({ name: donors.name, logoMediaId: donors.logoMediaId })
 		.from(projectDonors)
@@ -60,6 +66,7 @@ export async function getProjectBySlug(
 		targetAreas: p.targetAreas ?? [],
 		snapshots: p.snapshots ?? [],
 		donors: dsWithLogo.map((d) => ({ name: d.name, logoUrl: d.logoUrl })),
+		i18nFallback: fallback,
 	};
 }
 

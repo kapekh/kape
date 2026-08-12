@@ -1,17 +1,21 @@
 import { and, asc, eq } from "drizzle-orm";
 
+import { DEFAULT_LANG } from "#/lib/i18n-config";
 import type { DB } from "../db";
 import { renderBody } from "../richtext";
 import { media, people, translations } from "../schema";
-import { resolveOne } from "./i18n";
+import { resolveOneWithFallback } from "./i18n";
 import { attachMediaUrl } from "./media-util";
 
 const TENANT = 1;
 
-const pickName = (
-	r: { nameEn: string; nameKm: string | null },
-	lang: string,
-) => (lang === "km" && r.nameKm ? r.nameKm : r.nameEn);
+type NameColumns = { nameEn: string; nameKm: string | null };
+
+const translatedName = (r: NameColumns, lang: string) =>
+	lang === "km" ? r.nameKm : null;
+
+const pickName = (r: NameColumns, lang: string) =>
+	translatedName(r, lang) || r.nameEn;
 
 /* --------------------------------- public --------------------------------- */
 
@@ -49,6 +53,7 @@ export type ResolvedPerson = {
 	position: string;
 	photoUrl: string | null;
 	bodyHtml: string;
+	i18nFallback: string[];
 };
 
 /** A single public profile by slug, with the bilingual bio rendered to HTML. */
@@ -69,7 +74,14 @@ export async function getPersonBySlug(
 		)
 		.limit(1);
 	if (!p) return null;
-	const f = await resolveOne(db, "person", p.id, lang);
+	const { fields: f, fallback } = await resolveOneWithFallback(
+		db,
+		"person",
+		p.id,
+		lang,
+	);
+	// name is a column pair, not a translations row, so its fallback is invisible to the resolver
+	if (lang !== DEFAULT_LANG && !translatedName(p, lang)) fallback.push("name");
 	let photoUrl: string | null = null;
 	if (p.photoMediaId) {
 		const [m] = await db
@@ -86,6 +98,7 @@ export async function getPersonBySlug(
 		position: p.position ?? "",
 		photoUrl,
 		bodyHtml: renderBody(f.bio ?? null),
+		i18nFallback: fallback,
 	};
 }
 

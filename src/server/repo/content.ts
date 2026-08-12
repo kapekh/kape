@@ -11,7 +11,12 @@ import {
 	slugRedirects,
 	terms,
 } from "../schema";
-import { resolveOne, resolveTranslations } from "./i18n";
+import {
+	resolveOne,
+	resolveOneWithFallback,
+	resolveTranslations,
+	resolveWithFallback,
+} from "./i18n";
 import { resolveSections } from "./sections";
 
 const TENANT = 1;
@@ -54,6 +59,7 @@ export type ResolvedPage = {
 	parentTitle: string | null; // breadcrumb: the structural parent's own title
 	// only when the page has no content of its own, so a hub renders a child index
 	children?: ChildLink[];
+	i18nFallback: string[]; // fields showing the default language, for the inline editor
 };
 
 /** Published direct children of a page, for rendering a hub/index. */
@@ -118,7 +124,12 @@ export async function getPageBySlug(
 		.limit(1);
 	if (!page) return null;
 
-	const fields = await resolveOne(db, "page", page.id, lang);
+	const { fields, fallback } = await resolveOneWithFallback(
+		db,
+		"page",
+		page.id,
+		lang,
+	);
 	let coverUrl: string | null = null;
 	if (page.heroMediaId != null) {
 		const [m] = await db
@@ -154,6 +165,7 @@ export async function getPageBySlug(
 		sections,
 		parentTitle,
 		children,
+		i18nFallback: fallback,
 	};
 }
 
@@ -433,13 +445,31 @@ export async function listAlbums(db: DB, lang: string): Promise<AlbumItem[]> {
 	return out;
 }
 
-export type AlbumPhoto = { id: number; url: string; caption: string };
+export type AlbumPhoto = {
+	id: number;
+	url: string;
+	caption: string;
+	captionFallback?: boolean;
+};
 export type ResolvedAlbum = {
 	id: number;
 	slug: string;
 	title: string;
 	photos: AlbumPhoto[];
+	i18nFallback: string[];
 };
+
+const photo = (
+	p: { mediaId: number; url: string | null },
+	caps: Awaited<ReturnType<typeof resolveWithFallback>>,
+): AlbumPhoto => ({
+	id: p.mediaId,
+	url: p.url ?? "",
+	caption: caps.values.get(p.mediaId)?.caption ?? "",
+	...(caps.fallback.get(p.mediaId)?.includes("caption")
+		? { captionFallback: true }
+		: {}),
+});
 
 /** A single album with its ordered photos and (translated) captions. */
 export async function getAlbum(
@@ -460,14 +490,19 @@ export async function getAlbum(
 		)
 		.limit(1);
 	if (!a) return null;
-	const f = await resolveOne(db, "post", a.id, lang);
+	const { fields: f, fallback } = await resolveOneWithFallback(
+		db,
+		"post",
+		a.id,
+		lang,
+	);
 	const pm = await db
 		.select({ mediaId: media.id, url: media.url })
 		.from(postMedia)
 		.innerJoin(media, eq(postMedia.mediaId, media.id))
 		.where(eq(postMedia.postId, a.id))
 		.orderBy(asc(postMedia.sort));
-	const caps = await resolveTranslations(
+	const caps = await resolveWithFallback(
 		db,
 		"media",
 		pm.map((p) => p.mediaId),
@@ -477,11 +512,8 @@ export async function getAlbum(
 		id: a.id,
 		slug: a.slug,
 		title: f.title ?? "",
-		photos: pm.map((p) => ({
-			id: p.mediaId,
-			url: p.url ?? "",
-			caption: caps.get(p.mediaId)?.caption ?? "",
-		})),
+		photos: pm.map((p) => photo(p, caps)),
+		i18nFallback: fallback,
 	};
 }
 
@@ -501,6 +533,7 @@ export type ResolvedPost = {
 	// fetch the whole collection listing to find one record's own file
 	fileUrl: string | null;
 	youtubeUrl: string | null;
+	i18nFallback: string[];
 };
 
 /** If `slug` was an old page slug, return the page's current slug (for a 301). */
@@ -549,7 +582,12 @@ export async function getPostBySlug(
 		.limit(1);
 	if (!post) return null;
 
-	const f = await resolveOne(db, "post", post.id, lang);
+	const { fields: f, fallback } = await resolveOneWithFallback(
+		db,
+		"post",
+		post.id,
+		lang,
+	);
 
 	let coverUrl: string | null = null;
 	if (post.coverMediaId) {
@@ -567,7 +605,7 @@ export async function getPostBySlug(
 		.innerJoin(media, eq(postMedia.mediaId, media.id))
 		.where(eq(postMedia.postId, post.id))
 		.orderBy(asc(postMedia.sort));
-	const caps = await resolveTranslations(
+	const caps = await resolveWithFallback(
 		db,
 		"media",
 		pm.map((p) => p.mediaId),
@@ -586,12 +624,9 @@ export async function getPostBySlug(
 		excerpt: f.excerpt ?? "",
 		bodyHtml: renderBody(f.body ?? null),
 		coverUrl,
-		gallery: pm.map((p) => ({
-			id: p.mediaId,
-			url: p.url ?? "",
-			caption: caps.get(p.mediaId)?.caption ?? "",
-		})),
+		gallery: pm.map((p) => photo(p, caps)),
 		fileUrl: meta.fileUrl ? String(meta.fileUrl) : null,
 		youtubeUrl: meta.youtube_url ? String(meta.youtube_url) : null,
+		i18nFallback: fallback,
 	};
 }

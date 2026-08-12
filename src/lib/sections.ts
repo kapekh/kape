@@ -553,3 +553,22 @@ export const SECTION_DEFS: SectionDef[] = [
 
 export const sectionDef = (type: string): SectionDef | undefined =>
 	SECTION_DEFS.find((d) => d.type === type);
+
+const TEXT_KINDS = new Set<FieldKind>(["text", "textarea", "richtext"]);
+
+/** The fields a section offers for per-language translation, given its current props. */
+export function translatableFields(
+	type: string,
+	props: Record<string, unknown> = {},
+): SectionField[] {
+	const def = sectionDef(type);
+	if (!def) return [];
+	// a built form supplies its own title, intro and button, so only the slug is left to translate
+	const formPicked =
+		def.type === "form" &&
+		typeof props.formSlug === "string" &&
+		props.formSlug.length > 0;
+	return def.fields.filter(
+		(f) => TEXT_KINDS.has(f.kind) && !(formPicked && f.key !== "formSlug"),
+	);
+}

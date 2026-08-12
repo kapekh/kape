@@ -9,6 +9,9 @@ const TENANT = 1;
 /** Map of entityId -> { field: resolvedValue }. */
 export type TranslationMap = Map<number, Record<string, string>>;
 
+/** Map of entityId -> fields showing the default language because `lang` had no row. */
+export type FallbackMap = Map<number, string[]>;
+
 /** Enabled languages, ordered for the switcher. */
 export function listLanguages(db: DB) {
 	return db
@@ -28,15 +31,23 @@ export async function getDefaultLang(db: DB): Promise<string> {
 	return row?.code ?? "en";
 }
 
-export async function resolveTranslations(
+/**
+ * Resolved fields plus, per entity, which of them fell back.
+ * An inline editor that cannot tell a translation from a fallback writes Khmer into the English row.
+ */
+export async function resolveWithFallback(
 	db: DB,
 	entityType: string,
 	ids: number[],
 	lang: string,
-): Promise<TranslationMap> {
-	const out: TranslationMap = new Map();
-	if (ids.length === 0) return out;
-	for (const id of ids) out.set(id, {});
+): Promise<{ values: TranslationMap; fallback: FallbackMap }> {
+	const values: TranslationMap = new Map();
+	const fallback: FallbackMap = new Map();
+	if (ids.length === 0) return { values, fallback };
+	for (const id of ids) {
+		values.set(id, {});
+		fallback.set(id, []);
+	}
 
 	const defaultLang = await getDefaultLang(db);
 	const wanted = Array.from(new Set([defaultLang, lang]));
@@ -60,17 +71,35 @@ export async function resolveTranslations(
 	// Default first, then let the requested language override.
 	for (const r of rows) {
 		if (r.lang !== defaultLang) continue;
-		const fields = out.get(r.entityId);
+		const fields = values.get(r.entityId);
 		if (fields) fields[r.field] = r.value;
 	}
 	if (lang !== defaultLang) {
+		const translated = new Set<string>();
 		for (const r of rows) {
 			if (r.lang !== lang) continue;
-			const fields = out.get(r.entityId);
+			const fields = values.get(r.entityId);
 			if (fields) fields[r.field] = r.value;
+			translated.add(`${r.entityId}:${r.field}`);
+		}
+		for (const [id, fields] of values) {
+			fallback.set(
+				id,
+				Object.keys(fields).filter((f) => !translated.has(`${id}:${f}`)),
+			);
 		}
 	}
-	return out;
+	return { values, fallback };
+}
+
+export async function resolveTranslations(
+	db: DB,
+	entityType: string,
+	ids: number[],
+	lang: string,
+): Promise<TranslationMap> {
+	const { values } = await resolveWithFallback(db, entityType, ids, lang);
+	return values;
 }
 
 /** Convenience: resolved fields for a single entity. */
@@ -84,11 +113,27 @@ export async function resolveOne(
 	return map.get(id) ?? {};
 }
 
+/** `resolveOne` with the fallback list the inline editor needs. */
+export async function resolveOneWithFallback(
+	db: DB,
+	entityType: string,
+	id: number,
+	lang: string,
+): Promise<{ fields: Record<string, string>; fallback: string[] }> {
+	const { values, fallback } = await resolveWithFallback(
+		db,
+		entityType,
+		[id],
+		lang,
+	);
+	return { fields: values.get(id) ?? {}, fallback: fallback.get(id) ?? [] };
+}
+
 /** The UI-string dictionary for `lang`, with per-key fallback to the default language. */
 export async function getUiStrings(
 	db: DB,
 	lang: string,
-): Promise<Record<string, string>> {
+): Promise<{ strings: Record<string, string>; fallback: string[] }> {
 	const defaultLang = await getDefaultLang(db);
 	const wanted = Array.from(new Set([defaultLang, lang]));
 	const rows = await db
@@ -104,16 +149,26 @@ export async function getUiStrings(
 
 	const out: Record<string, string> = {};
 	for (const r of rows) if (r.lang === defaultLang) out[r.key] = r.value;
+	const fallback: string[] = [];
 	if (lang !== defaultLang) {
-		for (const r of rows) if (r.lang === lang) out[r.key] = r.value;
+		const translated = new Set<string>();
+		for (const r of rows) {
+			if (r.lang !== lang) continue;
+			out[r.key] = r.value;
+			translated.add(r.key);
+		}
+		for (const key of Object.keys(out))
+			if (!translated.has(key)) fallback.push(key);
 	}
-	return out;
+	return { strings: out, fallback };
 }
 
 export type I18nBootstrap = {
 	lang: string;
 	languages: { code: string; name: string; nativeName: string }[];
 	strings: Record<string, string>;
+	/** keys serving the default language because `lang` has no row */
+	stringsFallback: string[];
 };
 
 export async function bootstrapI18n(
@@ -127,7 +182,7 @@ export async function bootstrapI18n(
 	const active = langs.some((l) => l.code === requestedLang)
 		? requestedLang
 		: defaultLang;
-	const strings = await getUiStrings(db, active);
+	const { strings, fallback } = await getUiStrings(db, active);
 	return {
 		lang: active,
 		languages: langs.map((l) => ({
@@ -136,5 +191,6 @@ export async function bootstrapI18n(
 			nativeName: l.nativeName,
 		})),
 		strings,
+		stringsFallback: fallback,
 	};
 }

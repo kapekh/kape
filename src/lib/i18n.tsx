@@ -19,6 +19,8 @@ type Ctx = {
 	languages: LangInfo[];
 	// params keep a sentence one translatable unit; khmer word order breaks concatenation
 	t: (key: string, fallback?: string, params?: TParams) => string;
+	// keys serving the default language: an inline editor must not save over that row
+	stringsFallback: Set<string>;
 };
 
 // unmatched slot stays on screen: a visible {n} gets reported, `undefined` does not
@@ -43,11 +45,13 @@ export function LanguageProvider({
 	lang,
 	languages,
 	strings,
+	stringsFallback = [],
 	children,
 }: {
 	lang: string;
 	languages: LangInfo[];
 	strings: Record<string, string>;
+	stringsFallback?: string[];
 	children: ReactNode;
 }) {
 	useEffect(() => {
@@ -60,7 +64,9 @@ export function LanguageProvider({
 	const t = makeT(strings);
 
 	return (
-		<LangContext.Provider value={{ lang, languages, t }}>
+		<LangContext.Provider
+			value={{ lang, languages, t, stringsFallback: new Set(stringsFallback) }}
+		>
 			{children}
 		</LangContext.Provider>
 	);
@@ -68,7 +74,13 @@ export function LanguageProvider({
 
 export function useLang(): Ctx {
 	const ctx = useContext(LangContext);
-	if (!ctx) return { lang: "en", languages: [], t: fallbackT };
+	if (!ctx)
+		return {
+			lang: "en",
+			languages: [],
+			t: fallbackT,
+			stringsFallback: new Set<string>(),
+		};
 	return ctx;
 }
 

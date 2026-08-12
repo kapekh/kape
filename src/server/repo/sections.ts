@@ -1,6 +1,12 @@
 // dynamic queries run in the route loader and inline as props.data, so the client renderer stays pure
 import { NON_PUBLIC_CONTENT_TYPES } from "#/lib/collections";
-import type { QuerySource, SectionNode, SectionQuery } from "#/lib/sections";
+import { DEFAULT_LANG } from "#/lib/i18n-config";
+import {
+	type QuerySource,
+	type SectionNode,
+	type SectionQuery,
+	translatableFields,
+} from "#/lib/sections";
 import type { DB } from "../db";
 import { renderBody } from "../richtext";
 import {
@@ -119,6 +125,13 @@ export async function resolveSections(
 			delete props.i18n;
 			if (i18n && lang && i18n[lang]) {
 				props = { ...props, ...i18n[lang] };
+			}
+			if (lang && lang !== DEFAULT_LANG) {
+				const overlay = i18n?.[lang] ?? {};
+				const fellBack = translatableFields(s?.type ?? "", props)
+					.map((f) => f.key)
+					.filter((key) => !(key in overlay) && props[key]);
+				if (fellBack.length) props.i18nFallback = fellBack;
 			}
 			if (typeof props.body === "string" && props.body) {
 				props.bodyHtml = renderBody(props.body);

@@ -8,7 +8,7 @@ const ENABLED = process.env.SSG_CACHE !== "off";
 const TTL_SECONDS = 7 * 24 * 60 * 60; // backstop; precise invalidation is the primary mechanism
 
 // bump when the rendered HTML or the cached payload's shape changes; old rows age out on the TTL
-const FORMAT = "v3";
+const FORMAT = "v4";
 
 export const cacheKey = (path: string, lang: string) =>
 	`${FORMAT}::${lang || "en"}::${path.replace(/^\/+|\/+$/g, "")}`;
