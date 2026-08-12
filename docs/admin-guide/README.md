@@ -62,7 +62,8 @@ install has switched on under Modules. A short sidebar is normal.
 
 ### The topbar
 
-- The panel button collapses the sidebar. It remembers.
+- The panel button at the top of the sidebar collapses it. It remembers. Collapsed, the logo turns
+  back into that button when you point at it.
 - **View site** opens the public site in a new tab. Use it constantly.
 - Your initials open the account panel: your details, the theme toggle, sign out, and
   **Show me around**.

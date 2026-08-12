@@ -12,8 +12,7 @@ import {
 	ChevronDown,
 	ExternalLink,
 	Menu,
-	PanelLeftClose,
-	PanelLeftOpen,
+	PanelLeft,
 	ShieldAlert,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -449,17 +448,54 @@ function AdminLayout({ access }: { access: OkAccess }) {
 				<div
 					className={`flex items-center gap-3 h-16 border-b border-admin-border shrink-0 ${railNarrow ? "justify-center px-0" : "px-4"}`}
 				>
-					<img
-						src={siteLogo(settings)}
-						alt={siteShortName(settings)}
-						className="h-9 w-9 shrink-0 rounded-lg object-cover ring-1 ring-admin-border"
-					/>
-					<div className={railNarrow ? "sr-only" : "min-w-0 leading-tight"}>
-						<div className="truncate text-sm font-semibold text-admin-ink">
-							{siteShortName(settings)}
-						</div>
-						<div className="text-[13px] text-admin-ink-muted">Admin</div>
-					</div>
+					{railNarrow ? (
+						<button
+							type="button"
+							onClick={toggleRail}
+							aria-expanded={false}
+							aria-controls="admin-sidebar"
+							title="Expand sidebar"
+							className="group relative grid size-9 shrink-0 place-items-center rounded-lg transition-colors duration-150 ease-out hover:bg-admin-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+						>
+							<img
+								src={siteLogo(settings)}
+								alt=""
+								className="size-9 rounded-lg object-cover ring-1 ring-admin-border transition-opacity duration-150 ease-out group-hover:opacity-0 group-focus-visible:opacity-0"
+							/>
+							<PanelLeft
+								aria-hidden="true"
+								className="absolute h-5 w-5 text-admin-ink-muted opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100 group-focus-visible:opacity-100"
+							/>
+							<span className="sr-only">Expand sidebar</span>
+						</button>
+					) : (
+						<>
+							<img
+								src={siteLogo(settings)}
+								alt={siteShortName(settings)}
+								className="h-9 w-9 shrink-0 rounded-lg object-cover ring-1 ring-admin-border"
+							/>
+							<div className="min-w-0 flex-1 leading-tight">
+								<div className="truncate text-sm font-semibold text-admin-ink">
+									{siteShortName(settings)}
+								</div>
+								<div className="text-[13px] text-admin-ink-muted">Admin</div>
+							</div>
+							<button
+								type="button"
+								onClick={isDesktop ? toggleRail : closeDrawer}
+								aria-expanded={true}
+								aria-controls="admin-sidebar"
+								title={isDesktop ? "Collapse sidebar" : "Close navigation"}
+								className="grid size-9 shrink-0 place-items-center rounded-lg text-admin-ink-muted transition-colors duration-150 ease-out hover:bg-admin-accent-soft hover:text-admin-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+							>
+								<PanelLeft className="h-5 w-5" aria-hidden="true" />
+								<span className="sr-only">
+									{isDesktop ? "Collapse sidebar" : "Close navigation"}
+								</span>
+							</button>
+						</>
+					)}
 				</div>
 
 				<nav className="hide-scroll flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-6">
@@ -529,22 +565,6 @@ function AdminLayout({ access }: { access: OkAccess }) {
 					>
 						<Menu className="h-5 w-5" aria-hidden="true" />
 						<span className="sr-only">Menu</span>
-					</button>
-					<button
-						type="button"
-						onClick={toggleRail}
-						aria-expanded={!railShut}
-						aria-controls="admin-sidebar"
-						className="hidden lg:grid size-9 shrink-0 place-items-center rounded-lg text-admin-ink-muted transition-colors duration-150 ease-out hover:bg-admin-accent-soft hover:text-admin-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
-					>
-						{railShut ? (
-							<PanelLeftOpen className="h-5 w-5" aria-hidden="true" />
-						) : (
-							<PanelLeftClose className="h-5 w-5" aria-hidden="true" />
-						)}
-						<span className="sr-only">
-							{railShut ? "Expand sidebar" : "Collapse sidebar"}
-						</span>
 					</button>
 					<div
 						ref={setHeaderSlot}
