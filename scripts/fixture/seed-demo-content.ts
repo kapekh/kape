@@ -10,8 +10,8 @@
  */
 import { and, eq } from "drizzle-orm";
 
-import { db } from "../src/server/db";
-import { media, people, postMedia, posts, renderCache, translations } from "../src/server/schema";
+import { db } from "../../src/server/db";
+import { media, people, postMedia, posts, renderCache, translations } from "../../src/server/schema";
 
 const TENANT = 1;
 const AUTHOR = "KAPE Cambodia";

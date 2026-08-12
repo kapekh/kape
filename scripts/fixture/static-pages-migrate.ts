@@ -1,17 +1,17 @@
 /**
  * Migrate the static content routes into CMS tree pages, building section trees
- * from the normalized specs in scripts/static-pages/*.json. Creates any missing
+ * from the normalized specs in scripts/fixture/static-pages/*.json. Creates any missing
  * parent pages (what-we-do, media, opportunities) and links the tree. Idempotent
- * (upsert by slug). Run: bun scripts/static-pages-migrate.ts
+ * (upsert by slug). Run: bun scripts/fixture/static-pages-migrate.ts
  */
 import { and, eq } from "drizzle-orm";
 
 import group1 from "./static-pages/group1.json";
 import group2 from "./static-pages/group2.json";
 import group3 from "./static-pages/group3.json";
-import type { SectionNode } from "../src/lib/sections";
-import { db } from "../src/server/db";
-import { pages, translations } from "../src/server/schema";
+import type { SectionNode } from "../../src/lib/sections";
+import { db } from "../../src/server/db";
+import { pages, translations } from "../../src/server/schema";
 
 const TENANT = 1;
 

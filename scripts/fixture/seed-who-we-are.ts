@@ -10,9 +10,9 @@
  */
 import { and, eq } from "drizzle-orm";
 
-import type { SectionNode } from "../src/lib/sections";
-import { db } from "../src/server/db";
-import { orgNodes, pages, partners, people, projectLocations, renderCache } from "../src/server/schema";
+import type { SectionNode } from "../../src/lib/sections";
+import { db } from "../../src/server/db";
+import { orgNodes, pages, partners, people, projectLocations, renderCache } from "../../src/server/schema";
 
 const TENANT = 1;
 const pic = (seed: string, w = 1600, h = 900) => `https://picsum.photos/seed/${seed}/${w}/${h}`;

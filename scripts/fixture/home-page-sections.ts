@@ -8,10 +8,10 @@
  */
 import { and, eq } from "drizzle-orm";
 
-import type { SectionNode } from "../src/lib/sections";
-import { db } from "../src/server/db";
-import { listHeroSlides, listStats } from "../src/server/repo/site";
-import { pages, translations } from "../src/server/schema";
+import type { SectionNode } from "../../src/lib/sections";
+import { db } from "../../src/server/db";
+import { listHeroSlides, listStats } from "../../src/server/repo/site";
+import { pages, translations } from "../../src/server/schema";
 
 const TENANT = 1;
 const doc = (text: string) => JSON.stringify({ type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text }] }] });

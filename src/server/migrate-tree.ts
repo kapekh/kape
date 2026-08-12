@@ -3,9 +3,9 @@ import { and, eq } from "drizzle-orm";
 import { PLACEHOLDER_IMAGE } from "#/lib/placeholder";
 
 import type { SectionNode } from "#/lib/sections";
-import group1 from "../../scripts/static-pages/group1.json";
-import group2 from "../../scripts/static-pages/group2.json";
-import group3 from "../../scripts/static-pages/group3.json";
+import group1 from "../../scripts/fixture/static-pages/group1.json";
+import group2 from "../../scripts/fixture/static-pages/group2.json";
+import group3 from "../../scripts/fixture/static-pages/group3.json";
 import type { DB } from "./db";
 import { flattenNav, normalizeTree, upsertPage } from "./page-tree";
 import { clearCache } from "./render-cache";

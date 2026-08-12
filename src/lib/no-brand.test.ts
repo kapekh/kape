@@ -14,6 +14,10 @@ const BRANDS = [
 ];
 
 const ROOT = join(import.meta.dirname, "..");
+const REPO = join(ROOT, "..");
+// `scripts/` ships with the product, so a one-off written against one customer's
+// content is as much of a leak as a component would be.
+const SCANNED = [ROOT, join(REPO, "scripts")];
 
 // The loadable example-site fixture. Everything else is the product — including
 // install.ts, which is the path every new customer's database is built by.
@@ -21,6 +25,7 @@ const FIXTURE = [
 	join(ROOT, "server", "seed"),
 	join(ROOT, "server", "migrate-tree.ts"),
 	join(ROOT, "server", "page-tree.ts"),
+	join(REPO, "scripts", "fixture"),
 ];
 
 const exempt = (path: string) =>
@@ -43,7 +48,7 @@ const withoutFixtureCommand = (line: string) =>
 describe("shipped source carries no customer branding", () => {
 	for (const brand of BRANDS) {
 		it(`is free of ${brand}`, () => {
-			const hits = sourceFiles(ROOT)
+			const hits = SCANNED.flatMap(sourceFiles)
 				.filter((f) => f !== import.meta.filename)
 				.flatMap((f) =>
 					readFileSync(f, "utf8")
@@ -53,7 +58,7 @@ describe("shipped source carries no customer branding", () => {
 				)
 				.map(
 					({ f, n, line }) =>
-						`${f.slice(ROOT.length + 1)}:${n}: ${line.trim()}`,
+						`${f.slice(REPO.length + 1)}:${n}: ${line.trim()}`,
 				);
 			expect(hits).toEqual([]);
 		});

@@ -4,7 +4,7 @@
  * of `bun run seed:kape`; this is the standalone entry point for refreshing the
  * dates when a new sub-decree lands.
  */
-import { seedCalendarPages } from "../src/server/seed/pages-calendar";
+import { seedCalendarPages } from "../../src/server/seed/pages-calendar";
 
 await seedCalendarPages();
 process.exit(0);

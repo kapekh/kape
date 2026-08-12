@@ -1,15 +1,15 @@
 /**
  * Proof-of-concept: create the "alumni" form (replacing the orphaned
  * alumni_registrations table) and drop it onto the /opportunities/alumni page.
- * Idempotent. Run: bun scripts/seed-alumni-form.ts
+ * Idempotent. Run: bun scripts/fixture/seed-alumni-form.ts
  */
 import { and, eq } from "drizzle-orm";
 
-import type { FormField } from "../src/lib/forms";
-import type { SectionNode } from "../src/lib/sections";
-import { db } from "../src/server/db";
-import { clearCache } from "../src/server/render-cache";
-import { forms, pages } from "../src/server/schema";
+import type { FormField } from "../../src/lib/forms";
+import type { SectionNode } from "../../src/lib/sections";
+import { db } from "../../src/server/db";
+import { clearCache } from "../../src/server/render-cache";
+import { forms, pages } from "../../src/server/schema";
 
 const TENANT = 1;
 
