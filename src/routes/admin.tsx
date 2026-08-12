@@ -10,6 +10,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getCookie } from "@tanstack/react-start/server";
 import {
 	ChevronDown,
+	Compass,
 	ExternalLink,
 	Menu,
 	PanelLeft,
@@ -327,8 +328,8 @@ function AdminLayout({ access }: { access: OkAccess }) {
 		setRailCollapsed(localStorage.getItem("admin-nav-rail") === "collapsed");
 	}, []);
 
-	// Once, on the first admin screen anyone opens. The account panel offers it
-	// again afterwards.
+	// Once, on the first admin screen anyone opens. The topbar's Tour button
+	// offers it again afterwards.
 	useEffect(() => {
 		startTourOnce("shell");
 	}, []);
@@ -571,6 +572,15 @@ function AdminLayout({ access }: { access: OkAccess }) {
 						className="flex min-w-0 flex-1 items-center gap-3"
 					/>
 					<div className="flex shrink-0 items-center gap-1">
+						<button
+							type="button"
+							data-tour="tour-button"
+							onClick={() => startTour(tourForPath(pathname))}
+							className="flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium text-admin-ink-muted transition-colors duration-150 ease-out hover:bg-admin-accent-soft hover:text-admin-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+						>
+							Tour
+							<Compass className="size-4 shrink-0" aria-hidden="true" />
+						</button>
 						<a
 							href="/"
 							target="_blank"
@@ -629,16 +639,6 @@ function AdminLayout({ access }: { access: OkAccess }) {
 										>
 											My account
 										</Link>
-										<button
-											type="button"
-											onClick={() => {
-												closeAccount();
-												startTour(tourForPath(pathname));
-											}}
-											className={menuItem}
-										>
-											Show me around
-										</button>
 										{darkModeAvailable(settings) && (
 											<div className="flex items-center justify-between gap-3 rounded-lg px-3 py-2">
 												<span className="text-sm text-admin-ink">Theme</span>

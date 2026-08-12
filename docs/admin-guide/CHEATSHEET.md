@@ -16,7 +16,7 @@ One page. Pin it up. The long version is in [README.md](README.md).
 | Read what visitors sent | Messages |
 | Collect answers from visitors | Forms |
 | Turn a whole area off | Site → Modules |
-| Be walked through the screen I am on | Your initials → **Show me around** |
+| Be walked through the screen I am on | **Tour**, in the topbar. `N` forward, `P` back, Esc out |
 
 ## Publishing a page
 

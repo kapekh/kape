@@ -64,11 +64,11 @@ install has switched on under Modules. A short sidebar is normal.
 
 - The panel button at the top of the sidebar collapses it. It remembers. Collapsed, the logo turns
   back into that button when you point at it.
+- **Tour** walks you through the screen you are on.
 - **View site** opens the public site in a new tab. Use it constantly.
-- Your initials open the account panel: your details, the theme toggle, sign out, and
-  **Show me around**.
+- Your initials open the account panel: your details, the theme toggle and sign out.
 
-**Show me around** walks you through whatever screen you are on, pointing at each control in turn.
+**Tour** walks you through whatever screen you are on, pointing at each control in turn.
 It runs by itself the first time you open the admin and the first time you open the media library,
 and it is there whenever you want it again. Escape ends it.
 
