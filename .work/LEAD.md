@@ -38,7 +38,8 @@ Documents: `docs/ui-audit.md` (audit, shown to Rithy and approved), `.work/redes
 | J11 settings and modules | this pane | **done, one violation of my own I caught and fixed** | Commit `98ec922`. Gates: **433/48**, `tsc` silent, lint **8**, build green. All 12 acceptance items in `.work/redesign/J11-report.md`. Settings round-trips: 41 keys before, 41 identical after, and the one-field save moves exactly one line of the dump. Both probes reached the public site. Section nav reaches all four sections by click and by scroll. Custom key/value 21 → 22 → 21 rows, DB 41 → 42 → 41. Schools off removes it from the sidebar and `/admin/schools` redirects to `/admin`; back on, everything returns; `Modules saved.` both times. **The violation: my first cut of Brand displayed stored colours as hex and its save wrote that hex back over eight untouched `oklch()` values.** Caught by the round-trip diff, the conversion is deleted, the eight values restored, and the re-proof is in the report. **This commit also carries the sticky fix** below, and one file's worth of the in-flight comment pass, because `admin.tsx` had both |
 | J06 editors A | this pane | **done, two primitives touched deliberately** | Commit `3af6565`. Gates: **435/48**, `tsc` silent, lint **6** (both named `noArrayIndexKey` errors removed, none added), build green. All 15 acceptance items with pasted output in `.work/redesign/J06-report.md`. Eleven post-type field lists before and after, identical; counts identical on all sixteen captured screens; three fields **gained** a name they never had. Create, edit, dirty guard, validation, keyboard path on all four converted selects, and EN+KM round trip all driven through the UI and checked against SQL. **I edited `form-ui.tsx` twice** - `FormSection` gained an opt-in `split`, `EditorGrid` gained two `data-tour` hooks - because E2 names `FormSection` and eleven forms should not each invent a two-column section. Both additive, guard test untouched. **The alignment snippet caught two real defects of mine at 1440**, both fixed; every screen now reports only the documented topbar artefact |
 | J07 editors B | this pane | **done, one primitive touched deliberately** | Commit `a1bae23`. Gates: **435/48**, `tsc` silent, lint **6**, build green. All 15 acceptance items with pasted output in `.work/redesign/J07-report.md`. Field counts identical on all eight screens; create, edit, dirty guard, validation, keyboard on all three converted selects, EN+KM bio round trip, both maps and a photo upload all driven through the UI and checked against SQL. Module gating proved four ways by stashing back to HEAD with `projects` off. **I edited `MediaPicker.tsx`** - its chosen-file row centred a `w-full` filename against the two buttons it pushed onto the next line, 33.75px out on every editor with an image set, invisible to J06 because none of its records had one. **Item 13's premise is wrong and the report says so**: the org chart shows a person's name and photo, never their title |
-| J08-J15 | this pane | queued, contracts written | — |
+| J08 editors C | this pane | **done, two one-line additions outside the forms** | Gates: **437/48**, `tsc` silent, lint **6**, build green. All 17 acceptance items with pasted output in `.work/redesign/J08-report.md`. Field counts taken against a **worktree at `9281cf5` running the same database on `:3049`**, not from memory: identical on all eight screens once Radix's `aria-hidden` form element is subtracted, and the builder's 25 real controls are still 25 with three of them behind a disclosure. Role 4's permission set is byte for byte identical after a save that touched only the name, and a deliberate tick added exactly one area and lost none. A built form was placed on a public page, filled by a visitor and read back from the inbox. Staff refused client-side **and** 403 from the API. Password reset proved against `/api/auth/login`, old password 401. **I added `Donor created.` and `Form created.` toasts** to the two `.new` routes that said nothing, which is E4 and which `users.new` and `roles.new` already did. **Two things reported, not fixed** — see below |
+| J09-J15 | this pane | queued, contracts written | — |
 
 ## Live now
 
@@ -213,9 +214,28 @@ Its step bodies were reworded off posts-only language while doing that.
 `title`; `personId` resolves to the person's name, slug and photo only. Do not repeat J07's
 contract's claim in a later one.
 
+## What J08 found, not fixed, because it is flow
+
+**Three of the eleven editors have no navigation guard, and never had one.** `useDirtyGuard` arms its
+blocker only when a `savedSignal` is passed. `DonorForm` gets `savedAt`; `RoleForm`, `UserForm` and
+`FormBuilder` get nothing, at `9281cf5` and now. Deliberate: those three routes `navigate()` to the
+list on a successful save, so an armed blocker with no baseline reset would stop the form's own
+post-save navigation and ask the operator to confirm discarding what they just saved.
+
+Proved on `/admin/roles/6`: ticked `Media library`, clicked `Roles` in the sidebar, the edit was gone
+with no prompt. **The fix is one decision, not three:** should roles, users and forms stay put after
+saving, the way donors, posts and projects do? If yes, they gain `savedAt`, the guard, and the
+`Saved <time>` indicator for free. Rithy's call, and it is a phase-2 flow change either way.
+
+**A non-admin's sign-in did not land in the browser.** The `editor` user's credentials returned 200
+and a session cookie from `/api/auth/login`, but the login form left the browser on `/login` with no
+error, twice. `login.tsx:62` sends anyone who is not `admin` to `/internalsources`, and
+`staff@kapekh.org` reached it fine in the next run, so this is not the refusal working as intended.
+Nobody's file this round. Noted so it is not rediscovered as a redesign regression.
+
 ## Next action
 
-Build **J08**, then J09, J12, J13, J14, and J15 last or not at all.
+Build **J09**, then J12, J13, J14, and J15 last or not at all.
 
 `.work/redesign/lead.db` now carries five seeded donations, one seeded campaign, one real contact message (all tagged "Lead Probe"), J10's traffic: **six probe uploads, one deleted media item (id 96, a post cover, whose reference was nulled), and a probe image in the body of posts 3 and 26**, J06's: **post 30, project 20, campaigns 2 and 3, and project 3 moved to 13.1234 / 104.5678 with USAID added**, and J07's: **person 9 with two bio translations and media 138, school 7, office 6, partner 7, and one `org_nodes` row linked to person 9.** Harmless, but do not read those counts as the client's. `kape.db` is untouched at `e9789f59cb05f9f3426b9aba88001f9a`.
 
