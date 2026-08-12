@@ -11,6 +11,7 @@ import {
 	useEdgesState,
 	useNodesState,
 } from "@xyflow/react";
+import { Pencil, Plus, X } from "lucide-react";
 import "@xyflow/react/dist/style.css";
 import { useEffect } from "react";
 
@@ -98,59 +99,59 @@ function rowsToFlow(
 function OrgFlowNode({ data }: NodeProps<Node<NodeData>>) {
 	const { row, onEdit, onAddChild, onDelete } = data;
 	return (
-		<div className="w-[210px] rounded-2xl border border-border bg-card px-3 py-2.5 shadow-[var(--shadow-soft)] text-center">
+		<div className="w-[210px] rounded-xl border border-admin-border bg-admin-panel px-3 py-3 text-center shadow-[var(--shadow-soft)]">
 			<Handle
 				type="target"
 				position={Position.Top}
-				className="!h-2.5 !w-2.5 !bg-[var(--accent)] !border-0"
+				className="!h-2.5 !w-2.5 !border-0 !bg-admin-accent"
 			/>
 			<div className="flex items-center justify-center gap-1.5">
 				{row.personId != null && (
 					<span
-						className="h-2 w-2 rounded-full bg-[var(--palm)]"
+						className="size-2 rounded-full bg-admin-live"
 						title="Linked to a team member"
 					/>
 				)}
-				<span className="truncate text-sm font-semibold text-primary">
+				<span className="truncate text-sm font-semibold text-admin-ink">
 					{row.name}
 				</span>
 			</div>
 			{row.title && (
-				<div className="mt-0.5 truncate text-xs text-muted-foreground">
+				<div className="mt-1 truncate text-[13px] text-admin-ink-muted">
 					{row.title}
 				</div>
 			)}
 			{/* title cannot name a button that has text content */}
-			<div className="nodrag mt-2 flex items-center justify-center gap-1 border-t border-border pt-1.5">
+			<div className="nodrag mt-3 flex items-center justify-center gap-1 border-t border-admin-border pt-2">
 				<button
 					type="button"
 					aria-label={`Add a report under ${row.name}`}
 					onClick={() => onAddChild(row.id)}
-					className="rounded px-1.5 py-0.5 text-xs font-semibold text-[var(--accent)] hover:bg-[var(--accent)]/10"
+					className="grid size-8 place-items-center rounded-lg text-admin-accent transition-colors duration-150 ease-out hover:bg-admin-accent-soft focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
 				>
-					＋
+					<Plus aria-hidden="true" className="size-4" />
 				</button>
 				<button
 					type="button"
 					aria-label={`Edit ${row.name}`}
 					onClick={() => onEdit(row.id)}
-					className="rounded px-1.5 py-0.5 text-xs text-foreground/70 hover:bg-muted"
+					className="grid size-8 place-items-center rounded-lg text-admin-ink-muted transition-colors duration-150 ease-out hover:bg-admin-accent-soft hover:text-admin-ink focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
 				>
-					✎
+					<Pencil aria-hidden="true" className="size-4" />
 				</button>
 				<button
 					type="button"
 					aria-label={`Delete ${row.name}`}
 					onClick={() => onDelete(row.id)}
-					className="rounded px-1.5 py-0.5 text-xs text-destructive hover:bg-destructive/10"
+					className="grid size-8 place-items-center rounded-lg text-admin-danger transition-colors duration-150 ease-out hover:bg-admin-danger-soft focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
 				>
-					✕
+					<X aria-hidden="true" className="size-4" />
 				</button>
 			</div>
 			<Handle
 				type="source"
 				position={Position.Bottom}
-				className="!h-2.5 !w-2.5 !bg-[var(--accent)] !border-0"
+				className="!h-2.5 !w-2.5 !border-0 !bg-admin-accent"
 			/>
 		</div>
 	);
@@ -184,7 +185,7 @@ export function OrgCanvas({
 	}, [rows, onEdit, onAddChild, onDelete, setNodes, setEdges]);
 
 	return (
-		<div className="h-[640px] w-full overflow-hidden rounded-2xl border border-border bg-muted/20">
+		<div className="h-[640px] w-full overflow-hidden rounded-xl border border-admin-border bg-admin-bg">
 			<ReactFlow
 				nodes={nodes}
 				edges={edges}
@@ -209,7 +210,7 @@ export function OrgCanvas({
 				<MiniMap
 					pannable
 					zoomable
-					className="!bg-card"
+					className="!bg-admin-panel"
 					nodeColor="var(--accent)"
 				/>
 			</ReactFlow>

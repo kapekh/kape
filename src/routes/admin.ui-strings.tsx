@@ -1,7 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { fieldInput, fieldLabel } from "#/components/admin/form-ui";
+import { fieldLabel } from "#/components/admin/form-ui";
+import { Badge } from "#/components/ui/badge";
+import { Button } from "#/components/ui/button";
+import { Card } from "#/components/ui/card";
+import { Input } from "#/components/ui/input";
+import { PageHeader } from "#/components/ui/page-header";
+import { SkeletonRows } from "#/components/ui/skeleton";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 
 export const Route = createFileRoute("/admin/ui-strings")({
@@ -181,77 +187,75 @@ function UiStringsAdmin() {
 	}
 
 	const overriddenCount = rows.filter(overridden).length;
-	const button =
-		"rounded border border-border px-2.5 py-1 text-xs font-medium hover:bg-muted disabled:opacity-40 disabled:hover:bg-transparent transition";
 
 	return (
 		<div className="space-y-5">
-			<div>
-				<h1 className="font-display text-2xl font-semibold text-primary">
-					UI Strings
-				</h1>
-				<p className="mt-1 text-sm text-muted-foreground">
-					The words the site itself puts on screen - menu labels, buttons, form
-					messages. An empty field shows the shipped default, which is the grey
-					text inside it.
-				</p>
-			</div>
+			<PageHeader
+				title="UI strings"
+				description="The words the site itself puts on screen — menu labels, buttons, form messages. A box left empty shows the shipped default, which is the grey text inside it; clearing a box you have changed and saving puts that default back."
+				breadcrumb={[{ label: "Admin", to: "/admin" }, { label: "UI strings" }]}
+			/>
 
 			<output aria-live="polite" className="sr-only">
 				{announce}
 			</output>
 
-			<div className="rounded-xl border border-border bg-card p-4">
+			<Card>
 				<div className="flex flex-wrap items-end gap-4">
 					<div className="min-w-[260px] flex-1">
 						<label className={fieldLabel} htmlFor="ui-search">
-							Search
+							Search a key or the words themselves
 						</label>
-						<input
+						<Input
 							id="ui-search"
 							type="search"
-							className={fieldInput}
 							placeholder="nav.home, Donate, បរិច្ចាគ…"
 							value={needle}
 							onChange={(e) => setNeedle(e.target.value)}
 						/>
 					</div>
-					<label className="flex items-center gap-2 pb-2.5 text-sm">
+					<label className="flex items-center gap-2 pb-2 text-sm text-admin-ink">
 						<input
 							type="checkbox"
-							className="h-4 w-4 accent-[var(--primary)]"
+							className="size-4 accent-admin-accent"
 							checked={onlyOverridden}
 							onChange={(e) => setOnlyOverridden(e.target.checked)}
 						/>
 						Only strings this site has changed
 					</label>
 				</div>
-				<p className="mt-3 text-xs text-muted-foreground">
+				<p className="mt-3 text-[13px] text-admin-ink-muted">
 					{list
 						? `${shown.length} of ${rows.length} keys shown. ${overriddenCount} changed from the default.`
 						: "Reading the stored strings…"}
 				</p>
-			</div>
+			</Card>
 
 			{readError && (
-				<div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4">
-					<p className="text-sm text-destructive">
+				<Card tone="danger">
+					<p className="text-sm text-admin-danger">
 						The UI strings could not be read: {readError}
 					</p>
-					<button
-						type="button"
+					<Button
+						variant="secondary"
+						size="sm"
+						className="mt-3"
 						onClick={refresh}
-						className={`mt-3 ${button} px-4 py-2 text-sm`}
 					>
 						Try again
-					</button>
-				</div>
+					</Button>
+				</Card>
 			)}
 
+			{!list && !readError && <SkeletonRows rows={6} />}
+
 			{list && !shown.length && (
-				<p className="rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground">
-					No key matches that.
-				</p>
+				<Card>
+					<p className="text-sm text-admin-ink-muted">
+						No key matches “{needle}”
+						{onlyOverridden ? " among the strings this site has changed" : ""}.
+					</p>
+				</Card>
 			)}
 
 			{groups.map(([name, items]) => (
@@ -259,16 +263,16 @@ function UiStringsAdmin() {
 					key={name}
 					data-tour="ui-group"
 					aria-labelledby={`ui-group-${name}`}
-					className="overflow-hidden rounded-xl border border-border bg-card"
+					className="overflow-hidden rounded-xl border border-admin-border bg-admin-panel"
 				>
 					<h2
 						id={`ui-group-${name}`}
-						className="border-b border-border bg-muted/40 px-4 py-2.5 font-display text-sm font-semibold text-primary"
+						className="border-b border-admin-border bg-admin-bg px-4 py-3 text-base font-semibold text-admin-ink"
 					>
 						{name}
 					</h2>
 					<table className="w-full text-sm">
-						<thead className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+						<thead className="text-left text-xs font-medium uppercase tracking-wide text-admin-ink-muted">
 							<tr>
 								<th scope="col" className="px-4 py-2 w-1/5">
 									Key
@@ -283,21 +287,24 @@ function UiStringsAdmin() {
 								</th>
 							</tr>
 						</thead>
-						<tbody className="divide-y divide-border">
+						<tbody className="divide-y divide-admin-border">
 							{items.map((row) => {
 								const status = rowStatus[row.key];
 								const pending = !!busy[row.key];
 								const dirty = editsIn(row).length;
 								return (
-									<tr key={row.key} className="align-top hover:bg-muted/20">
+									<tr
+										key={row.key}
+										className="align-top transition-colors duration-150 ease-out hover:bg-admin-accent-soft/30"
+									>
 										<th
 											scope="row"
-											className="px-4 py-3 text-left font-mono text-xs font-normal text-muted-foreground"
+											className="px-4 py-3 text-left font-mono text-[13px] font-normal text-admin-ink-muted"
 										>
 											{row.key}
 											{status && (
 												<span
-													className={`mt-1 block font-sans ${status.failed ? "text-destructive" : "text-[var(--palm)]"}`}
+													className={`mt-1 block font-sans ${status.failed ? "text-admin-danger" : "text-admin-live"}`}
 												>
 													{status.text}
 												</span>
@@ -305,11 +312,11 @@ function UiStringsAdmin() {
 										</th>
 										{langs.map((l) => (
 											<td key={l.code} className="px-2 py-2">
-												<input
+												<Input
 													id={`ui-${row.key}-${l.code}`}
 													aria-label={`${l.name} for ${row.key}`}
 													lang={l.code}
-													className={`${fieldInput} ${l.code === "km" ? "font-khmer" : ""}`}
+													className={l.code === "km" ? "font-khmer" : undefined}
 													placeholder={row.defaults[l.code]}
 													value={fieldValue(row, l.code)}
 													onChange={(e) =>
@@ -320,31 +327,48 @@ function UiStringsAdmin() {
 													}
 													onKeyDown={(e) => e.key === "Enter" && saveRow(row)}
 												/>
-												{changed(row, l.code) && (
-													<button
-														type="button"
-														onClick={() => resetCell(row, l)}
-														disabled={pending}
-														className={`mt-1.5 ${button}`}
-													>
-														Reset to default
-													</button>
-												)}
+												{/* three states, said rather than implied: this site
+												    changed it, or it is the shipped default */}
+												<div className="mt-2 flex items-center gap-2">
+													{changed(row, l.code) ? (
+														<>
+															<Badge tone="accent">Changed here</Badge>
+															<Button
+																variant="ghost"
+																size="sm"
+																onClick={() => resetCell(row, l)}
+																disabled={pending}
+																aria-label={`Reset ${l.name} for ${row.key} to the shipped default`}
+															>
+																Reset to default
+															</Button>
+														</>
+													) : (
+														<span className="text-[13px] text-admin-ink-muted">
+															{fieldValue(row, l.code).trim()
+																? "Shipped default"
+																: "Empty — shows the default"}
+														</span>
+													)}
+												</div>
 											</td>
 										))}
 										<td className="px-4 py-2 text-right whitespace-nowrap">
-											<button
-												type="button"
+											<Button
+												variant="secondary"
+												size="sm"
 												onClick={() => saveRow(row)}
 												disabled={pending || !dirty}
-												className={button}
+												disabledReason={
+													dirty ? undefined : "No changes to save."
+												}
 											>
 												{pending
 													? "Saving…"
 													: dirty
 														? `Save (${dirty})`
 														: "Save"}
-											</button>
+											</Button>
 										</td>
 									</tr>
 								);

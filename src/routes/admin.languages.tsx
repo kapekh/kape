@@ -1,12 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Languages as LanguagesIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
-import {
-	FormSection,
-	fieldInput,
-	fieldLabel,
-} from "#/components/admin/form-ui";
+import { FormSection, fieldLabel } from "#/components/admin/form-ui";
+import { TableScroll } from "#/components/admin/list-ui";
+import { Badge } from "#/components/ui/badge";
+import { Button } from "#/components/ui/button";
+import { EmptyState } from "#/components/ui/empty-state";
+import { Input } from "#/components/ui/input";
+import { PageHeader } from "#/components/ui/page-header";
+import { SkeletonRows } from "#/components/ui/skeleton";
+import { Table, TBody, TD, TH, THead, TR } from "#/components/ui/table";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { LANGS } from "#/lib/i18n-config";
 import { saveErrorMessage } from "#/lib/save-error";
@@ -112,17 +117,11 @@ function LanguagesAdmin() {
 
 	return (
 		<div className="space-y-5">
-			<div>
-				<h1 className="font-display text-2xl font-semibold text-primary">
-					Languages
-				</h1>
-				<p className="mt-1 text-sm text-muted-foreground">
-					Untranslated content falls back to the default language. A language
-					the site can already serve appears in the visitor switcher as soon as
-					you enable it; any other one is marked below and needs a developer
-					first.
-				</p>
-			</div>
+			<PageHeader
+				title="Languages"
+				description="Untranslated content falls back to the default language. A language the site can already serve appears in the visitor switcher as soon as you enable it; any other one is marked below and needs a developer first."
+				breadcrumb={[{ label: "Admin", to: "/admin" }, { label: "Languages" }]}
+			/>
 
 			<div data-tour="lang-add">
 				<FormSection
@@ -131,150 +130,149 @@ function LanguagesAdmin() {
 				>
 					<div className="flex flex-wrap items-end gap-3">
 						<div className="w-20">
-							<label className="block">
-								<span className={fieldLabel}>Code</span>
-								<input
-									className={`${fieldInput} font-mono`}
-									placeholder="fr"
-									value={add.code}
-									onChange={(e) => setAdd({ ...add, code: e.target.value })}
-								/>
+							<label className={fieldLabel} htmlFor="lang-code">
+								Code
 							</label>
+							<Input
+								id="lang-code"
+								className="font-mono"
+								placeholder="fr"
+								value={add.code}
+								onChange={(e) => setAdd({ ...add, code: e.target.value })}
+							/>
 						</div>
 						<div className="flex-1 min-w-[160px]">
-							<label className="block">
-								<span className={fieldLabel}>English name</span>
-								<input
-									className={fieldInput}
-									placeholder="French"
-									value={add.name}
-									onChange={(e) => setAdd({ ...add, name: e.target.value })}
-								/>
+							<label className={fieldLabel} htmlFor="lang-name">
+								English name
 							</label>
+							<Input
+								id="lang-name"
+								placeholder="French"
+								value={add.name}
+								onChange={(e) => setAdd({ ...add, name: e.target.value })}
+							/>
 						</div>
 						<div className="flex-1 min-w-[160px]">
-							<label className="block">
-								<span className={fieldLabel}>Native name</span>
-								<input
-									className={fieldInput}
-									placeholder="Français"
-									value={add.nativeName}
-									onChange={(e) =>
-										setAdd({ ...add, nativeName: e.target.value })
-									}
-								/>
+							<label className={fieldLabel} htmlFor="lang-native">
+								Native name
 							</label>
+							<Input
+								id="lang-native"
+								placeholder="Français"
+								value={add.nativeName}
+								onChange={(e) => setAdd({ ...add, nativeName: e.target.value })}
+							/>
 						</div>
-						<label className="flex items-center gap-1.5 text-sm pb-2">
+						<label className="flex items-center gap-2 pb-2 text-sm text-admin-ink">
 							<input
 								type="checkbox"
 								checked={add.rtl}
 								onChange={(e) => setAdd({ ...add, rtl: e.target.checked })}
-							/>{" "}
-							RTL
+								className="size-4 accent-admin-accent"
+							/>
+							Right to left
 						</label>
-						<button
-							type="button"
-							onClick={create}
-							disabled={busy === "add"}
-							className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition"
-						>
-							{busy === "add" ? "Adding…" : "Add"}
-						</button>
+						<Button onClick={create} disabled={busy === "add"}>
+							{busy === "add" ? "Adding…" : "Add language"}
+						</Button>
 					</div>
 				</FormSection>
 			</div>
 
-			<div
-				data-tour="lang-table"
-				className="overflow-hidden rounded-xl border border-border bg-card"
-			>
-				<table className="w-full text-sm">
-					<thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
-						<tr>
-							<th className="px-2 py-2.5">Code</th>
-							<th className="px-2 py-2.5">Name / Native</th>
-							<th className="px-2 py-2.5">Enabled</th>
-							<th className="px-2 py-2.5">Default</th>
-							<th className="px-3 py-2.5 text-right">Actions</th>
-						</tr>
-					</thead>
-					<tbody className="divide-y divide-border">
-						{loading ? (
-							<tr>
-								<td colSpan={5} className="px-3 py-4 text-muted-foreground">
-									Loading…
-								</td>
-							</tr>
-						) : langs.length === 0 ? (
-							<tr>
-								<td colSpan={5} className="px-3 py-4 text-muted-foreground">
-									No languages yet — add one above. The site needs at least one,
-									and the first you add becomes the default.
-								</td>
-							</tr>
-						) : (
-							langs.map((l) => (
-								<tr key={l.code} className="hover:bg-muted/20">
-									<td className="px-2 font-mono">{l.code}</td>
-									<td className="px-2 py-2">
-										{l.name}{" "}
-										<span className="text-muted-foreground">
-											· {l.nativeName}
-										</span>
-										{routable(l.code) ? null : (
-											<span className="mt-1 block text-xs text-destructive">
-												Not served to visitors. {needsDeveloper(l.code)}
+			<div data-tour="lang-table">
+				{loading ? (
+					<SkeletonRows rows={3} />
+				) : langs.length === 0 ? (
+					<EmptyState
+						icon={<LanguagesIcon />}
+						title="No languages yet"
+						description="The site needs at least one. The first you add becomes the default, and everything untranslated falls back to it."
+					/>
+				) : (
+					<TableScroll label="Languages">
+						<Table>
+							<THead>
+								<TR>
+									<TH width={90}>Code</TH>
+									<TH>Name</TH>
+									<TH width={110}>Enabled</TH>
+									<TH width={150}>Default</TH>
+									<TH align="right" width={80}>
+										Actions
+									</TH>
+								</TR>
+							</THead>
+							<TBody>
+								{langs.map((l) => (
+									<TR key={l.code}>
+										<TD label="Code" className="font-mono">
+											{l.code}
+										</TD>
+										<TD label="Name">
+											<span className="text-admin-ink">{l.name}</span>{" "}
+											<span className="text-admin-ink-muted">
+												· {l.nativeName}
 											</span>
-										)}
-									</td>
-									<td className="px-2 text-center">
-										<input
-											type="checkbox"
-											aria-label={`Enable ${l.name}`}
-											disabled={busy === l.code}
-											checked={l.enabled}
-											onChange={(e) => save(l, { enabled: e.target.checked })}
-										/>
-									</td>
-									<td className="px-2 text-center">
-										{l.isDefault ? (
-											<span className="text-xs font-semibold text-[var(--palm)]">
-												default
-											</span>
-										) : (
-											<button
-												type="button"
-												onClick={() => save(l, { isDefault: true })}
-												disabled={busy === l.code || !routable(l.code)}
-												title={
-													routable(l.code) ? undefined : needsDeveloper(l.code)
-												}
-												aria-label={`Make ${l.name} the default language`}
-												className="text-xs text-[var(--accent)] hover:underline disabled:opacity-40"
-											>
-												Make default
-											</button>
-										)}
-									</td>
-									<td className="px-3 py-2 text-right">
-										<ActionMenu
-											label={`Actions for ${l.name}`}
-											items={[
-												{
-													label: "Delete",
-													danger: true,
-													disabled: l.isDefault || busy === l.code,
-													onClick: () => del(l.code),
-												},
-											]}
-										/>
-									</td>
-								</tr>
-							))
-						)}
-					</tbody>
-				</table>
+											{routable(l.code) ? null : (
+												<span className="mt-1 block text-[13px] text-admin-warning">
+													Not served to visitors. {needsDeveloper(l.code)}
+												</span>
+											)}
+										</TD>
+										<TD label="Enabled">
+											<label className="flex items-center gap-2 text-[13px] text-admin-ink-muted">
+												<input
+													type="checkbox"
+													aria-label={`Enable ${l.name}`}
+													disabled={busy === l.code}
+													checked={l.enabled}
+													onChange={(e) =>
+														save(l, { enabled: e.target.checked })
+													}
+													className="size-4 accent-admin-accent"
+												/>
+												{l.enabled ? "On the site" : "Off"}
+											</label>
+										</TD>
+										<TD label="Default">
+											{l.isDefault ? (
+												<Badge tone="live">Default</Badge>
+											) : (
+												<Button
+													variant="ghost"
+													size="sm"
+													onClick={() => save(l, { isDefault: true })}
+													disabled={busy === l.code || !routable(l.code)}
+													disabledReason={
+														routable(l.code)
+															? undefined
+															: needsDeveloper(l.code)
+													}
+													aria-label={`Make ${l.name} the default language`}
+												>
+													Make default
+												</Button>
+											)}
+										</TD>
+										<TD align="right">
+											<ActionMenu
+												label={`Actions for ${l.name}`}
+												items={[
+													{
+														label: "Delete",
+														danger: true,
+														disabled: l.isDefault || busy === l.code,
+														onClick: () => del(l.code),
+													},
+												]}
+											/>
+										</TD>
+									</TR>
+								))}
+							</TBody>
+						</Table>
+					</TableScroll>
+				)}
 			</div>
 		</div>
 	);

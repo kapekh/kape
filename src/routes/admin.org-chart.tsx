@@ -1,9 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Network, Plus } from "lucide-react";
 import { useCallback, useEffect, useId, useState } from "react";
 
-import { fieldInput, fieldLabel } from "#/components/admin/form-ui";
+import { fieldLabel } from "#/components/admin/form-ui";
 import { OrgCanvas, type OrgRow } from "#/components/admin/OrgCanvas";
 import { SearchableSelect } from "#/components/admin/SearchableSelect";
+import { Button } from "#/components/ui/button";
+import { EmptyState } from "#/components/ui/empty-state";
+import { Input } from "#/components/ui/input";
+import { PageHeader } from "#/components/ui/page-header";
+import { Skeleton } from "#/components/ui/skeleton";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { saveErrorMessage } from "#/lib/save-error";
 import { useModalPanel } from "#/lib/use-modal-panel";
@@ -92,27 +98,32 @@ function NodeForm({
 	return (
 		<form onSubmit={submit} className="space-y-3">
 			<div className="grid gap-3 sm:grid-cols-2">
-				<label className="block">
-					<span className={fieldLabel}>Name</span>
-					<input
-						className={fieldInput}
+				<div>
+					<label className={fieldLabel} htmlFor={`${uid}-name`}>
+						Name
+					</label>
+					<Input
+						id={`${uid}-name`}
 						value={name}
 						onChange={(e) => setName(e.target.value)}
 						placeholder="e.g. Executive Director"
-						// biome-ignore lint/a11y/noAutofocus: NodeForm only mounts inside the Add/Edit person modal, opened by an explicit click. Focus belongs in the modal, not left on the trigger behind it.
+						// only mounts inside the Add/Edit modal, opened by an explicit click:
+						// focus belongs in the modal, not on the trigger behind it
 						autoFocus
 						required
 					/>
-				</label>
-				<label className="block">
-					<span className={fieldLabel}>Title / role</span>
-					<input
-						className={fieldInput}
+				</div>
+				<div>
+					<label className={fieldLabel} htmlFor={`${uid}-title`}>
+						Title / role
+					</label>
+					<Input
+						id={`${uid}-title`}
 						value={title}
 						onChange={(e) => setTitle(e.target.value)}
 						placeholder="e.g. Director of Programs"
 					/>
-				</label>
+				</div>
 				<div>
 					<label className={fieldLabel} htmlFor={`${uid}-person`}>
 						Link to team member (optional — photo + profile)
@@ -141,20 +152,12 @@ function NodeForm({
 				</div>
 			</div>
 			<div className="flex items-center gap-2">
-				<button
-					type="submit"
-					disabled={saving}
-					className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:opacity-90 disabled:opacity-50"
-				>
+				<Button type="submit" disabled={saving}>
 					{saving ? "Saving…" : "Save"}
-				</button>
-				<button
-					type="button"
-					onClick={onCancel}
-					className="rounded-full border border-border px-5 py-2 text-sm font-medium hover:bg-muted"
-				>
+				</Button>
+				<Button variant="secondary" onClick={onCancel}>
 					Cancel
-				</button>
+				</Button>
 			</div>
 		</form>
 	);
@@ -274,50 +277,52 @@ function OrgChartAdmin() {
 
 	return (
 		<div className="max-w-[1600px]">
-			<div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-				<div>
-					<h1 className="font-display text-2xl font-semibold text-primary">
-						Organizational Chart
-					</h1>
-					<p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-						Drag boxes to arrange them, drag from a box's bottom dot to another
-						box's top dot to set who reports to whom, and use the ＋ / ✎ / ✕
-						buttons on each box. Scroll to zoom, drag the background to pan.
-					</p>
-				</div>
-				<button
-					type="button"
-					data-tour="org-add"
-					onClick={() => {
-						setAdding(null);
-						setEditing(null);
-					}}
-					className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold hover:opacity-90"
-				>
-					+ Add person
-				</button>
-			</div>
+			<PageHeader
+				title="Organisation chart"
+				description="Drag boxes to arrange them, drag from a box's bottom dot to another box's top dot to set who reports to whom, and use the buttons on each box. Scroll to zoom, drag the background to pan."
+				breadcrumb={[
+					{ label: "Admin", to: "/admin" },
+					{ label: "Organisation chart" },
+				]}
+				actions={
+					<Button
+						data-tour="org-add"
+						onClick={() => {
+							setAdding(null);
+							setEditing(null);
+						}}
+					>
+						<Plus aria-hidden="true" className="size-4" />
+						Add person
+					</Button>
+				}
+			/>
 
 			{loading || !mounted ? (
-				<div className="grid h-[640px] place-items-center rounded-2xl border border-border bg-muted/20 text-sm text-muted-foreground">
-					Loading…
+				<div className="h-[640px] rounded-xl border border-admin-border bg-admin-panel p-4">
+					<output className="sr-only">Loading the chart…</output>
+					<Skeleton className="mx-auto h-20 w-56" />
+					<div className="mt-8 flex justify-center gap-6">
+						<Skeleton className="h-20 w-56" />
+						<Skeleton className="h-20 w-56" />
+					</div>
 				</div>
 			) : rows.length === 0 ? (
 				<div
 					data-tour="org-canvas"
-					className="grid h-[640px] place-items-center rounded-2xl border border-dashed border-border bg-muted/20 text-center text-sm text-muted-foreground"
+					className="grid h-[640px] place-items-center rounded-xl border border-dashed border-admin-border bg-admin-panel"
 				>
-					<div>
-						No one in the chart yet.
-						<br />
-						<button
-							type="button"
-							onClick={() => setAdding(null)}
-							className="mt-3 rounded-full bg-primary text-primary-foreground px-4 py-2 font-semibold hover:opacity-90"
-						>
-							+ Add the first person
-						</button>
-					</div>
+					<EmptyState
+						icon={<Network />}
+						title="No one in the chart yet"
+						description="Add the person at the top, then hang everyone else off them."
+						action={
+							<Button onClick={() => setAdding(null)}>
+								<Plus aria-hidden="true" className="size-4" />
+								Add the first person
+							</Button>
+						}
+					/>
 				</div>
 			) : (
 				<OrgCanvas
@@ -331,7 +336,7 @@ function OrgChartAdmin() {
 			)}
 
 			{showModal && (
-				<div className="fixed inset-0 z-[60] grid place-items-center bg-foreground/40 p-4 backdrop-blur-sm">
+				<div className="fixed inset-0 z-[60] grid place-items-center bg-admin-ink/40 p-4 backdrop-blur-sm">
 					<button
 						type="button"
 						aria-label="Close person editor"
@@ -344,11 +349,11 @@ function OrgChartAdmin() {
 						aria-modal="true"
 						tabIndex={-1}
 						aria-labelledby={modalHeadingId}
-						className="relative w-full max-w-2xl rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-lift)] focus:outline-none"
+						className="relative w-full max-w-2xl rounded-xl border border-admin-border bg-admin-panel-raised p-6 shadow-[var(--shadow-lift)] focus:outline-none"
 					>
 						<h3
 							id={modalHeadingId}
-							className="mb-4 font-display text-lg font-semibold text-primary"
+							className="mb-4 text-base font-semibold text-admin-ink"
 						>
 							{editing != null ? "Edit person" : "Add person"}
 						</h3>

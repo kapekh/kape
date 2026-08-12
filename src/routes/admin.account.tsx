@@ -1,8 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
-import { fieldInput, fieldLabel } from "#/components/admin/form-ui";
+import { FormSection, fieldLabel } from "#/components/admin/form-ui";
 import { useDirtyGuard } from "#/components/admin/useDirty";
+import { Badge } from "#/components/ui/badge";
+import { Button } from "#/components/ui/button";
+import { Card } from "#/components/ui/card";
+import { Input } from "#/components/ui/input";
+import { PageHeader } from "#/components/ui/page-header";
+import { Skeleton } from "#/components/ui/skeleton";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { toast } from "@/components/Dialogs";
 
@@ -53,93 +59,118 @@ function Account() {
 
 	const dirty = useDirtyGuard(JSON.stringify({ current, next, confirmPw }));
 
+	const field = (
+		id: string,
+		label: string,
+		value: string,
+		onChange: (v: string) => void,
+		extra: React.ComponentProps<typeof Input>,
+	) => (
+		<div>
+			<label className={fieldLabel} htmlFor={id}>
+				{label}
+			</label>
+			<Input
+				id={id}
+				type="password"
+				value={value}
+				onChange={(e) => onChange(e.target.value)}
+				{...extra}
+			/>
+		</div>
+	);
+
 	return (
 		<div className="mx-auto max-w-2xl">
-			<h1 className="font-display text-2xl font-semibold text-primary">
-				My account
-			</h1>
-			<p className="mt-1 text-sm text-muted-foreground">
-				Manage your own login.
-			</p>
+			<PageHeader
+				title="My account"
+				description="Who you are signed in as, and your own password."
+				breadcrumb={[{ label: "Admin", to: "/admin" }, { label: "My account" }]}
+			/>
 
-			{me && (
-				<div className="mt-6 rounded-2xl border border-border bg-card p-5">
-					<dl className="space-y-2 text-sm">
-						<div className="flex justify-between gap-4 border-b border-border/60 pb-2">
-							<dt className="text-muted-foreground">Email</dt>
-							<dd className="font-medium text-foreground">{me.email}</dd>
-						</div>
-						{me.name && (
-							<div className="flex justify-between gap-4 border-b border-border/60 pb-2">
-								<dt className="text-muted-foreground">Name</dt>
-								<dd className="font-medium text-foreground">{me.name}</dd>
-							</div>
-						)}
-						<div className="flex justify-between gap-4">
-							<dt className="text-muted-foreground">Role</dt>
-							<dd className="font-medium capitalize text-foreground">
-								{me.role}
-							</dd>
-						</div>
-					</dl>
-				</div>
-			)}
-
-			<form
-				onSubmit={submit}
-				data-tour="account-password"
-				className="mt-6 rounded-2xl border border-border bg-card overflow-hidden"
-			>
-				<div className="border-b border-border px-5 py-4">
-					<h2 className="font-display text-base font-semibold text-primary">
-						Change password
+			{/* two scopes: what the account is, and the one thing on this screen that
+			    changes it */}
+			<Card padding="none" className="mb-6">
+				<div className="border-b border-admin-border px-4 py-4">
+					<h2 className="text-base font-semibold text-admin-ink">
+						Signed in as
 					</h2>
+					<p className="mt-1 text-[13px] text-admin-ink-muted">
+						Your email and role are set by an administrator, not here.
+					</p>
 				</div>
-				<div className="space-y-4 p-5">
-					<label className="block">
-						<span className={fieldLabel}>Current password</span>
-						<input
-							className={fieldInput}
-							type="password"
-							value={current}
-							onChange={(e) => setCurrent(e.target.value)}
-							autoComplete="current-password"
-							required
-						/>
-					</label>
-					<label className="block">
-						<span className={fieldLabel}>New password</span>
-						<input
-							className={fieldInput}
-							type="password"
-							value={next}
-							onChange={(e) => setNext(e.target.value)}
-							minLength={8}
-							autoComplete="new-password"
-							placeholder="At least 8 characters"
-							required
-						/>
-					</label>
-					<label className="block">
-						<span className={fieldLabel}>Confirm new password</span>
-						<input
-							className={fieldInput}
-							type="password"
-							value={confirmPw}
-							onChange={(e) => setConfirmPw(e.target.value)}
-							minLength={8}
-							autoComplete="new-password"
-							required
-						/>
-					</label>
-					<button
-						type="submit"
-						disabled={busy || !dirty}
-						className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50 transition"
-					>
-						{busy ? "Saving…" : "Change password"}
-					</button>
-				</div>
+				<dl className="divide-y divide-admin-border">
+					{me ? (
+						<>
+							<div className="flex justify-between gap-4 px-4 py-3">
+								<dt className="text-[13px] text-admin-ink-muted">Email</dt>
+								<dd className="text-sm font-medium text-admin-ink">
+									{me.email}
+								</dd>
+							</div>
+							{me.name && (
+								<div className="flex justify-between gap-4 px-4 py-3">
+									<dt className="text-[13px] text-admin-ink-muted">Name</dt>
+									<dd className="text-sm font-medium text-admin-ink">
+										{me.name}
+									</dd>
+								</div>
+							)}
+							<div className="flex items-center justify-between gap-4 px-4 py-3">
+								<dt className="text-[13px] text-admin-ink-muted">Role</dt>
+								<dd>
+									<Badge tone="accent" dot={false}>
+										{me.role}
+									</Badge>
+								</dd>
+							</div>
+						</>
+					) : (
+						<div className="space-y-3 px-4 py-3">
+							<output className="sr-only">Loading your account…</output>
+							<Skeleton className="h-4 w-48" />
+							<Skeleton className="h-4 w-32" />
+						</div>
+					)}
+				</dl>
+			</Card>
+
+			<form onSubmit={submit} data-tour="account-password">
+				<FormSection
+					title="Change password"
+					description="At least 8 characters. You stay signed in on this device."
+				>
+					<div className="space-y-4">
+						{field("account-current", "Current password", current, setCurrent, {
+							autoComplete: "current-password",
+							required: true,
+						})}
+						{field("account-next", "New password", next, setNext, {
+							minLength: 8,
+							autoComplete: "new-password",
+							placeholder: "At least 8 characters",
+							required: true,
+						})}
+						{field(
+							"account-confirm",
+							"Confirm new password",
+							confirmPw,
+							setConfirmPw,
+							{
+								minLength: 8,
+								autoComplete: "new-password",
+								required: true,
+							},
+						)}
+						<Button
+							type="submit"
+							disabled={busy || !dirty}
+							disabledReason={dirty ? undefined : "Fill the three boxes first."}
+						>
+							{busy ? "Saving…" : "Change password"}
+						</Button>
+					</div>
+				</FormSection>
 			</form>
 		</div>
 	);
