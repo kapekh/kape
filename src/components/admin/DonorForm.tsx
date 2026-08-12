@@ -1,16 +1,17 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
+import { Input } from "#/components/ui/input.tsx";
 import {
 	cancelButtonClass,
 	EditorGrid,
 	EditorHeader,
+	Field,
 	FormSection,
-	fieldInput,
-	fieldLabel,
 } from "./form-ui";
 import { MediaPicker } from "./MediaPicker";
 import { useDirtyGuard } from "./useDirty";
+import { useFieldErrors } from "./useFieldErrors";
 
 export type DonorFormValue = {
 	name: string;
@@ -43,6 +44,7 @@ export function DonorForm({
 	const [logoMediaId, setLogoMediaId] = useState(
 		initial?.logoMediaId != null ? String(initial.logoMediaId) : "",
 	);
+	const { errors, invalid } = useFieldErrors();
 
 	function submit(e: React.FormEvent) {
 		e.preventDefault();
@@ -75,29 +77,32 @@ export function DonorForm({
 			<EditorGrid
 				main={
 					<FormSection
+						split
 						title="Donor details"
-						description="Organisations that fund the work."
+						description="Organisations that fund the work, shown on the public donors panel."
 					>
-						<div className="space-y-4">
-							<label className="block">
-								<span className={fieldLabel}>Name</span>
-								<input
-									className={fieldInput}
-									value={name}
-									onChange={(e) => setName(e.target.value)}
-									placeholder="e.g. European Union"
-									required
-								/>
-							</label>
-							<label className="block">
-								<span className={fieldLabel}>Website (optional)</span>
-								<input
-									className={fieldInput}
-									value={url}
-									onChange={(e) => setUrl(e.target.value)}
-									placeholder="https://…"
-								/>
-							</label>
+						<div className="space-y-6">
+							<Field label="Name" required error={errors.name}>
+								{(p) => (
+									<Input
+										{...p}
+										{...invalid("name")}
+										value={name}
+										onChange={(e) => setName(e.target.value)}
+										placeholder="e.g. European Union"
+									/>
+								)}
+							</Field>
+							<Field label="Website (optional)">
+								{(p) => (
+									<Input
+										{...p}
+										value={url}
+										onChange={(e) => setUrl(e.target.value)}
+										placeholder="https://…"
+									/>
+								)}
+							</Field>
 						</div>
 					</FormSection>
 				}

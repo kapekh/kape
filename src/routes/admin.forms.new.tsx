@@ -20,6 +20,7 @@ function NewForm() {
 		setSaving(true);
 		try {
 			const id = await trpcClient.adminForms.create.mutate(v);
+			toast("Form created.", "success");
 			navigate({ to: "/admin/forms/$id", params: { id: String(id) } });
 		} catch (e) {
 			toast(saveErrorMessage(e), "error");

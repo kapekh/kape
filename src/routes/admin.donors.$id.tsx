@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import { DonorForm, type DonorFormValue } from "#/components/admin/DonorForm";
+import { EditorSkeleton } from "#/components/admin/EditorSkeleton";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { saveErrorMessage } from "#/lib/save-error";
 import { toast } from "@/components/Dialogs";
@@ -43,7 +44,7 @@ function EditDonor() {
 
 	if (notFound)
 		return <p className="text-sm text-muted-foreground">Donor not found.</p>;
-	if (!data) return <p className="text-sm text-muted-foreground">Loading…</p>;
+	if (!data) return <EditorSkeleton />;
 	return (
 		<DonorForm
 			initial={data}

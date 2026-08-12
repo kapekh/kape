@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-
+import { EditorSkeleton } from "#/components/admin/EditorSkeleton";
 import {
 	FormBuilder,
 	type FormBuilderValue,
@@ -38,8 +38,7 @@ function EditForm() {
 		}
 	}
 
-	if (!initial)
-		return <div className="p-6 text-muted-foreground">Loading…</div>;
+	if (!initial) return <EditorSkeleton />;
 	return (
 		<FormBuilder
 			initial={initial}

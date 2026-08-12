@@ -4,7 +4,7 @@ import {
 	useParams,
 } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-
+import { EditorSkeleton } from "#/components/admin/EditorSkeleton";
 import { RoleForm, type RoleFormValue } from "#/components/admin/RoleForm";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { toast } from "@/components/Dialogs";
@@ -50,8 +50,7 @@ function EditRole() {
 		}
 	}
 
-	if (role === undefined)
-		return <div className="text-sm text-muted-foreground">Loading…</div>;
+	if (role === undefined) return <EditorSkeleton />;
 	if (role === null)
 		return <div className="text-sm text-muted-foreground">Role not found.</div>;
 

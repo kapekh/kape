@@ -18,6 +18,7 @@ function NewDonor() {
 		setSaving(true);
 		try {
 			const id = await trpcClient.adminDonors.create.mutate(v);
+			toast("Donor created.", "success");
 			navigate({ to: "/admin/donors/$id", params: { id: String(id) } });
 		} catch (e) {
 			toast(saveErrorMessage(e), "error");

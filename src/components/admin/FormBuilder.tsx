@@ -1,5 +1,15 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { ArrowDown, ArrowUp, ChevronRight, Plus, X } from "lucide-react";
+import { useEffect, useId, useState } from "react";
+import { Input } from "#/components/ui/input.tsx";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "#/components/ui/select.tsx";
+import { Textarea } from "#/components/ui/textarea.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { toast } from "@/components/Dialogs";
 import {
@@ -12,12 +22,12 @@ import {
 	cancelButtonClass,
 	EditorGrid,
 	EditorHeader,
+	Field,
 	FormSection,
-	fieldInput,
-	fieldLabel,
 } from "./form-ui";
 import { RichTextEditor } from "./RichTextEditor";
 import { useDirtyGuard } from "./useDirty";
+import { useFieldErrors } from "./useFieldErrors";
 
 type SlugStatus = "idle" | "checking" | "available" | "taken";
 type FormStatus = "active" | "draft";
@@ -50,6 +60,9 @@ const slugify = (s: string) =>
 /** Keystroke-safe: keeps the separator you just typed, so a slug can be typed out. */
 const slugAsTyped = (s: string) => s.toLowerCase().replace(/[^a-z0-9_]+/g, "_");
 
+const ROW_BUTTON =
+	"grid size-9 shrink-0 place-items-center rounded-lg text-admin-ink-muted transition-colors duration-150 ease-out hover:bg-admin-accent-soft hover:text-admin-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50 disabled:cursor-not-allowed disabled:opacity-40";
+
 export function FormBuilder({
 	initial,
 	onSubmit,
@@ -75,6 +88,11 @@ export function FormBuilder({
 	const [notifyEmail, setNotifyEmail] = useState(initial?.notifyEmail ?? "");
 	const [deadline, setDeadline] = useState(initial?.deadline ?? "");
 	const [fields, setFields] = useState<FormField[]>(initial?.fields ?? []);
+	// which field's settings are open; a builder that shows every field's settings
+	// at once is a wall, and only one field is ever being edited
+	const [openField, setOpenField] = useState<number | null>(null);
+	const { errors, invalid } = useFieldErrors();
+	const uid = useId();
 
 	// Live slug-availability check (the effective slug is what will be saved).
 	const effectiveSlug = slugify(slug) || slugify(formTitle);
@@ -100,21 +118,32 @@ export function FormBuilder({
 
 	const setField = (i: number, patch: Partial<FormField>) =>
 		setFields((fs) => fs.map((f, n) => (n === i ? { ...f, ...patch } : f)));
-	const move = (i: number, dir: -1 | 1) =>
+	const move = (i: number, dir: -1 | 1) => {
+		const j = i + dir;
+		if (j < 0 || j >= fields.length) return;
 		setFields((fs) => {
-			const j = i + dir;
-			if (j < 0 || j >= fs.length) return fs;
 			const a = [...fs];
 			[a[i], a[j]] = [a[j], a[i]];
 			return a;
 		});
-	const addField = () =>
+		// the open panel belongs to the field, not to the position it used to hold
+		setOpenField((cur) => (cur === i ? j : cur === j ? i : cur));
+	};
+	const removeField = (i: number) => {
+		setFields((fs) => fs.filter((_, n) => n !== i));
+		setOpenField((cur) =>
+			cur === null || cur === i ? null : cur > i ? cur - 1 : cur,
+		);
+	};
+	const addField = () => {
 		setFields((fs) => [...fs, { key: "", label: "", type: "text" }]);
+		setOpenField(fields.length);
+	};
 
 	function submit(e: React.FormEvent) {
 		e.preventDefault();
 		if (slugStatus === "taken") {
-			toast("That form name is already taken — pick a different one.", "error");
+			toast("That form name is already taken. Pick a different one.", "error");
 			return;
 		}
 		const cleaned = fields
@@ -198,223 +227,318 @@ export function FormBuilder({
 				main={
 					<div className="space-y-5">
 						<FormSection
+							split
 							title="Form"
 							description="Shown to visitors above the fields."
 						>
-							<div className="space-y-4">
-								<div className="grid sm:grid-cols-2 gap-4">
-									<label className="block">
-										<span className={fieldLabel}>Title (EN)</span>
-										<input
-											className={fieldInput}
+							<div className="space-y-6">
+								<Field label="Title" required error={errors.title}>
+									{(p) => (
+										<Input
+											{...p}
+											{...invalid("title")}
 											value={formTitle}
 											onChange={(e) => setFormTitle(e.target.value)}
 											placeholder="Alumni registration"
-											required
 										/>
-									</label>
-									<label className="block">
-										<span className={fieldLabel}>Title (KM)</span>
-										<input
-											className={`${fieldInput} font-khmer`}
+									)}
+								</Field>
+								<Field label="Title (Khmer)">
+									{(p) => (
+										<Input
+											{...p}
+											className="font-khmer"
 											value={titleKm}
 											onChange={(e) => setTitleKm(e.target.value)}
 										/>
-									</label>
-								</div>
-								<div>
-									<label className="block">
-										<span className={fieldLabel}>Form name (unique)</span>
-										<input
-											className={`${fieldInput} font-mono ${slugStatus === "taken" ? "border-destructive focus:border-destructive" : ""}`}
+									)}
+								</Field>
+								<Field
+									label="Form name"
+									error={
+										slugStatus === "taken"
+											? `“${effectiveSlug}” is already taken. Choose another.`
+											: null
+									}
+									hint={
+										slugStatus === "checking"
+											? "Checking availability…"
+											: slugStatus === "available"
+												? `“${effectiveSlug}” is available`
+												: "A unique name for this form, filled in from the title if you leave it blank."
+									}
+								>
+									{(p) => (
+										<Input
+											{...p}
+											className="font-mono"
 											value={slug}
 											onChange={(e) => setSlug(slugAsTyped(e.target.value))}
 											placeholder="alumni"
 										/>
-									</label>
-									<p className="mt-1 text-xs">
-										{slugStatus === "checking" ? (
-											<span className="text-muted-foreground">
-												Checking availability…
-											</span>
-										) : slugStatus === "available" ? (
-											<span className="text-[var(--palm)]">
-												✓ “{effectiveSlug}” is available
-											</span>
-										) : slugStatus === "taken" ? (
-											<span className="text-destructive">
-												✕ “{effectiveSlug}” is already taken — choose another
-											</span>
-										) : (
-											<span className="text-muted-foreground">
-												A unique name for this form (auto-filled from the
-												title).
-											</span>
-										)}
-									</p>
-								</div>
-								<label className="block">
-									<span className={fieldLabel}>Intro</span>
-									<textarea
-										className={fieldInput}
-										rows={2}
-										value={intro}
-										onChange={(e) => setIntro(e.target.value)}
-									/>
-								</label>
+									)}
+								</Field>
+								<Field label="Intro">
+									{(p) => (
+										<Textarea
+											{...p}
+											rows={2}
+											value={intro}
+											onChange={(e) => setIntro(e.target.value)}
+										/>
+									)}
+								</Field>
 							</div>
 						</FormSection>
 
 						<FormSection
 							title="Fields"
-							description="The questions visitors answer. Drag order with the arrows."
+							description="The questions visitors answer. Open one to change it, reorder with the arrows."
 						>
-							<div className="space-y-3">
+							<div className="space-y-2">
 								{fields.length === 0 && (
-									<p className="text-sm text-muted-foreground">
-										No fields yet — add the first one below.
+									<p className="text-[13px] text-admin-ink-muted">
+										No fields yet. Add the first one below.
 									</p>
 								)}
-								{fields.map((f, i) => (
-									<div
-										key={i}
-										className={`rounded-xl border p-3 ${f.type === "section" ? "border-[var(--accent)]/40 bg-[var(--accent)]/5" : "border-border bg-background/40"}`}
-									>
-										<div className="flex items-center gap-2">
-											<input
-												className={`${fieldInput} flex-1 min-w-0`}
-												value={f.label}
-												placeholder={
-													f.type === "content"
-														? "Block name (internal, optional)"
-														: f.type === "section"
-															? "Section title (e.g. Personal information)"
-															: "Field label (e.g. Full name)"
-												}
-												// the key derives at save, not per keystroke, so submissions survive a reworded label
-												onChange={(e) => setField(i, { label: e.target.value })}
-											/>
-											<select
-												className={`${fieldInput} basis-36 shrink-0`}
-												value={f.type}
-												onChange={(e) =>
-													setField(i, { type: e.target.value as FormFieldType })
-												}
-											>
-												{FIELD_TYPES.map((t) => (
-													<option key={t.value} value={t.value}>
-														{t.label}
-													</option>
-												))}
-											</select>
-											<button
-												type="button"
-												className="rounded-lg border border-border px-2 py-2 text-xs hover:bg-muted"
-												disabled={i === 0}
-												onClick={() => move(i, -1)}
-											>
-												↑
-											</button>
-											<button
-												type="button"
-												className="rounded-lg border border-border px-2 py-2 text-xs hover:bg-muted"
-												disabled={i === fields.length - 1}
-												onClick={() => move(i, 1)}
-											>
-												↓
-											</button>
-											<button
-												type="button"
-												className="rounded-lg border border-border px-2 py-2 text-xs text-destructive hover:bg-destructive/10"
-												onClick={() =>
-													setFields((fs) => fs.filter((_, n) => n !== i))
-												}
-											>
-												✕
-											</button>
-										</div>
-										{f.type === "content" ? (
-											<div className="mt-2">
-												<p className="mb-1.5 text-xs text-muted-foreground">
-													Formatted text shown to visitors between questions
-													(instructions, a section intro…). Not an input.
-												</p>
-												<RichTextEditor
-													value={f.content ?? ""}
-													onChange={(json) => setField(i, { content: json })}
-												/>
+								{fields.map((f, i) => {
+									const open = openField === i;
+									const panelId = `${uid}-field-${i}`;
+									const typeLabel =
+										FIELD_TYPES.find((t) => t.value === f.type)?.label ??
+										f.type;
+									const named =
+										f.label.trim() ||
+										(f.type === "content" ? "Content block" : "Untitled field");
+									return (
+										<div
+											key={i}
+											className={`overflow-hidden rounded-lg border ${f.type === "section" ? "border-admin-accent/40 bg-admin-accent-soft" : "border-admin-border bg-admin-panel"}`}
+										>
+											<div className="flex items-center gap-1 pr-2">
+												<button
+													type="button"
+													onClick={() => setOpenField(open ? null : i)}
+													aria-expanded={open}
+													aria-controls={panelId}
+													className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-left transition-colors duration-150 ease-out hover:bg-admin-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+												>
+													<ChevronRight
+														aria-hidden="true"
+														className={`size-4 shrink-0 text-admin-ink-subtle transition-transform duration-200 ${open ? "rotate-90" : ""}`}
+													/>
+													<span className="min-w-0 flex-1 truncate text-sm text-admin-ink">
+														{named}
+														{f.required && (
+															<span
+																aria-hidden="true"
+																className="ml-0.5 text-admin-danger"
+															>
+																*
+															</span>
+														)}
+													</span>
+													<span className="shrink-0 text-[13px] text-admin-ink-muted">
+														{typeLabel}
+													</span>
+												</button>
+												<button
+													type="button"
+													aria-label={`Move ${named} up`}
+													className={ROW_BUTTON}
+													disabled={i === 0}
+													onClick={() => move(i, -1)}
+												>
+													<ArrowUp aria-hidden="true" className="size-4" />
+												</button>
+												<button
+													type="button"
+													aria-label={`Move ${named} down`}
+													className={ROW_BUTTON}
+													disabled={i === fields.length - 1}
+													onClick={() => move(i, 1)}
+												>
+													<ArrowDown aria-hidden="true" className="size-4" />
+												</button>
+												<button
+													type="button"
+													aria-label={`Remove ${named}`}
+													className={`${ROW_BUTTON} hover:text-admin-danger`}
+													onClick={() => removeField(i)}
+												>
+													<X aria-hidden="true" className="size-4" />
+												</button>
 											</div>
-										) : f.type === "section" ? (
-											<div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
-												<p className="flex-1 min-w-[200px] text-xs text-muted-foreground">
-													Numbered heading. Fields below it, up to the next
-													section, are grouped under it.
-												</p>
-												<input
-													className={`${fieldInput} h-8 basis-40 shrink-0 font-khmer text-xs`}
-													value={f.labelKm ?? ""}
-													placeholder="Section title (KM)"
-													onChange={(e) =>
-														setField(i, { labelKm: e.target.value })
-													}
-												/>
-											</div>
-										) : (
-											<>
-												<div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
-													<label className="flex items-center gap-1.5 text-xs">
-														<input
-															type="checkbox"
-															checked={!!f.required}
-															onChange={(e) =>
-																setField(i, { required: e.target.checked })
+											{open && (
+												<div
+													id={panelId}
+													className="space-y-4 border-t border-admin-border p-3"
+												>
+													<div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,14rem)]">
+														<Field
+															label={
+																f.type === "content"
+																	? "Block name (internal)"
+																	: f.type === "section"
+																		? "Section title"
+																		: "Field label"
 															}
-															className="h-3.5 w-3.5 accent-[var(--accent)]"
-														/>{" "}
-														Required
-													</label>
-													{f.type !== "richtext" && f.type !== "checkboxes" && (
-														<input
-															className={`${fieldInput} h-8 flex-1 min-w-[140px] text-xs`}
-															value={f.placeholder ?? ""}
-															placeholder="Placeholder (optional)"
-															onChange={(e) =>
-																setField(i, { placeholder: e.target.value })
-															}
-														/>
+														>
+															{(p) => (
+																<Input
+																	{...p}
+																	value={f.label}
+																	placeholder={
+																		f.type === "content"
+																			? "Optional"
+																			: f.type === "section"
+																				? "e.g. Personal information"
+																				: "e.g. Full name"
+																	}
+																	// the key derives at save, not per keystroke, so submissions survive a reworded label
+																	onChange={(e) =>
+																		setField(i, { label: e.target.value })
+																	}
+																/>
+															)}
+														</Field>
+														<Field label="Type">
+															{(p) => (
+																<Select
+																	value={f.type}
+																	onValueChange={(v) =>
+																		setField(i, { type: v as FormFieldType })
+																	}
+																>
+																	<SelectTrigger
+																		id={p.id}
+																		aria-label={`Type of ${named}`}
+																		className="w-full"
+																	>
+																		<SelectValue />
+																	</SelectTrigger>
+																	<SelectContent>
+																		{FIELD_TYPES.map((t) => (
+																			<SelectItem key={t.value} value={t.value}>
+																				{t.label}
+																			</SelectItem>
+																		))}
+																	</SelectContent>
+																</Select>
+															)}
+														</Field>
+													</div>
+													{f.type === "content" ? (
+														<div>
+															<p className="mb-1.5 text-[13px] text-admin-ink-muted">
+																Formatted text shown to visitors between
+																questions: instructions, a section intro. Not an
+																input.
+															</p>
+															<RichTextEditor
+																value={f.content ?? ""}
+																onChange={(json) =>
+																	setField(i, { content: json })
+																}
+															/>
+														</div>
+													) : f.type === "section" ? (
+														<>
+															<p className="text-[13px] text-admin-ink-muted">
+																A numbered heading. Fields below it, up to the
+																next section, are grouped under it.
+															</p>
+															<Field label="Section title (Khmer)">
+																{(p) => (
+																	<Input
+																		{...p}
+																		className="font-khmer"
+																		value={f.labelKm ?? ""}
+																		onChange={(e) =>
+																			setField(i, { labelKm: e.target.value })
+																		}
+																	/>
+																)}
+															</Field>
+														</>
+													) : (
+														<>
+															<label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-admin-border p-3 transition-colors duration-150 ease-out hover:bg-admin-panel-raised">
+																<input
+																	type="checkbox"
+																	checked={!!f.required}
+																	onChange={(e) =>
+																		setField(i, { required: e.target.checked })
+																	}
+																	className="mt-0.5 h-4 w-4 rounded border-admin-border accent-[var(--admin-accent)]"
+																/>
+																<span className="text-sm text-admin-ink">
+																	Required. A visitor cannot submit without it
+																</span>
+															</label>
+															{f.type !== "richtext" &&
+																f.type !== "checkboxes" && (
+																	<Field label="Placeholder (optional)">
+																		{(p) => (
+																			<Input
+																				{...p}
+																				value={f.placeholder ?? ""}
+																				onChange={(e) =>
+																					setField(i, {
+																						placeholder: e.target.value,
+																					})
+																				}
+																			/>
+																		)}
+																	</Field>
+																)}
+															<Field label="Label (Khmer)">
+																{(p) => (
+																	<Input
+																		{...p}
+																		className="font-khmer"
+																		value={f.labelKm ?? ""}
+																		onChange={(e) =>
+																			setField(i, { labelKm: e.target.value })
+																		}
+																	/>
+																)}
+															</Field>
+															{(f.type === "select" ||
+																f.type === "checkboxes") && (
+																<Field
+																	label="Options"
+																	hint="One line's worth, separated by commas."
+																>
+																	{(p) => (
+																		<Input
+																			{...p}
+																			// no trim here: it ate the comma you just typed; options are cleaned at save
+																			value={(f.options ?? []).join(",")}
+																			placeholder="Yes,No,Maybe"
+																			onChange={(e) =>
+																				setField(i, {
+																					options: e.target.value.split(","),
+																				})
+																			}
+																		/>
+																	)}
+																</Field>
+															)}
+														</>
 													)}
-													<input
-														className={`${fieldInput} h-8 basis-40 shrink-0 font-khmer text-xs`}
-														value={f.labelKm ?? ""}
-														placeholder="Label (KM)"
-														onChange={(e) =>
-															setField(i, { labelKm: e.target.value })
-														}
-													/>
 												</div>
-												{(f.type === "select" || f.type === "checkboxes") && (
-													<input
-														className={`${fieldInput} mt-2 text-xs`}
-														// no trim here: it ate the comma you just typed; options are cleaned at save
-														value={(f.options ?? []).join(",")}
-														placeholder="Options, comma-separated"
-														onChange={(e) =>
-															setField(i, {
-																options: e.target.value.split(","),
-															})
-														}
-													/>
-												)}
-											</>
-										)}
-									</div>
-								))}
+											)}
+										</div>
+									);
+								})}
 								<button
 									type="button"
 									onClick={addField}
-									className="text-sm font-semibold text-[var(--accent)] hover:underline"
+									className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-admin-accent transition-colors duration-150 ease-out hover:bg-admin-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
 								>
-									+ Add field
+									<Plus aria-hidden="true" className="size-4" />
+									Add field
 								</button>
 							</div>
 						</FormSection>
@@ -423,68 +547,83 @@ export function FormBuilder({
 				aside={
 					<div className="space-y-5">
 						<FormSection title="Availability">
-							<div className="space-y-4">
-								<label className="block">
-									<span className={fieldLabel}>Status</span>
-									<select
-										className={fieldInput}
-										value={status}
-										onChange={(e) => setStatus(e.target.value as FormStatus)}
-									>
-										<option value="active">Active — accepting responses</option>
-										<option value="draft">Draft — hidden</option>
-									</select>
-								</label>
-								<div>
-									<label className="block">
-										<span className={fieldLabel}>Deadline (optional)</span>
-										<input
+							<div className="space-y-6">
+								<Field label="Status">
+									{(p) => (
+										<Select
+											value={status}
+											onValueChange={(v) => setStatus(v as FormStatus)}
+										>
+											<SelectTrigger
+												id={p.id}
+												aria-label="Status"
+												className="w-full"
+											>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="active">
+													Active, accepting responses
+												</SelectItem>
+												<SelectItem value="draft">Draft, hidden</SelectItem>
+											</SelectContent>
+										</Select>
+									)}
+								</Field>
+								<Field
+									label="Deadline (optional)"
+									hint={
+										deadline
+											? isFormClosed(deadline)
+												? "This date has passed, so the form is closed to new responses."
+												: "Closes at the end of this day. After that it stops accepting responses."
+											: "Leave empty to stay open indefinitely."
+									}
+								>
+									{(p) => (
+										<Input
+											{...p}
 											type="date"
-											className={fieldInput}
 											value={deadline}
 											onChange={(e) => setDeadline(e.target.value)}
 										/>
-									</label>
-									<p className="mt-1 text-xs text-muted-foreground">
-										{deadline
-											? isFormClosed(deadline)
-												? "⚠ This date has passed — the form is closed to new responses."
-												: "Closes at end of this day; after that it stops accepting responses."
-											: "Leave empty to stay open indefinitely."}
-									</p>
-								</div>
+									)}
+								</Field>
 							</div>
 						</FormSection>
 						<FormSection title="After submit">
-							<div className="space-y-4">
-								<label className="block">
-									<span className={fieldLabel}>Submit button label</span>
-									<input
-										className={fieldInput}
-										value={submitLabel}
-										onChange={(e) => setSubmitLabel(e.target.value)}
-										placeholder="Submit"
-									/>
-								</label>
-								<label className="block">
-									<span className={fieldLabel}>Success message</span>
-									<textarea
-										className={fieldInput}
-										rows={3}
-										value={successMessage}
-										onChange={(e) => setSuccessMessage(e.target.value)}
-										placeholder="Thank you — your response has been recorded."
-									/>
-								</label>
-								<label className="block">
-									<span className={fieldLabel}>Notify email (optional)</span>
-									<input
-										className={fieldInput}
-										value={notifyEmail}
-										onChange={(e) => setNotifyEmail(e.target.value)}
-										placeholder="team@example.org"
-									/>
-								</label>
+							<div className="space-y-6">
+								<Field label="Submit button label">
+									{(p) => (
+										<Input
+											{...p}
+											value={submitLabel}
+											onChange={(e) => setSubmitLabel(e.target.value)}
+											placeholder="Submit"
+										/>
+									)}
+								</Field>
+								<Field label="Success message">
+									{(p) => (
+										<Textarea
+											{...p}
+											rows={3}
+											value={successMessage}
+											onChange={(e) => setSuccessMessage(e.target.value)}
+											placeholder="Thank you, your response has been recorded."
+										/>
+									)}
+								</Field>
+								<Field label="Notify email (optional)">
+									{(p) => (
+										<Input
+											{...p}
+											value={notifyEmail}
+											onChange={(e) => setNotifyEmail(e.target.value)}
+											placeholder="team@example.org"
+										/>
+									)}
+								</Field>
 							</div>
 						</FormSection>
 					</div>
