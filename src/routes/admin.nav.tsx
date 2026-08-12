@@ -1,4 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
+import {
+	ArrowDown,
+	ArrowUp,
+	ChevronRight,
+	Pencil,
+	Plus,
+	X,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
@@ -9,6 +17,10 @@ import {
 import type { LangOpt } from "#/components/admin/PostForm";
 import { SearchableSelect } from "#/components/admin/SearchableSelect";
 import { useDirtyGuard } from "#/components/admin/useDirty";
+import { Button } from "#/components/ui/button";
+import { Card } from "#/components/ui/card";
+import { PageHeader } from "#/components/ui/page-header";
+import { SkeletonRows } from "#/components/ui/skeleton";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { HEADER_DEFAULTS } from "#/lib/header-defaults";
 import { saveErrorMessage } from "#/lib/save-error";
@@ -64,7 +76,7 @@ function HeaderSettings() {
 			description="The donate button and the top-bar utility links. A site path (/…) or full URL; “#donate” jumps to an on-page anchor."
 		>
 			{loading ? (
-				<p className="text-sm text-muted-foreground">Loading…</p>
+				<SkeletonRows rows={2} />
 			) : (
 				<>
 					<div className="grid sm:grid-cols-2 gap-4">
@@ -83,17 +95,18 @@ function HeaderSettings() {
 							</div>
 						))}
 					</div>
-					<div className="mt-4 flex items-center gap-3">
-						<button
-							type="button"
+					<div className="mt-6 flex items-center gap-3 border-t border-admin-border pt-4">
+						<Button
 							onClick={save}
 							disabled={saving || !dirty}
-							className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition"
+							disabledReason={dirty ? undefined : "No changes to save."}
 						>
 							{saving ? "Saving…" : "Save header settings"}
-						</button>
+						</Button>
 						{savedAt && (
-							<span className="text-xs text-(--palm)">Saved {savedAt}</span>
+							<span className="text-[13px] text-admin-live">
+								Saved {savedAt}
+							</span>
 						)}
 					</div>
 				</>
@@ -145,7 +158,7 @@ function buildTree(items: NavRow[]): NavNode[] {
 }
 
 const inp =
-	"rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm";
+	"rounded-lg border border-admin-border bg-admin-panel px-3 py-2 text-sm text-admin-ink transition-colors duration-150 ease-out focus-visible:border-admin-accent focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none";
 
 /** Build picker options from pages/posts, keeping the current ref if it isn't one of them. */
 function refOptions(items: RefOpt[], current: string) {
@@ -215,13 +228,13 @@ function NavItemForm({
 	);
 
 	return (
-		<div className="rounded-xl border border-(--accent)/40 bg-(--accent)/5 p-3 my-2 space-y-3">
+		<div className="my-2 space-y-3 rounded-xl border border-admin-accent bg-admin-accent-soft/40 p-3">
 			{isGroup ? (
 				<>
 					{labelInputs}
-					<p className="text-[11px] leading-relaxed text-muted-foreground">
-						This item has children, so it's a <strong>dropdown group</strong> —
-						its label is the menu heading and it doesn't link anywhere.
+					<p className="text-[13px] leading-relaxed text-admin-ink-muted">
+						This item has children, so it is a dropdown group: its label is the
+						menu heading and it does not link anywhere.
 					</p>
 				</>
 			) : (
@@ -264,46 +277,44 @@ function NavItemForm({
 					</div>
 					{/* 2. Then the label (an optional override for page/post). */}
 					{labelInputs}
-					<p className="text-[11px] leading-relaxed text-muted-foreground">
+					<p className="text-[13px] leading-relaxed text-admin-ink-muted">
 						{inherits
-							? `The menu name, brief and image come from the linked ${targetKind} — leave the label blank to use its title. Add child items to make a dropdown.`
-							: "Give this link a menu label. Add child items to make a dropdown."}
+							? `The menu name, brief and image come from the linked ${targetKind} — leave the label blank to use its title.`
+							: "Give this link a menu label."}
 					</p>
 				</>
 			)}
 
 			<div className="flex flex-wrap items-center gap-2">
-				<label className="flex items-center gap-1 text-sm">
+				<label className="flex items-center gap-2 text-sm text-admin-ink">
 					<input
 						type="checkbox"
 						checked={visible}
 						onChange={(e) => setVisible(e.target.checked)}
-					/>{" "}
-					visible
+						className="size-4 accent-admin-accent"
+					/>
+					Show in the menu
 				</label>
-				<button
-					type="button"
-					onClick={() =>
-						onSave({
-							targetKind,
-							targetRef,
-							visible,
-							imageMediaId,
-							labels,
-							descriptions,
-						})
-					}
-					className="ml-auto rounded-full bg-primary text-primary-foreground px-4 py-1.5 text-sm font-semibold"
-				>
-					Save
-				</button>
-				<button
-					type="button"
-					onClick={onCancel}
-					className="rounded-full border border-border px-4 py-1.5 text-sm"
-				>
-					Cancel
-				</button>
+				<div className="ml-auto flex items-center gap-2">
+					<Button variant="secondary" size="sm" onClick={onCancel}>
+						Cancel
+					</Button>
+					<Button
+						size="sm"
+						onClick={() =>
+							onSave({
+								targetKind,
+								targetRef,
+								visible,
+								imageMediaId,
+								labels,
+								descriptions,
+							})
+						}
+					>
+						Save item
+					</Button>
+				</div>
 			</div>
 		</div>
 	);
@@ -422,37 +433,29 @@ function NavBuilder() {
 		const open = !collapsed.has(node.id);
 		const busy = busyId === node.id;
 		const act =
-			"grid h-6 w-6 shrink-0 place-items-center rounded text-sm text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-40 transition";
+			"grid size-8 shrink-0 place-items-center rounded-lg text-admin-ink-muted transition-colors duration-150 ease-out hover:bg-admin-accent-soft hover:text-admin-ink disabled:opacity-40 disabled:hover:bg-transparent focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none";
 		return (
 			<div key={node.id}>
 				<div
-					className={`group/row flex items-center gap-1.5 rounded-lg py-1 pr-1 hover:bg-muted/50 transition ${node.visible ? "" : "opacity-50"}`}
-					style={{ paddingLeft: depth * 18 + 4 }}
+					className={`flex items-center gap-1 rounded-lg py-1 pr-1 transition-colors duration-150 ease-out hover:bg-admin-accent-soft/40 ${node.visible ? "" : "opacity-60"}`}
+					style={{ paddingLeft: depth * 24 + 4 }}
 				>
 					{hasKids ? (
 						<button
 							type="button"
 							onClick={() => toggle(node.id)}
-							aria-label={open ? "Collapse" : "Expand"}
-							className="grid h-5 w-5 shrink-0 place-items-center text-muted-foreground hover:text-foreground"
+							aria-label={`${open ? "Collapse" : "Expand"} ${label}`}
+							aria-expanded={open}
+							aria-controls={`nav-children-${node.id}`}
+							className="grid size-8 shrink-0 place-items-center rounded-lg text-admin-ink-muted transition-colors duration-150 ease-out hover:bg-admin-accent-soft hover:text-admin-ink focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
 						>
-							<svg
+							<ChevronRight
 								aria-hidden="true"
-								className={`h-3 w-3 transition-transform ${open ? "rotate-90" : ""}`}
-								viewBox="0 0 12 12"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="1.8"
-							>
-								<path
-									d="M4.5 3L7.5 6L4.5 9"
-									strokeLinecap="round"
-									strokeLinejoin="round"
-								/>
-							</svg>
+								className={`size-4 transition-transform duration-200 ease-out ${open ? "rotate-90" : ""}`}
+							/>
 						</button>
 					) : (
-						<span className="h-5 w-5 shrink-0" />
+						<span className="size-8 shrink-0" />
 					)}
 					<button
 						type="button"
@@ -461,25 +464,37 @@ function NavBuilder() {
 								? toggle(node.id)
 								: setEditing(editing === node.id ? null : node.id)
 						}
-						className="flex min-w-0 flex-1 items-baseline gap-2 text-left"
+						// the label and what follows it are separate elements, so the name
+						// runs them together unless it is spelled out
+						aria-label={
+							hasKids
+								? `${label}, ${node.children.length} items`
+								: `${label}, ${node.targetRef ? `${node.targetKind}: ${node.targetRef}` : node.targetKind}`
+						}
+						className="flex min-w-0 flex-1 items-baseline gap-2 rounded-lg px-1 py-1 text-left focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
 					>
-						<span className="truncate text-sm font-medium text-foreground">
+						<span className="truncate text-sm font-medium text-admin-ink">
 							{label}
 						</span>
 						{hasKids ? (
-							<span className="shrink-0 rounded bg-muted px-1.5 text-[10px] font-medium text-muted-foreground">
+							<span className="shrink-0 rounded-full bg-admin-accent-soft px-2 text-[13px] font-medium text-admin-ink-muted">
 								{node.children.length}
 							</span>
 						) : (
-							<span className="truncate text-xs text-muted-foreground">
+							<span className="truncate text-[13px] text-admin-ink-muted">
 								{node.targetRef
 									? `${node.targetKind}: ${node.targetRef}`
 									: node.targetKind}
 							</span>
 						)}
+						{!node.visible && (
+							<span className="shrink-0 text-[13px] text-admin-ink-muted">
+								hidden
+							</span>
+						)}
 					</button>
-					{/* each control names its row; title never names a button that has text content */}
-					<div className="ml-auto flex shrink-0 items-center gap-0.5 opacity-0 transition group-hover/row:opacity-100 focus-within:opacity-100">
+					{/* on screen at rest: a control nobody can see is a control nobody finds */}
+					<div className="ml-auto flex shrink-0 items-center gap-0.5">
 						<button
 							type="button"
 							aria-label={`Move ${label} up`}
@@ -487,7 +502,7 @@ function NavBuilder() {
 							className={act}
 							onClick={() => move(node.id, "up")}
 						>
-							↑
+							<ArrowUp aria-hidden="true" className="size-4" />
 						</button>
 						<button
 							type="button"
@@ -496,7 +511,7 @@ function NavBuilder() {
 							className={act}
 							onClick={() => move(node.id, "down")}
 						>
-							↓
+							<ArrowDown aria-hidden="true" className="size-4" />
 						</button>
 						<button
 							type="button"
@@ -512,7 +527,7 @@ function NavBuilder() {
 								setAddingParent(node.id);
 							}}
 						>
-							＋
+							<Plus aria-hidden="true" className="size-4" />
 						</button>
 						<button
 							type="button"
@@ -521,16 +536,16 @@ function NavBuilder() {
 							className={act}
 							onClick={() => setEditing(editing === node.id ? null : node.id)}
 						>
-							✎
+							<Pencil aria-hidden="true" className="size-4" />
 						</button>
 						<button
 							type="button"
 							aria-label={`Delete ${label}`}
 							disabled={busy}
-							className={`${act} hover:text-destructive`}
+							className={`${act} hover:text-admin-danger`}
 							onClick={() => del(node.id)}
 						>
-							✕
+							<X aria-hidden="true" className="size-4" />
 						</button>
 					</div>
 				</div>
@@ -561,90 +576,110 @@ function NavBuilder() {
 						onCancel={() => setAddingParent(undefined)}
 					/>
 				)}
-				{hasKids && open && node.children.map((c) => renderNode(c, depth + 1))}
+				{hasKids && (
+					<div
+						id={`nav-children-${node.id}`}
+						hidden={!open}
+						className="border-l border-admin-border"
+						style={{ marginLeft: depth * 24 + 20 }}
+					>
+						{node.children.map((c) => (
+							<div key={c.id} style={{ marginLeft: -(depth * 24 + 20) }}>
+								{renderNode(c, depth + 1)}
+							</div>
+						))}
+					</div>
+				)}
 			</div>
 		);
 	}
 
-	if (loading) return <p className="text-sm text-muted-foreground">Loading…</p>;
+	if (loading)
+		return (
+			<div className="w-full">
+				<PageHeader
+					title="Header"
+					description="The site header — its menu, the donate button and the top-bar links."
+					breadcrumb={[{ label: "Admin", to: "/admin" }, { label: "Header" }]}
+				/>
+				<SkeletonRows rows={8} />
+			</div>
+		);
 	const tree = buildTree(items);
 
 	return (
 		<div className="w-full">
-			<div className="mb-6">
-				<h1 className="font-display text-2xl font-semibold text-primary">
-					Header
-				</h1>
-				<p className="mt-1 text-sm text-muted-foreground">
-					The site header — its menu, the donate button and the top-bar links.
-				</p>
-			</div>
+			<PageHeader
+				title="Header"
+				description="The site header — its menu, the donate button and the top-bar links."
+				breadcrumb={[{ label: "Admin", to: "/admin" }, { label: "Header" }]}
+			/>
 
 			<div data-tour="nav-settings" className="mb-8 max-w-4xl">
 				<HeaderSettings />
 			</div>
 
-			<div
-				data-tour="nav-menu"
-				className="flex items-center justify-between mb-2"
-			>
-				<h2 className="font-display text-lg font-semibold text-primary">
-					Menu
-				</h2>
-				<button
-					type="button"
-					onClick={() => setAddingParent(null)}
-					className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold hover:opacity-90"
-				>
-					+ Top-level item
-				</button>
-			</div>
-			<p className="text-sm text-muted-foreground mb-4">
-				Build the mega-menu. An item links to a <code>page</code>,{" "}
-				<code>post</code> or <code>url</code>; give it child items to make a
-				dropdown; reorder with ↑↓; add nested items with “+ child”.
-			</p>
-			{addingParent === null && (
-				<NavItemForm
-					languages={langs}
-					pages={pages}
-					posts={posts}
-					onSave={(v) => create(null, v)}
-					onCancel={() => setAddingParent(undefined)}
-				/>
-			)}
-			<div className="mb-2 flex items-center gap-3 text-xs text-muted-foreground">
-				<button
-					type="button"
-					className="hover:text-accent transition"
-					onClick={() => setCollapsed(new Set())}
-				>
-					Expand all
-				</button>
-				<span className="text-border">·</span>
-				<button
-					type="button"
-					className="hover:text-accent transition"
-					onClick={() =>
-						setCollapsed(
-							new Set(
-								items
-									.filter((i) => i.parentId != null)
-									.map((i) => i.parentId as number),
-							),
-						)
-					}
-				>
-					Collapse all
-				</button>
-			</div>
-			<div className="rounded-xl border border-border bg-card p-2">
-				{tree.length === 0 ? (
-					<p className="p-2 text-sm text-muted-foreground">No nav items.</p>
-				) : (
-					tree.map((n) => renderNode(n, 0))
-				)}
-			</div>
+			{/* two save scopes on one screen: settings save on their button, menu items
+			    save one at a time, so the menu says so above its own frame */}
+			<Card padding="none" data-tour="nav-menu" className="max-w-4xl">
+				<div className="flex flex-wrap items-start justify-between gap-3 border-b border-admin-border px-4 py-4">
+					<div className="min-w-0 max-w-xl">
+						<h2 className="text-base font-semibold text-admin-ink">Menu</h2>
+						<p className="mt-1 text-[13px] text-admin-ink-muted">
+							An item links to a page, a post or a URL. Give an item children
+							and it becomes a dropdown. Each item saves on its own — the button
+							above only saves the header settings.
+						</p>
+					</div>
+					<Button onClick={() => setAddingParent(null)}>
+						<Plus aria-hidden="true" className="size-4" />
+						Top-level item
+					</Button>
+				</div>
+				<div className="px-4 py-3">
+					{addingParent === null && (
+						<NavItemForm
+							languages={langs}
+							pages={pages}
+							posts={posts}
+							onSave={(v) => create(null, v)}
+							onCancel={() => setAddingParent(undefined)}
+						/>
+					)}
+					<div className="mb-2 flex items-center gap-3 text-[13px]">
+						<button
+							type="button"
+							className="text-admin-ink-muted transition-colors duration-150 ease-out hover:text-admin-accent"
+							onClick={() => setCollapsed(new Set())}
+						>
+							Expand all
+						</button>
+						<span className="text-admin-border">·</span>
+						<button
+							type="button"
+							className="text-admin-ink-muted transition-colors duration-150 ease-out hover:text-admin-accent"
+							onClick={() =>
+								setCollapsed(
+									new Set(
+										items
+											.filter((i) => i.parentId != null)
+											.map((i) => i.parentId as number),
+									),
+								)
+							}
+						>
+							Collapse all
+						</button>
+					</div>
+					{tree.length === 0 ? (
+						<p className="p-2 text-sm text-admin-ink-muted">
+							No menu items yet. Add a top-level item to start the menu.
+						</p>
+					) : (
+						tree.map((n) => renderNode(n, 0))
+					)}
+				</div>
+			</Card>
 		</div>
 	);
 }

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ArrowDown, ArrowUp, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { AdminHeader } from "#/components/admin/AdminHeader";
@@ -9,6 +10,9 @@ import {
 } from "#/components/admin/form-ui";
 import { MediaPicker } from "#/components/admin/MediaPicker";
 import { useDirtyGuard } from "#/components/admin/useDirty";
+import { Button } from "#/components/ui/button";
+import { PageHeader } from "#/components/ui/page-header";
+import { SkeletonRows } from "#/components/ui/skeleton";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { FOOTER_DEFAULTS } from "#/lib/footer-defaults";
 import { saveErrorMessage } from "#/lib/save-error";
@@ -97,19 +101,20 @@ function LinkRows({
 						type="button"
 						onClick={() => setRows((ls) => ls.filter((_, j) => j !== i))}
 						aria-label={`Remove ${l.label.trim() || `link ${i + 1}`}`}
-						className="shrink-0 grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40"
+						className="grid size-8 shrink-0 place-items-center rounded-lg border border-admin-border text-admin-ink-muted transition-colors duration-150 ease-out hover:border-admin-danger/40 hover:text-admin-danger focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
 					>
-						✕
+						<X aria-hidden="true" className="size-4" />
 					</button>
 				</div>
 			))}
-			<button
-				type="button"
+			<Button
+				variant="secondary"
+				size="sm"
 				onClick={() => setRows((ls) => [...ls, { label: "", href: "" }])}
-				className="text-sm font-semibold text-[var(--accent)] hover:underline"
 			>
+				<Plus aria-hidden="true" className="size-4" />
 				{addLabel}
-			</button>
+			</Button>
 		</div>
 	);
 }
@@ -221,7 +226,17 @@ function FooterAdmin() {
 		!loading,
 	);
 
-	if (loading) return <p className="text-sm text-muted-foreground">Loading…</p>;
+	if (loading)
+		return (
+			<div className="max-w-3xl">
+				<PageHeader
+					title="Footer"
+					description="Everything in the public site footer."
+					breadcrumb={[{ label: "Admin", to: "/admin" }, { label: "Footer" }]}
+				/>
+				<SkeletonRows rows={8} />
+			</div>
+		);
 
 	const Field = ({
 		k,
@@ -264,31 +279,30 @@ function FooterAdmin() {
 			className="max-w-3xl space-y-5 pb-10"
 		>
 			{/* sticky cannot be used here, the content <main> clips overflow and disables it; the button submits across the portal via the form attribute */}
+			{/* the slot the shell gives a route is ~59px at 390, where this button
+			    lands on top of Tour and View site; below lg it moves into the form */}
 			<AdminHeader>
-				<div className="ml-auto flex items-center gap-3">
+				<div className="ml-auto hidden items-center gap-3 lg:flex">
 					{savedAt && (
-						<span className="whitespace-nowrap text-xs text-[var(--palm)]">
+						<span className="whitespace-nowrap text-[13px] text-admin-live">
 							Saved {savedAt}
 						</span>
 					)}
-					<button
+					<Button
 						type="submit"
 						form="footer-form"
 						disabled={saving || !dirty}
-						className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition"
+						disabledReason={dirty ? undefined : "No changes to save."}
 					>
 						{saving ? "Saving…" : "Save footer"}
-					</button>
+					</Button>
 				</div>
 			</AdminHeader>
-			<div>
-				<h1 className="font-display text-2xl font-semibold text-primary">
-					Footer
-				</h1>
-				<p className="mt-1 text-sm text-muted-foreground">
-					Everything in the public site footer.
-				</p>
-			</div>
+			<PageHeader
+				title="Footer"
+				description="Everything in the public site footer."
+				breadcrumb={[{ label: "Admin", to: "/admin" }, { label: "Footer" }]}
+			/>
 
 			<FormSection
 				title="Brand"
@@ -363,7 +377,7 @@ function FooterAdmin() {
 						{socials.map((sc, i) => (
 							<div
 								key={i}
-								className="rounded-xl border border-border bg-background/40 p-3"
+								className="rounded-xl border border-admin-border bg-admin-bg p-3"
 							>
 								<div className="flex items-start gap-3">
 									<div className="w-24 shrink-0">
@@ -374,7 +388,7 @@ function FooterAdmin() {
 											aspect="square"
 											value={sc.logoUrl}
 											onChange={(v) => setSocial(i, { logoUrl: v })}
-											label="Logo"
+											label={`${socialName(sc, i)} logo`}
 										/>
 									</div>
 									<div className="flex-1 space-y-2">
@@ -399,18 +413,18 @@ function FooterAdmin() {
 											disabled={i === 0}
 											onClick={() => moveSocial(i, -1)}
 											aria-label={`Move ${socialName(sc, i)} up`}
-											className="grid h-7 w-7 place-items-center rounded-lg border border-border text-muted-foreground hover:text-foreground disabled:opacity-30"
+											className="grid size-8 place-items-center rounded-lg border border-admin-border text-admin-ink-muted transition-colors duration-150 ease-out hover:text-admin-ink disabled:opacity-30 focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
 										>
-											↑
+											<ArrowUp aria-hidden="true" className="size-4" />
 										</button>
 										<button
 											type="button"
 											disabled={i === socials.length - 1}
 											onClick={() => moveSocial(i, 1)}
 											aria-label={`Move ${socialName(sc, i)} down`}
-											className="grid h-7 w-7 place-items-center rounded-lg border border-border text-muted-foreground hover:text-foreground disabled:opacity-30"
+											className="grid size-8 place-items-center rounded-lg border border-admin-border text-admin-ink-muted transition-colors duration-150 ease-out hover:text-admin-ink disabled:opacity-30 focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
 										>
-											↓
+											<ArrowDown aria-hidden="true" className="size-4" />
 										</button>
 										<button
 											type="button"
@@ -418,23 +432,24 @@ function FooterAdmin() {
 												setSocials((ls) => ls.filter((_, j) => j !== i))
 											}
 											aria-label={`Remove ${socialName(sc, i)}`}
-											className="grid h-7 w-7 place-items-center rounded-lg border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40"
+											className="grid size-8 place-items-center rounded-lg border border-admin-border text-admin-ink-muted transition-colors duration-150 ease-out hover:border-admin-danger/40 hover:text-admin-danger focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
 										>
-											✕
+											<X aria-hidden="true" className="size-4" />
 										</button>
 									</div>
 								</div>
 							</div>
 						))}
-						<button
-							type="button"
+						<Button
+							variant="secondary"
+							size="sm"
 							onClick={() =>
 								setSocials((ls) => [...ls, { name: "", url: "", logoUrl: "" }])
 							}
-							className="text-sm font-semibold text-[var(--accent)] hover:underline"
 						>
-							+ Add social
-						</button>
+							<Plus aria-hidden="true" className="size-4" />
+							Add social link
+						</Button>
 					</div>
 				</fieldset>
 				<div className="mt-4 grid sm:grid-cols-2 gap-4">
@@ -442,6 +457,20 @@ function FooterAdmin() {
 					<Field k="copyright_km" label="Copyright line (Khmer)" km />
 				</div>
 			</FormSection>
+
+			<div className="flex items-center gap-3 lg:hidden">
+				<Button
+					type="submit"
+					form="footer-form"
+					disabled={saving || !dirty}
+					disabledReason={dirty ? undefined : "No changes to save."}
+				>
+					{saving ? "Saving…" : "Save footer"}
+				</Button>
+				{savedAt && (
+					<span className="text-[13px] text-admin-live">Saved {savedAt}</span>
+				)}
+			</div>
 		</form>
 	);
 }
