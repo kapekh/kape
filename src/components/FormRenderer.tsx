@@ -1,4 +1,6 @@
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
+
+import { useFieldErrors } from "#/components/admin/useFieldErrors";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import {
@@ -33,6 +35,17 @@ export function FormRenderer({ slug }: { slug: string }) {
 		"idle",
 	);
 	const [error, setError] = useState<string | null>(null);
+	// the browser's own refusal, under its field rather than in a bubble
+	const { errors, invalid } = useFieldErrors();
+	// `disabled` only arrives with the next render, so a fast second click gets
+	// through it; the ref is the guard that is already true when it does. It has
+	// to sit above the early returns below, or the hook count moves with the state
+	const inFlight = useRef(false);
+	const guard = <T extends HTMLElement>(key: string) =>
+		invalid(key) as unknown as {
+			onInvalid: React.ReactEventHandler<T>;
+			onInput: React.FormEventHandler<T>;
+		};
 
 	useEffect(() => {
 		let alive = true;
@@ -96,6 +109,7 @@ export function FormRenderer({ slug }: { slug: string }) {
 
 	const submit = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (inFlight.current) return;
 		// Friendly client-side guard before uploading megabytes.
 		for (const [, file] of Object.entries(files)) {
 			if (file && file.size > ATTACHMENT_MAX_BYTES) {
@@ -109,6 +123,7 @@ export function FormRenderer({ slug }: { slug: string }) {
 				return;
 			}
 		}
+		inFlight.current = true;
 		setStatus("sending");
 		setError(null);
 		try {
@@ -146,6 +161,8 @@ export function FormRenderer({ slug }: { slug: string }) {
 				),
 			);
 			setStatus("error");
+		} finally {
+			inFlight.current = false;
 		}
 	};
 
@@ -235,6 +252,9 @@ export function FormRenderer({ slug }: { slug: string }) {
 							name={f.key}
 							type="file"
 							required={f.required}
+							aria-invalid={errors[f.key] ? true : undefined}
+							aria-describedby={errors[f.key] ? `${id}-error` : undefined}
+							{...guard<HTMLInputElement>(f.key)}
 							accept={ATTACHMENT_EXTS.map((e) => `.${e}`).join(",")}
 							onChange={(e) =>
 								setFiles((p) => ({
@@ -266,6 +286,9 @@ export function FormRenderer({ slug }: { slug: string }) {
 						placeholder={f.placeholder}
 						value={values[f.key] ?? ""}
 						onChange={(e) => set(f.key, e.target.value)}
+						aria-invalid={errors[f.key] ? true : undefined}
+						aria-describedby={errors[f.key] ? `${id}-error` : undefined}
+						{...guard<HTMLTextAreaElement>(f.key)}
 						className={`${field} ${km}`}
 					/>
 				) : f.type === "select" ? (
@@ -275,6 +298,9 @@ export function FormRenderer({ slug }: { slug: string }) {
 						required={f.required}
 						value={values[f.key] ?? ""}
 						onChange={(e) => set(f.key, e.target.value)}
+						aria-invalid={errors[f.key] ? true : undefined}
+						aria-describedby={errors[f.key] ? `${id}-error` : undefined}
+						{...guard<HTMLSelectElement>(f.key)}
 						className={field}
 					>
 						<option value="">
@@ -305,8 +331,16 @@ export function FormRenderer({ slug }: { slug: string }) {
 						placeholder={f.placeholder}
 						value={values[f.key] ?? ""}
 						onChange={(e) => set(f.key, e.target.value)}
+						aria-invalid={errors[f.key] ? true : undefined}
+						aria-describedby={errors[f.key] ? `${id}-error` : undefined}
+						{...guard<HTMLInputElement>(f.key)}
 						className={`${field} ${km}`}
 					/>
+				)}
+				{errors[f.key] && (
+					<p id={`${id}-error`} className="mt-1 text-xs text-destructive">
+						{errors[f.key]}
+					</p>
 				)}
 			</div>
 		);

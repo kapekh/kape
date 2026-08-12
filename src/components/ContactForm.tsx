@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
+import { useFieldErrors } from "#/components/admin/useFieldErrors";
 import { useLang } from "#/lib/i18n";
 
 // floating label: a placeholder alone vanishes on the first keystroke
@@ -24,9 +25,31 @@ export function ContactForm() {
 	const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
 		"idle",
 	);
+	// the browser's own refusal, printed under its field instead of in a bubble
+	// that a screen reader never sees
+	const { errors, invalid } = useFieldErrors();
+	// the hook's handlers only read validationMessage and validity, which a
+	// textarea has too; its type is written for an input
+	const guard = <T extends HTMLElement>(key: string) =>
+		invalid(key) as unknown as {
+			onInvalid: React.ReactEventHandler<T>;
+			onInput: React.FormEventHandler<T>;
+		};
+	const fieldError = (key: string) =>
+		errors[key] ? (
+			<p id={`cf-${key}-error`} className="mt-1 text-xs text-destructive">
+				{errors[key]}
+			</p>
+		) : null;
+
+	// three fast clicks stored three messages: `disabled` only arrives with the
+	// next render, so the guard has to be synchronous
+	const inFlight = useRef(false);
 
 	async function submit(e: React.FormEvent) {
 		e.preventDefault();
+		if (inFlight.current) return;
+		inFlight.current = true;
 		setStatus("sending");
 		try {
 			const res = await fetch("/api/forms/contact", {
@@ -42,6 +65,8 @@ export function ContactForm() {
 			}
 		} catch {
 			setStatus("error");
+		} finally {
+			inFlight.current = false;
 		}
 	}
 
@@ -79,11 +104,15 @@ export function ContactForm() {
 						placeholder={t("forms.name", "Full name")}
 						value={f.name}
 						onChange={(e) => setF({ ...f, name: e.target.value })}
+						aria-invalid={errors.name ? true : undefined}
+						aria-describedby={errors.name ? "cf-name-error" : undefined}
+						{...invalid("name")}
 						required
 					/>
 					<label htmlFor="cf-name" className={floatLabel}>
 						{t("forms.name", "Full name")}
 					</label>
+					{fieldError("name")}
 				</div>
 				<div className="relative">
 					<input
@@ -95,11 +124,15 @@ export function ContactForm() {
 						placeholder={t("forms.email", "Email")}
 						value={f.email}
 						onChange={(e) => setF({ ...f, email: e.target.value })}
+						aria-invalid={errors.email ? true : undefined}
+						aria-describedby={errors.email ? "cf-email-error" : undefined}
+						{...invalid("email")}
 						required
 					/>
 					<label htmlFor="cf-email" className={floatLabel}>
 						{t("forms.email", "Email")}
 					</label>
+					{fieldError("email")}
 				</div>
 			</div>
 			<div className="relative">
@@ -125,11 +158,15 @@ export function ContactForm() {
 					placeholder={t("forms.message", "Message")}
 					value={f.message}
 					onChange={(e) => setF({ ...f, message: e.target.value })}
+					aria-invalid={errors.message ? true : undefined}
+					aria-describedby={errors.message ? "cf-message-error" : undefined}
+					{...guard<HTMLTextAreaElement>("message")}
 					required
 				/>
 				<label htmlFor="cf-message" className={areaLabel}>
 					{t("forms.message", "Message")}
 				</label>
+				{fieldError("message")}
 			</div>
 			{status === "error" && (
 				<p className="text-sm text-destructive">

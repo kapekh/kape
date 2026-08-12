@@ -7,7 +7,12 @@ import type { JobItem, PostListItem } from "#/server/repo/content";
 import type { SourceRow } from "#/server/repo/sections";
 import { useLang, useT } from "@/lib/i18n";
 import { localizedHref } from "@/lib/i18n-config";
-import { isPlaceholder, PLACEHOLDER_IMAGE } from "@/lib/placeholder";
+import {
+	imageFallbackRef,
+	isPlaceholder,
+	onImageError,
+	PLACEHOLDER_IMAGE,
+} from "@/lib/placeholder";
 
 import { ContactForm } from "../ContactForm";
 import { FormRenderer } from "../FormRenderer";
@@ -272,6 +277,8 @@ function Slideshow({ slides }: { slides: HeroSlide[] }) {
 								src={s.image}
 								alt={s.caption || ""}
 								className="h-full w-full object-cover"
+								onError={onImageError}
+								ref={imageFallbackRef}
 							/>
 						)}
 						<div className="absolute inset-0 bg-gradient-to-t from-primary/85 via-primary/20 to-transparent" />
@@ -412,6 +419,8 @@ function Hero(p: HeroProps) {
 							src={p.image}
 							alt={p.title || ""}
 							className="rounded-3xl object-cover w-full aspect-[4/3] shadow-[var(--shadow-soft)]"
+							onError={onImageError}
+							ref={imageFallbackRef}
 						/>
 					)}
 				</Container>
@@ -424,7 +433,15 @@ function Hero(p: HeroProps) {
 	return (
 		<section className="relative flex min-h-[60vh] items-center overflow-hidden bg-primary">
 			<div className="absolute inset-0">
-				{bg && <img src={bg} alt="" className="h-full w-full object-cover" />}
+				{bg && (
+					<img
+						src={bg}
+						alt=""
+						className="h-full w-full object-cover"
+						onError={onImageError}
+						ref={imageFallbackRef}
+					/>
+				)}
 				<div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/45" />
 			</div>
 			<Container className="relative py-24 text-center text-primary-foreground">
@@ -530,6 +547,8 @@ function Cards(p: CardsProps) {
 										src={it.image}
 										alt={it.title || ""}
 										className="absolute inset-0 h-full w-full object-cover"
+										onError={onImageError}
+										ref={imageFallbackRef}
 									/>
 									<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/10" />
 									<div className="relative text-white">
@@ -558,6 +577,8 @@ function Cards(p: CardsProps) {
 										src={it.image}
 										alt={it.title || ""}
 										className="aspect-video w-full object-cover"
+										onError={onImageError}
+										ref={imageFallbackRef}
 									/>
 								) : null}
 								<div className="flex flex-1 flex-col p-6">
@@ -613,6 +634,8 @@ function StatItem({
 					src={icon}
 					alt=""
 					className="mb-4 h-10 w-10 object-contain opacity-90"
+					onError={onImageError}
+					ref={imageFallbackRef}
 				/>
 			)}
 			<div
@@ -681,6 +704,8 @@ function Stats(p: StatsProps) {
 										src={it.icon}
 										alt=""
 										className="mb-3 h-10 w-10 object-contain"
+										onError={onImageError}
+										ref={imageFallbackRef}
 									/>
 								)}
 								<div
@@ -889,6 +914,8 @@ function Split(p: SplitProps) {
 					src={p.image}
 					alt={p.title || ""}
 					className="h-[420px] w-full object-cover md:h-[480px]"
+					onError={onImageError}
+					ref={imageFallbackRef}
 				/>
 			</div>
 			{p.statValue && (
@@ -1043,6 +1070,8 @@ function PostCard({
 					src={imgFor(post)}
 					alt={post.title || ""}
 					className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+					onError={onImageError}
+					ref={imageFallbackRef}
 				/>
 				<div className="absolute inset-0 bg-gradient-to-t from-primary/70 via-transparent to-transparent" />
 				{post.publishedAt && (
@@ -1180,6 +1209,8 @@ function PostList(p: PostListProps) {
 										src={imgFor(posts[0])}
 										alt={posts[0].title || ""}
 										className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+										onError={onImageError}
+										ref={imageFallbackRef}
 									/>
 								)}
 								<div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/30 to-transparent" />
@@ -1213,6 +1244,8 @@ function PostList(p: PostListProps) {
 											src={imgFor(post)}
 											alt={post.title || ""}
 											className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+											onError={onImageError}
+											ref={imageFallbackRef}
 										/>
 									</div>
 									<div className="flex-1">
@@ -1296,6 +1329,8 @@ function VideoGrid(p: VideoGridProps) {
 											src={thumb}
 											alt={v.title || ""}
 											className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+											onError={onImageError}
+											ref={imageFallbackRef}
 										/>
 										<div className="absolute inset-0 bg-primary/20 transition group-hover:bg-primary/10" />
 										<div className="absolute inset-0 grid place-items-center">
@@ -1342,6 +1377,8 @@ function AlbumGrid(p: AlbumGridProps) {
 										src={imgFor(a)}
 										alt={a.title || ""}
 										className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
+										onError={onImageError}
+										ref={imageFallbackRef}
 									/>
 								</div>
 								<div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-primary/90 via-primary/20 to-transparent p-5 text-primary-foreground">
@@ -1408,6 +1445,8 @@ function PublicationList(p: PublicationListProps) {
 											src={it.image}
 											alt={it.title || ""}
 											className={`shrink-0 rounded-xl object-cover ring-1 ring-border ${list ? "h-16 w-12" : "h-24 w-[4.5rem]"}`}
+											onError={onImageError}
+											ref={imageFallbackRef}
 										/>
 									) : (
 										<div
@@ -1483,6 +1522,8 @@ function People(p: PeopleProps) {
 											src={person.photoUrl}
 											alt={person.name || ""}
 											className="h-full w-full object-cover"
+											onError={onImageError}
+											ref={imageFallbackRef}
 										/>
 									) : (
 										<div className="grid h-full w-full place-items-center bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] text-primary-foreground font-display text-2xl font-bold">
@@ -1512,6 +1553,7 @@ type MapRow = SourceRow["locations"] | SourceRow["offices"];
 type MapProps = Common & { data?: MapRow[] };
 
 function MapSection(p: MapProps) {
+	const t = useT();
 	const rows: MapRow[] = Array.isArray(p.data) ? p.data : [];
 	const markers: MapMarker[] = rows
 		.map((r) =>
@@ -1543,9 +1585,14 @@ function MapSection(p: MapProps) {
 		<section className={`${PAD} ${toneBg(p.tone)}`}>
 			<Container>
 				<Heading eyebrow={p.eyebrow} title={p.title} />
-				<div className="overflow-hidden rounded-2xl border border-border shadow-sm">
-					<MapView markers={markers} center={center} zoom={7} />
-				</div>
+				{/* an empty map centred on the country reads as a broken page, not as "nothing here yet" */}
+				{markers.length === 0 ? (
+					<Empty>{t("empty.map", "No places to show on the map yet.")}</Empty>
+				) : (
+					<div className="overflow-hidden rounded-2xl border border-border shadow-sm">
+						<MapView markers={markers} center={center} zoom={7} />
+					</div>
+				)}
 			</Container>
 		</section>
 	);
@@ -1651,6 +1698,8 @@ function PartnerLogo({ row, linked }: { row: PartnerRow; linked: boolean }) {
 						src={row.logoUrl}
 						alt={row.name}
 						className="max-h-16 max-w-full object-contain"
+						onError={onImageError}
+						ref={imageFallbackRef}
 					/>
 				) : (
 					<span className="text-center text-sm font-medium text-foreground/80">
@@ -1745,6 +1794,8 @@ function Partners(p: PartnersProps) {
 														// max-h-8 not max-h-full: the row is auto-sized, so a
 														// percentage resolves against the image itself and caps nothing
 														className="max-h-8 max-w-full object-contain grayscale opacity-75 transition duration-300 group-hover:grayscale-0 group-hover:opacity-100"
+														onError={onImageError}
+														ref={imageFallbackRef}
 													/>
 												</span>
 											) : (
@@ -1825,6 +1876,8 @@ function ProjectList(p: ProjectListProps) {
 										src={r.image}
 										alt={r.name || ""}
 										className="mb-4 h-12 w-auto max-w-[10rem] object-contain"
+										onError={onImageError}
+										ref={imageFallbackRef}
 									/>
 								) : (
 									<div className="mb-4 inline-flex w-fit rounded-lg bg-[var(--accent)]/10 px-3 py-1.5 font-display text-sm font-bold text-[var(--accent)]">
@@ -1895,6 +1948,8 @@ function Certificates(p: CertificatesProps) {
 												src={it.image}
 												alt={it.title || ""}
 												className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+												onError={onImageError}
+												ref={imageFallbackRef}
 											/>
 										) : (
 											<div className="grid h-full w-full place-items-center text-[var(--accent)]">
