@@ -16,8 +16,11 @@ const BRANDS = [
 const ROOT = join(import.meta.dirname, "..");
 const REPO = join(ROOT, "..");
 // `scripts/` ships with the product, so a one-off written against one customer's
-// content is as much of a leak as a component would be.
+// content is as much of a leak as a component would be. The repo's own config
+// files are read too: the project was scaffolded under the first customer's name
+// and it survived in `.cta.json` and the lockfile long after the rename.
 const SCANNED = [ROOT, join(REPO, "scripts")];
+const REPO_FILES = [".cta.json", "package.json", "bun.lock", "components.json"];
 
 // The loadable example-site fixture. Everything else is the product — including
 // install.ts, which is the path every new customer's database is built by.
@@ -41,14 +44,20 @@ function sourceFiles(dir: string): string[] {
 	});
 }
 
-// blanked, not exempted, so a brand string sharing the line is still caught
+// blanked, not exempted, so a brand string sharing the line is still caught.
+// Both halves of package.json's fixture line: the command and the file it runs.
 const withoutFixtureCommand = (line: string) =>
-	line.replace(/seed:[a-z0-9-]+/g, "seed:fixture");
+	line
+		.replace(/seed:[a-z0-9-]+/g, "seed:fixture")
+		.replace(/server\/seed\/[a-z0-9-]+\.ts/g, "server/seed/fixture.ts");
 
 describe("shipped source carries no customer branding", () => {
 	for (const brand of BRANDS) {
 		it(`is free of ${brand}`, () => {
-			const hits = SCANNED.flatMap(sourceFiles)
+			const hits = [
+				...SCANNED.flatMap(sourceFiles),
+				...REPO_FILES.map((f) => join(REPO, f)),
+			]
 				.filter((f) => f !== import.meta.filename)
 				.flatMap((f) =>
 					readFileSync(f, "utf8")
