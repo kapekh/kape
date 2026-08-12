@@ -1,8 +1,15 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { FileQuestion } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
-import { PageForm, type PageFormValue } from "#/components/admin/PageForm";
+import {
+	PageForm,
+	type PageFormValue,
+	StudioSkeleton,
+} from "#/components/admin/PageForm";
 import type { LangOpt } from "#/components/admin/PostForm";
+import { Button } from "#/components/ui/button";
+import { EmptyState } from "#/components/ui/empty-state";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { saveErrorMessage } from "#/lib/save-error";
 
@@ -78,9 +85,21 @@ function EditPage() {
 	}
 
 	if (notFound)
-		return <p className="text-sm text-muted-foreground">Page not found.</p>;
-	if (!data || !langs.length)
-		return <p className="text-sm text-muted-foreground">Loading…</p>;
+		return (
+			<div className="p-6">
+				<EmptyState
+					icon={<FileQuestion />}
+					title="That page is not here"
+					description="It may have been deleted, or the address may be wrong. Everything else is still on the Pages list."
+					action={
+						<Button asChild>
+							<Link to="/admin/pages">Back to pages</Link>
+						</Button>
+					}
+				/>
+			</div>
+		);
+	if (!data || !langs.length) return <StudioSkeleton />;
 
 	return (
 		<PageForm

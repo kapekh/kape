@@ -1,5 +1,14 @@
 import { useLoaderData } from "@tanstack/react-router";
+import {
+	ArrowDown,
+	ArrowUp,
+	ChevronRight,
+	Plus,
+	Trash2,
+	X,
+} from "lucide-react";
 import { useEffect, useId, useMemo, useState } from "react";
+import { Button } from "#/components/ui/button";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 
 import { DEFAULT_LANG } from "#/lib/i18n-config";
@@ -59,8 +68,11 @@ const uid = () =>
 	globalThis.crypto?.randomUUID?.() ??
 	`s_${Date.now().toString(36)}_${Math.floor(Math.random() * 1e6).toString(36)}`;
 
-const btn =
-	"text-xs rounded border border-border px-2 py-1 hover:bg-muted transition disabled:opacity-40";
+/** A compact control inside a repeater row or a section header. */
+const iconBtn =
+	"grid size-8 shrink-0 place-items-center rounded-lg border border-admin-border text-admin-ink-muted transition-colors duration-150 ease-out hover:bg-admin-accent-soft hover:text-admin-ink disabled:opacity-40 disabled:hover:bg-transparent focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none";
+const textBtn =
+	"inline-flex h-8 items-center gap-2 rounded-lg border border-admin-border px-3 text-sm text-admin-ink transition-colors duration-150 ease-out hover:bg-admin-accent-soft focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none";
 
 /** A borderless cell input that fills its grid cell (Excel-like). */
 function CellInput({
@@ -74,7 +86,7 @@ function CellInput({
 }) {
 	const str = typeof value === "string" ? value : "";
 	const base =
-		"block w-full border-0 bg-transparent px-2 py-1.5 text-sm leading-snug outline-none focus:bg-[var(--accent)]/10";
+		"block w-full border-0 bg-transparent px-2 py-2 text-sm leading-snug text-admin-ink outline-none focus:bg-admin-accent-soft";
 	if (field.kind === "textarea") {
 		return (
 			<textarea
@@ -145,11 +157,11 @@ function ItemsTable({
 		onChange(a);
 	};
 	const th =
-		"border border-border bg-muted/50 px-2 py-1 text-left text-[10px] font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap";
+		"border border-admin-border bg-admin-bg px-2 py-2 text-left text-xs font-medium uppercase tracking-wide text-admin-ink-muted whitespace-nowrap";
 	return (
-		<div className="overflow-hidden rounded-lg border border-border">
+		<div className="overflow-hidden rounded-xl border border-admin-border">
 			<div className="overflow-x-auto thin-scroll">
-				<table className="w-full border-collapse text-sm [&_td]:border [&_td]:border-border">
+				<table className="w-full border-collapse text-sm [&_td]:border [&_td]:border-admin-border">
 					<thead>
 						<tr>
 							<th className={`${th} w-7 text-center`}>#</th>
@@ -165,7 +177,7 @@ function ItemsTable({
 						{rows.length === 0 && (
 							<tr>
 								<td
-									className="px-2 py-3 text-center text-xs text-muted-foreground"
+									className="px-2 py-4 text-center text-[13px] text-admin-ink-muted"
 									colSpan={fields.length + 2}
 								>
 									No items yet.
@@ -174,7 +186,7 @@ function ItemsTable({
 						)}
 						{rows.map((row, i) => (
 							<tr key={i}>
-								<td className="w-7 bg-muted/30 px-1 text-center align-middle text-xs text-muted-foreground">
+								<td className="w-7 bg-admin-bg px-1 text-center align-middle text-[13px] text-admin-ink-muted">
 									{i + 1}
 								</td>
 								{fields.map((f) => (
@@ -186,30 +198,33 @@ function ItemsTable({
 										/>
 									</td>
 								))}
-								<td className="bg-muted/30 px-1 align-middle whitespace-nowrap">
-									<div className="flex gap-0.5">
+								<td className="bg-admin-bg px-1 align-middle whitespace-nowrap">
+									<div className="flex gap-1">
 										<button
 											type="button"
-											className={btn}
+											className={iconBtn}
+											aria-label={`Move row ${i + 1} up`}
 											disabled={i === 0}
 											onClick={() => move(i, -1)}
 										>
-											↑
+											<ArrowUp aria-hidden="true" className="size-4" />
 										</button>
 										<button
 											type="button"
-											className={btn}
+											className={iconBtn}
+											aria-label={`Move row ${i + 1} down`}
 											disabled={i === rows.length - 1}
 											onClick={() => move(i, 1)}
 										>
-											↓
+											<ArrowDown aria-hidden="true" className="size-4" />
 										</button>
 										<button
 											type="button"
-											className={`${btn} text-destructive`}
+											className={`${iconBtn} text-admin-danger`}
+											aria-label={`Remove row ${i + 1}`}
 											onClick={() => onChange(rows.filter((_, n) => n !== i))}
 										>
-											✕
+											<X aria-hidden="true" className="size-4" />
 										</button>
 									</div>
 								</td>
@@ -218,13 +233,14 @@ function ItemsTable({
 					</tbody>
 				</table>
 			</div>
-			<div className="border-t border-border bg-card p-1.5">
+			<div className="border-t border-admin-border bg-admin-panel p-2">
 				<button
 					type="button"
-					className={btn}
+					className={textBtn}
 					onClick={() => onChange([...rows, {}])}
 				>
-					+ Add row
+					<Plus aria-hidden="true" className="size-4" />
+					Add row
 				</button>
 			</div>
 		</div>
@@ -273,41 +289,47 @@ function CardsEditor({
 	return (
 		<div className="space-y-3">
 			{cards.length === 0 && (
-				<p className="rounded-lg border border-dashed border-border px-3 py-4 text-center text-xs text-muted-foreground">
+				<p className="rounded-xl border border-dashed border-admin-border px-3 py-4 text-center text-[13px] text-admin-ink-muted">
 					No cards yet.
 				</p>
 			)}
 			{cards.map((card, i) => {
 				const btns = cardButtons(card);
 				return (
-					<div key={i} className="rounded-xl border border-border bg-card p-3">
-						<div className="mb-2 flex items-center justify-between">
-							<span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+					<div
+						key={i}
+						className="rounded-xl border border-admin-border bg-admin-panel p-3"
+					>
+						<div className="mb-3 flex items-center justify-between gap-2">
+							<span className="text-[13px] font-medium text-admin-ink-muted">
 								Card {i + 1}
 							</span>
-							<div className="flex gap-0.5">
+							<div className="flex gap-1">
 								<button
 									type="button"
-									className={btn}
+									className={iconBtn}
+									aria-label={`Move card ${i + 1} up`}
 									disabled={i === 0}
 									onClick={() => move(i, -1)}
 								>
-									↑
+									<ArrowUp aria-hidden="true" className="size-4" />
 								</button>
 								<button
 									type="button"
-									className={btn}
+									className={iconBtn}
+									aria-label={`Move card ${i + 1} down`}
 									disabled={i === cards.length - 1}
 									onClick={() => move(i, 1)}
 								>
-									↓
+									<ArrowDown aria-hidden="true" className="size-4" />
 								</button>
 								<button
 									type="button"
-									className={`${btn} text-destructive`}
+									className={`${iconBtn} text-admin-danger`}
+									aria-label={`Remove card ${i + 1}`}
 									onClick={() => onChange(cards.filter((_, n) => n !== i))}
 								>
-									✕
+									<X aria-hidden="true" className="size-4" />
 								</button>
 							</div>
 						</div>
@@ -326,14 +348,14 @@ function CardsEditor({
 									aspect="video"
 								/>
 								{card.image && (
-									<label className="mt-2 flex cursor-pointer items-center gap-2 text-sm text-foreground/80">
+									<label className="mt-2 flex cursor-pointer items-center gap-2 text-sm text-admin-ink">
 										<input
 											type="checkbox"
 											checked={!!card.imageAsBg}
 											onChange={(e) =>
 												patch(i, { imageAsBg: e.target.checked })
 											}
-											className="h-4 w-4 accent-[var(--accent)]"
+											className="size-4 accent-admin-accent"
 										/>
 										Use image as card background
 									</label>
@@ -391,7 +413,8 @@ function CardsEditor({
 											/>
 											<button
 												type="button"
-												className="rounded-lg border border-border px-2.5 text-sm text-muted-foreground hover:bg-muted"
+												className={iconBtn}
+												aria-label={`Remove button ${bi + 1}`}
 												onClick={() =>
 													setButtons(
 														i,
@@ -399,18 +422,19 @@ function CardsEditor({
 													)
 												}
 											>
-												×
+												<X aria-hidden="true" className="size-4" />
 											</button>
 										</div>
 									))}
 									<button
 										type="button"
-										className="text-sm font-semibold text-[var(--accent)] hover:underline"
+										className={textBtn}
 										onClick={() =>
 											setButtons(i, [...btns, { label: "", href: "" }])
 										}
 									>
-										+ Add button
+										<Plus aria-hidden="true" className="size-4" />
+										Add button
 									</button>
 								</div>
 							</fieldset>
@@ -420,10 +444,11 @@ function CardsEditor({
 			})}
 			<button
 				type="button"
-				className={btn}
+				className={textBtn}
 				onClick={() => onChange([...cards, {}])}
 			>
-				+ Add card
+				<Plus aria-hidden="true" className="size-4" />
+				Add card
 			</button>
 		</div>
 	);
@@ -545,7 +570,7 @@ function SectionEditor({
 	const [editLang, setEditLang] = useState("");
 	if (!def)
 		return (
-			<p className="text-xs text-destructive">
+			<p className="p-3 text-[13px] text-admin-danger">
 				Unknown section type “{node.type}”.
 			</p>
 		);
@@ -580,13 +605,13 @@ function SectionEditor({
 		});
 	};
 	const tab = (on: boolean) =>
-		`rounded-full px-3 py-1 text-xs font-semibold transition ${on ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground hover:bg-muted"}`;
+		`h-8 rounded-full px-3 text-[13px] font-medium transition-colors duration-150 ease-out ${on ? "bg-admin-accent text-accent-foreground" : "border border-admin-border text-admin-ink-muted hover:bg-admin-accent-soft"}`;
 
 	if (editLang) {
 		return (
-			<div className="space-y-3 border-t border-border/60 p-3">
+			<div className="space-y-4 border-t border-admin-border p-3">
 				{extraLangs.length > 0 && textFields.length > 0 && (
-					<div className="flex flex-wrap gap-1.5">
+					<div className="flex flex-wrap gap-2">
 						<button
 							type="button"
 							className={tab(false)}
@@ -606,7 +631,7 @@ function SectionEditor({
 						))}
 					</div>
 				)}
-				<p className="text-xs text-muted-foreground">
+				<p className="text-[13px] text-admin-ink-muted">
 					Translations — leave a field blank to fall back to the default text.
 					Images, links and the data source are shared across languages.
 				</p>
@@ -663,7 +688,7 @@ function SectionEditor({
 			)}
 
 			{def.kind === "dynamic" && sources.length > 0 && (
-				<div className="grid grid-cols-2 gap-2">
+				<div className="grid grid-cols-2 gap-3">
 					<div className="col-span-2">
 						<label className="block">
 							<span className={fieldLabel}>Data source</span>
@@ -744,9 +769,9 @@ function SectionEditor({
 				);
 			})}
 			{formPicked && (
-				<p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+				<p className="rounded-lg border border-admin-border bg-admin-bg px-3 py-2 text-[13px] text-admin-ink-muted">
 					Title, intro and submit button come from the selected form. Edit them
-					in <span className="font-medium text-foreground/80">Forms</span>.
+					in <span className="font-medium text-admin-ink">Forms</span>.
 				</p>
 			)}
 		</div>
@@ -808,8 +833,8 @@ export function SectionsBuilder({
 	return (
 		<div className="space-y-3">
 			{sections.length === 0 && (
-				<p className="text-sm text-muted-foreground">
-					No sections yet. Add one to start building the page.
+				<p className="rounded-xl border border-dashed border-admin-border px-3 py-6 text-center text-[13px] text-admin-ink-muted">
+					No sections yet. Add one and it appears in the preview.
 				</p>
 			)}
 
@@ -819,64 +844,54 @@ export function SectionsBuilder({
 				return (
 					<div
 						key={s.id}
-						className="rounded-xl border border-border bg-card overflow-hidden"
+						className={`overflow-hidden rounded-xl border bg-admin-panel transition-colors duration-150 ease-out ${open ? "border-admin-accent" : "border-admin-border"}`}
 					>
-						<div className="flex items-center gap-2 px-3 py-2">
+						<div className="flex items-center gap-2 p-2">
 							<button
 								type="button"
 								onClick={() => setOpenId(open ? null : s.id)}
-								className="flex min-w-0 flex-1 items-center gap-2 text-left"
+								aria-expanded={open}
+								className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-1 py-1 text-left focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
 							>
-								<svg
+								<ChevronRight
 									aria-hidden="true"
-									className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-90" : ""}`}
-									viewBox="0 0 12 12"
-									fill="none"
-									stroke="currentColor"
-									strokeWidth="1.8"
-								>
-									<path
-										d="M4.5 3L7.5 6L4.5 9"
-										strokeLinecap="round"
-										strokeLinejoin="round"
-									/>
-								</svg>
-								<span
-									className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${def?.kind === "dynamic" ? "bg-[var(--accent)]/15 text-[var(--accent)]" : "bg-muted text-muted-foreground"}`}
-								>
-									{def?.kind ?? "?"}
-								</span>
-								<span className="shrink-0 font-medium text-sm text-foreground">
-									{def?.label ?? s.type}
-								</span>
-								{s.layout && def && def.layouts.length > 1 && (
-									<span className="min-w-0 truncate text-xs text-muted-foreground">
-										·{" "}
-										{def.layouts.find((l) => l.value === s.layout)?.label ??
-											s.layout}
+									className={`size-4 shrink-0 text-admin-ink-muted transition-transform duration-200 ease-out ${open ? "rotate-90" : ""}`}
+								/>
+								<span className="min-w-0 flex-1">
+									<span className="block truncate text-sm font-medium text-admin-ink">
+										{def?.label ?? s.type}
 									</span>
-								)}
+									<span className="block truncate text-[13px] text-admin-ink-muted">
+										{def?.kind === "dynamic" ? "Dynamic" : "Static"}
+										{s.layout && def && def.layouts.length > 1
+											? ` · ${def.layouts.find((l) => l.value === s.layout)?.label ?? s.layout}`
+											: ""}
+									</span>
+								</span>
 							</button>
 							<div className="flex shrink-0 gap-1">
 								<button
 									type="button"
-									className={btn}
+									className={iconBtn}
+									aria-label={`Move ${def?.label ?? s.type} up`}
 									disabled={i === 0}
 									onClick={() => move(i, -1)}
 								>
-									↑
+									<ArrowUp aria-hidden="true" className="size-4" />
 								</button>
 								<button
 									type="button"
-									className={btn}
+									className={iconBtn}
+									aria-label={`Move ${def?.label ?? s.type} down`}
 									disabled={i === sections.length - 1}
 									onClick={() => move(i, 1)}
 								>
-									↓
+									<ArrowDown aria-hidden="true" className="size-4" />
 								</button>
 								<button
 									type="button"
-									className={`${btn} text-destructive`}
+									className={`${iconBtn} text-admin-danger`}
+									aria-label={`Delete ${def?.label ?? s.type}`}
 									onClick={() => {
 										void confirm({
 											message: `Delete the “${def?.label ?? s.type}” section? This can't be undone.`,
@@ -885,7 +900,7 @@ export function SectionsBuilder({
 										}).then((ok) => ok && remove(s.id));
 									}}
 								>
-									Delete
+									<Trash2 aria-hidden="true" className="size-4" />
 								</button>
 							</div>
 						</div>
@@ -901,25 +916,27 @@ export function SectionsBuilder({
 			})}
 
 			{adding ? (
-				<div className="rounded-xl border border-[var(--accent)]/40 bg-[var(--accent)]/5 p-3">
-					<div className="mb-2 flex items-center justify-between">
-						<span className="text-sm font-semibold text-primary">
+				<div className="rounded-xl border border-admin-accent bg-admin-accent-soft/40 p-3">
+					<div className="mb-3 flex items-center justify-between gap-2">
+						<span className="text-sm font-semibold text-admin-ink">
 							Add a section
 						</span>
 						<button
 							type="button"
-							className={btn}
+							className={textBtn}
 							onClick={() => setAdding(false)}
 						>
 							Cancel
 						</button>
 					</div>
 					{(["static", "dynamic"] as const).map((kind) => (
-						<div key={kind} className="mb-2">
-							<div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">
-								{kind}
+						<div key={kind} className="mb-3 last:mb-0">
+							<div className="mb-2 text-[13px] text-admin-ink-muted">
+								{kind === "static"
+									? "Static — words you write"
+									: "Dynamic — pulled from posts, projects or people"}
 							</div>
-							<div className="flex flex-wrap gap-1.5">
+							<div className="flex flex-wrap gap-2">
 								{catalogue
 									.filter((d) => d.kind === kind)
 									.map((d) => (
@@ -928,7 +945,7 @@ export function SectionsBuilder({
 											type="button"
 											onClick={() => add(d.type)}
 											title={d.description}
-											className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm hover:border-[var(--accent)]/50 hover:text-[var(--accent)] transition"
+											className="h-8 rounded-lg border border-admin-border bg-admin-panel px-3 text-sm text-admin-ink transition-colors duration-150 ease-out hover:border-admin-accent hover:text-admin-accent focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
 										>
 											{d.label}
 										</button>
@@ -938,13 +955,10 @@ export function SectionsBuilder({
 					))}
 				</div>
 			) : (
-				<button
-					type="button"
-					onClick={() => setAdding(true)}
-					className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold hover:opacity-90 transition"
-				>
-					+ Add section
-				</button>
+				<Button onClick={() => setAdding(true)}>
+					<Plus aria-hidden="true" className="size-4" />
+					Add section
+				</Button>
 			)}
 		</div>
 	);

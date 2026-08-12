@@ -1,4 +1,5 @@
 import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { ChevronDown, Plus } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
@@ -90,7 +91,7 @@ export function PageSwitcher() {
 
 	return (
 		<div ref={wrapRef} className="relative flex min-w-0 items-center gap-2">
-			<span className="hidden text-xs font-medium uppercase tracking-wide text-muted-foreground sm:inline">
+			<span className="hidden text-[13px] font-medium text-admin-ink-muted sm:inline">
 				Page
 			</span>
 			<button
@@ -98,35 +99,25 @@ export function PageSwitcher() {
 				onClick={() => setOpen((o) => !o)}
 				aria-haspopup="listbox"
 				aria-expanded={open}
-				className="flex min-w-0 max-w-[280px] items-center gap-2 rounded-lg border border-border bg-card py-1.5 pl-3 pr-2.5 text-sm font-semibold text-primary hover:border-[var(--accent)] focus:border-[var(--accent)] focus:outline-none transition"
+				className="flex h-8 min-w-0 max-w-[280px] items-center gap-2 rounded-lg border border-admin-border bg-admin-panel px-3 text-sm font-medium text-admin-ink transition-colors duration-150 ease-out hover:border-admin-accent focus-visible:border-admin-accent focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
 			>
 				<span className="min-w-0 truncate">{currentLabel}</span>
-				<svg
+				<ChevronDown
 					aria-hidden="true"
-					className="h-3 w-3 shrink-0 text-muted-foreground"
-					viewBox="0 0 12 12"
-					fill="none"
-					stroke="currentColor"
-					strokeWidth="1.8"
-				>
-					<path
-						d="M3 4.5L6 7.5L9 4.5"
-						strokeLinecap="round"
-						strokeLinejoin="round"
-					/>
-				</svg>
+					className="size-4 shrink-0 text-admin-ink-muted"
+				/>
 			</button>
 
 			{open && (
-				<div className="absolute left-0 top-full z-30 mt-1.5 w-[300px] max-w-[80vw] overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-lift)]">
-					<div className="border-b border-border p-2">
+				<div className="absolute left-0 top-full z-30 mt-2 w-[300px] max-w-[80vw] overflow-hidden rounded-xl border border-admin-border bg-admin-panel-raised shadow-[var(--shadow-lift)]">
+					<div className="border-b border-admin-border p-2">
 						<input
 							ref={inputRef}
 							value={query}
 							onChange={(e) => setQuery(e.target.value)}
 							onKeyDown={onKeyDown}
 							placeholder="Search pages…"
-							className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-[var(--accent)] focus:outline-none"
+							className="h-8 w-full rounded-lg border border-admin-border bg-admin-panel px-3 text-sm text-admin-ink transition-colors duration-150 ease-out placeholder:text-admin-ink-subtle focus-visible:border-admin-accent focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
 						/>
 					</div>
 					<div
@@ -135,7 +126,7 @@ export function PageSwitcher() {
 						className="thin-scroll max-h-72 overflow-y-auto py-1"
 					>
 						{filtered.length === 0 ? (
-							<p className="px-3 py-3 text-center text-xs text-muted-foreground">
+							<p className="px-3 py-3 text-center text-[13px] text-admin-ink-muted">
 								No pages match “{query}”.
 							</p>
 						) : (
@@ -149,12 +140,12 @@ export function PageSwitcher() {
 										aria-selected={isCurrent}
 										onMouseEnter={() => setActive(i)}
 										onClick={() => choose(p)}
-										className={`flex w-full flex-col items-start gap-0.5 px-3 py-1.5 text-left transition ${i === active ? "bg-muted" : ""} ${isCurrent ? "text-[var(--accent)]" : "text-foreground"}`}
+										className={`flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left transition-colors duration-150 ease-out ${i === active ? "bg-admin-accent-soft" : ""} ${isCurrent ? "text-admin-accent" : "text-admin-ink"}`}
 									>
 										<span className="w-full truncate text-sm font-medium">
 											{p.title || p.slug || "Untitled page"}
 										</span>
-										<span className="w-full truncate font-mono text-[11px] text-muted-foreground">
+										<span className="w-full truncate font-mono text-[13px] text-admin-ink-muted">
 											/{p.slug}
 										</span>
 									</button>
@@ -168,18 +159,9 @@ export function PageSwitcher() {
 							setOpen(false);
 							navigate({ to: "/admin/pages/new" });
 						}}
-						className="flex w-full items-center gap-2 border-t border-border px-3 py-2 text-sm font-semibold text-primary hover:bg-muted transition"
+						className="flex w-full items-center gap-2 border-t border-admin-border px-3 py-2 text-sm font-medium text-admin-ink transition-colors duration-150 ease-out hover:bg-admin-accent-soft"
 					>
-						<svg
-							aria-hidden="true"
-							className="h-4 w-4 shrink-0"
-							viewBox="0 0 16 16"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth="1.8"
-						>
-							<path d="M8 3.5v9M3.5 8h9" strokeLinecap="round" />
-						</svg>
+						<Plus aria-hidden="true" className="size-4 shrink-0" />
 						New page…
 					</button>
 				</div>
@@ -190,18 +172,9 @@ export function PageSwitcher() {
 				onClick={() => navigate({ to: "/admin/pages/new" })}
 				title="New page"
 				aria-label="New page"
-				className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-border text-primary hover:border-[var(--accent)] hover:text-[var(--accent)] transition"
+				className="grid size-8 shrink-0 place-items-center rounded-lg border border-admin-border text-admin-ink transition-colors duration-150 ease-out hover:border-admin-accent hover:text-admin-accent focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
 			>
-				<svg
-					aria-hidden="true"
-					className="h-4 w-4"
-					viewBox="0 0 16 16"
-					fill="none"
-					stroke="currentColor"
-					strokeWidth="1.8"
-				>
-					<path d="M8 3.5v9M3.5 8h9" strokeLinecap="round" />
-				</svg>
+				<Plus aria-hidden="true" className="size-4" />
 			</button>
 		</div>
 	);

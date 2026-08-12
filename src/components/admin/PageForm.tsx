@@ -1,17 +1,30 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { ChevronRight, GripVertical } from "lucide-react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 
+import { Button } from "#/components/ui/button";
+import { Input } from "#/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "#/components/ui/select";
+import { Skeleton } from "#/components/ui/skeleton";
+import { Textarea } from "#/components/ui/textarea";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import type { SectionNode } from "#/lib/sections";
 import { PAGE_TITLE_MAX, segmentProblem } from "#/lib/slug";
 
 import { AdminHeader } from "./AdminHeader";
-import { cancelButtonClass, fieldInput, fieldLabel } from "./form-ui";
+import { fieldLabel } from "./form-ui";
 import { LangTabs } from "./LangTabs";
 import { MediaPicker } from "./MediaPicker";
 import { PagePreview } from "./PagePreview";
 import { PageSwitcher } from "./PageSwitcher";
 import type { LangOpt } from "./PostForm";
+import { SearchableSelect } from "./SearchableSelect";
 import { SectionsBuilder } from "./SectionsBuilder";
 import { useDirtyGuard } from "./useDirty";
 
@@ -47,6 +60,73 @@ type FieldError = { field: "segment" | "title"; lang?: string; text: string };
 /** A title stored before the cap existed still has to fit one dropdown line. */
 const optionLabel = (text: string) =>
 	text.length > 60 ? `${text.slice(0, 60)}…` : text;
+
+/** One collapsible job in the inspector, so four unrelated ones stop competing. */
+function InspectorGroup({
+	id,
+	title,
+	description,
+	defaultOpen,
+	children,
+	...rest
+}: {
+	id: string;
+	title: string;
+	description?: string;
+	defaultOpen?: boolean;
+	children: ReactNode;
+} & React.HTMLAttributes<HTMLElement>) {
+	const [open, setOpen] = useState(!!defaultOpen);
+	return (
+		<section className="border-b border-admin-border" {...rest}>
+			<h2>
+				<button
+					type="button"
+					onClick={() => setOpen((o) => !o)}
+					aria-expanded={open}
+					aria-controls={`${id}-panel`}
+					className="flex w-full items-center gap-2 px-4 py-3 text-left transition-colors duration-150 ease-out hover:bg-admin-accent-soft/40"
+				>
+					<ChevronRight
+						aria-hidden="true"
+						className={`size-4 shrink-0 text-admin-ink-muted transition-transform duration-200 ease-out ${open ? "rotate-90" : ""}`}
+					/>
+					<span className="flex-1 text-base font-semibold text-admin-ink">
+						{title}
+					</span>
+				</button>
+			</h2>
+			<div id={`${id}-panel`} hidden={!open} className="px-4 pb-4">
+				{description && (
+					<p className="mb-3 text-[13px] text-admin-ink-muted">{description}</p>
+				)}
+				{children}
+			</div>
+		</section>
+	);
+}
+
+/** The studio's own shape while it loads, so the two panes do not arrive as a jump. */
+export function StudioSkeleton({
+	label = "Loading the page…",
+}: {
+	label?: string;
+}) {
+	return (
+		<div className="flex flex-col bg-admin-bg xl:h-[calc(100dvh-4rem)] xl:flex-row">
+			<output className="sr-only">{label}</output>
+			<aside className="w-full shrink-0 space-y-4 border-b border-admin-border bg-admin-panel p-4 xl:w-[420px] xl:border-b-0">
+				<Skeleton className="h-6 w-40" />
+				<Skeleton className="h-16 w-full" />
+				<Skeleton className="h-16 w-full" />
+				<Skeleton className="h-10 w-32" />
+			</aside>
+			<div className="flex-1 p-6">
+				<Skeleton className="h-32 w-full" />
+			</div>
+		</div>
+	);
+}
 
 export function PageForm({
 	initial,
@@ -246,12 +326,9 @@ export function PageForm({
 		document.body.style.userSelect = "none";
 	}
 
-	const panelHead = "font-display text-sm font-semibold text-primary";
-	const panelSub = "mt-0.5 text-xs text-muted-foreground";
-
 	// not a <form>: the preview can hold real <form> sections and React 19 errors on nesting
 	return (
-		<div className="flex flex-col xl:h-[calc(100dvh-4rem)] xl:flex-row">
+		<div className="flex flex-col bg-admin-bg xl:h-[calc(100dvh-4rem)] xl:flex-row">
 			{/* the design gives this editor no title bar, so the h1 is for AT only */}
 			<h1 className="sr-only">{title ?? "Page"}</h1>
 			{/* Page-owned titlebar content (rendered into the admin topbar slot). */}
@@ -259,35 +336,70 @@ export function PageForm({
 				<PageSwitcher />
 			</AdminHeader>
 
-			{/* Tools panel (resizable) */}
+			{/* Inspector: four jobs, one open at a time, its own save footer */}
 			<aside
-				className="flex flex-col border-b border-border bg-card xl:shrink-0 xl:border-b-0 xl:overflow-y-auto thin-scroll"
+				className="flex min-h-0 flex-col border-b border-admin-border bg-admin-panel xl:shrink-0 xl:border-b-0"
 				style={isWide ? { width: panelW } : undefined}
 			>
-				<div data-tour="page-sections" className="border-b border-border p-4">
-					<h2 className={panelHead}>Page sections</h2>
-					<p className={`${panelSub} mb-3`}>
-						Compose the page from sections (static + data-driven).
-					</p>
-					<SectionsBuilder
-						value={sections}
-						onChange={setSections}
-						languages={languages}
-					/>
+				{/* the studio's header: whether this page is on the site is the one thing
+				    that must never be scrolled past */}
+				<div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-admin-border px-4 py-3">
+					<span className="text-[13px] font-medium text-admin-ink-muted">
+						Status
+					</span>
+					<Select
+						value={status}
+						onValueChange={(v) => setStatus(v as PageStatus)}
+					>
+						<SelectTrigger size="sm" aria-label="Status" className="w-36">
+							<span
+								aria-hidden="true"
+								className={`size-2 shrink-0 rounded-full ${status === "published" ? "bg-admin-live" : "bg-admin-draft"}`}
+							/>
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="draft">Draft</SelectItem>
+							<SelectItem value="published">Published</SelectItem>
+						</SelectContent>
+					</Select>
+					<span className="text-[13px] text-admin-ink-muted">
+						{status === "published"
+							? "On the site."
+							: "Off the site until published."}
+					</span>
 				</div>
+				<div className="min-h-0 flex-1 xl:overflow-y-auto thin-scroll">
+					<InspectorGroup
+						id="page-sections"
+						data-tour="page-sections"
+						title="Page sections"
+						description="A page is a stack of sections, rendered in this order."
+						defaultOpen
+					>
+						<SectionsBuilder
+							value={sections}
+							onChange={setSections}
+							languages={languages}
+						/>
+					</InspectorGroup>
 
-				<div className="border-b border-border p-4">
-					<h2 className={panelHead}>Metadata</h2>
-					<p className={`${panelSub} mb-3`}>
-						Title, brief and cover power SEO and the menu card.
-					</p>
-					<div className="space-y-4">
+					<InspectorGroup
+						id="page-metadata"
+						title="Metadata"
+						description="Title, brief and cover power SEO and the menu card."
+					>
 						<LangTabs languages={languages}>
 							{(l) => (
-								<div className="space-y-2">
-									<label className="block">
-										<span className={fieldLabel}>Title</span>
-										<input
+								<div className="space-y-3">
+									<label
+										className={fieldLabel}
+										htmlFor={`page-title-${l.code}`}
+									>
+										Title
+									</label>
+									<div>
+										<Input
 											ref={(el) => {
 												titleRefs.current[l.code] = el;
 											}}
@@ -299,25 +411,31 @@ export function PageForm({
 													? `page-title-error-${l.code}`
 													: undefined
 											}
-											className={`${fieldInput} ${titleInvalid(l.code) ? "border-destructive" : ""} ${l.code === "km" ? "font-khmer" : ""}`}
+											className={l.code === "km" ? "font-khmer" : undefined}
 											value={trans[l.code]?.title ?? ""}
 											onChange={(e) =>
 												setField(l.code, "title", e.target.value)
 											}
 										/>
-									</label>
+									</div>
 									{titleInvalid(l.code) && fieldError && (
 										<p
 											id={`page-title-error-${l.code}`}
-											className="text-xs font-medium text-destructive"
+											className="text-[13px] font-medium text-admin-danger"
 										>
 											{fieldError.text}
 										</p>
 									)}
-									<label className="block">
-										<span className={fieldLabel}>Brief</span>
-										<textarea
-											className={`${fieldInput} resize-y ${l.code === "km" ? "font-khmer" : ""}`}
+									<label
+										className={fieldLabel}
+										htmlFor={`page-excerpt-${l.code}`}
+									>
+										Brief
+									</label>
+									<div>
+										<Textarea
+											id={`page-excerpt-${l.code}`}
+											className={`resize-y ${l.code === "km" ? "font-khmer" : ""}`}
 											rows={2}
 											placeholder="Shown on menu cards and used for SEO."
 											value={trans[l.code]?.excerpt ?? ""}
@@ -325,97 +443,136 @@ export function PageForm({
 												setField(l.code, "excerpt", e.target.value)
 											}
 										/>
-									</label>
+									</div>
 								</div>
 							)}
 						</LangTabs>
-					</div>
+					</InspectorGroup>
+
+					<InspectorGroup
+						id="page-settings"
+						data-tour="page-settings"
+						title="Page settings"
+						description="Where the page sits, and the address it answers on."
+					>
+						<div className="space-y-4">
+							<div>
+								<label className={fieldLabel} htmlFor="page-parent">
+									Parent page
+								</label>
+								<SearchableSelect
+									id="page-parent"
+									value={parentId != null ? String(parentId) : ""}
+									onChange={(v) => setParentId(v ? Number(v) : null)}
+									emptyOption="Top level"
+									placeholder="Top level"
+									options={parentOptions.map((p) => ({
+										value: String(p.id),
+										label: `${p.slug} — ${optionLabel(p.title)}`,
+									}))}
+								/>
+							</div>
+							<div>
+								<label className={fieldLabel} htmlFor="page-segment">
+									URL segment
+								</label>
+								<div>
+									<Input
+										ref={segmentRef}
+										id="page-segment"
+										aria-invalid={segmentInvalid || undefined}
+										aria-describedby={
+											segmentInvalid
+												? "page-segment-error page-segment-url"
+												: "page-segment-url"
+										}
+										value={segment}
+										onChange={(e) => {
+											setSegment(e.target.value);
+											if (segmentInvalid) setFieldError(null);
+										}}
+										placeholder="about"
+										required
+									/>
+								</div>
+								{segmentInvalid && fieldError && (
+									<p
+										id="page-segment-error"
+										className="mt-1 text-[13px] font-medium text-admin-danger"
+									>
+										{fieldError.text}
+									</p>
+								)}
+								<p
+									id="page-segment-url"
+									className="mt-1 text-[13px] text-admin-ink-muted"
+								>
+									URL:{" "}
+									<span className="font-mono text-admin-ink">{fullPath}</span>
+								</p>
+							</div>
+						</div>
+					</InspectorGroup>
+
+					<InspectorGroup
+						id="page-cover"
+						title="Cover image"
+						description="Page hero, menu card and social image."
+					>
+						<MediaPicker
+							value={coverMediaId != null ? String(coverMediaId) : ""}
+							onChange={(v) => setCoverMediaId(v ? Number(v) : null)}
+							mode="id"
+							kind="image"
+							aspect="video"
+						/>
+					</InspectorGroup>
 				</div>
 
-				<div className="border-b border-border p-4">
-					<h2 className={panelHead}>Page settings</h2>
-					<div className="mt-3 space-y-3">
-						<label className="block">
-							<span className={fieldLabel}>Parent page</span>
-							<select
-								className={fieldInput}
-								value={parentId ?? ""}
-								onChange={(e) =>
-									setParentId(e.target.value ? Number(e.target.value) : null)
-								}
-							>
-								<option value="">— Top level</option>
-								{parentOptions.map((p) => (
-									<option key={p.id} value={p.id}>
-										{p.slug} — {optionLabel(p.title)}
-									</option>
-								))}
-							</select>
-						</label>
-						<div>
-							<label className="block">
-								<span className={fieldLabel}>URL segment</span>
-								<input
-									ref={segmentRef}
-									id="page-segment"
-									className={`${fieldInput} ${segmentInvalid ? "border-destructive" : ""}`}
-									aria-invalid={segmentInvalid || undefined}
-									aria-describedby={
-										segmentInvalid
-											? "page-segment-error page-segment-url"
-											: "page-segment-url"
-									}
-									value={segment}
-									onChange={(e) => {
-										setSegment(e.target.value);
-										if (segmentInvalid) setFieldError(null);
-									}}
-									placeholder="about"
-									required
-								/>
-							</label>
-							{segmentInvalid && fieldError && (
-								<p
-									id="page-segment-error"
-									className="mt-1 text-xs font-medium text-destructive"
+				{/* The save acts on this pane, so it lives at the foot of it */}
+				<div className="shrink-0 border-t border-admin-border bg-admin-panel">
+					{error && (
+						<div
+							role="alert"
+							className="border-b border-admin-danger/40 bg-admin-danger-soft px-4 py-3"
+						>
+							<p className="text-sm text-admin-danger">{error}</p>
+							{onReload && (
+								<Button
+									variant="secondary"
+									size="sm"
+									className="mt-2"
+									onClick={onReload}
 								>
-									{fieldError.text}
-								</p>
+									Reload the saved version
+								</Button>
 							)}
-							<p
-								id="page-segment-url"
-								className="mt-1 text-[11px] text-muted-foreground"
-							>
-								URL:{" "}
-								<span className="font-mono text-foreground/80">{fullPath}</span>
+							<p className="mt-2 text-[13px] text-admin-ink-muted">
+								{onReload
+									? "Your draft is still on screen. Reloading replaces it with what is stored."
+									: "Nothing you have typed has been lost."}
 							</p>
 						</div>
-						<label className="block">
-							<span className={fieldLabel}>Status</span>
-							<select
-								className={fieldInput}
-								value={status}
-								onChange={(e) => setStatus(e.target.value as PageStatus)}
+					)}
+					<div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+						{/* the save used to finish in silence, the button re-disabling its only cue */}
+						<output className="text-[13px] text-admin-live">
+							{savedAt ? `Saved ${savedAt}` : ""}
+						</output>
+						<div className="ml-auto flex items-center gap-2">
+							<Button variant="secondary" asChild>
+								<Link to="/admin/pages">Cancel</Link>
+							</Button>
+							<Button
+								data-tour="page-save"
+								onClick={() => submit()}
+								disabled={saving || !dirty}
+								disabledReason={dirty ? undefined : "No changes to save."}
 							>
-								<option value="draft">Draft</option>
-								<option value="published">Published</option>
-							</select>
-						</label>
+								{saving ? "Saving…" : "Save page"}
+							</Button>
+						</div>
 					</div>
-				</div>
-
-				<div className="p-4">
-					<h2 className={panelHead}>Cover image</h2>
-					<p className={`${panelSub} mb-3`}>
-						Page hero, menu card and social/SEO image.
-					</p>
-					<MediaPicker
-						value={coverMediaId != null ? String(coverMediaId) : ""}
-						onChange={(v) => setCoverMediaId(v ? Number(v) : null)}
-						mode="id"
-						kind="image"
-						aspect="video"
-					/>
 				</div>
 			</aside>
 
@@ -431,75 +588,23 @@ export function PageForm({
 				tabIndex={0}
 				onMouseDown={startResize}
 				onKeyDown={nudgeResize}
-				className="relative hidden w-px shrink-0 cursor-col-resize bg-border transition-colors hover:bg-[var(--accent)]/50 focus-visible:bg-[var(--accent)] focus-visible:outline-none xl:block"
+				className="relative hidden w-px shrink-0 cursor-col-resize bg-admin-border transition-colors duration-150 ease-out hover:bg-admin-accent/50 focus-visible:bg-admin-accent focus-visible:outline-none xl:block"
 			>
-				<span className="absolute left-1/2 top-1/2 z-10 grid h-11 w-5 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]">
-					<svg
-						aria-hidden="true"
-						className="h-4 w-4"
-						viewBox="0 0 16 16"
-						fill="currentColor"
-					>
-						<circle cx="6" cy="4" r="1" />
-						<circle cx="10" cy="4" r="1" />
-						<circle cx="6" cy="8" r="1" />
-						<circle cx="10" cy="8" r="1" />
-						<circle cx="6" cy="12" r="1" />
-						<circle cx="10" cy="12" r="1" />
-					</svg>
+				<span className="absolute left-1/2 top-1/2 z-10 grid h-11 w-5 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-admin-border bg-admin-panel text-admin-ink-muted shadow-[var(--shadow-soft)] transition-colors duration-150 ease-out hover:border-admin-accent hover:text-admin-accent">
+					<GripVertical aria-hidden="true" className="size-4" />
 				</span>
 			</div>
 
 			{/* Preview canvas */}
-			<div className="flex min-h-0 min-w-0 flex-1 flex-col bg-muted/40">
-				<div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border bg-card px-4 py-2">
-					<span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-						Live preview{" "}
-						<span className="ml-1.5 font-normal normal-case text-[11px] text-muted-foreground/70">
-							English · approximate
-						</span>
+			<div className="flex min-h-0 min-w-0 flex-1 flex-col bg-admin-bg">
+				<div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-admin-border bg-admin-panel px-4 py-3">
+					<span className="text-base font-semibold text-admin-ink">
+						Live preview
 					</span>
-					<div className="flex items-center gap-2">
-						{/* the save used to finish in silence, the button re-disabling its only cue */}
-						<output className="text-xs text-[var(--palm)]">
-							{savedAt ? `Saved ${savedAt}` : ""}
-						</output>
-						<Link to="/admin/pages" className={cancelButtonClass}>
-							Cancel
-						</Link>
-						<button
-							type="button"
-							data-tour="page-save"
-							onClick={() => submit()}
-							disabled={saving || !dirty}
-							className="rounded-full bg-primary text-primary-foreground px-5 py-1.5 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition"
-						>
-							{saving ? "Saving…" : "Save page"}
-						</button>
-					</div>
+					<span className="text-[13px] text-admin-ink-muted">
+						English · approximate
+					</span>
 				</div>
-				{error && (
-					<div
-						role="alert"
-						className="flex shrink-0 flex-wrap items-center gap-3 border-b border-destructive/40 bg-destructive/5 px-4 py-2.5"
-					>
-						<p className="text-sm text-destructive">{error}</p>
-						{onReload && (
-							<button
-								type="button"
-								onClick={onReload}
-								className="rounded-full border border-border bg-card px-4 py-1 text-xs font-semibold hover:bg-muted transition"
-							>
-								Reload the saved version
-							</button>
-						)}
-						<p className="text-xs text-muted-foreground">
-							{onReload
-								? "Your draft is still on screen. Reloading replaces it with what is stored."
-								: "Nothing you have typed has been lost."}
-						</p>
-					</div>
-				)}
 				<div className="min-h-0 flex-1 overflow-y-auto thin-scroll">
 					<div className="bg-background">
 						<PagePreview sections={sections} />

@@ -1,7 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
-import { PageForm, type PageFormValue } from "#/components/admin/PageForm";
+import {
+	PageForm,
+	type PageFormValue,
+	StudioSkeleton,
+} from "#/components/admin/PageForm";
 import type { LangOpt } from "#/components/admin/PostForm";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { saveErrorMessage } from "#/lib/save-error";
@@ -37,8 +41,7 @@ function NewPage() {
 		}
 	}
 
-	if (!langs.length)
-		return <p className="text-sm text-muted-foreground">Loading…</p>;
+	if (!langs.length) return <StudioSkeleton label="Loading the editor…" />;
 
 	return (
 		<PageForm
