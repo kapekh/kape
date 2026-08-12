@@ -69,8 +69,12 @@ install has switched on under Modules. A short sidebar is normal.
 - Your initials open the account panel: your details, the theme toggle and sign out.
 
 **Tour** walks you through whatever screen you are on, pointing at each control in turn.
-It runs by itself the first time you open the admin and the first time you open the media library,
-and it is there whenever you want it again. Escape ends it.
+Every screen in the sidebar has its own, and so do the editors, the page builder and the form
+builder, so press it anywhere you are not sure.
+It runs by itself the first time you open the admin and the first time you open the media library.
+
+`N` moves to the next step and `P` back to the previous one. **End tour** leaves at any step, and so
+does Escape.
 
 ### Finding things
 

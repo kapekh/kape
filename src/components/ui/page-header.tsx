@@ -70,13 +70,21 @@ function PageHeader({
 					)}
 				</div>
 				{actions && (
-					<div className="flex shrink-0 flex-wrap items-center gap-2">
+					<div
+						data-slot="page-actions"
+						className="flex shrink-0 flex-wrap items-center gap-2"
+					>
 						{actions}
 					</div>
 				)}
 			</div>
 			{toolbar && (
-				<div className="flex flex-wrap items-center gap-3">{toolbar}</div>
+				<div
+					data-slot="page-toolbar"
+					className="flex flex-wrap items-center gap-3"
+				>
+					{toolbar}
+				</div>
 			)}
 		</header>
 	);

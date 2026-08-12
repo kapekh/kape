@@ -34,10 +34,10 @@ describe("admin tours", () => {
 		// the card drifts to the middle of the screen still describing a control.
 		for (const [id, tour] of Object.entries(TOURS))
 			for (const step of tour.steps)
-				if (step.target)
+				for (const target of [step.target ?? []].flat())
 					expect(
-						() => document.querySelector(step.target as string),
-						`${id}: ${step.target}`,
+						() => document.querySelector(target),
+						`${id}: ${target}`,
 					).not.toThrow();
 	});
 
@@ -45,8 +45,64 @@ describe("admin tours", () => {
 		expect(tourForPath("/admin/media")).toBe("media");
 		expect(tourForPath("/admin/settings")).toBe("settings");
 		expect(tourForPath("/admin/modules")).toBe("modules");
-		expect(tourForPath("/admin/pages")).toBe("shell");
-		expect(tourForPath("/admin")).toBe("shell");
+		expect(tourForPath("/admin")).toBe("dashboard");
+		// a list and its editor are different screens
+		expect(tourForPath("/admin/pages")).toBe("pages");
+		expect(tourForPath("/admin/pages/12")).toBe("pageBuilder");
+		expect(tourForPath("/admin/posts")).toBe("posts");
+		expect(tourForPath("/admin/posts/new")).toBe("editor");
+		expect(tourForPath("/admin/forms")).toBe("forms");
+		expect(tourForPath("/admin/forms/3")).toBe("formBuilder");
+		expect(tourForPath("/admin/forms/3/submissions")).toBe("formResponses");
+		expect(tourForPath("/admin/roles")).toBe("roles");
+		expect(tourForPath("/admin/roles/2")).toBe("roleEditor");
+		expect(tourForPath("/admin/campaigns")).toBe("campaigns");
+		expect(tourForPath("/admin/campaigns/4")).toBe("editor");
+		expect(tourForPath("/admin/campaigns/4/donations")).toBe(
+			"campaignDonations",
+		);
+		// the four term lists are one screen wearing four titles
+		expect(tourForPath("/admin/locations")).toBe("terms");
+		expect(tourForPath("/admin/partner-categories")).toBe("terms");
+		// partner-categories must not be read as the partners list
+		expect(tourForPath("/admin/partners")).toBe("partners");
+		expect(tourForPath("/admin/unknown-screen")).toBe("shell");
+	});
+
+	it("gives every admin screen in the sidebar a tour of its own", () => {
+		// the sidebar's own list, so a screen added there without a tour fails here
+		const screens = [
+			"/admin",
+			"/admin/messages",
+			"/admin/forms",
+			"/admin/pages",
+			"/admin/projects",
+			"/admin/media",
+			"/admin/posts",
+			"/admin/campaigns",
+			"/admin/donations",
+			"/admin/schools",
+			"/admin/people",
+			"/admin/partners",
+			"/admin/donors",
+			"/admin/offices",
+			"/admin/nav",
+			"/admin/footer",
+			"/admin/org-chart",
+			"/admin/languages",
+			"/admin/ui-strings",
+			"/admin/users",
+			"/admin/roles",
+			"/admin/settings",
+			"/admin/modules",
+			"/admin/locations",
+			"/admin/publication-categories",
+			"/admin/doc-categories",
+			"/admin/partner-categories",
+			"/admin/account",
+		];
+		for (const path of screens)
+			expect(tourForPath(path), path).not.toBe("shell");
 	});
 
 	it("runs a tour once and never again", () => {
@@ -59,6 +115,32 @@ describe("admin tours", () => {
 		expect(screen.queryByRole("dialog")).toBeNull();
 
 		act(() => startTourOnce("shell"));
+		expect(screen.queryByRole("dialog")).toBeNull();
+	});
+
+	it("walks the steps with N and P", () => {
+		render(<TourHost />);
+		act(() => startTourOnce("shell"));
+		const steps = TOURS.shell.steps;
+		const shown = () => screen.getByRole("dialog").textContent ?? "";
+		const press = (key: string) =>
+			act(() => {
+				document.dispatchEvent(new KeyboardEvent("keydown", { key }));
+			});
+
+		expect(shown()).toContain(steps[0].title);
+		press("n");
+		expect(shown()).toContain(steps[1].title);
+		press("P");
+		expect(shown()).toContain(steps[0].title);
+		// nothing before the first step
+		press("p");
+		expect(shown()).toContain(steps[0].title);
+
+		for (let i = 1; i < steps.length; i++) press("n");
+		expect(shown()).toContain(steps[steps.length - 1].title);
+		// N on the last step ends the tour rather than sticking
+		press("n");
 		expect(screen.queryByRole("dialog")).toBeNull();
 	});
 

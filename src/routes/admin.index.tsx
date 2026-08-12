@@ -230,7 +230,11 @@ function NeedsAttention({
 	const settled = posts !== null && !!o && !waiting;
 
 	return (
-		<Card padding="lg" tone={waiting ? "warning" : "neutral"}>
+		<Card
+			padding="lg"
+			tone={waiting ? "warning" : "neutral"}
+			data-tour="dash-attention"
+		>
 			<h2 className="text-base font-semibold text-admin-ink">
 				Needs attention
 			</h2>
@@ -319,7 +323,7 @@ function Traffic({
 	const ticks = top % 2 === 0 ? [top, top / 2, 0] : [top, 0];
 
 	return (
-		<Card padding="lg">
+		<Card padding="lg" data-tour="dash-traffic">
 			<figure className="m-0">
 				<figcaption className="flex flex-wrap items-baseline justify-between gap-3">
 					<h2 className="text-base font-semibold text-admin-ink">

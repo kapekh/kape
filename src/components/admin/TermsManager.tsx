@@ -116,38 +116,40 @@ export function TermsManager({
 			/>
 
 			<div className="space-y-6">
-				<FormSection
-					title="Add item"
-					description="The key is what gets stored. The label is what people read."
-				>
-					<div className="flex flex-wrap items-end gap-3">
-						<label className="block">
-							<span className={fieldLabel}>Key</span>
-							<input
-								className={`${fieldInput} w-48 font-mono`}
-								placeholder="annual-report"
-								value={add.key}
-								onChange={(e) => setAdd({ ...add, key: e.target.value })}
-								onKeyDown={(e) => e.key === "Enter" && create()}
-							/>
-						</label>
-						<div className="min-w-[200px] flex-1">
+				<div data-tour="terms-add">
+					<FormSection
+						title="Add item"
+						description="The key is what gets stored. The label is what people read."
+					>
+						<div className="flex flex-wrap items-end gap-3">
 							<label className="block">
-								<span className={fieldLabel}>Label</span>
+								<span className={fieldLabel}>Key</span>
 								<input
-									className={fieldInput}
-									placeholder="Annual Report"
-									value={add.label}
-									onChange={(e) => setAdd({ ...add, label: e.target.value })}
+									className={`${fieldInput} w-48 font-mono`}
+									placeholder="annual-report"
+									value={add.key}
+									onChange={(e) => setAdd({ ...add, key: e.target.value })}
 									onKeyDown={(e) => e.key === "Enter" && create()}
 								/>
 							</label>
+							<div className="min-w-[200px] flex-1">
+								<label className="block">
+									<span className={fieldLabel}>Label</span>
+									<input
+										className={fieldInput}
+										placeholder="Annual Report"
+										value={add.label}
+										onChange={(e) => setAdd({ ...add, label: e.target.value })}
+										onKeyDown={(e) => e.key === "Enter" && create()}
+									/>
+								</label>
+							</div>
+							<Button type="button" onClick={create} disabled={busy === "add"}>
+								{busy === "add" ? "Adding…" : "Add"}
+							</Button>
 						</div>
-						<Button type="button" onClick={create} disabled={busy === "add"}>
-							{busy === "add" ? "Adding…" : "Add"}
-						</Button>
-					</div>
-				</FormSection>
+					</FormSection>
+				</div>
 
 				{state !== "ready" ? (
 					<ListStatus state={state} error={error} onRetry={reload} />

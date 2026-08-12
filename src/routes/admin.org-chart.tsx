@@ -5,8 +5,8 @@ import { fieldInput, fieldLabel } from "#/components/admin/form-ui";
 import { OrgCanvas, type OrgRow } from "#/components/admin/OrgCanvas";
 import { SearchableSelect } from "#/components/admin/SearchableSelect";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
-import { useModalPanel } from "#/lib/use-modal-panel";
 import { saveErrorMessage } from "#/lib/save-error";
+import { useModalPanel } from "#/lib/use-modal-panel";
 import { confirm, toast } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/org-chart")({
@@ -287,6 +287,7 @@ function OrgChartAdmin() {
 				</div>
 				<button
 					type="button"
+					data-tour="org-add"
 					onClick={() => {
 						setAdding(null);
 						setEditing(null);
@@ -302,7 +303,10 @@ function OrgChartAdmin() {
 					Loading…
 				</div>
 			) : rows.length === 0 ? (
-				<div className="grid h-[640px] place-items-center rounded-2xl border border-dashed border-border bg-muted/20 text-center text-sm text-muted-foreground">
+				<div
+					data-tour="org-canvas"
+					className="grid h-[640px] place-items-center rounded-2xl border border-dashed border-border bg-muted/20 text-center text-sm text-muted-foreground"
+				>
 					<div>
 						No one in the chart yet.
 						<br />

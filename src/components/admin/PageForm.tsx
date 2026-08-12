@@ -264,7 +264,7 @@ export function PageForm({
 				className="flex flex-col border-b border-border bg-card xl:shrink-0 xl:border-b-0 xl:overflow-y-auto thin-scroll"
 				style={isWide ? { width: panelW } : undefined}
 			>
-				<div className="border-b border-border p-4">
+				<div data-tour="page-sections" className="border-b border-border p-4">
 					<h2 className={panelHead}>Page sections</h2>
 					<p className={`${panelSub} mb-3`}>
 						Compose the page from sections (static + data-driven).
@@ -469,6 +469,7 @@ export function PageForm({
 						</Link>
 						<button
 							type="button"
+							data-tour="page-save"
 							onClick={() => submit()}
 							disabled={saving || !dirty}
 							className="rounded-full bg-primary text-primary-foreground px-5 py-1.5 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition"

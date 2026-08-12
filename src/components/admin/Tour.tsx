@@ -1,4 +1,3 @@
-import { X } from "lucide-react";
 import {
 	useCallback,
 	useEffect,
@@ -9,7 +8,7 @@ import {
 
 import { Button } from "#/components/ui/button.tsx";
 import { useModalPanel } from "#/lib/use-modal-panel";
-import { type TourId, TOURS } from "./tours";
+import { TOURS, type TourId } from "./tours";
 
 const SEEN = "admin-tour-seen:";
 const PAD = 6;
@@ -82,12 +81,35 @@ function TourRun({ id }: { id: TourId }) {
 
 	const panelRef = useModalPanel(end, true);
 
+	const last = i === tour.steps.length - 1;
+	useEffect(() => {
+		const onKey = (e: KeyboardEvent) => {
+			if (e.metaKey || e.ctrlKey || e.altKey) return;
+			const k = e.key.toLowerCase();
+			if (k !== "n" && k !== "p") return;
+			e.preventDefault();
+			if (k === "p") {
+				setI((n) => Math.max(0, n - 1));
+				return;
+			}
+			if (last) end();
+			else setI((n) => n + 1);
+		};
+		document.addEventListener("keydown", onKey);
+		return () => document.removeEventListener("keydown", onKey);
+	}, [last, end]);
+
 	useLayoutEffect(() => {
 		if (!step.target) {
 			setBox(null);
 			return;
 		}
-		const el = document.querySelector<HTMLElement>(step.target);
+		const el = [step.target]
+			.flat()
+			.reduce<HTMLElement | null>(
+				(found, sel) => found ?? document.querySelector<HTMLElement>(sel),
+				null,
+			);
 		if (!el) {
 			setBox(null);
 			return;
@@ -138,7 +160,6 @@ function TourRun({ id }: { id: TourId }) {
 		return () => ro.disconnect();
 	}, [card]);
 
-	const last = i === tour.steps.length - 1;
 	const width = Math.min(CARD_W, window.innerWidth - 32);
 	const frame = box && {
 		top: box.top - PAD,
@@ -248,27 +269,23 @@ function TourRun({ id }: { id: TourId }) {
 				className="fixed z-[200] rounded-xl border border-admin-border bg-admin-panel-raised p-4 shadow-[var(--shadow-lift)] focus:outline-none"
 				style={cardStyle}
 			>
-				<div className="flex items-start justify-between gap-3">
-					<p id={headingId} className="text-base font-semibold text-admin-ink">
-						{step.title}
-					</p>
-					<Button
-						type="button"
-						size="icon"
-						variant="ghost"
-						aria-label="End tour"
-						onClick={end}
-						className="-mr-2 -mt-2 flex-none"
-					>
-						<X aria-hidden="true" />
-					</Button>
-				</div>
+				<p id={headingId} className="text-base font-semibold text-admin-ink">
+					{step.title}
+				</p>
 				<p className="mt-2 text-[13px] text-admin-ink-muted">{step.body}</p>
-				<div className="mt-4 flex items-center justify-between gap-3">
+				<div className="mt-4 flex flex-wrap items-center justify-between gap-3">
 					<p className="text-[13px] text-admin-ink-muted">
 						Step {i + 1} of {tour.steps.length}
+						<span className="block text-admin-ink-subtle">
+							N next, P back, Esc ends
+						</span>
 					</p>
 					<div className="flex items-center gap-2">
+						{!last && (
+							<Button type="button" size="sm" variant="ghost" onClick={end}>
+								End tour
+							</Button>
+						)}
 						{i > 0 && (
 							<Button
 								type="button"

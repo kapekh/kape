@@ -87,6 +87,7 @@ function Account() {
 
 			<form
 				onSubmit={submit}
+				data-tour="account-password"
 				className="mt-6 rounded-2xl border border-border bg-card overflow-hidden"
 			>
 				<div className="border-b border-border px-5 py-4">

@@ -124,64 +124,71 @@ function LanguagesAdmin() {
 				</p>
 			</div>
 
-			<FormSection
-				title="Add language"
-				description="ISO code plus the English and native names."
-			>
-				<div className="flex flex-wrap items-end gap-3">
-					<div className="w-20">
-						<label className="block">
-							<span className={fieldLabel}>Code</span>
+			<div data-tour="lang-add">
+				<FormSection
+					title="Add language"
+					description="ISO code plus the English and native names."
+				>
+					<div className="flex flex-wrap items-end gap-3">
+						<div className="w-20">
+							<label className="block">
+								<span className={fieldLabel}>Code</span>
+								<input
+									className={`${fieldInput} font-mono`}
+									placeholder="fr"
+									value={add.code}
+									onChange={(e) => setAdd({ ...add, code: e.target.value })}
+								/>
+							</label>
+						</div>
+						<div className="flex-1 min-w-[160px]">
+							<label className="block">
+								<span className={fieldLabel}>English name</span>
+								<input
+									className={fieldInput}
+									placeholder="French"
+									value={add.name}
+									onChange={(e) => setAdd({ ...add, name: e.target.value })}
+								/>
+							</label>
+						</div>
+						<div className="flex-1 min-w-[160px]">
+							<label className="block">
+								<span className={fieldLabel}>Native name</span>
+								<input
+									className={fieldInput}
+									placeholder="Français"
+									value={add.nativeName}
+									onChange={(e) =>
+										setAdd({ ...add, nativeName: e.target.value })
+									}
+								/>
+							</label>
+						</div>
+						<label className="flex items-center gap-1.5 text-sm pb-2">
 							<input
-								className={`${fieldInput} font-mono`}
-								placeholder="fr"
-								value={add.code}
-								onChange={(e) => setAdd({ ...add, code: e.target.value })}
-							/>
+								type="checkbox"
+								checked={add.rtl}
+								onChange={(e) => setAdd({ ...add, rtl: e.target.checked })}
+							/>{" "}
+							RTL
 						</label>
+						<button
+							type="button"
+							onClick={create}
+							disabled={busy === "add"}
+							className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition"
+						>
+							{busy === "add" ? "Adding…" : "Add"}
+						</button>
 					</div>
-					<div className="flex-1 min-w-[160px]">
-						<label className="block">
-							<span className={fieldLabel}>English name</span>
-							<input
-								className={fieldInput}
-								placeholder="French"
-								value={add.name}
-								onChange={(e) => setAdd({ ...add, name: e.target.value })}
-							/>
-						</label>
-					</div>
-					<div className="flex-1 min-w-[160px]">
-						<label className="block">
-							<span className={fieldLabel}>Native name</span>
-							<input
-								className={fieldInput}
-								placeholder="Français"
-								value={add.nativeName}
-								onChange={(e) => setAdd({ ...add, nativeName: e.target.value })}
-							/>
-						</label>
-					</div>
-					<label className="flex items-center gap-1.5 text-sm pb-2">
-						<input
-							type="checkbox"
-							checked={add.rtl}
-							onChange={(e) => setAdd({ ...add, rtl: e.target.checked })}
-						/>{" "}
-						RTL
-					</label>
-					<button
-						type="button"
-						onClick={create}
-						disabled={busy === "add"}
-						className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition"
-					>
-						{busy === "add" ? "Adding…" : "Add"}
-					</button>
-				</div>
-			</FormSection>
+				</FormSection>
+			</div>
 
-			<div className="overflow-hidden rounded-xl border border-border bg-card">
+			<div
+				data-tour="lang-table"
+				className="overflow-hidden rounded-xl border border-border bg-card"
+			>
 				<table className="w-full text-sm">
 					<thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
 						<tr>

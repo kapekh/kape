@@ -580,11 +580,14 @@ function NavBuilder() {
 				</p>
 			</div>
 
-			<div className="mb-8 max-w-4xl">
+			<div data-tour="nav-settings" className="mb-8 max-w-4xl">
 				<HeaderSettings />
 			</div>
 
-			<div className="flex items-center justify-between mb-2">
+			<div
+				data-tour="nav-menu"
+				className="flex items-center justify-between mb-2"
+			>
 				<h2 className="font-display text-lg font-semibold text-primary">
 					Menu
 				</h2>
