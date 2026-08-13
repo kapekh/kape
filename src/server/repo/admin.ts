@@ -15,8 +15,14 @@ import {
 } from "drizzle-orm";
 import type { SQLiteColumn, SQLiteTable } from "drizzle-orm/sqlite-core";
 
-import type { SectionNode } from "#/lib/sections";
-import { segmentProblem } from "#/lib/slug";
+import { DEFAULT_LANG } from "#/lib/i18n-config";
+import {
+	sectionDef,
+	type SectionField,
+	type SectionNode,
+	translatableFields,
+} from "#/lib/sections";
+import { PAGE_TITLE_MAX, segmentProblem } from "#/lib/slug";
 import type { DB } from "../db";
 import {
 	alumniRegistrations,
@@ -762,6 +768,371 @@ export async function updatePage(
 	const trs = pageTranslationRows(id, input);
 	if (trs.length) await db.insert(translations).values(trs);
 	return updatedAt;
+}
+
+/* ---------------- One field at a time ---------------- */
+
+export type FieldTarget =
+	| { kind: "field"; field: string }
+	| { kind: "sectionProp"; sectionId: string; field: string }
+	| {
+			kind: "sectionItem";
+			sectionId: string;
+			key: string;
+			index: number;
+			field: string;
+	  };
+
+const SECTION_ID = "[A-Za-z0-9_-]+";
+const NAME = "[A-Za-z][A-Za-z0-9_]*";
+const TARGET_FIELD = new RegExp(`^field:(${NAME})$`);
+const TARGET_PROP = new RegExp(`^section:(${SECTION_ID}):props\\.(${NAME})$`);
+const TARGET_ITEM = new RegExp(
+	`^section:(${SECTION_ID}):props\\.(${NAME})\\[(\\d+)\\]\\.(${NAME})$`,
+);
+
+// an address arrives from a data- attribute in the browser, so it is untrusted input
+export function parseFieldTarget(target: string): FieldTarget {
+	const item = TARGET_ITEM.exec(target);
+	if (item)
+		return {
+			kind: "sectionItem",
+			sectionId: item[1],
+			key: item[2],
+			index: Number(item[3]),
+			field: item[4],
+		};
+	const prop = TARGET_PROP.exec(target);
+	if (prop) return { kind: "sectionProp", sectionId: prop[1], field: prop[2] };
+	const field = TARGET_FIELD.exec(target);
+	if (field) return { kind: "field", field: field[1] };
+	throw new Error(
+		`"${target}" is not a field address. Expected field:<name>, section:<id>:props.<field> or section:<id>:props.<items>[<n>].<field>.`,
+	);
+}
+
+const ENTITY_TABLES = {
+	page: pages,
+	post: posts,
+	person: people,
+	project: projects,
+} as const;
+
+// people.name lives in name_en/name_km columns rather than a translations row, so it is not addressable here
+const ENTITY_FIELDS: Record<string, readonly string[]> = {
+	page: PAGE_FIELDS,
+	post: POST_FIELDS,
+	person: ["bio"],
+	project: ["name", "summary", "body"],
+};
+
+// projects carries no updated_at, so a compare-and-swap is impossible there
+const VERSIONED_TABLES = {
+	page: pages,
+	post: posts,
+	person: people,
+} as const;
+
+export type UpdateFieldInput = {
+	entity: string;
+	entityId: number;
+	lang: string;
+	target: string;
+	value: string;
+	/** The `updatedAt` the editor loaded. Absent skips the check. */
+	expectedUpdatedAt?: string | null;
+};
+
+export type UpdateFieldResult = {
+	/** A `translations` row, or a key inside the page's `sections` JSON. */
+	wrote: "translation" | "section";
+	/** Blank clears rather than storing an empty string, as the wholesale path does. */
+	cleared: boolean;
+	/** The new version to send with the next save; null where the table has none. */
+	updatedAt: string | null;
+};
+
+async function requireLanguage(db: DB, lang: string): Promise<void> {
+	const [row] = await db
+		.select({ code: languages.code })
+		.from(languages)
+		.where(eq(languages.code, lang))
+		.limit(1);
+	if (!row) throw new Error(`"${lang}" is not a language on this site.`);
+}
+
+/** Compare-and-swap on the version the editor loaded, as `updatePage` does. */
+async function stampVersion(
+	db: DB,
+	entity: string,
+	id: number,
+	expected: string | null | undefined,
+): Promise<string | null> {
+	const table = VERSIONED_TABLES[entity as keyof typeof VERSIONED_TABLES];
+	if (!table) {
+		if (expected)
+			throw new Error(
+				`A ${entity} has no version column, so this save cannot be checked against the copy you loaded.`,
+			);
+		return null;
+	}
+	const updatedAt = new Date().toISOString();
+	const written = await db
+		.update(table)
+		.set({ updatedAt })
+		.where(
+			and(
+				eq(table.tenantId, TENANT),
+				eq(table.id, id),
+				...(expected ? [eq(table.updatedAt, expected)] : []),
+			),
+		)
+		.returning({ id: table.id });
+	if (!written.length) throw new StaleWriteError();
+	return updatedAt;
+}
+
+const TEXT_KINDS = new Set(["text", "textarea", "richtext"]);
+// cards are edited by a bespoke editor rather than declared itemFields
+const CARD_TEXT_FIELDS = ["title", "body"];
+
+const textItemFields = (container: SectionField): string[] =>
+	container.kind === "cards"
+		? CARD_TEXT_FIELDS
+		: (container.itemFields ?? [])
+				.filter((f) => TEXT_KINDS.has(f.kind))
+				.map((f) => f.key);
+
+/**
+ * Write one key into the per-language overlay, mirroring `SectionsBuilder`'s
+ * `setI18n`: a blank value drops the key so the field falls back to the default
+ * language, and a map or overlay left empty goes with it.
+ */
+function setOverlay(
+	props: Record<string, unknown>,
+	lang: string,
+	key: string,
+	value: unknown,
+): Record<string, unknown> {
+	const i18n = {
+		...((props.i18n as Record<string, Record<string, unknown>>) ?? {}),
+	};
+	const map = { ...(i18n[lang] ?? {}) };
+	if (value === "" || value == null) delete map[key];
+	else map[key] = value;
+	if (Object.keys(map).length) i18n[lang] = map;
+	else delete i18n[lang];
+	const next = { ...props };
+	if (Object.keys(i18n).length) next.i18n = i18n;
+	else delete next.i18n;
+	return next;
+}
+
+function writeSectionProp(
+	node: SectionNode,
+	props: Record<string, unknown>,
+	target: Extract<FieldTarget, { kind: "sectionProp" }>,
+	lang: string,
+	value: string,
+): Record<string, unknown> {
+	const offered = translatableFields(node.type ?? "", props).map((f) => f.key);
+	if (!offered.includes(target.field))
+		throw new Error(
+			`"${target.field}" is not translatable text on a ${node.type} section. It offers ${offered.join(", ") || "none"}.`,
+		);
+	if (lang === DEFAULT_LANG) return { ...props, [target.field]: value };
+	return setOverlay(props, lang, target.field, value);
+}
+
+function writeSectionItem(
+	node: SectionNode,
+	props: Record<string, unknown>,
+	target: Extract<FieldTarget, { kind: "sectionItem" }>,
+	lang: string,
+	value: string,
+): Record<string, unknown> {
+	const container = sectionDef(node.type ?? "")?.fields.find(
+		(f) => f.key === target.key,
+	);
+	if (!container || (container.kind !== "items" && container.kind !== "cards"))
+		throw new Error(
+			`"${target.key}" is not a repeater on a ${node.type} section.`,
+		);
+	const offered = textItemFields(container);
+	if (!offered.includes(target.field))
+		throw new Error(
+			`"${target.field}" is not translatable text on a ${target.key} item. It offers ${offered.join(", ") || "none"}.`,
+		);
+	const shared = Array.isArray(props[target.key])
+		? (props[target.key] as Record<string, unknown>[])
+		: [];
+	// the overlay replaces the whole key, so a translated repeater is a full copy of the array
+	const overlay = (props.i18n as Record<string, Record<string, unknown>>)?.[
+		lang
+	]?.[target.key];
+	const base =
+		lang === DEFAULT_LANG || !Array.isArray(overlay)
+			? shared
+			: (overlay as Record<string, unknown>[]);
+	if (target.index >= base.length)
+		throw new Error(
+			`Item ${target.index} is past the end of "${target.key}", which has ${base.length}.`,
+		);
+	const items = base.map((it, n) => {
+		if (n !== target.index) return { ...it };
+		const next = { ...it };
+		if (value === "" && lang !== DEFAULT_LANG) delete next[target.field];
+		else next[target.field] = value;
+		return next;
+	});
+	if (lang === DEFAULT_LANG) return { ...props, [target.key]: items };
+	// an overlay that has drifted back to the shared array carries nothing, so it goes
+	const same = JSON.stringify(items) === JSON.stringify(shared);
+	return setOverlay(props, lang, target.key, same ? "" : items);
+}
+
+/** Apply one value to one section node, leaving every other node untouched. */
+export function applySectionValue(
+	sections: SectionNode[],
+	target: Exclude<FieldTarget, { kind: "field" }>,
+	lang: string,
+	value: string,
+): SectionNode[] {
+	const node = sections.find((s) => s?.id === target.sectionId);
+	if (!node)
+		throw new Error(`No section "${target.sectionId}" on this page.`);
+	const props = { ...(node.props ?? {}) };
+	const next =
+		target.kind === "sectionProp"
+			? writeSectionProp(node, props, target, lang, value)
+			: writeSectionItem(node, props, target, lang, value);
+	return sections.map((s) => (s === node ? { ...s, props: next } : s));
+}
+
+async function writeTranslationField(
+	db: DB,
+	input: UpdateFieldInput,
+	field: string,
+	value: string,
+): Promise<UpdateFieldResult> {
+	const offered = ENTITY_FIELDS[input.entity];
+	if (!offered.includes(field))
+		throw new Error(
+			`"${field}" is not a translated field of a ${input.entity}. It has ${offered.join(", ")}.`,
+		);
+	if (
+		input.entity === "page" &&
+		field === "title" &&
+		value.length > PAGE_TITLE_MAX
+	)
+		throw new Error(
+			`A page title is at most ${PAGE_TITLE_MAX} characters; this one is ${value.length}.`,
+		);
+	const updatedAt = await stampVersion(
+		db,
+		input.entity,
+		input.entityId,
+		input.expectedUpdatedAt,
+	);
+	const row = and(
+		eq(translations.entityType, input.entity),
+		eq(translations.entityId, input.entityId),
+		eq(translations.field, field),
+		eq(translations.lang, input.lang),
+	);
+	// the wholesale path stores no row for an empty value, so clearing removes it rather than blanking it
+	if (!value) {
+		await db.delete(translations).where(row);
+		return { wrote: "translation", cleared: true, updatedAt };
+	}
+	await db
+		.insert(translations)
+		.values({
+			tenantId: TENANT,
+			entityType: input.entity,
+			entityId: input.entityId,
+			field,
+			lang: input.lang,
+			value,
+		})
+		.onConflictDoUpdate({
+			target: [
+				translations.entityType,
+				translations.entityId,
+				translations.field,
+				translations.lang,
+			],
+			set: { value },
+		});
+	return { wrote: "translation", cleared: false, updatedAt };
+}
+
+async function writeSectionField(
+	db: DB,
+	input: UpdateFieldInput,
+	target: Exclude<FieldTarget, { kind: "field" }>,
+	value: string,
+): Promise<UpdateFieldResult> {
+	if (input.entity !== "page")
+		throw new Error(`Only a page carries sections; a ${input.entity} has none.`);
+	const [page] = await db
+		.select({ sections: pages.sections })
+		.from(pages)
+		.where(and(eq(pages.tenantId, TENANT), eq(pages.id, input.entityId)))
+		.limit(1);
+	const sections = applySectionValue(
+		(page?.sections ?? []) as SectionNode[],
+		target,
+		input.lang,
+		value,
+	);
+	// one statement, so the version check and the section write cannot come apart
+	const updatedAt = new Date().toISOString();
+	const written = await db
+		.update(pages)
+		.set({ sections, updatedAt })
+		.where(
+			and(
+				eq(pages.tenantId, TENANT),
+				eq(pages.id, input.entityId),
+				...(input.expectedUpdatedAt
+					? [eq(pages.updatedAt, input.expectedUpdatedAt)]
+					: []),
+			),
+		)
+		.returning({ id: pages.id });
+	if (!written.length) throw new StaleWriteError();
+	return { wrote: "section", cleared: !value, updatedAt };
+}
+
+/**
+ * Write one addressed field, touching nothing else.
+ *
+ * `updatePage` deletes every translation row for the page and reinserts from its
+ * payload, so an inline save through it destroys any language or field the
+ * payload left out. This path writes the one row, or the one key.
+ */
+export async function updateField(
+	db: DB,
+	input: UpdateFieldInput,
+): Promise<UpdateFieldResult> {
+	const target = parseFieldTarget(input.target);
+	const table = ENTITY_TABLES[input.entity as keyof typeof ENTITY_TABLES];
+	if (!table)
+		throw new Error(
+			`"${input.entity}" has no editable fields. Expected one of ${Object.keys(ENTITY_TABLES).join(", ")}.`,
+		);
+	await requireLanguage(db, input.lang);
+	const [row] = await db
+		.select({ id: table.id })
+		.from(table)
+		.where(and(eq(table.tenantId, TENANT), eq(table.id, input.entityId)))
+		.limit(1);
+	if (!row) throw new Error(`There is no ${input.entity} ${input.entityId}.`);
+	const value = input.value.trim();
+	return target.kind === "field"
+		? writeTranslationField(db, input, target.field, value)
+		: writeSectionField(db, input, target, value);
 }
 
 /** True if `candidateParentId` is `id` itself or one of its descendants. */
