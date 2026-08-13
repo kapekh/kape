@@ -242,3 +242,56 @@ km overlay keys: items,title
 ```
 
 Rithy's three rulings all hold on screen: publishes at once, writes the URL's language, and the affordance is behind a toggle that is off by default.
+
+## R4 - a page's own title, edited in place
+
+`/en/calendar/international-days`, admin, edit mode on. The page carries exactly two markers, `field:title` and `field:excerpt`, and the body carries none by the lead's ruling below.
+
+```
+box label: Title (English)   value: "International Days"
+typed:     "International Days (edited in place)"
+
+page 40 after the save
+  623|en|title|International Days (edited in place)   ← the only row that moved
+  624|km|title|ទិវាអន្តរជាតិ
+  625|en|excerpt|Global observances KAPE and its partners m
+  626|km|excerpt|ទិវាអន្តរជាតិដែលខេប និងដៃគូរបស់ខេប…
+  627|en|body|{"type":"doc","content":[{"type":"table",…
+  628|km|body|{"type":"doc","content":[{"type":"table",…
+total translations: 630 before and after
+```
+
+Restored afterwards.
+
+## R6 - the static build catches up
+
+Whole site built and prerendered from `uat.db`, then one title edited through the API:
+
+```
+Prerendered 150/150 pages → dist/static/
+
+Stale: 2 of 150 paths.
+  regenerate  /en/calendar/international-days  (content … > rendered …)
+  regenerate  /km/calendar/international-days  (content … > rendered …)
+Prerendered 2/2 pages → dist/static/
+
+new title in dist/static/en/calendar/international-days/index.html: 5 occurrences
+second run: Nothing stale — no file written.
+```
+
+An edit reaches the static build in two paths rather than 150, and a run with nothing to do writes nothing.
+
+## P12 - 390 and 1440
+
+`/en` at 390: `scrollWidth 375, clientWidth 375`, no horizontal overflow, one `h1`. The desktop pass is the 1440 screenshots each redesign job took.
+
+## Two findings from the sweep
+
+**A media row points at a file that is not there.** `media` id 96, `/uploads/fe08f054-…jpg`, is the cover of the story `yary-happy-cambodian-children`. Every load of that page fetches it and gets a 404. It is the only one of the 59 referenced files missing from `public/uploads` here. Nothing looks broken, because a SubPage hero sits behind the brand gradient at `-z-10` with an empty `alt`, so the fallback J14 added to `SectionRenderer` never applies and does not need to. Either restore the file or null the reference; both are data, not code, and this checkout may simply not carry every upload the server does.
+
+**The tour and the palette can both be open.** Recorded above under J15.
+
+## Lead rulings taken during UAT
+
+- **The page body is no longer offered for inline editing.** J07 shipped it working, and reported that the box hands an admin 19,000 characters of ProseMirror JSON and that a save which is not valid JSON renders as nothing, with no marked node left on screen to click again. Rich text belongs to the studio.
+- **J06's highlight rule is scoped to the record.** It matched by address alone, so opening a page title also lit every post title in a listing on the same page.
