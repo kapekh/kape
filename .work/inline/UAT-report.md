@@ -185,3 +185,20 @@ Enter             → /admin/donations
 The rail also carries a visible `Search the admin` control, so the shortcut is not the only way in.
 
 **One finding.** On a first visit the screen's own tour is open, and `Ctrl+K` opens the palette on top of it: **two `aria-modal` dialogs at once**. Neither traps the other. J15 reported the tour taking the keyboard; what actually happens is worse in accessibility terms and cheap to fix, by having the palette refuse to open while a tour is up. Logged, not fixed: it crosses two jobs' files.
+
+## P7 - donate
+
+With the client's data there are **no campaigns at all**, and `/en/donate` says so: `No active campaigns right now`, with a link to the about page. That is J14's empty state, correct rather than broken.
+
+To exercise the path itself, a campaign was created through the admin API, read on the public site, and deleted again:
+
+```
+adminCampaigns.create → id 1
+/en/donate            → "1 campaign", the card, ★ Featured
+/en/donate/uat-probe-campaign → presets $10/$25/$50, custom amount, name,
+                                email, message, supporters-wall choice,
+                                "♡ Donate $25", "Secured by Baray"
+adminCampaigns.delete → campaigns left: 0
+```
+
+No payment was submitted, so the provider leg is unverified by design.
