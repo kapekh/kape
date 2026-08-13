@@ -314,7 +314,8 @@ function ResolvedRoute() {
 		}
 		return null;
 	}, [r]);
-	const mark = useRecordMark(record);
+	// registers the record's version for the bar; this route marks nothing itself
+	useRecordMark(record);
 
 	if (r.kind === "page") {
 		const page = r.page;
@@ -417,8 +418,9 @@ function ResolvedRoute() {
 				leadField="excerpt"
 			>
 				{hasBody ? (
+					// rich text stays in the studio: the stored body is prosemirror json, and
+					// a save that is not valid json renders as nothing with no way back in
 					<div
-						{...mark("body")}
 						className="prose-body"
 						// biome-ignore lint/security/noDangerouslySetInnerHtml: trusted, server-rendered
 						dangerouslySetInnerHTML={{ __html: page.bodyHtml }}

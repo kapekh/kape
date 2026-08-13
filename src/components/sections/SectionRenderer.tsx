@@ -213,7 +213,8 @@ function EditLayer({
 	// selecting by the address avoids mutating nodes React owns
 	const selected =
 		target?.kind === "field" && /^[\w:.[\]-]+$/.test(target.target)
-			? `[data-cms-target="${target.target}"]{outline:2px solid var(--primary);outline-offset:2px;background:color-mix(in oklab, var(--primary) 12%, transparent)}`
+			? // scoped to this record: a listing row carries the same address for another one
+				`[data-cms-entity="${identity?.entity}"][data-cms-entity-id="${identity?.entityId}"][data-cms-target="${target.target}"]{outline:2px solid var(--primary);outline-offset:2px;background:color-mix(in oklab, var(--primary) 12%, transparent)}`
 			: "";
 	return (
 		<style>{`[data-cms-target^="section:"]{outline:1px dashed ${OUTLINE};outline-offset:2px;border-radius:2px;cursor:pointer}${selected}`}</style>

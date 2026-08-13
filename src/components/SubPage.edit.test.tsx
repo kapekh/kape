@@ -322,16 +322,17 @@ describe("editing a page's own text on the page it is printed on", () => {
 		);
 	});
 
-	it("edits the stored body, not the html on screen", async () => {
+	// the stored body is prosemirror json, and a save that is not valid json renders
+	// as nothing with no marked node left to click, so rich text stays in the studio
+	it("offers no box on the body", async () => {
 		signIn(["pages"]);
 		const record = page();
 		const { container } = await editing(record);
-		const node = clickField(container, record, "body");
 
-		expect(node.textContent).toBe("Global observances.");
-		const box = screen.getByRole("textbox") as HTMLTextAreaElement;
-		expect(box.tagName).toBe("TEXTAREA");
-		expect(box.value).toBe(BODY_SOURCE);
+		expect(record.fields.body).toBeUndefined();
+		expect(
+			container.querySelector('[data-cms-target="field:body"]'),
+		).toBeNull();
 	});
 
 	it("opens empty and quotes English where the field fell back", async () => {

@@ -28,16 +28,17 @@ export type PageRecord = {
 	updatedAt: string | null;
 };
 
-/** A page's own text, off the payload the route loader already fetched. */
+/** A page's own text, off the payload the route loader already fetched. No body: the
+ * stored source is prosemirror json, and rich text stays in the studio. */
 export const pageRecord = (
 	page: Pick<
 		ResolvedPage,
-		"id" | "title" | "excerpt" | "body" | "i18nFallback" | "updatedAt"
+		"id" | "title" | "excerpt" | "i18nFallback" | "updatedAt"
 	>,
 ): PageRecord => ({
 	entity: "page",
 	entityId: page.id,
-	fields: { title: page.title, excerpt: page.excerpt, body: page.body ?? "" },
+	fields: { title: page.title, excerpt: page.excerpt },
 	fallback: page.i18nFallback,
 	updatedAt: page.updatedAt,
 });
