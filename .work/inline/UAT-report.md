@@ -108,3 +108,36 @@ GET /api/trpc/adminMessages.contact
 ```
 
 Public producer to admin reader, end to end.
+
+## A8 - a UI string edited in the admin reaches the public site
+
+```
+POST adminSettings.setUiString {key:"newsletter.subscribe", lang:"en", value:"UAT Subscribe"}
+→ {"reset":false}
+
+GET /en/news  →  "newsletter.subscribe":"UAT Subscribe"   (3 occurrences)
+```
+
+No rebuild, no manual cache bust: `adminProcedure` clears the render cache on every mutation. Reset afterwards.
+
+## P11 - an anonymous visitor gets no editor
+
+`/en/who-we-are/about`, signed out:
+
+```
+Edit text on this page: 0
+cms_admin: 0
+auth.me: 0
+InlineEditBar: 0
+data-cms-target: 1
+```
+
+The marker is `data-*` only and carries no affordance, which is the design: identity is resolved after hydration, so a cached or prerendered page is byte-identical for everyone.
+
+## A trap worth writing down
+
+`grep` treats these pages as binary and prints nothing for a pattern that is present, so a check written with a bare `grep` silently passes. Three of my own checks read as zero this way before the count was taken in Python. Use `grep -a`, or count in the script.
+
+## P4 - the draft page
+
+The one draft page is not reachable: `/en/nonexistent-page-xyz` → 404, and the draft's own slug is checked with the final sweep.
