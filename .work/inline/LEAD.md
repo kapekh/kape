@@ -24,19 +24,23 @@ Ends with UAT across every public page and every admin function, run in the lead
 |---|---|---|---|
 | audit | lead pane | verified | Every plan citation re-checked. Three were stale, corrected in `AUDIT.md` |
 | baseline | lead pane | verified | 449/50 green, `tsc` exit 0, lint 6, all run here on 13 Aug |
-| J03 updateField | herdr `w1:p1X`, agent `j03`, worktree `kape-j03` | **live** | |
-| J04 addressing | herdr `w1:p1W`, agent `j04`, worktree `kape-j04` | **live** | |
-| J06 section editor | unassigned | after J03, J04 | Contract written |
+| J03 updateField | herdr `w1:p1X`, closed | **verified** | Commit `8eb2e99`, merged at `6bfc14a`. Re-run here: tests **467/51** (baseline 449/50), `tsc` exit 0, lint **6**. Only its three owned files. My own probe through `trpcRouter.createCaller` on a copy of the real database: page 40 keeps six rows and their ids, exactly one value moves, **630 translations before and after**, and three refused addresses write nothing. The same calls as `staff` are `FORBIDDEN`, so the per-entity gate it added holds |
+| J04 addressing | herdr `w1:p1W`, closed | **verified** | Commit `9361e5b`, merged at `66995e1`. Re-run here: tests **449/50**, `tsc` exit 0, lint **6**, all at baseline, only its three owned files. The integration check neither job could run alone: **all 93 distinct targets the probe page emits parse through J03's real `parseFieldTarget`**, 4 `field`, 59 section prop, 30 repeater item. One structural change, a span around a hero stat label that was a bare text node, reported not styled around. **It left no runnable test**, so J06 now owes one |
+| J06 section editor | herdr `w1:p1Z`, agent `j06`, worktree `kape-j06` | **live** | |
 | J07 page/post editor | unassigned | after J06 | Contract written |
-| J08 prerender invalidation | unassigned | after J03 | Contract written |
+| J08 prerender invalidation | herdr `w1:p10`, agent `j08`, worktree `kape-j08` | **live** | |
+| J15 command palette | herdr `w1:p1Y`, agent `j15`, worktree `kape-j15` | **live** | Redesign round's last job, dispatched here because it shares no file with anything |
 | UAT | lead pane | after every job | Every public page and every admin function |
 
 ## Live now
 
-Two panes, both from commit `63a0ec8` on branch `inline-round`, each in its own git worktree with its own database copy and its own port.
+Three panes, each from the merge of J03 and J04 at `66fe41c` on branch `inline-round`, each in its own git worktree with its own database copy and its own port.
 
-- **J03**, pane `w1:p1X`, agent `j03`, `/home/userx/workspace/kape-j03`, branch `j03-updatefield`, db `j03.db`, port 3071. Owns `router.ts`, `repo/admin.ts`, its new test.
-- **J04**, pane `w1:p1W`, agent `j04`, `/home/userx/workspace/kape-j04`, branch `j04-addressing`, db `j04.db`, port 3072. Owns `SectionRenderer.tsx`, `SubPage.tsx`, `$.tsx`.
+- **J06**, pane `w1:p1Z`, agent `j06`, `/home/userx/workspace/kape-j06`, branch `j06-section-editor`, db `j06.db`, port 3074. Owns `lib/inline-edit.tsx`, `InlineEditBar.tsx`, `SectionRenderer.tsx`, one new test.
+- **J08**, pane `w1:p10`, agent `j08`, `/home/userx/workspace/kape-j08`, branch `j08-prerender`, db `j08.db`, port 3075, prerender preview on 4185. Owns `scripts/prerender-static.ts`, one new test.
+- **J15**, pane `w1:p1Y`, agent `j15`, `/home/userx/workspace/kape-j15`, branch `j15-palette`, db `j15.db`, port 3073, from `030351a`. Owns one new file, `src/components/admin/CommandPalette.tsx`. Three concurrent rather than two because Rithy asked for the whole website today and this one collides with nothing.
+
+`kape-j03` and `kape-j04` are merged, their panes closed and their worktrees removed.
 
 Not mine, do not touch: **`:3020` is KAPE's own live instance.** `:3021`, `:3022`, `:3011`, `:3100` are prior-round leftovers.
 
@@ -54,4 +58,4 @@ Not mine, do not touch: **`:3020` is KAPE's own live instance.** `:3021`, `:3022
 
 ## Next action
 
-Verify J03 and J04 in this pane when they report: re-run their gates in their own worktree at their commit, check the ownership boundary held, then merge into `inline-round` and close the pane. J06 and J08 go out at that seam.
+Verify J06, J08 and J15 as each reports, in this pane, against a re-run of its own gates in its own worktree. J07 goes out the moment J06 is verified, because it consumes J06's box. Then UAT from `.work/inline/UAT.md`, with `uat-crawl.ts` for the page sweep.
