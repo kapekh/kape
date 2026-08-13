@@ -39,3 +39,72 @@ pages with zero markers: none
 ## Still to run
 
 Everything under Admin, the round's own features, and the public function checks P6 to P9 and P12, once J06, J07 and J08 are in.
+
+## A1 - every admin route loads
+
+`bun .work/inline/uat-admin.ts` walks the route files, substitutes a real id for every `$id`, and fetches each with a real session cookie.
+
+```
+50/50 admin routes
+```
+
+50 distinct paths from the 57 route files: `admin.tsx` is the layout and the `index` variants collapse onto their parent.
+
+The first run reported 0/50, all 307. That was the harness, not the site: `curl` writes the session cookie as `#HttpOnly_<domain>` and the parser was dropping every `#` line.
+
+## A2 - login and logout
+
+```
+admin login:    200
+staff login:    200
+wrong password: 401
+```
+
+## A7 - permissions
+
+Same sweep with the staff session:
+
+```
+ok   200 /admin
+1/50 admin routes
+```
+
+`/admin` is the shared landing every admin user may read; the other 49 redirect. The `staff` role holds zero areas on this install.
+
+And the API refuses, not just the router:
+
+```
+POST /api/trpc/adminPages.updateField (staff session)
+→ {"error":{"json":{"message":"FORBIDDEN","code":-32003,"data":{"code":"FORBIDDEN","httpStatus":403 ...
+```
+
+That is J03's own per-entity gate holding over real HTTP with a real cookie, not an in-process caller.
+
+## A3 - create, edit, delete through the real API
+
+`bun .work/inline/uat-crud.ts`, counted in SQL either side:
+
+```
+ok  page: 39 -> 40 -> 39 (id 43)
+ok  post: 26 -> 27 -> 26 (id 30)
+2/2 entities round-tripped
+```
+
+## P6 - the contact form
+
+Submitted anonymously to `/api/forms/contact`:
+
+```
+{"ok":true}  status 200
+contact_submissions: 1 row
+{"id":1,"name":"UAT Lead","email":"uat@example.com","message":"Checking the public contact path end to end."}
+```
+
+Read back through the admin inbox with the admin session:
+
+```
+GET /api/trpc/adminMessages.contact
+→ [{"id":1,"name":"UAT Lead","email":"uat@example.com","createdAt":"2026-08-13 02:41:57"}]
+```
+
+Public producer to admin reader, end to end.
