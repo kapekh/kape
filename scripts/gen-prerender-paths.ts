@@ -8,7 +8,7 @@
  */
 import { and, eq } from "drizzle-orm";
 
-import { COLLECTIONS } from "../src/lib/collections";
+import { COLLECTIONS, resolvesUnder } from "../src/lib/collections";
 import { reportUnroutable } from "../src/lib/i18n-config";
 import { db } from "../src/server/db";
 import { languages, pages, posts, projects } from "../src/server/schema";
@@ -34,11 +34,16 @@ async function main() {
 	for (const p of await db.select({ slug: pages.slug }).from(pages).where(and(eq(pages.tenantId, TENANT), eq(pages.status, "published")))) {
 		if (p.slug !== "home") content.add(p.slug);
 	}
+	// resolvesUnder is what the detail route itself asks (route.ts:98), so a path
+	// only lands here if the router will serve it
+	const published = await db.select({ slug: posts.slug, contentType: posts.contentType }).from(posts).where(and(eq(posts.tenantId, TENANT), eq(posts.status, "published")));
 	for (const def of Object.values(COLLECTIONS)) {
 		if (def.kind === "project") {
 			for (const r of await db.select({ slug: projects.slug }).from(projects)) content.add(`${def.prefix}/${r.slug}`);
-		} else if (def.contentType) {
-			for (const r of await db.select({ slug: posts.slug }).from(posts).where(and(eq(posts.tenantId, TENANT), eq(posts.contentType, def.contentType), eq(posts.status, "published")))) content.add(`${def.prefix}/${r.slug}`);
+		} else {
+			for (const r of published) {
+				if (resolvesUnder(def, r.contentType)) content.add(`${def.prefix}/${r.slug}`);
+			}
 		}
 	}
 
