@@ -34,12 +34,16 @@ for (const lang of langs) {
 }
 urls.push("/sitemap.xml", "/robots.txt", "/llms.txt", "/manifest.json", "/");
 
+// the serialised ui dictionary ships every string the site owns, including its own
+// error copy, so a marker is only meaningful outside it
 const ERROR_MARKS = [
-	"Something went wrong",
 	"Unexpected Application Error",
 	"TypeError:",
 	"Cannot read properties",
+	"data-error-boundary",
 ];
+const withoutPayload = (html: string) =>
+	html.replace(/<script[\s\S]*?<\/script>/g, "");
 
 let bad = 0;
 for (const u of urls) {
@@ -51,15 +55,15 @@ for (const u of urls) {
 		status = res.status;
 		const html = await res.text();
 		h1 = (html.match(/<h1[\s>]/g) ?? []).length;
-		marks = ERROR_MARKS.filter((m) => html.includes(m));
+		const visible = withoutPayload(html);
+		marks = ERROR_MARKS.filter((m) => visible.includes(m));
 	} catch (e) {
 		marks = [String(e)];
 	}
-	const isDoc = !/\.(xml|txt|json)$/.test(u);
+	const redirected = status === 301 || status === 302;
+	const isDoc = !redirected && !/\.(xml|txt|json)$/.test(u);
 	const ok =
-		(status === 200 || status === 301 || status === 302) &&
-		marks.length === 0 &&
-		(!isDoc || h1 === 1);
+		(status === 200 || redirected) && marks.length === 0 && (!isDoc || h1 === 1);
 	if (!ok) bad++;
 	console.log(
 		`${ok ? "ok  " : "FAIL"} ${status} h1=${h1} ${u}${marks.length ? ` :: ${marks.join(", ")}` : ""}`,
