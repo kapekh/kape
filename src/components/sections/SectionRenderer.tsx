@@ -2,7 +2,17 @@ import { useLoaderData } from "@tanstack/react-router";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
-import type { SectionNode } from "#/lib/sections";
+import {
+	type FieldEditTarget,
+	isEditableEntity,
+	useInlineEdit,
+} from "#/lib/inline-edit";
+import {
+	type SectionField,
+	type SectionNode,
+	sectionDef,
+	translatableFields,
+} from "#/lib/sections";
 import type { JobItem, PostListItem } from "#/server/repo/content";
 import type { SourceRow } from "#/server/repo/sections";
 import { useLang, useT } from "@/lib/i18n";
@@ -59,12 +69,22 @@ export function cmsMark(
 	};
 }
 
+/** True while an admin who may edit pages has the switch on. */
+function useEditingSections(): boolean {
+	const { editing, may } = useInlineEdit();
+	return editing && may("pages");
+}
+
 /** Marks a field of the section being rendered, e.g. `title`, `items[2].body`. */
 function useMark() {
 	const id = useContext(Identity);
 	const sectionId = useContext(SectionId);
+	// a marked node is reachable by keyboard only while it is editable
+	const focusable: CmsMarker = useEditingSections() ? { tabIndex: 0 } : {};
 	return (path: string): CmsMarker =>
-		sectionId ? cmsMark(id, `section:${sectionId}:props.${path}`) : {};
+		id && sectionId
+			? { ...cmsMark(id, `section:${sectionId}:props.${path}`), ...focusable }
+			: {};
 }
 
 /** Marks text a listing pulled from another record, which owns the row that holds it. */
@@ -72,6 +92,132 @@ function useRowMark() {
 	const id = useContext(Identity);
 	return (entity: string, entityId: number, field: string): CmsMarker =>
 		id ? cmsMark({ entity, entityId, lang: id.lang }, `field:${field}`) : {};
+}
+
+const SECTION_TARGET =
+	/^section:([A-Za-z0-9_-]+):props\.([A-Za-z][A-Za-z0-9_]*)(?:\[(\d+)\]\.([A-Za-z][A-Za-z0-9_]*))?$/;
+
+// the cards kind declares no itemFields; its own editor draws a line for the
+// title and a box for the body, so the inline editor offers the same two
+const CARD_ITEM_FIELDS: SectionField[] = [
+	{ key: "title", label: "Title", kind: "text" },
+	{ key: "body", label: "Body", kind: "textarea" },
+];
+
+const TEXT_KINDS = new Set(["text", "textarea", "richtext"]);
+
+const fellBackKeys = (props: Record<string, unknown>): string[] =>
+	Array.isArray(props.i18nFallback)
+		? props.i18nFallback.filter((k): k is string => typeof k === "string")
+		: [];
+
+/**
+ * What the bar needs to edit a marked node, read off the sections themselves
+ * rather than off the DOM: `props.title` is the stored source, asterisks and
+ * all, while the rendered heading has been split into accent spans.
+ * Null when the target belongs to another renderer or another job.
+ */
+export function fieldEditTarget(
+	sections: SectionNode[],
+	id: EditIdentity,
+	target: string,
+): FieldEditTarget | null {
+	const parsed = SECTION_TARGET.exec(target);
+	if (!parsed || !isEditableEntity(id.entity)) return null;
+	const [, sectionId, key, index, itemKey] = parsed;
+	const section = sections.find((s) => s.id === sectionId);
+	if (!section) return null;
+	const props = (section.props ?? {}) as Record<string, unknown>;
+	const field = sectionDef(section.type)?.fields.find((f) => f.key === key);
+	const itemFields =
+		field?.kind === "cards" ? CARD_ITEM_FIELDS : field?.itemFields;
+	const item = itemKey ? itemFields?.find((f) => f.key === itemKey) : undefined;
+	// the same fields updateField will accept, so no box promises a save it cannot make
+	const editable = itemKey
+		? !!item && TEXT_KINDS.has(item.kind)
+		: translatableFields(section.type, props).some((f) => f.key === key);
+	if (!editable) return null;
+	const row = (props[key] as Record<string, unknown>[] | undefined)?.[
+		Number(index)
+	];
+	const raw = itemKey ? row?.[itemKey] : props[key];
+	const shown = typeof raw === "string" ? raw : "";
+	const kind = (itemKey ? item?.kind : field?.kind) ?? "text";
+	return {
+		kind: "field",
+		entity: id.entity,
+		entityId: id.entityId,
+		lang: id.lang,
+		target,
+		shown,
+		// an item field cannot fall back on its own: the overlay replaces the whole array
+		fellBack: !itemKey && fellBackKeys(props).includes(key),
+		multiline:
+			kind === "textarea" || kind === "richtext" || shown.includes("\n"),
+		label: (itemKey ? item?.label : field?.label) ?? itemKey ?? key,
+	};
+}
+
+const OUTLINE = "color-mix(in oklab, var(--primary) 45%, transparent)";
+
+/**
+ * One delegated listener for every marked node in this renderer, mounted only
+ * for an admin with the switch on. A signed-out visitor never reaches it: the
+ * context is off until `auth.me` answers after hydration.
+ */
+function EditLayer({
+	sections,
+	identity,
+}: {
+	sections: SectionNode[];
+	identity: EditIdentity | null;
+}) {
+	const { setTarget, target } = useInlineEdit();
+	const on = useEditingSections() && identity !== null;
+
+	useEffect(() => {
+		if (!on || !identity) return;
+		const open = (node: Element): boolean => {
+			const address = node.getAttribute("data-cms-target");
+			const picked = address && fieldEditTarget(sections, identity, address);
+			if (!picked) return false;
+			setTarget(picked);
+			return true;
+		};
+		const marked = (e: Event): Element | null =>
+			(e.target as Element | null)?.closest?.("[data-cms-target]") ?? null;
+		const onClick = (e: MouseEvent) => {
+			const node = marked(e);
+			if (!node || !open(node)) return;
+			// the marked text often sits inside a link or a button
+			e.preventDefault();
+			e.stopPropagation();
+			(node as HTMLElement).focus?.();
+		};
+		const onKeyDown = (e: KeyboardEvent) => {
+			if (e.key !== "Enter" && e.key !== " ") return;
+			const node = marked(e);
+			if (!node || node !== document.activeElement || !open(node)) return;
+			e.preventDefault();
+			e.stopPropagation();
+		};
+		document.addEventListener("click", onClick, true);
+		document.addEventListener("keydown", onKeyDown, true);
+		return () => {
+			document.removeEventListener("click", onClick, true);
+			document.removeEventListener("keydown", onKeyDown, true);
+		};
+	}, [on, identity, sections, setTarget]);
+
+	if (!on) return null;
+	// selecting by the address avoids mutating nodes React owns
+	const selected =
+		target?.kind === "field" && /^[\w:.[\]-]+$/.test(target.target)
+			? `[data-cms-target="${target.target}"]{outline:2px solid var(--primary);outline-offset:2px;background:color-mix(in oklab, var(--primary) 12%, transparent)}`
+			: "";
+	return (
+		<style>{`[data-cms-target^="section:"]{outline:1px dashed ${OUTLINE};outline-offset:2px;border-radius:2px;cursor:pointer}${selected}`}</style>
+	);
 }
 
 /* ------------------------------------------------------------------ */
@@ -2400,6 +2546,7 @@ export function SectionRenderer({
 		entity && entityId != null && lang ? { entity, entityId, lang } : null;
 	return (
 		<Identity.Provider value={identity}>
+			<EditLayer sections={sections} identity={identity} />
 			{sections.map((s, i) => {
 				const Template = templateFor(s.type);
 				const body = Template ? (
