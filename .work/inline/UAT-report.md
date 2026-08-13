@@ -202,3 +202,7 @@ adminCampaigns.delete → campaigns left: 0
 ```
 
 No payment was submitted, so the provider leg is unverified by design.
+
+## A5 - media library
+
+`/admin/media` in the browser: **122 items · 121 images · 1 file · 22.9 MB**, All/Images/Files filters, an upload control, and thumbnails that render, so `/uploads` serves in this instance. Every tile carries the file's own accessible name.
