@@ -11,12 +11,22 @@ This job must use `updateField` and never `adminPages.update`.
 
 - `src/components/SubPage.tsx`
 - `src/routes/$.tsx`
+- `src/components/InlineEditBar.tsx`, for `versionOf` only
+- `src/server/repo/content.ts`, for the one field in the next section
 - one new test
 
 Nothing else.
-`src/lib/inline-edit.tsx`, `InlineEditBar.tsx` and `SectionRenderer.tsx` are J06's and are already landed.
-Consume the box, do not edit it.
+`src/lib/inline-edit.tsx` and `SectionRenderer.tsx` are J06's and are landed.
+Consume the box; the only thing you change in the bar is which record's version it reads.
 If it cannot serve a field, stop and report.
+
+## The version hole J06 left you
+
+J06's report says it plainly: `versionOf` in `InlineEditBar.tsx` only knows how to read a page's version, so **a post target currently saves unversioned**, with no compare-and-swap at all.
+It also names the cheap fix, which is why `content.ts` is yours: `ResolvedPage` carries no timestamp, so the box makes an extra `adminPages.get` per record just to learn one.
+
+Put `updatedAt` on the public payload for a page and a post, use it, and delete the extra read.
+One line in the type, one in each resolver, and the conflict refusal starts working for posts as a side effect.
 
 ## Do
 
@@ -41,7 +51,9 @@ Run it, paste the output into `.work/inline/J07-report.md`.
 7. **`h1` count unchanged.** Fifteen public pages, one `h1` each, before and after.
 8. **Anonymous sees nothing.** Public HTML and network log for a signed-out visitor: no chrome, no extra request.
 9. **Permission gated.** `staff@kapekh.org` gets plain text.
-10. **Gates.** `bun run test` at 449 or better, `tsc` silent, `bun run lint` at 6 or fewer, `bun run build` green.
+10. **No extra request per record.** Paste the network log for one page load in edit mode before and after your change: the `adminPages.get` J06 needed is gone, and no request replaced it.
+11. **A post refuses a stale write too.** Two tabs on one post, second save refused. This is the hole J06 named, so it is the item that proves the fix.
+12. **Gates.** `bun run test` at 487 or better, `tsc` silent, `bun run lint` at 6 or fewer, `bun run build` green.
 
 ## Out of scope
 
