@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { NavLink } from "@/components/NavLink";
+import { cmsMark } from "@/components/sections/SectionRenderer";
 import { useLang, useT } from "@/lib/i18n";
 import { localizedHref } from "@/lib/i18n-config";
 
@@ -13,6 +14,10 @@ export function SubPage({
 	badge,
 	crumbs,
 	wide = false,
+	entity,
+	entityId,
+	titleField,
+	leadField,
 	children,
 }: {
 	section: string;
@@ -24,9 +29,15 @@ export function SubPage({
 	/** Full-width body (max-w-7xl, no single card) for layouts that supply their
 	 *  own cards/columns. Default is the narrow article card (max-w-4xl). */
 	wide?: boolean;
+	/** Which record the title and lead came from; both absent leaves them unmarked. */
+	entity?: string;
+	entityId?: number;
+	titleField?: string;
+	leadField?: string;
 	children: ReactNode;
 }) {
 	const { lang, t } = useLang();
+	const id = entity && entityId != null ? { entity, entityId, lang } : null;
 	return (
 		<main className="text-foreground overflow-x-hidden">
 			{/* Hero */}
@@ -76,11 +87,17 @@ export function SubPage({
 							{badge}
 						</div>
 					)}
-					<h1 className="mt-5 max-w-4xl t-page-title [text-shadow:0_2px_24px_rgba(0,0,0,0.3)]">
+					<h1
+						{...(titleField ? cmsMark(id, `field:${titleField}`) : {})}
+						className="mt-5 max-w-4xl t-page-title [text-shadow:0_2px_24px_rgba(0,0,0,0.3)]"
+					>
 						{title}
 					</h1>
 					{lead && (
-						<p className="mt-5 max-w-3xl t-lead text-primary-foreground/90">
+						<p
+							{...(leadField ? cmsMark(id, `field:${leadField}`) : {})}
+							className="mt-5 max-w-3xl t-lead text-primary-foreground/90"
+						>
 							{lead}
 						</p>
 					)}

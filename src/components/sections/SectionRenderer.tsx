@@ -30,6 +30,51 @@ type Common = {
 };
 
 /* ------------------------------------------------------------------ */
+/* Addressing                                                          */
+/* ------------------------------------------------------------------ */
+
+/** Which record the surrounding tree came from. */
+export type EditIdentity = {
+	entity: string;
+	entityId: number;
+	lang: string;
+};
+
+export type CmsMarker = Record<string, string | number>;
+
+const Identity = createContext<EditIdentity | null>(null);
+const SectionId = createContext<string | null>(null);
+
+/** The addressing tuple as data attributes; empty when the tree carries no identity. */
+export function cmsMark(
+	id: EditIdentity | null | undefined,
+	target: string,
+): CmsMarker {
+	if (!id) return {};
+	return {
+		"data-cms-entity": id.entity,
+		"data-cms-entity-id": id.entityId,
+		"data-cms-lang": id.lang,
+		"data-cms-target": target,
+	};
+}
+
+/** Marks a field of the section being rendered, e.g. `title`, `items[2].body`. */
+function useMark() {
+	const id = useContext(Identity);
+	const sectionId = useContext(SectionId);
+	return (path: string): CmsMarker =>
+		sectionId ? cmsMark(id, `section:${sectionId}:props.${path}`) : {};
+}
+
+/** Marks text a listing pulled from another record, which owns the row that holds it. */
+function useRowMark() {
+	const id = useContext(Identity);
+	return (entity: string, entityId: number, field: string): CmsMarker =>
+		id ? cmsMark({ entity, entityId, lang: id.lang }, `field:${field}`) : {};
+}
+
+/* ------------------------------------------------------------------ */
 /* Shared primitives                                                   */
 /* ------------------------------------------------------------------ */
 
@@ -60,8 +105,9 @@ function renderTitle(title: string, accent = "text-[var(--secondary)]") {
 			if (seg === "\n") return <br key={i} />;
 			if (seg.startsWith("*") && seg.endsWith("*"))
 				return (
+					// data-cms-accent is how the marked heading serializes back to *text*
 					// biome-ignore lint/suspicious/noArrayIndexKey: split segments of one string, position is the identity
-					<span key={i} className={`italic ${accent}`}>
+					<span key={i} data-cms-accent="" className={`italic ${accent}`}>
 						{seg.slice(1, -1)}
 					</span>
 				);
@@ -86,6 +132,7 @@ function Heading({
 	light?: boolean;
 }) {
 	const H = useContext(OwnsPageTitle) ? "h1" : "h2";
+	const mark = useMark();
 	if (!title && !eyebrow) return null;
 	return (
 		<div
@@ -93,13 +140,17 @@ function Heading({
 		>
 			{eyebrow && (
 				<div
+					{...mark("eyebrow")}
 					className={`t-eyebrow ${light ? "text-[var(--gold)]" : "text-[var(--accent)]"}`}
 				>
 					{eyebrow}
 				</div>
 			)}
 			{title && (
-				<H className={`mt-3 t-section ${light ? "" : "text-primary"}`}>
+				<H
+					{...mark("title")}
+					className={`mt-3 t-section ${light ? "" : "text-primary"}`}
+				>
 					{renderTitle(title)}
 				</H>
 			)}
@@ -244,6 +295,7 @@ type HeroProps = Common & {
 
 function Slideshow({ slides }: { slides: HeroSlide[] }) {
 	const t = useT();
+	const mark = useMark();
 	const [i, setI] = useState(0);
 	const [paused, setPaused] = useState(false);
 	useEffect(() => {
@@ -284,17 +336,28 @@ function Slideshow({ slides }: { slides: HeroSlide[] }) {
 						<div className="absolute inset-0 bg-gradient-to-t from-primary/85 via-primary/20 to-transparent" />
 						<div className="absolute inset-x-0 bottom-0 p-7 md:p-9 text-primary-foreground">
 							{s.kicker && (
-								<div className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[var(--gold)]">
+								<div
+									{...mark(`slides[${idx}].kicker`)}
+									className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[var(--gold)]"
+								>
 									{s.kicker}
 								</div>
 							)}
 							{s.title && (
-								<h2 className="mt-2 max-w-md font-display text-2xl md:text-3xl font-semibold leading-tight">
+								<h2
+									{...mark(`slides[${idx}].title`)}
+									className="mt-2 max-w-md font-display text-2xl md:text-3xl font-semibold leading-tight"
+								>
 									{s.title}
 								</h2>
 							)}
 							{s.caption && (
-								<p className="mt-2 text-sm opacity-90">{s.caption}</p>
+								<p
+									{...mark(`slides[${idx}].caption`)}
+									className="mt-2 text-sm opacity-90"
+								>
+									{s.caption}
+								</p>
 							)}
 						</div>
 					</div>
@@ -325,6 +388,7 @@ function Slideshow({ slides }: { slides: HeroSlide[] }) {
 function Hero(p: HeroProps) {
 	const L = useL();
 	const t = useT();
+	const mark = useMark();
 	const layout = p.layout ?? "banner";
 	const slides: HeroSlide[] = Array.isArray(p.slides) ? p.slides : [];
 	const stats: HeroStat[] = Array.isArray(p.stats) ? p.stats : [];
@@ -336,6 +400,7 @@ function Hero(p: HeroProps) {
 			{p.ctaHref && (
 				<NavLink
 					href={L(p.ctaHref)}
+					{...mark("ctaLabel")}
 					className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-6 py-3 text-sm font-semibold shadow-[var(--shadow-lift)] hover:-translate-y-0.5 transition"
 				>
 					{p.ctaLabel || t("cta.learnMore", "Learn more")}
@@ -344,6 +409,7 @@ function Hero(p: HeroProps) {
 			{p.cta2Href && (
 				<NavLink
 					href={L(p.cta2Href)}
+					{...mark("cta2Label")}
 					className="inline-flex items-center gap-2 rounded-full border border-primary/30 px-6 py-3 text-sm font-semibold text-primary hover:bg-primary hover:text-primary-foreground transition"
 				>
 					{p.cta2Label || t("cta.learnMore", "Learn more")}
@@ -359,16 +425,22 @@ function Hero(p: HeroProps) {
 				<Container className="grid items-center gap-12 py-16 lg:grid-cols-12 lg:py-24">
 					<div className="relative z-10 lg:col-span-6">
 						{p.eyebrow && (
-							<div className="inline-flex items-center gap-2 rounded-full border border-[var(--accent)]/40 bg-[var(--accent)]/5 px-4 py-1.5 text-xs font-medium text-[var(--accent)]">
+							<div
+								{...mark("eyebrow")}
+								className="inline-flex items-center gap-2 rounded-full border border-[var(--accent)]/40 bg-[var(--accent)]/5 px-4 py-1.5 text-xs font-medium text-[var(--accent)]"
+							>
 								<span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)] animate-pulse" />
 								{p.eyebrow}
 							</div>
 						)}
-						<h1 className="mt-6 t-display text-primary">
+						<h1 {...mark("title")} className="mt-6 t-display text-primary">
 							{renderTitle(p.title || "", "text-[var(--accent)]")}
 						</h1>
 						{p.lead && (
-							<p className="mt-6 max-w-xl t-lead text-muted-foreground">
+							<p
+								{...mark("lead")}
+								className="mt-6 max-w-xl t-lead text-muted-foreground"
+							>
 								{p.lead}
 							</p>
 						)}
@@ -380,10 +452,13 @@ function Hero(p: HeroProps) {
 									<div key={n} className="flex items-center gap-6">
 										{n > 0 && <span className="h-10 w-px bg-border" />}
 										<div>
-											<div className="font-display text-2xl font-semibold text-primary">
+											<div
+												{...mark(`stats[${n}].value`)}
+												className="font-display text-2xl font-semibold text-primary"
+											>
 												{s.value}
 											</div>
-											{s.label}
+											<span {...mark(`stats[${n}].label`)}>{s.label}</span>
 										</div>
 									</div>
 								))}
@@ -404,13 +479,20 @@ function Hero(p: HeroProps) {
 				<Container className="grid items-center gap-12 lg:grid-cols-2">
 					<div>
 						{p.eyebrow && (
-							<div className="t-eyebrow text-[var(--accent)]">{p.eyebrow}</div>
+							<div
+								{...mark("eyebrow")}
+								className="t-eyebrow text-[var(--accent)]"
+							>
+								{p.eyebrow}
+							</div>
 						)}
-						<h1 className="mt-3 t-page-title text-primary">
+						<h1 {...mark("title")} className="mt-3 t-page-title text-primary">
 							{renderTitle(p.title || "")}
 						</h1>
 						{p.lead && (
-							<p className="mt-5 t-lead text-foreground/75">{p.lead}</p>
+							<p {...mark("lead")} className="mt-5 t-lead text-foreground/75">
+								{p.lead}
+							</p>
 						)}
 						{ctas()}
 					</div>
@@ -446,15 +528,24 @@ function Hero(p: HeroProps) {
 			</div>
 			<Container className="relative py-24 text-center text-primary-foreground">
 				{p.eyebrow && (
-					<div className="t-eyebrow text-[var(--gold)] [text-shadow:0_1px_10px_rgba(0,0,0,0.7)]">
+					<div
+						{...mark("eyebrow")}
+						className="t-eyebrow text-[var(--gold)] [text-shadow:0_1px_10px_rgba(0,0,0,0.7)]"
+					>
 						{p.eyebrow}
 					</div>
 				)}
-				<h1 className="mx-auto mt-4 max-w-4xl t-page-title [text-shadow:0_2px_24px_rgba(0,0,0,0.45)]">
+				<h1
+					{...mark("title")}
+					className="mx-auto mt-4 max-w-4xl t-page-title [text-shadow:0_2px_24px_rgba(0,0,0,0.45)]"
+				>
 					{renderTitle(p.title || "", "text-[var(--gold)]")}
 				</h1>
 				{p.lead && (
-					<p className="mx-auto mt-6 max-w-2xl t-lead text-white/90 [text-shadow:0_1px_12px_rgba(0,0,0,0.6)]">
+					<p
+						{...mark("lead")}
+						className="mx-auto mt-6 max-w-2xl t-lead text-white/90 [text-shadow:0_1px_12px_rgba(0,0,0,0.6)]"
+					>
 						{p.lead}
 					</p>
 				)}
@@ -496,6 +587,7 @@ type CardsProps = Common & { center?: string; items?: CardItem[] };
 function Cards(p: CardsProps) {
 	const L = useL();
 	const t = useT();
+	const mark = useMark();
 	const cols =
 		p.layout === "cols-2"
 			? "md:grid-cols-2"
@@ -553,12 +645,20 @@ function Cards(p: CardsProps) {
 									<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/10" />
 									<div className="relative text-white">
 										{it.title && (
-											<h3 className="t-card-title [text-shadow:0_1px_10px_rgba(0,0,0,0.5)]">
+											<h3
+												{...mark(`items[${n}].title`)}
+												className="t-card-title [text-shadow:0_1px_10px_rgba(0,0,0,0.5)]"
+											>
 												{it.title}
 											</h3>
 										)}
 										{it.body && (
-											<p className="mt-2 t-body text-white/85">{it.body}</p>
+											<p
+												{...mark(`items[${n}].body`)}
+												className="mt-2 t-body text-white/85"
+											>
+												{it.body}
+											</p>
 										)}
 										{footer(it, true)}
 									</div>
@@ -588,10 +688,20 @@ function Cards(p: CardsProps) {
 										</div>
 									)}
 									{it.title && (
-										<h3 className="t-card-title text-primary">{it.title}</h3>
+										<h3
+											{...mark(`items[${n}].title`)}
+											className="t-card-title text-primary"
+										>
+											{it.title}
+										</h3>
 									)}
 									{it.body && (
-										<p className="mt-2 t-body text-foreground/75">{it.body}</p>
+										<p
+											{...mark(`items[${n}].body`)}
+											className="mt-2 t-body text-foreground/75"
+										>
+											{it.body}
+										</p>
 									)}
 									{footer(it)}
 								</div>
@@ -605,6 +715,7 @@ function Cards(p: CardsProps) {
 }
 
 function StatItem({
+	index,
 	value,
 	label,
 	icon,
@@ -612,6 +723,7 @@ function StatItem({
 	valueClass = "text-5xl md:text-6xl",
 	labelClass = "text-xs",
 }: {
+	index: number;
 	value: string;
 	label?: string;
 	icon?: string;
@@ -619,6 +731,7 @@ function StatItem({
 	valueClass?: string;
 	labelClass?: string;
 }) {
+	const mark = useMark();
 	const digits = String(value).replace(/[^0-9]/g, "");
 	const target = digits ? Number(digits) : 0;
 	const n = useCount(target, run);
@@ -640,6 +753,7 @@ function StatItem({
 			)}
 			<div
 				aria-hidden="true"
+				{...mark(`items[${index}].value`)}
 				className={`font-display ${valueClass} font-semibold tabular-nums tracking-tight text-[var(--secondary)] whitespace-nowrap`}
 			>
 				{display}
@@ -649,6 +763,7 @@ function StatItem({
 			</span>
 			<div
 				aria-hidden="true"
+				{...mark(`items[${index}].label`)}
 				className={`mt-2 ${labelClass} uppercase tracking-[0.18em] text-primary-foreground/70`}
 			>
 				{label}
@@ -682,6 +797,7 @@ type StatsProps = Common & {
 };
 
 function Stats(p: StatsProps) {
+	const mark = useMark();
 	const items: StatRow[] = Array.isArray(p.items) ? p.items : [];
 	const [bandRef, inView] = useInView<HTMLElement>();
 	const band = p.layout !== "plain";
@@ -709,11 +825,15 @@ function Stats(p: StatsProps) {
 									/>
 								)}
 								<div
+									{...mark(`items[${n}].value`)}
 									className={`font-display ${valueClass} font-semibold tabular-nums tracking-tight text-primary whitespace-nowrap`}
 								>
 									{it.value}
 								</div>
-								<div className={`mt-2 ${labelClass} text-muted-foreground`}>
+								<div
+									{...mark(`items[${n}].label`)}
+									className={`mt-2 ${labelClass} text-muted-foreground`}
+								>
 									{it.label}
 								</div>
 							</div>
@@ -743,15 +863,22 @@ function Stats(p: StatsProps) {
 			<Container className="relative">
 				<div className="mb-16 max-w-3xl">
 					{p.eyebrow && (
-						<div className="t-eyebrow text-[var(--gold)]">{p.eyebrow}</div>
+						<div {...mark("eyebrow")} className="t-eyebrow text-[var(--gold)]">
+							{p.eyebrow}
+						</div>
 					)}
-					{p.title && <h2 className="mt-3 t-band">{renderTitle(p.title)}</h2>}
+					{p.title && (
+						<h2 {...mark("title")} className="mt-3 t-band">
+							{renderTitle(p.title)}
+						</h2>
+					)}
 				</div>
 				<div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-x-10 gap-y-12">
 					{items.map((it, n) => (
 						<StatItem
 							// biome-ignore lint/suspicious/noArrayIndexKey: server-rendered list, no reorder or delete while mounted
 							key={n}
+							index={n}
 							value={String(it.value)}
 							label={it.label}
 							icon={it.icon}
@@ -777,6 +904,7 @@ type CtaProps = Common & {
 function Cta(p: CtaProps) {
 	const L = useL();
 	const t = useT();
+	const mark = useMark();
 	return (
 		<section
 			className="relative overflow-hidden py-24"
@@ -786,15 +914,21 @@ function Cta(p: CtaProps) {
 			<Blob className="-bottom-20 -right-20 h-80 w-80 bg-primary/30" />
 			<div className="relative mx-auto max-w-4xl px-6 text-center">
 				{p.eyebrow && (
-					<div className="t-eyebrow text-warm-foreground-muted/80">
+					<div
+						{...mark("eyebrow")}
+						className="t-eyebrow text-warm-foreground-muted/80"
+					>
 						{p.eyebrow}
 					</div>
 				)}
-				<h2 className="mt-4 t-band text-warm-foreground">
+				<h2 {...mark("title")} className="mt-4 t-band text-warm-foreground">
 					{renderTitle(p.title || "", "italic")}
 				</h2>
 				{p.body && (
-					<p className="mx-auto mt-6 max-w-2xl t-lead text-warm-foreground-muted/90">
+					<p
+						{...mark("body")}
+						className="mx-auto mt-6 max-w-2xl t-lead text-warm-foreground-muted/90"
+					>
 						{p.body}
 					</p>
 				)}
@@ -802,6 +936,7 @@ function Cta(p: CtaProps) {
 					{p.ctaHref && (
 						<NavLink
 							href={L(p.ctaHref)}
+							{...mark("ctaLabel")}
 							className="inline-flex items-center gap-2 rounded-full bg-warm-foreground text-primary-foreground px-8 py-4 text-base font-semibold shadow-[var(--shadow-lift)] hover:-translate-y-1 transition"
 						>
 							{p.ctaLabel || t("cta.donateNow", "Donate now")}
@@ -810,6 +945,7 @@ function Cta(p: CtaProps) {
 					{p.cta2Href && (
 						<NavLink
 							href={L(p.cta2Href)}
+							{...mark("cta2Label")}
 							className="inline-flex items-center gap-2 rounded-full border-2 border-warm-foreground/40 text-warm-foreground px-8 py-4 text-base font-semibold hover:bg-warm-foreground hover:text-primary-foreground transition"
 						>
 							{p.cta2Label || t("cta.learnMore", "Learn more")}
@@ -831,6 +967,7 @@ type ResourcesProps = Common & { items?: ResourceItem[] };
 
 function Resources(p: ResourcesProps) {
 	const t = useT();
+	const mark = useMark();
 	const items: ResourceItem[] = Array.isArray(p.items) ? p.items : [];
 	const cols = p.layout === "cols-2" ? "md:grid-cols-2" : "";
 	const { openPdf, reader } = usePdfReader();
@@ -851,14 +988,23 @@ function Resources(p: ResourcesProps) {
 										{Icon.doc("h-6 w-6")}
 									</div>
 									<div className="min-w-0 flex-1">
-										<div className="text-[10px] uppercase tracking-[0.18em] text-[var(--accent)] font-semibold">
+										<div
+											{...mark(`items[${n}].kind`)}
+											className="text-[10px] uppercase tracking-[0.18em] text-[var(--accent)] font-semibold"
+										>
 											{it.kind || t("resources.kindDefault", "file")}
 										</div>
-										<div className="mt-0.5 font-medium text-foreground group-hover:text-[var(--accent)] transition">
+										<div
+											{...mark(`items[${n}].title`)}
+											className="mt-0.5 font-medium text-foreground group-hover:text-[var(--accent)] transition"
+										>
 											{it.title}
 										</div>
 										{it.meta && (
-											<div className="text-xs text-muted-foreground mt-0.5">
+											<div
+												{...mark(`items[${n}].meta`)}
+												className="text-xs text-muted-foreground mt-0.5"
+											>
 												{it.meta}
 											</div>
 										)}
@@ -906,6 +1052,7 @@ type SplitProps = Common & {
 };
 
 function Split(p: SplitProps) {
+	const mark = useMark();
 	const mediaLeft = p.layout === "media-left";
 	const media = p.image ? (
 		<div className="relative">
@@ -920,10 +1067,16 @@ function Split(p: SplitProps) {
 			</div>
 			{p.statValue && (
 				<div className="absolute -bottom-8 -right-6 max-w-[220px] rounded-2xl bg-card p-6 shadow-[var(--shadow-lift)] ring-1 ring-border">
-					<div className="font-display text-4xl font-semibold text-[var(--accent)]">
+					<div
+						{...mark("statValue")}
+						className="font-display text-4xl font-semibold text-[var(--accent)]"
+					>
 						{p.statValue}
 					</div>
-					<div className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">
+					<div
+						{...mark("statLabel")}
+						className="mt-1 text-xs uppercase tracking-wider text-muted-foreground"
+					>
 						{p.statLabel}
 					</div>
 				</div>
@@ -933,10 +1086,12 @@ function Split(p: SplitProps) {
 	const text = (
 		<div>
 			{p.eyebrow && (
-				<div className="t-eyebrow text-[var(--accent)]">{p.eyebrow}</div>
+				<div {...mark("eyebrow")} className="t-eyebrow text-[var(--accent)]">
+					{p.eyebrow}
+				</div>
 			)}
 			{p.title && (
-				<h2 className="mt-3 t-section text-primary">
+				<h2 {...mark("title")} className="mt-3 t-section text-primary">
 					{renderTitle(p.title, "italic text-primary")}
 				</h2>
 			)}
@@ -966,6 +1121,7 @@ type PillGroup = { heading?: string; links?: string };
 type PillsProps = Common & { groups?: PillGroup[] };
 
 function Pills(p: PillsProps) {
+	const mark = useMark();
 	const groups: PillGroup[] = Array.isArray(p.groups) ? p.groups : [];
 	const parse = (s?: string) =>
 		String(s || "")
@@ -985,7 +1141,10 @@ function Pills(p: PillsProps) {
 						// biome-ignore lint/suspicious/noArrayIndexKey: server-rendered list, no reorder or delete while mounted
 						<div key={n}>
 							{g.heading && (
-								<h3 className="mb-3 font-display text-lg font-semibold text-primary">
+								<h3
+									{...mark(`groups[${n}].heading`)}
+									className="mb-3 font-display text-lg font-semibold text-primary"
+								>
 									{g.heading}
 								</h3>
 							)}
@@ -1015,6 +1174,7 @@ type FormProps = Common & {
 };
 
 function FormSection(p: FormProps) {
+	const mark = useMark();
 	// Nothing to post to: no built form and not the contact layout. Rendering the
 	// fields anyway gave a volunteer or an applicant a form that discarded them.
 	if (!p.formSlug && p.layout !== "contact") return null;
@@ -1026,7 +1186,10 @@ function FormSection(p: FormProps) {
 			<Container className="max-w-2xl">
 				{!builtForm && <Heading eyebrow={p.eyebrow} title={p.title} center />}
 				{!builtForm && p.body && (
-					<p className="-mt-6 mb-8 text-center text-foreground/75 leading-relaxed">
+					<p
+						{...mark("body")}
+						className="-mt-6 mb-8 text-center text-foreground/75 leading-relaxed"
+					>
 						{p.body}
 					</p>
 				)}
@@ -1062,6 +1225,7 @@ function PostCard({
 }) {
 	const L = useL();
 	const t = useT();
+	const row = useRowMark();
 	const href = base ? L(`${base}/${post.slug}`) : undefined;
 	const body = (
 		<>
@@ -1081,11 +1245,17 @@ function PostCard({
 				)}
 			</div>
 			<div className="p-6">
-				<H className="t-card-title text-primary group-hover:text-[var(--accent)] transition">
+				<H
+					{...row("post", post.id, "title")}
+					className="t-card-title text-primary group-hover:text-[var(--accent)] transition"
+				>
 					{post.title}
 				</H>
 				{post.excerpt && (
-					<p className="mt-2 t-meta text-foreground/70 line-clamp-3">
+					<p
+						{...row("post", post.id, "excerpt")}
+						className="mt-2 t-meta text-foreground/70 line-clamp-3"
+					>
 						{post.excerpt}
 					</p>
 				)}
@@ -1111,6 +1281,7 @@ function PostCard({
 function PostList(p: PostListProps) {
 	const L = useL();
 	const t = useT();
+	const row = useRowMark();
 	const H = useItemHeading(Boolean(p.title || p.eyebrow));
 	// the "featured" layout nests its secondary posts under the lead one
 	const HSub = H === "h2" ? "h3" : "h4";
@@ -1142,7 +1313,10 @@ function PostList(p: PostListProps) {
 									href={link(post.slug)}
 									className="group flex items-center justify-between gap-4 px-5 py-4 hover:bg-[var(--accent)]/5 transition"
 								>
-									<span className="font-medium text-foreground/85 group-hover:text-[var(--accent)] transition">
+									<span
+										{...row("post", post.id, "title")}
+										className="font-medium text-foreground/85 group-hover:text-[var(--accent)] transition"
+									>
 										{post.title}
 									</span>
 									<span className="shrink-0 text-xs text-muted-foreground">
@@ -1172,7 +1346,10 @@ function PostList(p: PostListProps) {
 							<tbody className="divide-y divide-border">
 								{posts.map((post) => (
 									<tr key={post.id} className="hover:bg-muted/30 transition">
-										<td className="px-4 py-3 font-medium text-foreground">
+										<td
+											{...row("post", post.id, "title")}
+											className="px-4 py-3 font-medium text-foreground"
+										>
 											{post.title}
 										</td>
 										<td className="px-4 py-3 text-foreground/70">
@@ -1220,9 +1397,17 @@ function PostList(p: PostListProps) {
 											{posts[0].publishedAt}
 										</span>
 									)}
-									<H className="mt-4 max-w-xl t-section">{posts[0].title}</H>
+									<H
+										{...row("post", posts[0].id, "title")}
+										className="mt-4 max-w-xl t-section"
+									>
+										{posts[0].title}
+									</H>
 									{posts[0].excerpt && (
-										<p className="mt-3 max-w-lg t-meta opacity-90 line-clamp-2">
+										<p
+											{...row("post", posts[0].id, "excerpt")}
+											className="mt-3 max-w-lg t-meta opacity-90 line-clamp-2"
+										>
 											{posts[0].excerpt}
 										</p>
 									)}
@@ -1254,7 +1439,10 @@ function PostList(p: PostListProps) {
 												{post.publishedAt}
 											</div>
 										)}
-										<HSub className="mt-1.5 t-card-title text-primary group-hover:text-[var(--accent)] transition line-clamp-3">
+										<HSub
+											{...row("post", post.id, "title")}
+											className="mt-1.5 t-card-title text-primary group-hover:text-[var(--accent)] transition line-clamp-3"
+										>
 											{post.title}
 										</HSub>
 									</div>
@@ -1291,6 +1479,7 @@ type VideoGridProps = Common & {
 function VideoGrid(p: VideoGridProps) {
 	const L = useL();
 	const t = useT();
+	const row = useRowMark();
 	const H = useItemHeading(Boolean(p.title || p.eyebrow));
 	const videos: SourceRow["videos"][] = Array.isArray(p.data) ? p.data : [];
 	return (
@@ -1339,7 +1528,10 @@ function VideoGrid(p: VideoGridProps) {
 											</span>
 										</div>
 									</div>
-									<H className="mt-4 t-card-title text-primary group-hover:text-[var(--accent)] transition">
+									<H
+										{...row("post", v.id, "title")}
+										className="mt-4 t-card-title text-primary group-hover:text-[var(--accent)] transition"
+									>
 										{v.title}
 									</H>
 								</NavLink>
@@ -1357,6 +1549,7 @@ type AlbumGridProps = Common & { data?: SourceRow["albums"][] };
 function AlbumGrid(p: AlbumGridProps) {
 	const L = useL();
 	const t = useT();
+	const row = useRowMark();
 	const albums: SourceRow["albums"][] = Array.isArray(p.data) ? p.data : [];
 	return (
 		<section className={`${PAD} ${toneBg(p.tone)}`}>
@@ -1382,7 +1575,9 @@ function AlbumGrid(p: AlbumGridProps) {
 									/>
 								</div>
 								<div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-primary/90 via-primary/20 to-transparent p-5 text-primary-foreground">
-									<div className="t-card-title">{a.title}</div>
+									<div {...row("post", a.id, "title")} className="t-card-title">
+										{a.title}
+									</div>
 									<div className="mt-0.5 t-meta opacity-85">
 										{t("albums.count", "{n} photos", { n: a.count })}
 									</div>
@@ -1400,6 +1595,7 @@ type PublicationListProps = Common & { data?: SourceRow["publications"][] };
 
 function PublicationList(p: PublicationListProps) {
 	const t = useT();
+	const row = useRowMark();
 	const items: SourceRow["publications"][] = Array.isArray(p.data)
 		? p.data
 		: [];
@@ -1456,7 +1652,10 @@ function PublicationList(p: PublicationListProps) {
 										</div>
 									)}
 									<div className="min-w-0 flex-1">
-										<div className="font-medium text-foreground group-hover:text-[var(--accent)] transition">
+										<div
+											{...row("post", it.id, "title")}
+											className="font-medium text-foreground group-hover:text-[var(--accent)] transition"
+										>
 											{it.title}
 										</div>
 										{it.year && (
@@ -1825,6 +2024,7 @@ type ProjectListProps = Common & {
 function ProjectList(p: ProjectListProps) {
 	const L = useL();
 	const t = useT();
+	const row = useRowMark();
 	const rows: ProjectRow[] = Array.isArray(p.data) ? p.data : [];
 	const base = p.linkBase ?? "";
 	const cols =
@@ -1853,7 +2053,10 @@ function ProjectList(p: ProjectListProps) {
 									href={base ? L(`${base}/${r.slug}`) : "#"}
 									className="group flex items-center justify-between gap-4 px-5 py-4 hover:bg-[var(--accent)]/5 transition"
 								>
-									<span className="font-medium text-foreground/85 group-hover:text-[var(--accent)] transition">
+									<span
+										{...row("project", r.id, "name")}
+										className="font-medium text-foreground/85 group-hover:text-[var(--accent)] transition"
+									>
 										{r.name}
 									</span>
 									<span className="shrink-0 text-xs uppercase tracking-wider text-muted-foreground">
@@ -1884,11 +2087,17 @@ function ProjectList(p: ProjectListProps) {
 										{r.code}
 									</div>
 								)}
-								<h3 className="t-card-title text-primary group-hover:text-[var(--accent)] transition">
+								<h3
+									{...row("project", r.id, "name")}
+									className="t-card-title text-primary group-hover:text-[var(--accent)] transition"
+								>
 									{r.name}
 								</h3>
 								{r.summary && (
-									<p className="mt-2 t-body text-foreground/75 line-clamp-3">
+									<p
+										{...row("project", r.id, "summary")}
+										className="mt-2 t-body text-foreground/75 line-clamp-3"
+									>
 										{r.summary}
 									</p>
 								)}
@@ -1921,6 +2130,7 @@ type CertificatesProps = Common & {
 
 function Certificates(p: CertificatesProps) {
 	const t = useT();
+	const mark = useMark();
 	const items: CertificateItem[] = Array.isArray(p.items) ? p.items : [];
 	const { openPdf, reader } = usePdfReader();
 	const cols =
@@ -1959,7 +2169,10 @@ function Certificates(p: CertificatesProps) {
 									</div>
 									<div className="mt-4">
 										{it.title && (
-											<h3 className="t-card-title text-primary group-hover:text-[var(--accent)] transition">
+											<h3
+												{...mark(`items[${n}].title`)}
+												className="t-card-title text-primary group-hover:text-[var(--accent)] transition"
+											>
 												{it.title}
 											</h3>
 										)}
@@ -2166,14 +2379,27 @@ function UnknownSection({ type }: { type: string }) {
 	);
 }
 
-export function SectionRenderer({ sections }: { sections: SectionNode[] }) {
+export function SectionRenderer({
+	sections,
+	entity,
+	entityId,
+	lang,
+}: {
+	sections: SectionNode[];
+	entity?: string;
+	entityId?: number;
+	lang?: string;
+}) {
 	// Hero renders its own h1. Without one, promote the first titled section so
 	// collection landings like /team and /news are not h2-first.
 	const titleIndex = sections.some((s) => s.type === "hero")
 		? -1
 		: sections.findIndex((s) => (s.props as { title?: string })?.title);
+	// the spread below flattens s.props, so identity travels beside it, not in it
+	const identity: EditIdentity | null =
+		entity && entityId != null && lang ? { entity, entityId, lang } : null;
 	return (
-		<>
+		<Identity.Provider value={identity}>
 			{sections.map((s, i) => {
 				const Template = templateFor(s.type);
 				const body = Template ? (
@@ -2184,13 +2410,22 @@ export function SectionRenderer({ sections }: { sections: SectionNode[] }) {
 				// Expose the section id as a DOM anchor (e.g. `#donate`) and offset the
 				// scroll target so the sticky header never covers it.
 				return (
-					<div key={s.id} id={s.id} className="scroll-mt-28">
-						<OwnsPageTitle.Provider value={i === titleIndex}>
-							{body}
-						</OwnsPageTitle.Provider>
+					<div
+						key={s.id}
+						id={s.id}
+						data-cms-section={s.id}
+						data-cms-section-type={s.type}
+						data-cms-section-index={i}
+						className="scroll-mt-28"
+					>
+						<SectionId.Provider value={s.id}>
+							<OwnsPageTitle.Provider value={i === titleIndex}>
+								{body}
+							</OwnsPageTitle.Provider>
+						</SectionId.Provider>
 					</div>
 				);
 			})}
-		</>
+		</Identity.Provider>
 	);
 }

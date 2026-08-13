@@ -301,7 +301,12 @@ function ResolvedRoute() {
 				return (
 					<main className="min-h-screen overflow-x-hidden text-foreground">
 						{page.slug === "home" && <AnnouncementPopup />}
-						<SectionRenderer sections={page.sections} />
+						<SectionRenderer
+							sections={page.sections}
+							entity="page"
+							entityId={page.id}
+							lang={lang}
+						/>
 					</main>
 				);
 			return (
@@ -311,9 +316,18 @@ function ResolvedRoute() {
 					title={page.title}
 					lead={page.excerpt || undefined}
 					heroImage={page.coverUrl || undefined}
+					entity="page"
+					entityId={page.id}
+					titleField="title"
+					leadField="excerpt"
 				>
 					{page.slug === "home" && <AnnouncementPopup />}
-					<SectionRenderer sections={page.sections} />
+					<SectionRenderer
+						sections={page.sections}
+						entity="page"
+						entityId={page.id}
+						lang={lang}
+					/>
 				</SubPage>
 			);
 		}
@@ -328,6 +342,10 @@ function ResolvedRoute() {
 					title={page.title}
 					lead={page.excerpt || undefined}
 					heroImage={page.coverUrl || undefined}
+					entity="page"
+					entityId={page.id}
+					titleField="title"
+					leadField="excerpt"
 				>
 					<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 						{page.children.map((c) => (
@@ -370,6 +388,10 @@ function ResolvedRoute() {
 				title={page.title}
 				lead={page.excerpt || undefined}
 				heroImage={page.coverUrl || undefined}
+				entity="page"
+				entityId={page.id}
+				titleField="title"
+				leadField="excerpt"
 			>
 				{hasBody ? (
 					<div
@@ -405,6 +427,10 @@ function ResolvedRoute() {
 				title={post.title}
 				lead={post.excerpt || undefined}
 				heroImage={post.coverUrl || undefined}
+				entity="post"
+				entityId={post.id}
+				titleField="title"
+				leadField="excerpt"
 			>
 				<JsonLd
 					data={articleLd(
@@ -464,6 +490,9 @@ function ResolvedRoute() {
 				section={collectionLabel(t, r.label)}
 				title={album.title}
 				lead={t("album.lead", "Click any photo to view it larger.")}
+				entity="post"
+				entityId={album.id}
+				titleField="title"
 			>
 				<PhotoGrid photos={album.photos} className={albumCols} />
 			</SubPage>
