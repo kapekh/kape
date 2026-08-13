@@ -206,3 +206,39 @@ No payment was submitted, so the provider leg is unverified by design.
 ## A5 - media library
 
 `/admin/media` in the browser: **122 items · 121 images · 1 file · 22.9 MB**, All/Images/Files filters, an upload control, and thumbnails that render, so `/uploads` serves in this instance. Every tile carries the file's own accessible name.
+
+## R1, R2, R3 - inline editing of section text, in a real browser
+
+Signed in as admin on the public site, `uat.db`, port 3070.
+
+**R1.** The bar is off until asked: `Edit text on this page` with a switch, nothing else. An anonymous visitor gets no bar at all (P11 above).
+
+**R2, a section title on `/en`.** Clicked the cards section title on `/en/what-we-do/ict-innovation`, box opened on that field carrying `Our digital pillars`, typed and saved:
+
+```
+page 13 sections after the save
+  hero: title "ICT Innovation"          km "បច្ចេកវិទ្យាព័ត៌មាន"    ← untouched
+  b0:   title "Our digital pillars (UAT)"  km "សសរស្តម្ភឌីជីថលរបស់យើង"  ← only this moved
+
+public page shows the new text: 3 occurrences, no rebuild
+```
+
+**R3, the language rule.** Cleared the Khmer overlay for that field through `updateField`, then opened it on `/km`:
+
+```
+box label:  Section title (ខ្មែរ)
+box value:  ""                                   ← empty, so a save cannot copy English into the Khmer row
+hint:       No ខ្មែរ text stored, so the page is showing "Our digital pillars (UAT)".
+            What you save here becomes the ខ្មែរ version.
+            Empty falls back to English.
+```
+
+Typed the Khmer title back through the box and restored the English through the API:
+
+```
+en title: Our digital pillars
+km title: សសរស្តម្ភឌីជីថលរបស់យើង
+km overlay keys: items,title
+```
+
+Rithy's three rulings all hold on screen: publishes at once, writes the URL's language, and the affordance is behind a toggle that is off by default.
