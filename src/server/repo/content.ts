@@ -60,6 +60,7 @@ export type ResolvedPage = {
 	// only when the page has no content of its own, so a hub renders a child index
 	children?: ChildLink[];
 	i18nFallback: string[]; // fields showing the default language, for the inline editor
+	updatedAt: string; // the version an inline save is checked against
 };
 
 /** Published direct children of a page, for rendering a hub/index. */
@@ -166,6 +167,7 @@ export async function getPageBySlug(
 		parentTitle,
 		children,
 		i18nFallback: fallback,
+		updatedAt: page.updatedAt,
 	};
 }
 
@@ -534,6 +536,7 @@ export type ResolvedPost = {
 	fileUrl: string | null;
 	youtubeUrl: string | null;
 	i18nFallback: string[];
+	updatedAt: string; // the version an inline save is checked against
 };
 
 /** If `slug` was an old page slug, return the page's current slug (for a 301). */
@@ -628,5 +631,6 @@ export async function getPostBySlug(
 		fileUrl: meta.fileUrl ? String(meta.fileUrl) : null,
 		youtubeUrl: meta.youtube_url ? String(meta.youtube_url) : null,
 		i18nFallback: fallback,
+		updatedAt: post.updatedAt,
 	};
 }

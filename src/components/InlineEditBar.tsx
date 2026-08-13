@@ -1,5 +1,5 @@
 import { Pencil, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { useLang } from "#/lib/i18n";
@@ -183,28 +183,24 @@ function StringEditor({
 
 /**
  * The version each record was loaded at, so a second editor's save is refused
- * rather than silently overwriting the first. The public page payload carries no
- * `updated_at`, so it is read once per record, awaited by the first save that
- * needs it, and then kept from what each save returns.
+ * rather than silently overwriting the first. It comes off the payload the page
+ * already has, so no record is read twice, and each save replaces it with the
+ * version it wrote.
  */
-const versions = new Map<string, Promise<string | null>>();
-const versionKey = (t: FieldEditTarget) => `${t.entity}:${t.entityId}`;
+const versions = new Map<string, string | null>();
+const key = (entity: string, entityId: number) => `${entity}:${entityId}`;
 
-function versionOf(target: FieldEditTarget): Promise<string | null> {
-	const key = versionKey(target);
-	let pending = versions.get(key);
-	if (!pending) {
-		pending =
-			target.entity === "page"
-				? trpcClient.adminPages.get
-						.query({ id: target.entityId })
-						.then((page) => page?.updatedAt ?? null)
-						.catch(() => null)
-				: Promise.resolve(null);
-		versions.set(key, pending);
-	}
-	return pending;
+/** What the page loaded this record at. */
+export function rememberVersion(
+	entity: string,
+	entityId: number,
+	updatedAt: string | null,
+) {
+	versions.set(key(entity, entityId), updatedAt);
 }
+
+const versionOf = (t: FieldEditTarget): string | null =>
+	versions.get(key(t.entity, t.entityId)) ?? null;
 
 function FieldEditor({
 	target,
@@ -225,11 +221,6 @@ function FieldEditor({
 	const langName = useLangName(target.lang);
 	const defaultName = useLangName(DEFAULT_LANG);
 
-	// in flight while the admin types, so saving does not wait on it
-	useEffect(() => {
-		versionOf(target);
-	}, [target]);
-
 	function close() {
 		onClose();
 		if (openedFrom instanceof HTMLElement) openedFrom.focus();
@@ -245,9 +236,9 @@ function FieldEditor({
 				lang: target.lang,
 				target: target.target,
 				value,
-				expectedUpdatedAt: await versionOf(target),
+				expectedUpdatedAt: versionOf(target),
 			});
-			versions.set(versionKey(target), Promise.resolve(result.updatedAt));
+			rememberVersion(target.entity, target.entityId, result.updatedAt);
 			// the section text belongs to the route loader, not to this component
 			window.location.reload();
 		} catch (err) {
