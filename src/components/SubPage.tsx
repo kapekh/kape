@@ -1,9 +1,200 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect } from "react";
+import { rememberVersion } from "@/components/InlineEditBar";
 import { NavLink } from "@/components/NavLink";
+import {
+	type CmsMarker,
+	cmsMark,
+} from "@/components/sections/SectionRenderer";
 import { useLang, useT } from "@/lib/i18n";
 import { localizedHref } from "@/lib/i18n-config";
+import {
+	type EditableEntity,
+	type FieldEditTarget,
+	useInlineEdit,
+} from "@/lib/inline-edit";
+import type { ResolvedPage, ResolvedPost } from "#/server/repo/content";
 
 type Crumb = { label: string; href?: string };
+
+/** The record a page *is*, as opposed to the records its sections list. */
+export type PageRecord = {
+	entity: EditableEntity;
+	entityId: number;
+	/** The stored source of every field `updateField` takes, keyed by its name. */
+	fields: Record<string, string>;
+	/** Those of them showing the default language because this one stores none. */
+	fallback: string[];
+	/** The version the page was loaded at, which every save is checked against. */
+	updatedAt: string | null;
+};
+
+/** A page's own text, off the payload the route loader already fetched. No body: the
+ * stored source is prosemirror json, and rich text stays in the studio. */
+export const pageRecord = (
+	page: Pick<
+		ResolvedPage,
+		"id" | "title" | "excerpt" | "i18nFallback" | "updatedAt"
+	>,
+): PageRecord => ({
+	entity: "page",
+	entityId: page.id,
+	fields: { title: page.title, excerpt: page.excerpt },
+	fallback: page.i18nFallback,
+	updatedAt: page.updatedAt,
+});
+
+/** The same for a post. No body: the payload carries the rendered html, not the source. */
+export const postRecord = (
+	post: Pick<
+		ResolvedPost,
+		"id" | "title" | "excerpt" | "i18nFallback" | "updatedAt"
+	>,
+): PageRecord => ({
+	entity: "post",
+	entityId: post.id,
+	fields: { title: post.title, excerpt: post.excerpt },
+	fallback: post.i18nFallback,
+	updatedAt: post.updatedAt,
+});
+
+const AREA: Record<string, string> = { page: "pages", post: "posts" };
+
+/**
+ * True while an admin who may edit this record's entity has the switch on. A
+ * route whose kind carries no editable source, an album's, is never editable.
+ */
+function useEditingRecord(record: PageRecord | null): boolean {
+	const { editing, may } = useInlineEdit();
+	return (
+		record !== null &&
+		editing &&
+		may(AREA[record.entity]) &&
+		Object.keys(record.fields).length > 0
+	);
+}
+
+// what the studio's own form calls each field
+const LABELS: Record<string, Record<string, string>> = {
+	page: { title: "Title", excerpt: "Brief", body: "Body" },
+	post: { title: "Title", excerpt: "Excerpt", body: "Body" },
+};
+
+const FIELD_TARGET = /^field:([A-Za-z][A-Za-z0-9_]*)$/;
+
+/**
+ * What the bar needs to edit one of this record's own fields, read off the
+ * payload the page already has. Null for a field this route does not carry the
+ * source of, and for a marker belonging to a record a listing pulled in.
+ */
+export function recordFieldTarget(
+	record: PageRecord,
+	lang: string,
+	target: string,
+): FieldEditTarget | null {
+	const field = FIELD_TARGET.exec(target)?.[1];
+	const shown = field === undefined ? undefined : record.fields[field];
+	if (field === undefined || shown === undefined) return null;
+	return {
+		kind: "field",
+		entity: record.entity,
+		entityId: record.entityId,
+		lang,
+		target,
+		shown,
+		fellBack: record.fallback.includes(field),
+		multiline: field !== "title" || shown.includes("\n"),
+		label: LABELS[record.entity]?.[field] ?? field,
+	};
+}
+
+/** Marks this record's own fields, and hands the bar the version it loaded. */
+export function useRecordMark(record: PageRecord | null) {
+	const { lang } = useLang();
+	// a marked node is reachable by keyboard only while it is editable
+	const focusable: CmsMarker = useEditingRecord(record) ? { tabIndex: 0 } : {};
+
+	useEffect(() => {
+		if (record)
+			rememberVersion(record.entity, record.entityId, record.updatedAt);
+	}, [record]);
+
+	return (field: string): CmsMarker =>
+		record
+			? {
+					...cmsMark(
+						{ entity: record.entity, entityId: record.entityId, lang },
+						`field:${field}`,
+					),
+					...focusable,
+				}
+			: {};
+}
+
+const OUTLINE = "color-mix(in oklab, var(--primary) 45%, transparent)";
+
+/**
+ * One delegated listener for this record's own fields, the field-level twin of
+ * the section renderer's. A marker naming another record - a post title inside a
+ * listing - belongs to that record and is left alone.
+ */
+function FieldLayer({ record }: { record: PageRecord }) {
+	const { lang } = useLang();
+	const { setTarget, target } = useInlineEdit();
+	const on = useEditingRecord(record);
+	const scope = `[data-cms-entity="${record.entity}"][data-cms-entity-id="${record.entityId}"]`;
+
+	useEffect(() => {
+		if (!on) return;
+		const open = (node: Element): boolean => {
+			if (!node.matches(scope)) return false;
+			const picked = recordFieldTarget(
+				record,
+				lang,
+				node.getAttribute("data-cms-target") ?? "",
+			);
+			if (!picked) return false;
+			setTarget(picked);
+			return true;
+		};
+		const marked = (e: Event): Element | null =>
+			(e.target as Element | null)?.closest?.("[data-cms-target]") ?? null;
+		const onClick = (e: MouseEvent) => {
+			const node = marked(e);
+			if (!node || !open(node)) return;
+			// the marked text often sits inside a link
+			e.preventDefault();
+			e.stopPropagation();
+			(node as HTMLElement).focus?.();
+		};
+		const onKeyDown = (e: KeyboardEvent) => {
+			if (e.key !== "Enter" && e.key !== " ") return;
+			const node = marked(e);
+			if (!node || node !== document.activeElement || !open(node)) return;
+			e.preventDefault();
+			e.stopPropagation();
+		};
+		document.addEventListener("click", onClick, true);
+		document.addEventListener("keydown", onKeyDown, true);
+		return () => {
+			document.removeEventListener("click", onClick, true);
+			document.removeEventListener("keydown", onKeyDown, true);
+		};
+	}, [on, record, lang, scope, setTarget]);
+
+	if (!on) return null;
+	const address = (field: string) => `${scope}[data-cms-target="field:${field}"]`;
+	const editable = Object.keys(record.fields).map(address).join(",");
+	const selected =
+		target?.kind === "field" &&
+		target.entity === record.entity &&
+		target.entityId === record.entityId &&
+		FIELD_TARGET.test(target.target)
+			? `${address(target.target.slice("field:".length))}{outline:2px solid var(--primary);outline-offset:2px;background:color-mix(in oklab, var(--primary) 12%, transparent)}`
+			: "";
+	return (
+		<style>{`${editable}{outline:1px dashed ${OUTLINE};outline-offset:2px;border-radius:2px;cursor:pointer}${selected}`}</style>
+	);
+}
 
 export function SubPage({
 	section,
@@ -13,6 +204,9 @@ export function SubPage({
 	badge,
 	crumbs,
 	wide = false,
+	record,
+	titleField,
+	leadField,
 	children,
 }: {
 	section: string;
@@ -24,11 +218,17 @@ export function SubPage({
 	/** Full-width body (max-w-7xl, no single card) for layouts that supply their
 	 *  own cards/columns. Default is the narrow article card (max-w-4xl). */
 	wide?: boolean;
+	/** Which record the title and lead came from; absent leaves them unmarked. */
+	record?: PageRecord | null;
+	titleField?: string;
+	leadField?: string;
 	children: ReactNode;
 }) {
 	const { lang, t } = useLang();
+	const mark = useRecordMark(record ?? null);
 	return (
 		<main className="text-foreground overflow-x-hidden">
+			{record && <FieldLayer record={record} />}
 			{/* Hero */}
 			<section className="relative pt-28 pb-24 px-6 overflow-hidden">
 				<div className="absolute inset-0 -z-10">
@@ -76,11 +276,17 @@ export function SubPage({
 							{badge}
 						</div>
 					)}
-					<h1 className="mt-5 max-w-4xl t-page-title [text-shadow:0_2px_24px_rgba(0,0,0,0.3)]">
+					<h1
+						{...(titleField ? mark(titleField) : {})}
+						className="mt-5 max-w-4xl t-page-title [text-shadow:0_2px_24px_rgba(0,0,0,0.3)]"
+					>
 						{title}
 					</h1>
 					{lead && (
-						<p className="mt-5 max-w-3xl t-lead text-primary-foreground/90">
+						<p
+							{...(leadField ? mark(leadField) : {})}
+							className="mt-5 max-w-3xl t-lead text-primary-foreground/90"
+						>
 							{lead}
 						</p>
 					)}

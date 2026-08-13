@@ -4,6 +4,8 @@ import { z } from "zod";
 import { FORM_FIELD_TYPES } from "#/lib/forms";
 import {
 	disallowedSections,
+	moduleForRouter,
+	routerEnabled,
 	sourceEnabled,
 	taxonomyEnabled,
 } from "#/lib/modules";
@@ -11,6 +13,7 @@ import {
 	ALL_AREAS,
 	PERMISSION_AREAS,
 	type PermissionArea,
+	ROUTER_AREA,
 } from "#/lib/permissions";
 import type { SectionNode } from "#/lib/sections";
 import { PAGE_TITLE_MAX } from "#/lib/slug";
@@ -82,6 +85,7 @@ import {
 	updateLanguage,
 	updateNavItem,
 	updateOffice,
+	updateField,
 	updatePage,
 	updatePartner,
 	updatePost,
@@ -728,6 +732,26 @@ async function assertSectionsAllowed(
 		throw new TRPCError({ code: "BAD_REQUEST", message: bad.join(" ") });
 }
 
+const ENTITY_ROUTER = {
+	page: "adminPages",
+	post: "adminPosts",
+	person: "adminPeople",
+	project: "adminProjects",
+} as const;
+
+// updateField writes four entities from one router, so the module and permission
+// gate adminProcedure applied to `adminPages` is re-run for the router owning the row
+async function assertEntityAllowed(
+	ctx: TRPCContext,
+	entity: keyof typeof ENTITY_ROUTER,
+) {
+	const key = ENTITY_ROUTER[entity];
+	if (moduleForRouter(key) && !routerEnabled(await getSettings(ctx.db), key))
+		throw new TRPCError({ code: "FORBIDDEN" });
+	if (!ctx.isSuperAdmin && !ctx.permissions.includes(ROUTER_AREA[key]))
+		throw new TRPCError({ code: "FORBIDDEN" });
+}
+
 const adminPagesRouter = {
 	list: adminProcedure.query(({ ctx }) => adminListPages(ctx.db)),
 	get: adminProcedure
@@ -772,6 +796,29 @@ const adminPagesRouter = {
 				return await updatePage(ctx.db, input.id, input as PageInput);
 			} catch (err) {
 				// The editor turns the bare code into the sentence and the reload offer.
+				if (err instanceof StaleWriteError)
+					throw new TRPCError({ code: "CONFLICT" });
+				throw err;
+			}
+		}),
+	// one addressed field, so an inline save cannot destroy the languages it was not told about
+	updateField: adminProcedure
+		.input(
+			z.object({
+				entity: z.enum(["page", "post", "person", "project"]),
+				entityId: z.number(),
+				lang: z.string().min(2),
+				target: z.string().min(1),
+				value: z.string(),
+				expectedUpdatedAt: z.string().nullish(),
+			}),
+		)
+		.mutation(async ({ ctx, input }) => {
+			await assertEntityAllowed(ctx, input.entity);
+			try {
+				return await updateField(ctx.db, input);
+			} catch (err) {
+				// the editor turns the bare code into the sentence and the reload offer
 				if (err instanceof StaleWriteError)
 					throw new TRPCError({ code: "CONFLICT" });
 				throw err;

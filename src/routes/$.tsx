@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, notFound, redirect } from "@tanstack/react-router";
+import { useMemo } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { AnnouncementPopup } from "@/components/AnnouncementPopup";
@@ -10,7 +11,13 @@ import { usePdfReader } from "@/components/PdfReader";
 import { ProjectView } from "@/components/ProjectView";
 import { RichBody } from "@/components/RichBody";
 import { ShareButtons } from "@/components/ShareButtons";
-import { SubPage } from "@/components/SubPage";
+import {
+	type PageRecord,
+	pageRecord,
+	postRecord,
+	SubPage,
+	useRecordMark,
+} from "@/components/SubPage";
 import {
 	SectionRenderer,
 	youtubeId,
@@ -289,6 +296,26 @@ function ResolvedRoute() {
 	const { route: r, settings } = Route.useLoaderData();
 	const { lang } = useLang();
 	const t = useT();
+	// the record this URL *is*, with the source of every field of it that can be
+	// edited in place. A person's and a project's text is not addressable as a
+	// translations row, and an album's is a later job
+	const record = useMemo<PageRecord | null>(() => {
+		if (r.kind === "page") return pageRecord(r.page);
+		if (r.kind === "article") return postRecord(r.post);
+		if (r.kind === "album") {
+			const fields: Record<string, string> = {};
+			return {
+				entity: "post",
+				entityId: r.album.id,
+				fields,
+				fallback: [],
+				updatedAt: null,
+			};
+		}
+		return null;
+	}, [r]);
+	// registers the record's version for the bar; this route marks nothing itself
+	useRecordMark(record);
 
 	if (r.kind === "page") {
 		const page = r.page;
@@ -301,7 +328,12 @@ function ResolvedRoute() {
 				return (
 					<main className="min-h-screen overflow-x-hidden text-foreground">
 						{page.slug === "home" && <AnnouncementPopup />}
-						<SectionRenderer sections={page.sections} />
+						<SectionRenderer
+							sections={page.sections}
+							entity="page"
+							entityId={page.id}
+							lang={lang}
+						/>
 					</main>
 				);
 			return (
@@ -311,9 +343,17 @@ function ResolvedRoute() {
 					title={page.title}
 					lead={page.excerpt || undefined}
 					heroImage={page.coverUrl || undefined}
+					record={record}
+					titleField="title"
+					leadField="excerpt"
 				>
 					{page.slug === "home" && <AnnouncementPopup />}
-					<SectionRenderer sections={page.sections} />
+					<SectionRenderer
+						sections={page.sections}
+						entity="page"
+						entityId={page.id}
+						lang={lang}
+					/>
 				</SubPage>
 			);
 		}
@@ -328,6 +368,9 @@ function ResolvedRoute() {
 					title={page.title}
 					lead={page.excerpt || undefined}
 					heroImage={page.coverUrl || undefined}
+					record={record}
+					titleField="title"
+					leadField="excerpt"
 				>
 					<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 						{page.children.map((c) => (
@@ -370,8 +413,13 @@ function ResolvedRoute() {
 				title={page.title}
 				lead={page.excerpt || undefined}
 				heroImage={page.coverUrl || undefined}
+				record={record}
+				titleField="title"
+				leadField="excerpt"
 			>
 				{hasBody ? (
+					// rich text stays in the studio: the stored body is prosemirror json, and
+					// a save that is not valid json renders as nothing with no way back in
 					<div
 						className="prose-body"
 						// biome-ignore lint/security/noDangerouslySetInnerHtml: trusted, server-rendered
@@ -405,6 +453,9 @@ function ResolvedRoute() {
 				title={post.title}
 				lead={post.excerpt || undefined}
 				heroImage={post.coverUrl || undefined}
+				record={record}
+				titleField="title"
+				leadField="excerpt"
 			>
 				<JsonLd
 					data={articleLd(
@@ -464,6 +515,8 @@ function ResolvedRoute() {
 				section={collectionLabel(t, r.label)}
 				title={album.title}
 				lead={t("album.lead", "Click any photo to view it larger.")}
+				record={record}
+				titleField="title"
 			>
 				<PhotoGrid photos={album.photos} className={albumCols} />
 			</SubPage>
