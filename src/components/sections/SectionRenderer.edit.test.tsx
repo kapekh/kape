@@ -291,15 +291,7 @@ describe("the markers J04 emits and the address J03 parses", () => {
 		// no box opens on a field the write path would refuse, and none is withheld
 		// from a field it would take
 		expect(opens).toEqual(writes);
-		// J04 marks the resources item's `kind`, which is a pdf/video/image select
-		// rather than text, so updateField refuses it. Reported to the lead; the fix
-		// is the marker, in a file this job does not own. Delete these four when it goes.
-		expect(refused).toEqual([
-			'section:s-resources-cols-1:props.items[0].kind -> "kind" is not translatable text on a items item. It offers title, meta.',
-			'section:s-resources-cols-1:props.items[1].kind -> "kind" is not translatable text on a items item. It offers title, meta.',
-			'section:s-resources-cols-2:props.items[0].kind -> "kind" is not translatable text on a items item. It offers title, meta.',
-			'section:s-resources-cols-2:props.items[1].kind -> "kind" is not translatable text on a items item. It offers title, meta.',
-		]);
+		expect(refused).toEqual([]);
 	});
 
 	it("edits the stored source of a title, not the accent spans on screen", () => {

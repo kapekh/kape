@@ -1134,10 +1134,7 @@ function Resources(p: ResourcesProps) {
 										{Icon.doc("h-6 w-6")}
 									</div>
 									<div className="min-w-0 flex-1">
-										<div
-											{...mark(`items[${n}].kind`)}
-											className="text-[10px] uppercase tracking-[0.18em] text-[var(--accent)] font-semibold"
-										>
+										<div className="text-[10px] uppercase tracking-[0.18em] text-[var(--accent)] font-semibold">
 											{it.kind || t("resources.kindDefault", "file")}
 										</div>
 										<div
