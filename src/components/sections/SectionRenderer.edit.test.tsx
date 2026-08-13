@@ -29,9 +29,6 @@ vi.mock("#/integrations/tanstack-query/root-provider", () => ({
 	trpcClient: {
 		auth: { me: { query: () => Promise.resolve(state.me) } },
 		adminPages: {
-			get: {
-				query: () => Promise.resolve({ updatedAt: "2026-08-13T00:00:00Z" }),
-			},
 			updateField: {
 				mutate: (input: Record<string, unknown>) => {
 					if (state.conflict) return Promise.reject(new Error("CONFLICT"));
@@ -71,10 +68,11 @@ vi.mock("../PublicOrgChart", () => ({ PublicOrgChart: () => <div /> }));
 vi.mock("../ContactForm", () => ({ ContactForm: () => <form /> }));
 vi.mock("../FormRenderer", () => ({ FormRenderer: () => <form /> }));
 
-import { InlineEditBar } from "../InlineEditBar";
+import { InlineEditBar, rememberVersion } from "../InlineEditBar";
 import { fieldEditTarget, SectionRenderer } from "./SectionRenderer";
 
 const PAGE_ID = 43;
+const LOADED_AT = "2026-08-13T00:00:00Z";
 
 // the stats count-up gates on scrolling into view, which jsdom has no notion of
 vi.stubGlobal(
@@ -170,6 +168,9 @@ function Probe({
 	sections: SectionNode[];
 	lang?: string;
 }) {
+	// the route hands the bar the version its payload carried, which J07 replaced
+	// the extra adminPages.get with
+	rememberVersion("page", PAGE_ID, LOADED_AT);
 	return (
 		<LanguageProvider
 			lang={lang}
@@ -347,7 +348,7 @@ describe("editing a section field on the public page", () => {
 					lang: "en",
 					target: lead,
 					value: "A new lead",
-					expectedUpdatedAt: "2026-08-13T00:00:00Z",
+					expectedUpdatedAt: LOADED_AT,
 				},
 			]),
 		);

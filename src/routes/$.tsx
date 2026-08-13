@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, notFound, redirect } from "@tanstack/react-router";
+import { useMemo } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { AnnouncementPopup } from "@/components/AnnouncementPopup";
@@ -10,7 +11,13 @@ import { usePdfReader } from "@/components/PdfReader";
 import { ProjectView } from "@/components/ProjectView";
 import { RichBody } from "@/components/RichBody";
 import { ShareButtons } from "@/components/ShareButtons";
-import { SubPage } from "@/components/SubPage";
+import {
+	type PageRecord,
+	pageRecord,
+	postRecord,
+	SubPage,
+	useRecordMark,
+} from "@/components/SubPage";
 import {
 	SectionRenderer,
 	youtubeId,
@@ -289,6 +296,25 @@ function ResolvedRoute() {
 	const { route: r, settings } = Route.useLoaderData();
 	const { lang } = useLang();
 	const t = useT();
+	// the record this URL *is*, with the source of every field of it that can be
+	// edited in place. A person's and a project's text is not addressable as a
+	// translations row, and an album's is a later job
+	const record = useMemo<PageRecord | null>(() => {
+		if (r.kind === "page") return pageRecord(r.page);
+		if (r.kind === "article") return postRecord(r.post);
+		if (r.kind === "album") {
+			const fields: Record<string, string> = {};
+			return {
+				entity: "post",
+				entityId: r.album.id,
+				fields,
+				fallback: [],
+				updatedAt: null,
+			};
+		}
+		return null;
+	}, [r]);
+	const mark = useRecordMark(record);
 
 	if (r.kind === "page") {
 		const page = r.page;
@@ -316,8 +342,7 @@ function ResolvedRoute() {
 					title={page.title}
 					lead={page.excerpt || undefined}
 					heroImage={page.coverUrl || undefined}
-					entity="page"
-					entityId={page.id}
+					record={record}
 					titleField="title"
 					leadField="excerpt"
 				>
@@ -342,8 +367,7 @@ function ResolvedRoute() {
 					title={page.title}
 					lead={page.excerpt || undefined}
 					heroImage={page.coverUrl || undefined}
-					entity="page"
-					entityId={page.id}
+					record={record}
 					titleField="title"
 					leadField="excerpt"
 				>
@@ -388,13 +412,13 @@ function ResolvedRoute() {
 				title={page.title}
 				lead={page.excerpt || undefined}
 				heroImage={page.coverUrl || undefined}
-				entity="page"
-				entityId={page.id}
+				record={record}
 				titleField="title"
 				leadField="excerpt"
 			>
 				{hasBody ? (
 					<div
+						{...mark("body")}
 						className="prose-body"
 						// biome-ignore lint/security/noDangerouslySetInnerHtml: trusted, server-rendered
 						dangerouslySetInnerHTML={{ __html: page.bodyHtml }}
@@ -427,8 +451,7 @@ function ResolvedRoute() {
 				title={post.title}
 				lead={post.excerpt || undefined}
 				heroImage={post.coverUrl || undefined}
-				entity="post"
-				entityId={post.id}
+				record={record}
 				titleField="title"
 				leadField="excerpt"
 			>
@@ -490,8 +513,7 @@ function ResolvedRoute() {
 				section={collectionLabel(t, r.label)}
 				title={album.title}
 				lead={t("album.lead", "Click any photo to view it larger.")}
-				entity="post"
-				entityId={album.id}
+				record={record}
 				titleField="title"
 			>
 				<PhotoGrid photos={album.photos} className={albumCols} />
