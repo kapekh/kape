@@ -20,6 +20,7 @@ import { useEffect, useState } from "react";
 
 import { AdminHeaderProvider } from "#/components/admin/AdminHeader";
 import { AdminIcon } from "#/components/admin/AdminIcon";
+import { CommandPalette } from "#/components/admin/CommandPalette";
 import { startTour, startTourOnce, TourHost } from "#/components/admin/Tour";
 import { tourForPath } from "#/components/admin/tours";
 import { ThemeToggle } from "#/components/ThemeToggle";
@@ -498,6 +499,8 @@ function AdminLayout({ access }: { access: OkAccess }) {
 						</>
 					)}
 				</div>
+
+				<CommandPalette nav={visibleNav} narrow={railNarrow} />
 
 				<nav className="hide-scroll flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-6">
 					{visibleNav.map((section) => {
