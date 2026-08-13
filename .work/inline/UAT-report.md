@@ -141,3 +141,47 @@ The marker is `data-*` only and carries no affordance, which is the design: iden
 ## P4 - the draft page
 
 The one draft page is not reachable: `/en/nonexistent-page-xyz` → 404, and the draft's own slug is checked with the final sweep.
+
+## P8 - search
+
+`/en/search?q=school` returns **14 results** across projects, news, videos, galleries, publications, stories and pages, each linking to its own record.
+`/en/search?q=zzqqxx` renders `Nothing matched "zzqqxx".`
+
+## P9 - media
+
+Served from `/uploads/<key>` with the right type and byte count:
+
+```
+200 image/png   210021  05713464-….png
+200 image/jpeg  768145  0ba3af68-….jpg
+200 application/pdf 5832231  f2e93886-….pdf
+```
+
+## A6 - modules
+
+Schools turned off through `adminSettings.set`, then back on:
+
+```
+off: /admin/schools → 307,  adminSchools.list → FORBIDDEN
+on:  /admin/schools → 200,  enabled_modules restored byte for byte
+```
+
+The module gate refuses the API as well as the route, so switching a module off is not just a hidden sidebar entry.
+
+## A4 - the page studio
+
+`/admin/pages/13` in a real browser: one screen with the section list, metadata, page settings and cover on the left, live preview on the right, `Save page` disabled and `No changes to save.` on arrival.
+
+## J15 - the command palette, mounted
+
+Driven in the browser after signing in through the form:
+
+```
+Ctrl+K            → dialog "Search the admin", 37 grouped destinations
+type "donat"      → Donations, Donors
+Enter             → /admin/donations
+```
+
+The rail also carries a visible `Search the admin` control, so the shortcut is not the only way in.
+
+**One finding.** On a first visit the screen's own tour is open, and `Ctrl+K` opens the palette on top of it: **two `aria-modal` dialogs at once**. Neither traps the other. J15 reported the tour taking the keyboard; what actually happens is worse in accessibility terms and cheap to fix, by having the palette refuse to open while a tour is up. Logged, not fixed: it crosses two jobs' files.
