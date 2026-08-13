@@ -46,7 +46,8 @@ Run it, paste the output into `.work/inline/J06-report.md`.
 7. **Permission gated.** Sign in as `staff@kapekh.org`, paste what the page offers.
 8. **Keyboard.** Open a field, Escape closes it, focus returns to where it was. Paste the active element before and after.
 9. **Cache cleared.** Show the public page serving the new text without a manual cache bust.
-10. **Gates.** `bun run test` at 449 or better, `tsc` silent, `bun run lint` at 6 or fewer, `bun run build` green. Paste all four.
+10. **A runnable guard on the addressing.** J04's markers and J03's parser agree today, checked by hand in the lead pane: 93 target strings, all parse. Nothing in the suite would notice if that came apart. Leave one test behind that renders the probe page's sections, collects every emitted target and asserts `parseFieldTarget` accepts each one.
+11. **Gates.** `bun run test` at 467 or better, `tsc` silent, `bun run lint` at 6 or fewer, `bun run build` green. Paste all four.
 
 ## Out of scope
 
