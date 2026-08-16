@@ -117,10 +117,12 @@
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
+  --color-secondary-ink: var(--secondary-ink);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
@@ -142,15 +144,20 @@
   --color-admin-ink-muted: var(--admin-ink-muted);
   --color-admin-ink-subtle: var(--admin-ink-subtle);
   --color-admin-accent: var(--admin-accent);
+  --color-admin-accent-ink: var(--admin-accent-ink);
   --color-admin-accent-soft: var(--admin-accent-soft);
   --color-admin-focus: var(--admin-focus);
   --color-admin-live: var(--admin-live);
+  --color-admin-live-ink: var(--admin-live-ink);
   --color-admin-live-soft: var(--admin-live-soft);
   --color-admin-draft: var(--admin-draft);
+  --color-admin-draft-ink: var(--admin-draft-ink);
   --color-admin-draft-soft: var(--admin-draft-soft);
   --color-admin-warning: var(--admin-warning);
+  --color-admin-warning-ink: var(--admin-warning-ink);
   --color-admin-warning-soft: var(--admin-warning-soft);
   --color-admin-danger: var(--admin-danger);
+  --color-admin-danger-ink: var(--admin-danger-ink);
   --color-admin-danger-soft: var(--admin-danger-soft);
   --color-admin-neutral: var(--admin-neutral);
   --color-admin-neutral-soft: var(--admin-neutral-soft);
@@ -238,6 +245,12 @@
   );
   --input: var(--border);
   --ring: var(--accent);
+  /* The accent as text on paper. The brand accent is a surface colour: at its
+     usual lightness it measures about 3:1 on white, and WCAG wants 4.5 for
+     anything under 24px. Capping lightness keeps the hue and only darkens an
+     accent that is too light to read; a darker brand accent passes through. */
+  --accent-ink: light-dark(oklch(from var(--accent) min(l, 0.53) c h), var(--accent));
+  --secondary-ink: light-dark(oklch(from var(--secondary) min(l, 0.54) c h), var(--secondary));
   /* Palm green, "this worked". A status colour, not a brand colour, so it is
      deliberately not one of the knobs: green must keep meaning green. */
   --palm: light-dark(oklch(0.55 0.10 165), oklch(0.62 0.12 165));
@@ -315,8 +328,9 @@
     oklch(0.50 calc(0.022 * var(--paper-chroma)) calc(55 + var(--paper-hue))),
     oklch(0.73 calc(0.016 * var(--paper-chroma)) calc(75 + var(--paper-hue)))
   );
+  /* 0.62 measured 3.65 on the panel, under the 4.5 a 13px hint needs. */
   --admin-ink-subtle: light-dark(
-    oklch(0.62 calc(0.016 * var(--paper-chroma)) calc(60 + var(--paper-hue))),
+    oklch(0.52 calc(0.016 * var(--paper-chroma)) calc(60 + var(--paper-hue))),
     oklch(0.58 calc(0.014 * var(--paper-chroma)) calc(70 + var(--paper-hue)))
   );
   --admin-accent: var(--accent);
@@ -336,6 +350,15 @@
   --admin-danger-soft: oklch(from var(--destructive) l c h / 0.12);
   --admin-neutral: var(--admin-ink-muted);
   --admin-neutral-soft: oklch(from var(--admin-ink-muted) l c h / 0.12);
+
+  /* Each tone twice: the colour, and the same colour dark enough to be read at
+     13px on its own soft tint. A badge painted tone-on-tone-soft measured
+     2.3-3.9 against white; only the text moves, the tint and the dot do not. */
+  --admin-accent-ink: var(--accent-ink);
+  --admin-live-ink: light-dark(oklch(from var(--admin-live) min(l, 0.5) c h), var(--admin-live));
+  --admin-draft-ink: light-dark(oklch(from var(--admin-draft) min(l, 0.52) c h), var(--admin-draft));
+  --admin-warning-ink: light-dark(oklch(from var(--admin-warning) min(l, 0.52) c h), var(--admin-warning));
+  --admin-danger-ink: light-dark(oklch(from var(--admin-danger) min(l, 0.5) c h), var(--admin-danger));
 }
 
 @layer base {
@@ -498,6 +521,20 @@
   /* Battambang reads ~1 optical step smaller; nudge running text up on /km. */
   :lang(km) .t-body { font-size: 1.05rem; }
   :lang(km) .t-lead { font-size: 1.2rem; }
+
+  /* Grows a small control's hit area to the 24px WCAG 2.2 minimum without
+     moving it or resizing what is drawn. A one-line link is 16px tall and an
+     8px carousel dot is 8px; both stay as they look and gain a bigger target. */
+  .tap-target { position: relative; }
+  .tap-target::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 24px);
+    height: max(100%, 24px);
+    transform: translate(-50%, -50%);
+  }
 }
 
 /* ---- Organizational chart: CSS-connector hierarchy tree ---- */

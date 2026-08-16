@@ -45,7 +45,7 @@ function PageHeader({
 									{crumb.to && !last ? (
 										<Link
 											to={crumb.to}
-											className="rounded-lg transition-colors duration-150 ease-out hover:text-admin-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+											className="tap-target rounded-lg transition-colors duration-150 ease-out hover:text-admin-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
 										>
 											{crumb.label}
 										</Link>

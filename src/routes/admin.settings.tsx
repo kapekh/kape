@@ -3,12 +3,12 @@ import { KeyRound, Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
-import { startTourOnce } from "#/components/admin/Tour";
 import {
+	FormSection,
 	fieldInput,
 	fieldLabel,
-	FormSection,
 } from "#/components/admin/form-ui";
+import { startTourOnce } from "#/components/admin/Tour";
 import { Button } from "#/components/ui/button.tsx";
 import { EmptyState } from "#/components/ui/empty-state.tsx";
 import { PageHeader } from "#/components/ui/page-header.tsx";
@@ -18,13 +18,13 @@ import { Table, TBody, TD, TH, THead, TR } from "#/components/ui/table.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { saveErrorMessage } from "#/lib/save-error";
 import {
-	checkThemeValue,
 	type ColourReach,
+	checkThemeValue,
 	colourReach,
 	colourToHex,
 	THEME_FIELDS,
-	themeContrast,
 	type ThemeKind,
+	themeContrast,
 	toggleOn,
 } from "#/lib/site-theme";
 import { confirm, toast } from "@/components/Dialogs";
@@ -189,7 +189,7 @@ function Fields({
 							{problem && (
 								<p
 									id={errorId}
-									className="mt-2 text-[13px] font-medium text-admin-danger"
+									className="mt-2 text-[13px] font-medium text-admin-danger-ink"
 								>
 									{problem} Until that is fixed, or the field is cleared, this
 									one is not sent and not saved.
@@ -230,7 +230,7 @@ function Contrast({ values }: { values: Record<string, string> }) {
 			{measured.map((c) => (
 				<p
 					key={`${c.key}-${c.mode}-${c.what}`}
-					className={`text-[13px] ${c.ratio < 4.5 ? "text-admin-danger" : "text-admin-ink-muted"}`}
+					className={`text-[13px] ${c.ratio < 4.5 ? "text-admin-danger-ink" : "text-admin-ink-muted"}`}
 				>
 					{c.label}, {c.mode} mode, {c.what}: {c.ratio.toFixed(1)}:1
 					{c.ratio < 3
@@ -243,7 +243,7 @@ function Contrast({ values }: { values: Record<string, string> }) {
 			{caveats.map(({ field, value, reach }) => (
 				<p
 					key={field.key}
-					className={`text-[13px] ${reach === "invisible" ? "text-admin-danger" : "text-admin-ink-muted"}`}
+					className={`text-[13px] ${reach === "invisible" ? "text-admin-danger-ink" : "text-admin-ink-muted"}`}
 				>
 					{field.label}: <span className="font-mono">{value}</span>{" "}
 					{REACH[reach]}
@@ -282,7 +282,7 @@ function ReadError({
 		<div
 			className={`space-y-3 rounded-xl border p-6 ${firstLoad ? "border-admin-border bg-admin-panel" : "border-admin-danger/40 bg-admin-danger-soft"}`}
 		>
-			<p className="text-sm text-admin-danger">
+			<p className="text-sm text-admin-danger-ink">
 				{readFailureSentence(error, firstLoad)}
 			</p>
 			{!firstLoad && !signedOut && (
@@ -539,11 +539,11 @@ function SettingsAdmin() {
 									<a
 										href={`#${s.id}`}
 										aria-current={active === s.id ? "true" : undefined}
-										className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm text-admin-ink-muted transition-colors duration-150 ease-out hover:bg-admin-accent-soft hover:text-admin-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50 aria-[current]:bg-admin-accent-soft aria-[current]:font-medium aria-[current]:text-admin-accent"
+										className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm text-admin-ink-muted transition-colors duration-150 ease-out hover:bg-admin-accent-soft hover:text-admin-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50 aria-[current]:bg-admin-accent-soft aria-[current]:font-medium aria-[current]:text-admin-accent-ink"
 									>
 										{s.label}
 										{pending > 0 && (
-											<span className="rounded-full bg-admin-warning-soft px-2 py-1 text-xs font-medium leading-none text-admin-warning">
+											<span className="rounded-full bg-admin-warning-soft px-2 py-1 text-xs font-medium leading-none text-admin-warning-ink">
 												{pending}
 												<span className="sr-only"> unsaved</span>
 											</span>
@@ -650,7 +650,7 @@ function SettingsAdmin() {
 								</Button>
 							</div>
 							{addError && (
-								<p className="mt-3 text-sm text-admin-danger">
+								<p className="mt-3 text-sm text-admin-danger-ink">
 									{addError === SESSION_OVER
 										? "Your session has ended, so this setting was not added. Sign in again, then add it."
 										: `This setting was not added: ${addError}`}

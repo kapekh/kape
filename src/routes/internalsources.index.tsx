@@ -42,7 +42,7 @@ function NewsFeed() {
 							key={n.id}
 							className="rounded-xl border border-border bg-card p-5"
 						>
-							<div className="text-xs text-[var(--accent)] font-semibold uppercase tracking-wide">
+							<div className="text-xs text-[var(--accent-ink)] font-semibold uppercase tracking-wide">
 								{n.publishedAt}
 							</div>
 							<h2 className="mt-1 font-display text-lg font-semibold text-primary">

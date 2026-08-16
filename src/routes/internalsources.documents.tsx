@@ -66,7 +66,7 @@ function Documents() {
 													d.fileUrl &&
 													openPdf(e, { url: d.fileUrl, title: d.title })
 												}
-												className="text-[var(--accent)] font-semibold hover:underline"
+												className="text-[var(--accent-ink)] font-semibold hover:underline"
 											>
 												{t("internal.documents.open", "Open")}
 											</a>

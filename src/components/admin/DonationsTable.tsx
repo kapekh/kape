@@ -1,8 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { HandCoins } from "lucide-react";
-
-import { EmptyState } from "#/components/ui/empty-state.tsx";
 import { Badge, type BadgeTone } from "#/components/ui/badge.tsx";
+import { EmptyState } from "#/components/ui/empty-state.tsx";
 import { Table, TBody, TD, TH, THead, TR } from "#/components/ui/table.tsx";
 import { ActionMenu } from "./ActionMenu";
 import { ListStatus, TableScroll } from "./list-ui";
@@ -124,7 +123,7 @@ export function DonationsTable({
 										<Link
 											to="/admin/campaigns/$id"
 											params={{ id: String(r.campaignId) }}
-											className="rounded transition-colors duration-150 ease-out hover:text-admin-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+											className="rounded transition-colors duration-150 ease-out hover:text-admin-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
 										>
 											{r.campaignTitle}
 										</Link>

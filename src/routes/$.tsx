@@ -213,7 +213,7 @@ function RelatedPosts({
 						)}
 						<div className="flex flex-1 flex-col p-4">
 							{p.publishedAt && (
-								<div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
+								<div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--accent-ink)]">
 									{p.publishedAt}
 								</div>
 							)}
@@ -398,7 +398,7 @@ function ResolvedRoute() {
 											{c.excerpt}
 										</p>
 									)}
-									<span className="mt-4 inline-block text-sm font-semibold text-[var(--accent)]">
+									<span className="mt-4 inline-block text-sm font-semibold text-[var(--accent-ink)]">
 										{t("nav.explore", "Explore")} →
 									</span>
 								</div>
@@ -471,7 +471,7 @@ function ResolvedRoute() {
 					)}
 				/>
 				{post.publishedAt && (
-					<div className="text-xs text-[var(--accent)] font-semibold uppercase tracking-wider mb-6">
+					<div className="text-xs text-[var(--accent-ink)] font-semibold uppercase tracking-wider mb-6">
 						{post.publishedAt} · {post.author ?? socialSiteName(settings)}
 					</div>
 				)}

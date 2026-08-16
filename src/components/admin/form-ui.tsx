@@ -37,7 +37,9 @@ export function EditorHeader({
 			<h1 className="text-xl font-semibold text-admin-ink">{title}</h1>
 			<div className="flex items-center gap-2">
 				{savedAt && (
-					<span className="text-[13px] text-admin-live">Saved {savedAt}</span>
+					<span className="text-[13px] text-admin-live-ink">
+						Saved {savedAt}
+					</span>
 				)}
 				{children}
 				<Button
@@ -162,7 +164,7 @@ export function Field({
 				{label}
 				{required && (
 					<>
-						<span aria-hidden="true" className="ml-0.5 text-admin-danger">
+						<span aria-hidden="true" className="ml-0.5 text-admin-danger-ink">
 							*
 						</span>
 						<span className="sr-only"> (required)</span>
@@ -183,7 +185,7 @@ export function Field({
 			{error && (
 				<p
 					id={errorId}
-					className="mt-2 text-[13px] font-medium text-admin-danger"
+					className="mt-2 text-[13px] font-medium text-admin-danger-ink"
 				>
 					{error}
 				</p>

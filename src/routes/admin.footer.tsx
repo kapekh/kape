@@ -101,7 +101,7 @@ function LinkRows({
 						type="button"
 						onClick={() => setRows((ls) => ls.filter((_, j) => j !== i))}
 						aria-label={`Remove ${l.label.trim() || `link ${i + 1}`}`}
-						className="grid size-8 shrink-0 place-items-center rounded-lg border border-admin-border text-admin-ink-muted transition-colors duration-150 ease-out hover:border-admin-danger/40 hover:text-admin-danger focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
+						className="grid size-8 shrink-0 place-items-center rounded-lg border border-admin-border text-admin-ink-muted transition-colors duration-150 ease-out hover:border-admin-danger/40 hover:text-admin-danger-ink focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
 					>
 						<X aria-hidden="true" className="size-4" />
 					</button>
@@ -284,7 +284,7 @@ function FooterAdmin() {
 			<AdminHeader>
 				<div className="ml-auto hidden items-center gap-3 lg:flex">
 					{savedAt && (
-						<span className="whitespace-nowrap text-[13px] text-admin-live">
+						<span className="whitespace-nowrap text-[13px] text-admin-live-ink">
 							Saved {savedAt}
 						</span>
 					)}
@@ -432,7 +432,7 @@ function FooterAdmin() {
 												setSocials((ls) => ls.filter((_, j) => j !== i))
 											}
 											aria-label={`Remove ${socialName(sc, i)}`}
-											className="grid size-8 place-items-center rounded-lg border border-admin-border text-admin-ink-muted transition-colors duration-150 ease-out hover:border-admin-danger/40 hover:text-admin-danger focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
+											className="grid size-8 place-items-center rounded-lg border border-admin-border text-admin-ink-muted transition-colors duration-150 ease-out hover:border-admin-danger/40 hover:text-admin-danger-ink focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
 										>
 											<X aria-hidden="true" className="size-4" />
 										</button>
@@ -468,7 +468,9 @@ function FooterAdmin() {
 					{saving ? "Saving…" : "Save footer"}
 				</Button>
 				{savedAt && (
-					<span className="text-[13px] text-admin-live">Saved {savedAt}</span>
+					<span className="text-[13px] text-admin-live-ink">
+						Saved {savedAt}
+					</span>
 				)}
 			</div>
 		</form>

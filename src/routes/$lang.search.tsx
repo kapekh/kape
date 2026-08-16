@@ -129,7 +129,7 @@ function SearchPage() {
 					<ul className="mt-4 divide-y divide-border">
 						{results.map((r) => (
 							<li key={`${r.kind}-${r.id}`} className="py-5">
-								<div className="t-eyebrow text-[var(--accent)]">
+								<div className="t-eyebrow text-[var(--accent-ink)]">
 									{t(collectionKey(r.labelKey), r.label)}
 								</div>
 								<h2 className="mt-1 t-subsection">

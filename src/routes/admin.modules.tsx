@@ -12,10 +12,10 @@ import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { useTRPC } from "#/integrations/trpc/react";
 import {
 	enabledModules,
-	type ModuleDef,
-	type ModuleId,
 	MODULES,
 	MODULES_SETTING,
+	type ModuleDef,
+	type ModuleId,
 	serializeModules,
 } from "#/lib/modules";
 import { toast } from "@/components/Dialogs";
@@ -125,7 +125,7 @@ function ModulesAdmin() {
 			>
 				{error ? (
 					<div className="space-y-3">
-						<p className="text-sm text-admin-danger">
+						<p className="text-sm text-admin-danger-ink">
 							This site's modules could not be read, so nothing here can be
 							changed yet: {error}
 						</p>
@@ -178,7 +178,7 @@ function ModulesAdmin() {
 						})}
 
 						{(goingOff.length > 0 || goingOn.length > 0) && (
-							<p className="rounded-xl border border-admin-warning/40 bg-admin-warning-soft px-4 py-3 text-[13px] text-admin-warning">
+							<p className="rounded-xl border border-admin-warning/40 bg-admin-warning-soft px-4 py-3 text-[13px] text-admin-warning-ink">
 								{goingOff.length > 0 &&
 									`Saving will take ${list(goingOff.flatMap(screensOf))} out of the sidebar. `}
 								{goingOn.length > 0 &&

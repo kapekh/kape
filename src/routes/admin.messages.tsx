@@ -105,14 +105,14 @@ function Messages() {
 									<div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-admin-ink-muted">
 										<a
 											href={`mailto:${r.email}`}
-											className="rounded transition-colors duration-150 ease-out hover:text-admin-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+											className="rounded transition-colors duration-150 ease-out hover:text-admin-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
 										>
 											{r.email}
 										</a>
 										{r.phone && (
 											<a
 												href={`tel:${r.phone}`}
-												className="rounded transition-colors duration-150 ease-out hover:text-admin-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+												className="rounded transition-colors duration-150 ease-out hover:text-admin-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
 											>
 												{r.phone}
 											</a>

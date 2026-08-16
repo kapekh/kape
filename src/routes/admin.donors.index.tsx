@@ -129,7 +129,7 @@ function DonorsList() {
 										<Link
 											to="/admin/donors/$id"
 											params={{ id: String(r.id) }}
-											className="block truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+											className="tap-target block truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
 										>
 											{r.name}
 										</Link>
@@ -140,7 +140,7 @@ function DonorsList() {
 												href={r.url}
 												target="_blank"
 												rel="noopener noreferrer"
-												className="truncate text-admin-accent hover:underline"
+												className="truncate text-admin-accent-ink hover:underline"
 											>
 												{r.url}
 											</a>

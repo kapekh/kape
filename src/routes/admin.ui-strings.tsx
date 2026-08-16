@@ -233,7 +233,7 @@ function UiStringsAdmin() {
 
 			{readError && (
 				<Card tone="danger">
-					<p className="text-sm text-admin-danger">
+					<p className="text-sm text-admin-danger-ink">
 						The UI strings could not be read: {readError}
 					</p>
 					<Button
@@ -304,7 +304,7 @@ function UiStringsAdmin() {
 											{row.key}
 											{status && (
 												<span
-													className={`mt-1 block font-sans ${status.failed ? "text-admin-danger" : "text-admin-live"}`}
+													className={`mt-1 block font-sans ${status.failed ? "text-admin-danger-ink" : "text-admin-live-ink"}`}
 												>
 													{status.text}
 												</span>

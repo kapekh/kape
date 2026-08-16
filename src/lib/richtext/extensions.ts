@@ -48,7 +48,7 @@ export const richTextExtensions = [
 	TableHeader.configure({
 		HTMLAttributes: {
 			class:
-				"border border-border bg-secondary/10 px-4 py-3 text-left align-top font-semibold text-secondary",
+				"border border-border bg-secondary/10 px-4 py-3 text-left align-top font-semibold text-secondary-ink",
 		},
 	}),
 	TableCell.configure({

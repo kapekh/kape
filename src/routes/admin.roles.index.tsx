@@ -127,7 +127,7 @@ function RolesList() {
 											<Link
 												to="/admin/roles/$id"
 												params={{ id: String(r.id) }}
-												className="truncate font-medium text-admin-ink transition-colors duration-150 ease-out hover:text-admin-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50 max-md:whitespace-normal"
+												className="tap-target truncate font-medium text-admin-ink transition-colors duration-150 ease-out hover:text-admin-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50 max-md:whitespace-normal"
 											>
 												{r.name}
 											</Link>

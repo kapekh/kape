@@ -32,6 +32,10 @@ const PUBLIC_TOKENS: Record<string, string> = {
 		"light-dark( var(--brand-accent), var(--brand-accent-dark, oklch(from var(--brand-accent) clamp(0.55, calc(l + 0.05), 0.82) c h)) )",
 	"--accent-foreground":
 		"oklch(from var(--accent) clamp(0.16, (0.57 + c * 0.1 - l) * 1000, 0.985) calc(0.012 * var(--paper-chroma)) calc(80 + var(--paper-hue)))",
+	"--accent-ink":
+		"light-dark(oklch(from var(--accent) min(l, 0.53) c h), var(--accent))",
+	"--secondary-ink":
+		"light-dark(oklch(from var(--secondary) min(l, 0.54) c h), var(--secondary))",
 	"--background":
 		"light-dark( oklch(0.985 calc(0.012 * var(--paper-chroma)) calc(80 + var(--paper-hue))), oklch(0.19 calc(0.015 * var(--paper-chroma)) calc(60 + var(--paper-hue))) )",
 	"--border":
@@ -121,25 +125,30 @@ describe("admin token layer", () => {
 		expect([...declarations(admin ?? "").keys()].sort()).toEqual(
 			[
 				"--admin-accent",
+				"--admin-accent-ink",
 				"--admin-accent-soft",
 				"--admin-bg",
 				"--admin-border",
 				"--admin-border-strong",
 				"--admin-danger",
+				"--admin-danger-ink",
 				"--admin-danger-soft",
 				"--admin-draft",
+				"--admin-draft-ink",
 				"--admin-draft-soft",
 				"--admin-focus",
 				"--admin-ink",
 				"--admin-ink-muted",
 				"--admin-ink-subtle",
 				"--admin-live",
+				"--admin-live-ink",
 				"--admin-live-soft",
 				"--admin-neutral",
 				"--admin-neutral-soft",
 				"--admin-panel",
 				"--admin-panel-raised",
 				"--admin-warning",
+				"--admin-warning-ink",
 				"--admin-warning-soft",
 			].sort(),
 		);

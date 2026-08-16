@@ -616,7 +616,7 @@ function MediaLibrary() {
 					<div className="rounded-xl border-2 border-dashed border-admin-accent bg-admin-panel px-8 py-8 text-center shadow-[var(--shadow-lift)]">
 						<ArrowDownToLine
 							aria-hidden="true"
-							className="mx-auto size-8 text-admin-accent"
+							className="mx-auto size-8 text-admin-accent-ink"
 						/>
 						<p className="mt-2 text-base font-semibold text-admin-ink">
 							Drop files to upload
@@ -716,7 +716,7 @@ function MediaLibrary() {
 									</span>
 									{usage && (
 										<span
-											className={`rounded-full px-2 py-1 text-xs font-medium leading-none ${usage.length ? "bg-admin-accent-soft text-admin-accent" : "bg-admin-neutral-soft text-admin-ink-muted"}`}
+											className={`rounded-full px-2 py-1 text-xs font-medium leading-none ${usage.length ? "bg-admin-accent-soft text-admin-accent-ink" : "bg-admin-neutral-soft text-admin-ink-muted"}`}
 										>
 											{usage.length
 												? `${usage.length} place${usage.length > 1 ? "s" : ""}`

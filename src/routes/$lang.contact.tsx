@@ -166,7 +166,7 @@ function ContactPage() {
 									/>
 								)}
 								{o.province && (
-									<div className="t-eyebrow text-[var(--accent)] mb-1">
+									<div className="t-eyebrow text-[var(--accent-ink)] mb-1">
 										{o.province}
 									</div>
 								)}

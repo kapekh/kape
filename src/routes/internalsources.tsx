@@ -71,7 +71,11 @@ function Portal() {
 					</div>
 					<div className="flex items-center gap-4 text-sm">
 						<span className="opacity-80">{name}</span>
-						<button type="button" onClick={logout} className="hover:underline">
+						<button
+							type="button"
+							onClick={logout}
+							className="tap-target hover:underline"
+						>
 							{t("internal.logout", "Log out")}
 						</button>
 					</div>

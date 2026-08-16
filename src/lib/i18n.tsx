@@ -91,9 +91,7 @@ export function LanguageProvider({
 		};
 	}, [lang, languages, strings, stringsFallback, edited, setString]);
 
-	return (
-		<LangContext.Provider value={value}>{children}</LangContext.Provider>
-	);
+	return <LangContext.Provider value={value}>{children}</LangContext.Provider>;
 }
 
 export function useLang(): Ctx {
@@ -142,7 +140,7 @@ export function LanguageSwitcher({ className = "" }: { className?: string }) {
 						type="button"
 						onClick={() => switchTo(l.code)}
 						aria-pressed={lang === l.code}
-						className={`px-2 py-0.5 rounded-full transition ${l.code === "km" ? "font-khmer" : ""} ${
+						className={`tap-target px-2 py-0.5 rounded-full transition ${l.code === "km" ? "font-khmer" : ""} ${
 							lang === l.code
 								? "bg-[var(--secondary)] text-primary font-semibold"
 								: "opacity-80 hover:opacity-100"

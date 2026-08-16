@@ -610,7 +610,7 @@ function GalleryPicker({
 								<button
 									type="button"
 									onClick={() => remove(id)}
-									className={`${thumbButton} text-admin-danger`}
+									className={`${thumbButton} text-admin-danger-ink`}
 									aria-label="Remove"
 								>
 									<X className="size-3.5" aria-hidden="true" />

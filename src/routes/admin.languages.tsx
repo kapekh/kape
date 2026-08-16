@@ -163,7 +163,7 @@ function LanguagesAdmin() {
 								onChange={(e) => setAdd({ ...add, nativeName: e.target.value })}
 							/>
 						</div>
-						<label className="flex items-center gap-2 pb-2 text-sm text-admin-ink">
+						<label className="flex min-h-6 items-center gap-2 pb-2 text-sm text-admin-ink">
 							<input
 								type="checkbox"
 								checked={add.rtl}
@@ -214,13 +214,13 @@ function LanguagesAdmin() {
 												· {l.nativeName}
 											</span>
 											{routable(l.code) ? null : (
-												<span className="mt-1 block text-[13px] text-admin-warning">
+												<span className="mt-1 block text-[13px] text-admin-warning-ink">
 													Not served to visitors. {needsDeveloper(l.code)}
 												</span>
 											)}
 										</TD>
 										<TD label="Enabled">
-											<label className="flex items-center gap-2 text-[13px] text-admin-ink-muted">
+											<label className="flex min-h-6 items-center gap-2 text-[13px] text-admin-ink-muted">
 												<input
 													type="checkbox"
 													aria-label={`Enable ${l.name}`}

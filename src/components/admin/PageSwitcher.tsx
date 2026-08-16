@@ -140,7 +140,7 @@ export function PageSwitcher() {
 										aria-selected={isCurrent}
 										onMouseEnter={() => setActive(i)}
 										onClick={() => choose(p)}
-										className={`flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left transition-colors duration-150 ease-out ${i === active ? "bg-admin-accent-soft" : ""} ${isCurrent ? "text-admin-accent" : "text-admin-ink"}`}
+										className={`flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left transition-colors duration-150 ease-out ${i === active ? "bg-admin-accent-soft" : ""} ${isCurrent ? "text-admin-accent-ink" : "text-admin-ink"}`}
 									>
 										<span className="w-full truncate text-sm font-medium">
 											{p.title || p.slug || "Untitled page"}
@@ -172,7 +172,7 @@ export function PageSwitcher() {
 				onClick={() => navigate({ to: "/admin/pages/new" })}
 				title="New page"
 				aria-label="New page"
-				className="grid size-8 shrink-0 place-items-center rounded-lg border border-admin-border text-admin-ink transition-colors duration-150 ease-out hover:border-admin-accent hover:text-admin-accent focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
+				className="grid size-8 shrink-0 place-items-center rounded-lg border border-admin-border text-admin-ink transition-colors duration-150 ease-out hover:border-admin-accent hover:text-admin-accent-ink focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
 			>
 				<Plus aria-hidden="true" className="size-4" />
 			</button>

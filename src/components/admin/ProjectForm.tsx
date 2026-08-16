@@ -303,7 +303,7 @@ export function ProjectForm({
 											type="button"
 											variant="ghost"
 											size="sm"
-											className="text-admin-danger"
+											className="text-admin-danger-ink"
 											onClick={() =>
 												setLocations((ls) => ls.filter((_, j) => j !== i))
 											}
@@ -377,7 +377,7 @@ export function ProjectForm({
 											type="button"
 											variant="ghost"
 											size="sm"
-											className="text-admin-danger"
+											className="text-admin-danger-ink"
 											onClick={() =>
 												setSnapshots((ss) => ss.filter((_, j) => j !== i))
 											}
@@ -502,7 +502,7 @@ export function ProjectForm({
 									donors.map((d) => (
 										<label
 											key={d.id}
-											className="flex cursor-pointer items-center gap-2.5 text-sm text-admin-ink"
+											className="flex min-h-6 cursor-pointer items-center gap-2.5 text-sm text-admin-ink"
 										>
 											<input
 												type="checkbox"

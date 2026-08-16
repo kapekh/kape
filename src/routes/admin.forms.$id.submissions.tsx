@@ -105,7 +105,9 @@ function Submissions() {
 	const searchable = (r: Sub) => {
 		const data = (r.data ?? {}) as Record<string, string>;
 		return dataFields.map((f) =>
-			f.type === "richtext" ? stripHtml(data[f.key] ?? "") : (data[f.key] ?? ""),
+			f.type === "richtext"
+				? stripHtml(data[f.key] ?? "")
+				: (data[f.key] ?? ""),
 		);
 	};
 	const shown = rows.filter((r) =>
@@ -208,7 +210,7 @@ function Submissions() {
 															href={data[f.key]}
 															target="_blank"
 															rel="noopener noreferrer"
-															className="inline-flex items-center gap-1.5 rounded font-medium text-admin-accent transition-colors duration-150 ease-out hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+															className="inline-flex items-center gap-1.5 rounded font-medium text-admin-accent-ink transition-colors duration-150 ease-out hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
 														>
 															<Download
 																aria-hidden="true"
@@ -232,7 +234,7 @@ function Submissions() {
 												) : f.type === "email" && data[f.key] ? (
 													<a
 														href={`mailto:${data[f.key]}`}
-														className="rounded transition-colors duration-150 ease-out hover:text-admin-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+														className="rounded transition-colors duration-150 ease-out hover:text-admin-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
 													>
 														{data[f.key]}
 													</a>

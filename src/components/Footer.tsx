@@ -225,7 +225,7 @@ export function Footer({ settings }: { settings: Record<string, string> }) {
 									onChange={(e) => setEmail(e.target.value)}
 									aria-label={t("newsletter.email", "Email address")}
 									placeholder={t("forms.emailPlaceholder", "you@email.org")}
-									className="flex-1 rounded-full bg-primary-foreground/10 border border-primary-foreground/20 px-4 py-2.5 text-sm placeholder:text-primary-foreground/50 focus:outline-none focus:border-[var(--secondary)]"
+									className="flex-1 rounded-full bg-primary-foreground/10 border border-primary-foreground/20 px-4 py-2.5 text-sm placeholder:text-primary-foreground/50 focus:outline-none focus:border-[var(--secondary)] focus-visible:ring-2 focus-visible:ring-[var(--secondary)]"
 								/>
 								<button
 									type="submit"

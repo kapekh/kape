@@ -135,7 +135,7 @@ export function ActionMenu({
 								closeToTrigger();
 								it.onClick();
 							}}
-							className={`block w-full rounded-lg px-3 py-2 text-left text-sm transition-colors duration-150 ease-out hover:bg-admin-accent-soft focus-visible:bg-admin-accent-soft focus-visible:outline-none disabled:cursor-not-allowed disabled:text-admin-ink-subtle ${it.danger ? "text-admin-danger" : "text-admin-ink"}`}
+							className={`block w-full rounded-lg px-3 py-2 text-left text-sm transition-colors duration-150 ease-out hover:bg-admin-accent-soft focus-visible:bg-admin-accent-soft focus-visible:outline-none disabled:cursor-not-allowed disabled:text-admin-ink-subtle ${it.danger ? "text-admin-danger-ink" : "text-admin-ink"}`}
 						>
 							{it.label}
 						</button>

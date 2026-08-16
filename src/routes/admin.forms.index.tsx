@@ -136,7 +136,7 @@ function FormsList() {
 											<Link
 												to="/admin/forms/$id"
 												params={{ id: String(r.id) }}
-												className="block truncate font-medium text-admin-ink transition-colors duration-150 ease-out hover:text-admin-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50 max-md:whitespace-normal"
+												className="tap-target block truncate font-medium text-admin-ink transition-colors duration-150 ease-out hover:text-admin-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50 max-md:whitespace-normal"
 											>
 												{r.title}
 											</Link>
@@ -168,7 +168,7 @@ function FormsList() {
 											<Link
 												to="/admin/forms/$id/submissions"
 												params={{ id: String(r.id) }}
-												className="rounded font-medium tabular-nums text-admin-accent transition-colors duration-150 ease-out hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+												className="rounded font-medium tabular-nums text-admin-accent-ink transition-colors duration-150 ease-out hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
 											>
 												{r.submissionCount}
 											</Link>

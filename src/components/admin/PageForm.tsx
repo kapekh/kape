@@ -421,7 +421,7 @@ export function PageForm({
 									{titleInvalid(l.code) && fieldError && (
 										<p
 											id={`page-title-error-${l.code}`}
-											className="text-[13px] font-medium text-admin-danger"
+											className="text-[13px] font-medium text-admin-danger-ink"
 										>
 											{fieldError.text}
 										</p>
@@ -498,7 +498,7 @@ export function PageForm({
 								{segmentInvalid && fieldError && (
 									<p
 										id="page-segment-error"
-										className="mt-1 text-[13px] font-medium text-admin-danger"
+										className="mt-1 text-[13px] font-medium text-admin-danger-ink"
 									>
 										{fieldError.text}
 									</p>
@@ -536,7 +536,7 @@ export function PageForm({
 							role="alert"
 							className="border-b border-admin-danger/40 bg-admin-danger-soft px-4 py-3"
 						>
-							<p className="text-sm text-admin-danger">{error}</p>
+							<p className="text-sm text-admin-danger-ink">{error}</p>
 							{onReload && (
 								<Button
 									variant="secondary"
@@ -556,7 +556,7 @@ export function PageForm({
 					)}
 					<div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
 						{/* the save used to finish in silence, the button re-disabling its only cue */}
-						<output className="text-[13px] text-admin-live">
+						<output className="text-[13px] text-admin-live-ink">
 							{savedAt ? `Saved ${savedAt}` : ""}
 						</output>
 						<div className="ml-auto flex items-center gap-2">
@@ -588,9 +588,9 @@ export function PageForm({
 				tabIndex={0}
 				onMouseDown={startResize}
 				onKeyDown={nudgeResize}
-				className="relative hidden w-px shrink-0 cursor-col-resize bg-admin-border transition-colors duration-150 ease-out hover:bg-admin-accent/50 focus-visible:bg-admin-accent focus-visible:outline-none xl:block"
+				className="tap-target hidden w-px shrink-0 cursor-col-resize bg-admin-border transition-colors duration-150 ease-out hover:bg-admin-accent/50 focus-visible:bg-admin-accent focus-visible:outline-none xl:block"
 			>
-				<span className="absolute left-1/2 top-1/2 z-10 grid h-11 w-5 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-admin-border bg-admin-panel text-admin-ink-muted shadow-[var(--shadow-soft)] transition-colors duration-150 ease-out hover:border-admin-accent hover:text-admin-accent">
+				<span className="absolute left-1/2 top-1/2 z-10 grid h-11 w-5 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-admin-border bg-admin-panel text-admin-ink-muted shadow-[var(--shadow-soft)] transition-colors duration-150 ease-out hover:border-admin-accent hover:text-admin-accent-ink">
 					<GripVertical aria-hidden="true" className="size-4" />
 				</span>
 			</div>

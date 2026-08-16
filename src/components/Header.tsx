@@ -338,7 +338,7 @@ export function Header({
 						{showSearch && (
 							<a
 								href={searchHref}
-								className="hover:text-[var(--secondary)] transition"
+								className="tap-target hover:text-[var(--secondary)] transition"
 							>
 								<T k="top.search" />
 							</a>
@@ -346,7 +346,7 @@ export function Header({
 						{showSitemap && (
 							<a
 								href={sitemapHref}
-								className="hover:text-[var(--secondary)] transition"
+								className="tap-target hover:text-[var(--secondary)] transition"
 							>
 								<T k="top.sitemap" />
 							</a>
@@ -354,7 +354,7 @@ export function Header({
 						<a
 							href="/login"
 							aria-label={t("top.login", "Staff login")}
-							className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-primary-foreground/30 bg-white/10 px-2 py-0.5 font-semibold hover:bg-white/20 hover:text-[var(--secondary)] transition sm:px-3"
+							className="tap-target inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-primary-foreground/30 bg-white/10 px-2 py-0.5 font-semibold hover:bg-white/20 hover:text-[var(--secondary)] transition sm:px-3"
 						>
 							<svg
 								className="h-3 w-3"
@@ -441,7 +441,7 @@ export function Header({
 											<NavLink
 												href={href || withLang("/", lang)}
 												onMouseEnter={() => hoverOpen(null)}
-												className="group relative flex items-center gap-1 hover:text-primary transition"
+												className="tap-target group flex items-center gap-1 hover:text-primary transition"
 											>
 												{n.label}
 												<span className="absolute -bottom-0.5 left-0 h-0.5 w-0 bg-[var(--accent)] transition-all group-hover:w-full" />
@@ -461,7 +461,7 @@ export function Header({
 												setOpenId(active ? null : n.id);
 											}}
 											aria-expanded={active}
-											className={`relative flex items-center gap-1 transition ${active ? "text-primary" : "hover:text-primary"}`}
+											className={`tap-target flex items-center gap-1 transition ${active ? "text-primary" : "hover:text-primary"}`}
 										>
 											{n.label}
 											{hasChildren && (

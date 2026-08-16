@@ -215,7 +215,7 @@ const card =
 	"rounded-3xl border border-border bg-card shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-[var(--shadow-soft)]";
 
 /** Render a title string with *asterisk-wrapped* segments as italic accent text. */
-function renderTitle(title: string, accent = "text-[var(--secondary)]") {
+function renderTitle(title: string, accent = "text-[var(--secondary-ink)]") {
 	return String(title)
 		.split(/(\*[^*]+\*|\n)/g)
 		.map((seg, i) => {
@@ -259,7 +259,7 @@ function Heading({
 			{eyebrow && (
 				<div
 					{...mark("eyebrow")}
-					className={`t-eyebrow ${light ? "text-[var(--gold)]" : "text-[var(--accent)]"}`}
+					className={`t-eyebrow ${light ? "text-[var(--gold)]" : "text-[var(--accent-ink)]"}`}
 				>
 					{eyebrow}
 				</div>
@@ -488,11 +488,15 @@ function Slideshow({ slides }: { slides: HeroSlide[] }) {
 							type="button"
 							onClick={() => setI(idx)}
 							aria-label={t("hero.slide", "Slide {n}", { n: idx + 1 })}
-							className="relative h-1 flex-1 overflow-hidden rounded-full bg-white/30"
+							className="tap-target relative h-1 flex-1 rounded-full"
 						>
-							<span
-								className={`absolute inset-y-0 left-0 bg-white ${idx === i ? "w-full transition-[width] duration-[4500ms] ease-linear" : "w-0"}`}
-							/>
+							{/* the clip lives here, not on the button: overflow-hidden there would
+							    cut off the ::after that carries the 24px hit area */}
+							<span className="absolute inset-0 overflow-hidden rounded-full bg-white/30">
+								<span
+									className={`absolute inset-y-0 left-0 bg-white ${idx === i ? "w-full transition-[width] duration-[4500ms] ease-linear" : "w-0"}`}
+								/>
+							</span>
 						</button>
 					))}
 				</div>
@@ -545,14 +549,14 @@ function Hero(p: HeroProps) {
 						{p.eyebrow && (
 							<div
 								{...mark("eyebrow")}
-								className="inline-flex items-center gap-2 rounded-full border border-[var(--accent)]/40 bg-[var(--accent)]/5 px-4 py-1.5 text-xs font-medium text-[var(--accent)]"
+								className="inline-flex items-center gap-2 rounded-full border border-[var(--accent)]/40 bg-[var(--accent)]/5 px-4 py-1.5 text-xs font-medium text-[var(--accent-ink)]"
 							>
 								<span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)] animate-pulse" />
 								{p.eyebrow}
 							</div>
 						)}
 						<h1 {...mark("title")} className="mt-6 t-display text-primary">
-							{renderTitle(p.title || "", "text-[var(--accent)]")}
+							{renderTitle(p.title || "", "text-[var(--accent-ink)]")}
 						</h1>
 						{p.lead && (
 							<p
@@ -1106,7 +1110,7 @@ function Resources(p: ResourcesProps) {
 										{Icon.doc("h-6 w-6")}
 									</div>
 									<div className="min-w-0 flex-1">
-										<div className="text-[10px] uppercase tracking-[0.18em] text-[var(--accent)] font-semibold">
+										<div className="text-[10px] uppercase tracking-[0.18em] text-[var(--accent-ink)] font-semibold">
 											{it.kind || t("resources.kindDefault", "file")}
 										</div>
 										<div
@@ -1201,7 +1205,10 @@ function Split(p: SplitProps) {
 	const text = (
 		<div>
 			{p.eyebrow && (
-				<div {...mark("eyebrow")} className="t-eyebrow text-[var(--accent)]">
+				<div
+					{...mark("eyebrow")}
+					className="t-eyebrow text-[var(--accent-ink)]"
+				>
 					{p.eyebrow}
 				</div>
 			)}
@@ -1375,7 +1382,7 @@ function PostCard({
 					</p>
 				)}
 				{href && (
-					<span className="mt-4 inline-block text-sm font-semibold text-[var(--accent)]">
+					<span className="mt-4 inline-block text-sm font-semibold text-[var(--accent-ink)]">
 						{t("home.news.readmore", "Read more →")}
 					</span>
 				)}
@@ -1412,7 +1419,7 @@ function PostList(p: PostListProps) {
 					{p.moreHref && (
 						<NavLink
 							href={L(p.moreHref) ?? "#"}
-							className="text-sm font-semibold text-primary underline underline-offset-8 hover:text-[var(--accent)]"
+							className="tap-target text-sm font-semibold text-primary underline underline-offset-8 hover:text-[var(--accent)]"
 						>
 							{t("home.news.all", "See all →")}
 						</NavLink>
@@ -1508,7 +1515,7 @@ function PostList(p: PostListProps) {
 								<div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/30 to-transparent" />
 								<div className="absolute bottom-0 p-8 text-primary-foreground">
 									{posts[0].publishedAt && (
-										<span className="rounded-full bg-[var(--accent)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em]">
+										<span className="rounded-full bg-[var(--accent)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent-foreground">
 											{posts[0].publishedAt}
 										</span>
 									)}
@@ -1550,7 +1557,7 @@ function PostList(p: PostListProps) {
 									</div>
 									<div className="flex-1">
 										{post.publishedAt && (
-											<div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
+											<div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--accent-ink)]">
 												{post.publishedAt}
 											</div>
 										)}
@@ -1605,7 +1612,7 @@ function VideoGrid(p: VideoGridProps) {
 					{p.moreHref && (
 						<NavLink
 							href={L(p.moreHref) ?? "#"}
-							className="text-sm font-semibold text-primary underline underline-offset-8 hover:text-[var(--accent)]"
+							className="tap-target text-sm font-semibold text-primary underline underline-offset-8 hover:text-[var(--accent)]"
 						>
 							{t("home.video.all", "All videos →")}
 						</NavLink>
@@ -1790,7 +1797,7 @@ function PublicationList(p: PublicationListProps) {
 											</div>
 										)}
 									</div>
-									<span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-[var(--accent)]">
+									<span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-[var(--accent-ink)]">
 										{Icon.download("h-4 w-4")} PDF
 									</span>
 								</a>
@@ -2089,7 +2096,7 @@ function Partners(p: PartnersProps) {
 								key={cat}
 								className="grid gap-3 py-6 md:grid-cols-[minmax(0,190px)_1fr] md:gap-8 md:py-7"
 							>
-								<H className="t-eyebrow text-[var(--accent)] md:pt-2.5">
+								<H className="t-eyebrow text-[var(--accent-ink)] md:pt-2.5">
 									{cat.replace(/-/g, " ")}
 								</H>
 								<div className="flex flex-wrap items-center gap-3">
@@ -2152,7 +2159,7 @@ function ProjectList(p: ProjectListProps) {
 					{p.moreHref && (
 						<NavLink
 							href={L(p.moreHref) ?? "#"}
-							className="text-sm font-semibold text-primary underline underline-offset-8 hover:text-[var(--accent)]"
+							className="tap-target text-sm font-semibold text-primary underline underline-offset-8 hover:text-[var(--accent)]"
 						>
 							{t("home.news.all", "See all →")}
 						</NavLink>

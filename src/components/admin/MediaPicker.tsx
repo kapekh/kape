@@ -141,7 +141,7 @@ export function MediaPicker({
 							size="sm"
 							variant="ghost"
 							onClick={clear}
-							className="text-admin-danger hover:bg-admin-danger-soft hover:text-admin-danger"
+							className="text-admin-danger-ink hover:bg-admin-danger-soft hover:text-admin-danger-ink"
 						>
 							Remove
 						</Button>

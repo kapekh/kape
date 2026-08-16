@@ -100,7 +100,7 @@ export function KhmerCalendar() {
 										year: toKhmer(cursor.year + 543),
 									})}
 								</div>
-								<div className="text-[11px] opacity-70">{localMonth}</div>
+								<div className="text-xs opacity-70">{localMonth}</div>
 							</div>
 							<button
 								type="button"
@@ -112,12 +112,12 @@ export function KhmerCalendar() {
 							</button>
 						</div>
 
-						<div className="mt-3 grid grid-cols-7 gap-1 text-center font-khmer text-[10px] opacity-70">
+						<div className="mt-3 grid grid-cols-7 gap-1 text-center font-khmer text-xs opacity-70">
 							{KM_WEEKDAYS.map((d) => (
 								<div key={d}>{d}</div>
 							))}
 						</div>
-						<div className="mt-1 grid grid-cols-7 gap-1 text-center text-[11px]">
+						<div className="mt-1 grid grid-cols-7 gap-1 text-center text-xs">
 							{days.map((d) => (
 								<div
 									key={d}

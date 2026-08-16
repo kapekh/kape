@@ -102,7 +102,7 @@ export function MapField({
 									type="button"
 									variant="ghost"
 									onClick={() => onChange("", "")}
-									className="mr-auto text-admin-danger not-disabled:hover:bg-admin-danger-soft not-disabled:hover:text-admin-danger"
+									className="mr-auto text-admin-danger-ink not-disabled:hover:bg-admin-danger-soft not-disabled:hover:text-admin-danger-ink"
 								>
 									Clear
 								</Button>

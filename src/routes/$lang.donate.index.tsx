@@ -132,7 +132,7 @@ function DonatePage() {
 						>
 							<NavLink
 								href={localizedHref("/who-we-are/about", lang)}
-								className="text-[var(--accent)] hover:underline"
+								className="text-[var(--accent-ink)] hover:underline"
 							>
 								{t("donate.empty.link", "learn more about our work")}
 							</NavLink>

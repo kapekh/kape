@@ -1,21 +1,18 @@
 import { type ReactNode, useEffect } from "react";
-import { rememberVersion } from "@/lib/inline-edit";
+import type { ResolvedPage, ResolvedPost } from "#/server/repo/content";
+import type { ResolvedPerson } from "#/server/repo/people";
+import type { ResolvedProject } from "#/server/repo/projects";
 import { NavLink } from "@/components/NavLink";
-import {
-	type CmsMarker,
-	cmsMark,
-} from "@/components/sections/SectionRenderer";
+import { type CmsMarker, cmsMark } from "@/components/sections/SectionRenderer";
 import { useLang, useT } from "@/lib/i18n";
 import { localizedHref } from "@/lib/i18n-config";
 import {
 	type EditableEntity,
 	type FieldEditTarget,
+	rememberVersion,
 	useInlineEdit,
 	useStudioLink,
 } from "@/lib/inline-edit";
-import type { ResolvedPage, ResolvedPost } from "#/server/repo/content";
-import type { ResolvedPerson } from "#/server/repo/people";
-import type { ResolvedProject } from "#/server/repo/projects";
 
 type Crumb = { label: string; href?: string };
 
@@ -205,7 +202,8 @@ function FieldLayer({ record }: { record: PageRecord }) {
 	}, [on, record, lang, scope, register]);
 
 	if (!on) return null;
-	const address = (field: string) => `${scope}[data-cms-target="field:${field}"]`;
+	const address = (field: string) =>
+		`${scope}[data-cms-target="field:${field}"]`;
 	const editable = Object.keys(record.fields).map(address).join(",");
 	const hover = Object.keys(record.fields)
 		.map((f) => `${address(f)}:hover`)
@@ -270,7 +268,7 @@ export function SubPage({
 					<nav className="flex flex-wrap items-center gap-2 text-xs opacity-85">
 						<NavLink
 							href={localizedHref("/", lang)}
-							className="hover:underline"
+							className="tap-target hover:underline"
 						>
 							{t("nav.home", "Home")}
 						</NavLink>
@@ -283,7 +281,7 @@ export function SubPage({
 								{c.href ? (
 									<NavLink
 										href={localizedHref(c.href, lang)}
-										className="hover:underline"
+										className="tap-target hover:underline"
 									>
 										{c.label}
 									</NavLink>
@@ -421,7 +419,7 @@ export function MediaPlaceholder({
 				{icon}
 			</div>
 			<div className="min-w-0">
-				<div className="text-[10px] uppercase tracking-[0.18em] text-[var(--accent)] font-semibold">
+				<div className="text-[10px] uppercase tracking-[0.18em] text-[var(--accent-ink)] font-semibold">
 					{label}
 				</div>
 				<div className="mt-0.5 font-medium text-foreground group-hover:text-[var(--accent)] transition">

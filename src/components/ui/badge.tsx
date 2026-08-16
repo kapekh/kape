@@ -12,17 +12,20 @@ export type BadgeTone =
 	| "accent";
 
 const TONE: Record<BadgeTone, { shell: string; dot: string }> = {
-	live: { shell: "bg-admin-live-soft text-admin-live", dot: "bg-admin-live" },
+	live: {
+		shell: "bg-admin-live-soft text-admin-live-ink",
+		dot: "bg-admin-live",
+	},
 	draft: {
-		shell: "bg-admin-draft-soft text-admin-draft",
+		shell: "bg-admin-draft-soft text-admin-draft-ink",
 		dot: "bg-admin-draft",
 	},
 	warning: {
-		shell: "bg-admin-warning-soft text-admin-warning",
+		shell: "bg-admin-warning-soft text-admin-warning-ink",
 		dot: "bg-admin-warning",
 	},
 	danger: {
-		shell: "bg-admin-danger-soft text-admin-danger",
+		shell: "bg-admin-danger-soft text-admin-danger-ink",
 		dot: "bg-admin-danger",
 	},
 	neutral: {
@@ -30,7 +33,7 @@ const TONE: Record<BadgeTone, { shell: string; dot: string }> = {
 		dot: "bg-admin-ink-muted",
 	},
 	accent: {
-		shell: "bg-admin-accent-soft text-admin-accent",
+		shell: "bg-admin-accent-soft text-admin-accent-ink",
 		dot: "bg-admin-accent",
 	},
 };

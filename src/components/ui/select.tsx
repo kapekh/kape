@@ -114,7 +114,7 @@ function SelectItem({
 		>
 			<span
 				data-slot="select-item-indicator"
-				className="absolute right-3 flex size-4 items-center justify-center text-admin-accent"
+				className="absolute right-3 flex size-4 items-center justify-center text-admin-accent-ink"
 			>
 				<SelectPrimitive.ItemIndicator>
 					<CheckIcon className="size-4" />
@@ -132,7 +132,10 @@ function SelectSeparator({
 	return (
 		<SelectPrimitive.Separator
 			data-slot="select-separator"
-			className={cn("pointer-events-none -mx-1 my-1 h-px bg-admin-border", className)}
+			className={cn(
+				"pointer-events-none -mx-1 my-1 h-px bg-admin-border",
+				className,
+			)}
 			{...props}
 		/>
 	);

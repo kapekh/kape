@@ -244,7 +244,7 @@ function PaletteDialog({
 									onMouseMove={() => setActive(i)}
 									className={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm ${
 										i === active
-											? "bg-admin-accent-soft font-medium text-admin-accent"
+											? "bg-admin-accent-soft font-medium text-admin-accent-ink"
 											: "text-admin-ink"
 									}`}
 								>

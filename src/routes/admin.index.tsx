@@ -155,7 +155,7 @@ function Dashboard() {
 					</h2>
 					<Link
 						to="/admin/posts"
-						className="rounded-lg text-[13px] font-medium text-admin-accent transition-colors duration-150 ease-out hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+						className="tap-target rounded-lg text-[13px] font-medium text-admin-accent-ink transition-colors duration-150 ease-out hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
 					>
 						All posts
 					</Link>
@@ -254,7 +254,7 @@ function NeedsAttention({
 								<span className="flex min-w-0 items-center gap-3">
 									<FileText
 										aria-hidden="true"
-										className="size-4 shrink-0 text-admin-warning"
+										className="size-4 shrink-0 text-admin-warning-ink"
 									/>
 									Drafts awaiting review
 								</span>
@@ -299,7 +299,7 @@ function NeedsAttention({
 						<p className="flex items-center gap-3 text-sm text-admin-ink-muted">
 							<CheckCircle2
 								aria-hidden="true"
-								className="size-4 shrink-0 text-admin-live"
+								className="size-4 shrink-0 text-admin-live-ink"
 							/>
 							All clear — nothing needs review.
 						</p>
@@ -507,7 +507,7 @@ function TrendNote({ delta }: { delta: number }) {
 	const Arrow = up ? ArrowUp : ArrowDown;
 	return (
 		<span
-			className={`flex items-center gap-1 ${up ? "text-admin-live" : "text-admin-danger"}`}
+			className={`flex items-center gap-1 ${up ? "text-admin-live-ink" : "text-admin-danger-ink"}`}
 		>
 			<Arrow aria-hidden="true" className="size-4 shrink-0" />
 			{Math.abs(delta).toLocaleString()} vs yesterday

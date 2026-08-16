@@ -104,7 +104,7 @@ function HeaderSettings() {
 							{saving ? "Saving…" : "Save header settings"}
 						</Button>
 						{savedAt && (
-							<span className="text-[13px] text-admin-live">
+							<span className="text-[13px] text-admin-live-ink">
 								Saved {savedAt}
 							</span>
 						)}
@@ -542,7 +542,7 @@ function NavBuilder() {
 							type="button"
 							aria-label={`Delete ${label}`}
 							disabled={busy}
-							className={`${act} hover:text-admin-danger`}
+							className={`${act} hover:text-admin-danger-ink`}
 							onClick={() => del(node.id)}
 						>
 							<X aria-hidden="true" className="size-4" />
@@ -649,7 +649,7 @@ function NavBuilder() {
 					<div className="mb-2 flex items-center gap-3 text-[13px]">
 						<button
 							type="button"
-							className="text-admin-ink-muted transition-colors duration-150 ease-out hover:text-admin-accent"
+							className="tap-target text-admin-ink-muted transition-colors duration-150 ease-out hover:text-admin-accent-ink"
 							onClick={() => setCollapsed(new Set())}
 						>
 							Expand all
@@ -657,7 +657,7 @@ function NavBuilder() {
 						<span className="text-admin-border">·</span>
 						<button
 							type="button"
-							className="text-admin-ink-muted transition-colors duration-150 ease-out hover:text-admin-accent"
+							className="tap-target text-admin-ink-muted transition-colors duration-150 ease-out hover:text-admin-accent-ink"
 							onClick={() =>
 								setCollapsed(
 									new Set(

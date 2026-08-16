@@ -220,7 +220,7 @@ function ItemsTable({
 										</button>
 										<button
 											type="button"
-											className={`${iconBtn} text-admin-danger`}
+											className={`${iconBtn} text-admin-danger-ink`}
 											aria-label={`Remove row ${i + 1}`}
 											onClick={() => onChange(rows.filter((_, n) => n !== i))}
 										>
@@ -325,7 +325,7 @@ function CardsEditor({
 								</button>
 								<button
 									type="button"
-									className={`${iconBtn} text-admin-danger`}
+									className={`${iconBtn} text-admin-danger-ink`}
 									aria-label={`Remove card ${i + 1}`}
 									onClick={() => onChange(cards.filter((_, n) => n !== i))}
 								>
@@ -570,7 +570,7 @@ function SectionEditor({
 	const [editLang, setEditLang] = useState("");
 	if (!def)
 		return (
-			<p className="p-3 text-[13px] text-admin-danger">
+			<p className="p-3 text-[13px] text-admin-danger-ink">
 				Unknown section type “{node.type}”.
 			</p>
 		);
@@ -890,7 +890,7 @@ export function SectionsBuilder({
 								</button>
 								<button
 									type="button"
-									className={`${iconBtn} text-admin-danger`}
+									className={`${iconBtn} text-admin-danger-ink`}
 									aria-label={`Delete ${def?.label ?? s.type}`}
 									onClick={() => {
 										void confirm({
@@ -945,7 +945,7 @@ export function SectionsBuilder({
 											type="button"
 											onClick={() => add(d.type)}
 											title={d.description}
-											className="h-8 rounded-lg border border-admin-border bg-admin-panel px-3 text-sm text-admin-ink transition-colors duration-150 ease-out hover:border-admin-accent hover:text-admin-accent focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
+											className="h-8 rounded-lg border border-admin-border bg-admin-panel px-3 text-sm text-admin-ink transition-colors duration-150 ease-out hover:border-admin-accent hover:text-admin-accent-ink focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
 										>
 											{d.label}
 										</button>

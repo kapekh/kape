@@ -134,7 +134,7 @@ export function SearchableSelect({
 								type="button"
 								onMouseDown={(e) => e.preventDefault()}
 								onClick={() => pick("")}
-								className={`${OPTION} ${value === "" ? "font-medium text-admin-accent" : "text-admin-ink-muted hover:bg-admin-accent-soft"}`}
+								className={`${OPTION} ${value === "" ? "font-medium text-admin-accent-ink" : "text-admin-ink-muted hover:bg-admin-accent-soft"}`}
 							>
 								<span className="truncate">{emptyOption}</span>
 								{value === "" && (
@@ -158,7 +158,7 @@ export function SearchableSelect({
 									onClick={() => pick(o.value)}
 									// selected is the check and the accent text; the background is
 									// the keyboard cursor alone, or the two states cannot be told apart
-									className={`${OPTION} ${o.value === value ? "font-medium text-admin-accent" : "text-admin-ink"} ${i === active ? "bg-admin-accent-soft" : "hover:bg-admin-accent-soft"}`}
+									className={`${OPTION} ${o.value === value ? "font-medium text-admin-accent-ink" : "text-admin-ink"} ${i === active ? "bg-admin-accent-soft" : "hover:bg-admin-accent-soft"}`}
 								>
 									<span className="truncate">{o.label}</span>
 									{o.value === value && (

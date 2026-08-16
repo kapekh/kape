@@ -332,7 +332,7 @@ export function FormBuilder({
 														{f.required && (
 															<span
 																aria-hidden="true"
-																className="ml-0.5 text-admin-danger"
+																className="ml-0.5 text-admin-danger-ink"
 															>
 																*
 															</span>
@@ -363,7 +363,7 @@ export function FormBuilder({
 												<button
 													type="button"
 													aria-label={`Remove ${named}`}
-													className={`${ROW_BUTTON} hover:text-admin-danger`}
+													className={`${ROW_BUTTON} hover:text-admin-danger-ink`}
 													onClick={() => removeField(i)}
 												>
 													<X aria-hidden="true" className="size-4" />
@@ -535,7 +535,7 @@ export function FormBuilder({
 								<button
 									type="button"
 									onClick={addField}
-									className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-admin-accent transition-colors duration-150 ease-out hover:bg-admin-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+									className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-admin-accent-ink transition-colors duration-150 ease-out hover:bg-admin-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
 								>
 									<Plus aria-hidden="true" className="size-4" />
 									Add field

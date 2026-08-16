@@ -163,7 +163,7 @@ export function UserForm({
 								Roles and what they reach are set in{" "}
 								<Link
 									to="/admin/roles"
-									className="font-medium text-admin-accent hover:underline"
+									className="font-medium text-admin-accent-ink hover:underline"
 								>
 									Roles
 								</Link>

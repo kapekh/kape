@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { useLang } from "@/lib/i18n";
-import { useInlineEdit } from "@/lib/inline-edit";
 import { localizedHref } from "@/lib/i18n-config";
+import { useInlineEdit } from "@/lib/inline-edit";
 
 type Announcement = Awaited<
 	ReturnType<typeof trpcClient.site.announcement.query>
@@ -103,7 +103,7 @@ export function AnnouncementPopup() {
 			<div className="h-2 w-full bg-gradient-to-r from-[var(--accent)] via-[var(--gold)] to-[var(--secondary)]" />
 			<div className="p-8 md:p-10">
 				<div className="flex items-center justify-between gap-4">
-					<div className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[var(--accent)]">
+					<div className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[var(--accent-ink)]">
 						{t("announcement.label", "Announcement")}
 					</div>
 					{many && (
@@ -130,7 +130,7 @@ export function AnnouncementPopup() {
 					</p>
 				)}
 				{a.deadline && (
-					<div className="mt-6 inline-flex items-center gap-1 rounded-full border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-4 py-1.5 text-sm font-semibold text-[var(--accent)]">
+					<div className="mt-6 inline-flex items-center gap-1 rounded-full border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-4 py-1.5 text-sm font-semibold text-[var(--accent-ink)]">
 						⏳{" "}
 						{t("announcement.deadlineOn", "Deadline {date}", {
 							date: a.deadline,
@@ -160,7 +160,7 @@ export function AnnouncementPopup() {
 						<button
 							type="button"
 							onClick={() => step(-1)}
-							className="text-sm font-semibold text-primary transition hover:text-[var(--accent)]"
+							className="tap-target text-sm font-semibold text-primary transition hover:text-[var(--accent)]"
 						>
 							← {t("announcement.prev", "Previous")}
 						</button>
@@ -173,14 +173,18 @@ export function AnnouncementPopup() {
 									aria-label={t("announcement.goto", "Announcement {n}", {
 										n: i + 1,
 									})}
-									className={`h-2 rounded-full transition-all ${i === index ? "w-8 bg-[var(--accent)]" : "w-2 bg-border hover:bg-muted-foreground/40"}`}
-								/>
+									className="group grid h-6 min-w-6 place-items-center"
+								>
+									<span
+										className={`block h-2 rounded-full transition-all ${i === index ? "w-8 bg-[var(--accent)]" : "w-2 bg-border group-hover:bg-muted-foreground/40"}`}
+									/>
+								</button>
 							))}
 						</div>
 						<button
 							type="button"
 							onClick={() => step(1)}
-							className="text-sm font-semibold text-primary transition hover:text-[var(--accent)]"
+							className="tap-target text-sm font-semibold text-primary transition hover:text-[var(--accent)]"
 						>
 							{t("announcement.next", "Next")} →
 						</button>

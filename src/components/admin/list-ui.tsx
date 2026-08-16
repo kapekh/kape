@@ -67,7 +67,7 @@ export function ListStatus({
 			role="alert"
 			className="rounded-xl border border-admin-danger/40 bg-admin-danger-soft p-6 text-center"
 		>
-			<p className="text-sm font-medium text-admin-danger">
+			<p className="text-sm font-medium text-admin-danger-ink">
 				This list could not be loaded.
 			</p>
 			<p className="mx-auto mt-2 max-w-md text-[13px] text-admin-ink-muted">

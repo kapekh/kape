@@ -127,7 +127,7 @@ function OrgFlowNode({ data }: NodeProps<Node<NodeData>>) {
 					type="button"
 					aria-label={`Add a report under ${row.name}`}
 					onClick={() => onAddChild(row.id)}
-					className="grid size-8 place-items-center rounded-lg text-admin-accent transition-colors duration-150 ease-out hover:bg-admin-accent-soft focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
+					className="grid size-8 place-items-center rounded-lg text-admin-accent-ink transition-colors duration-150 ease-out hover:bg-admin-accent-soft focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
 				>
 					<Plus aria-hidden="true" className="size-4" />
 				</button>
@@ -143,7 +143,7 @@ function OrgFlowNode({ data }: NodeProps<Node<NodeData>>) {
 					type="button"
 					aria-label={`Delete ${row.name}`}
 					onClick={() => onDelete(row.id)}
-					className="grid size-8 place-items-center rounded-lg text-admin-danger transition-colors duration-150 ease-out hover:bg-admin-danger-soft focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
+					className="grid size-8 place-items-center rounded-lg text-admin-danger-ink transition-colors duration-150 ease-out hover:bg-admin-danger-soft focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
 				>
 					<X aria-hidden="true" className="size-4" />
 				</button>
