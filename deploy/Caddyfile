@@ -1,0 +1,20 @@
+{
+	email ops@example.org
+}
+
+www.example.org, example.org {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:3000
+}
+
+# Serving both names means two URLs for every page. If you prefer one, replace
+# the block above with these two and set VITE_SITE_URL to the surviving name.
+#
+# www.example.org {
+# 	encode zstd gzip
+# 	reverse_proxy 127.0.0.1:3000
+# }
+#
+# example.org {
+# 	redir https://www.example.org{uri} permanent
+# }

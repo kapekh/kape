@@ -81,6 +81,16 @@ Optional integrations, each degrades gracefully when unset:
 | `BARAY_*` ([Baray](https://baray.io)) | Real donation payments | `/donate` shows "not configured" |
 | `VITE_SITE_URL` | Canonical + hreflang + absolute OG URLs | Relative URLs |
 
+`VITE_SITE_URL` is read when the bundle is **built**, not when it runs, so changing it means rebuilding.
+`docker compose` passes it through as a build arg for that reason.
+
+## Deploying
+
+[docs/DEPLOY.md](docs/DEPLOY.md) is the runbook for a fresh production host: a DigitalOcean droplet
+running the container behind Caddy, with Cloudflare in front, source pulled from GitHub by a deploy
+key. It covers moving an existing database and uploads onto the box, backups, and what each failure
+mode looks like.
+
 ## Upgrading an existing deployment
 
 Read this before deploying this version over one that is already running.

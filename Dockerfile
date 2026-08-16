@@ -9,6 +9,11 @@ FROM oven/bun:1 AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# vite inlines import.meta.env.VITE_* at build time, so canonical/hreflang/OG
+# absolute URLs are decided here, not by the runtime env. Unset builds a site
+# that emits relative URLs only.
+ARG VITE_SITE_URL=""
+ENV VITE_SITE_URL=$VITE_SITE_URL
 # gen-prerender-paths.ts (run by `bun run build`) imports src/server/db.ts,
 # which self-migrates on import. This throwaway DB is only used for the
 # build — the actual production data lives on a volume-mounted DATABASE_PATH
