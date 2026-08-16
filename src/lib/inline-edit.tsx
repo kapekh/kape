@@ -5,6 +5,7 @@ import {
 	useContext,
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 } from "react";
 
@@ -20,6 +21,10 @@ export type UiStringTarget = {
 	key: string;
 	/** What the page is showing, which for a key with no row at all is the only copy of it. */
 	shown: string;
+	/** A row in this very language, rather than the default showing through. */
+	own: boolean;
+	label: string;
+	multiline: boolean;
 };
 
 /** The entity types `updateField` accepts, which are `translations.entity_type` values. */
@@ -51,6 +56,8 @@ export type FieldEditTarget = {
 	multiline: boolean;
 	/** Human name for the field, e.g. "Lead". */
 	label: string;
+	/** Anything an editor has to know before typing, e.g. that a field is shared. */
+	note?: string;
 };
 
 /** What the bar is editing. */
@@ -62,22 +69,84 @@ export const targetKey = (t: EditTarget): string =>
 		? `uiString:${t.key}`
 		: `${t.entity}:${t.entityId}:${t.lang}:${t.target}`;
 
+/** Turns a marked node into what the surface needs to edit it, or null when the
+ *  node belongs to another record, another renderer, or a field nobody may save. */
+export type EditResolver = (node: Element) => EditTarget | null;
+
+/** What the bar reports while an admin types into the page itself. */
+export type EditStatus =
+	| { kind: "idle" }
+	| { kind: "editing"; label: string; multiline: boolean; hint?: string }
+	| { kind: "saving"; label: string }
+	| { kind: "saved"; label: string }
+	| { kind: "error"; label: string; message: string };
+
 type Ctx = {
 	editor: Editor | null;
 	editing: boolean;
 	setEditing: (on: boolean) => void;
 	may: (area: string) => boolean;
-	target: EditTarget | null;
-	setTarget: (target: EditTarget | null) => void;
+	/** A renderer lends the surface its own addressing for as long as it is mounted. */
+	register: (resolve: EditResolver) => () => void;
+	resolve: EditResolver;
+	/** How many renderers have lent theirs: none means nothing here is editable. */
+	editable: number;
+	status: EditStatus;
+	setStatus: (status: EditStatus) => void;
+	/**
+	 * Bumped whenever an edit ends. Typing in a node replaces the very DOM nodes
+	 * React holds a reference to, so the next render would patch text that is no
+	 * longer in the document: a renderer keys its output on this and remounts
+	 * instead.
+	 */
+	revision: number;
+	bumpRevision: () => void;
+	/** Where the whole record is edited, for everything inline editing will not take. */
+	studio: StudioLink | null;
+	setStudio: (link: StudioLink | null) => void;
 };
+
+export type StudioLink = { href: string; noun: string };
+
+const STUDIO_PATH: Record<string, string> = {
+	page: "pages",
+	post: "posts",
+	project: "projects",
+	person: "people",
+};
+
+/** Publishes where this record is edited in full, for as long as it is on screen. */
+export function useStudioLink(
+	entity: string | null | undefined,
+	entityId: number | null | undefined,
+	on: boolean,
+) {
+	const { setStudio } = useInlineEdit();
+	const path = entity ? STUDIO_PATH[entity] : undefined;
+	useEffect(() => {
+		if (!on || !path || entityId == null) return;
+		const link = { href: `/admin/${path}/${entityId}`, noun: entity as string };
+		setStudio(link);
+		return () => setStudio(null);
+	}, [on, path, entityId, entity, setStudio]);
+}
+
+const IDLE: EditStatus = { kind: "idle" };
 
 const OFF: Ctx = {
 	editor: null,
 	editing: false,
 	setEditing: () => {},
 	may: () => false,
-	target: null,
-	setTarget: () => {},
+	register: () => () => {},
+	resolve: () => null,
+	editable: 0,
+	status: IDLE,
+	setStatus: () => {},
+	revision: 0,
+	bumpRevision: () => {},
+	studio: null,
+	setStudio: () => {},
 };
 
 const InlineEditContext = createContext<Ctx | null>(null);
@@ -93,7 +162,11 @@ const stored = (key: string): string | null => {
 export function InlineEditProvider({ children }: { children: ReactNode }) {
 	const [editor, setEditor] = useState<Editor | null>(null);
 	const [editing, setEditingState] = useState(false);
-	const [target, setTarget] = useState<EditTarget | null>(null);
+	const [status, setStatus] = useState<EditStatus>(IDLE);
+	const [revision, setRevision] = useState(0);
+	const [studio, setStudio] = useState<StudioLink | null>(null);
+	const [editable, setEditable] = useState(0);
+	const resolvers = useRef<Set<EditResolver>>(new Set());
 
 	// after hydration only: every SSR response for a path is cached and prerendered
 	// byte-identically, so who is asking cannot reach the server-rendered html
@@ -118,10 +191,29 @@ export function InlineEditProvider({ children }: { children: ReactNode }) {
 
 	const setEditing = useCallback((on: boolean) => {
 		setEditingState(on);
-		if (!on) setTarget(null);
+		if (!on) setStatus(IDLE);
 		try {
 			localStorage.setItem(MODE_KEY, on ? "on" : "off");
 		} catch {}
+	}, []);
+
+	const bumpRevision = useCallback(() => setRevision((n) => n + 1), []);
+
+	const register = useCallback((resolve: EditResolver) => {
+		resolvers.current.add(resolve);
+		setEditable((n) => n + 1);
+		return () => {
+			resolvers.current.delete(resolve);
+			setEditable((n) => n - 1);
+		};
+	}, []);
+
+	const resolve = useCallback<EditResolver>((node) => {
+		for (const fn of resolvers.current) {
+			const target = fn(node);
+			if (target) return target;
+		}
+		return null;
 	}, []);
 
 	const value = useMemo<Ctx>(
@@ -132,10 +224,28 @@ export function InlineEditProvider({ children }: { children: ReactNode }) {
 			may: (area) =>
 				editor !== null &&
 				(editor.isSuperAdmin || editor.permissions.includes(area)),
-			target,
-			setTarget,
+			register,
+			resolve,
+			editable,
+			status,
+			setStatus,
+			revision,
+			bumpRevision,
+			studio,
+			setStudio,
 		}),
-		[editor, editing, setEditing, target],
+		[
+			editor,
+			editing,
+			setEditing,
+			register,
+			resolve,
+			editable,
+			status,
+			revision,
+			bumpRevision,
+			studio,
+		],
 	);
 
 	return (
@@ -148,3 +258,24 @@ export function InlineEditProvider({ children }: { children: ReactNode }) {
 export function useInlineEdit(): Ctx {
 	return useContext(InlineEditContext) ?? OFF;
 }
+
+/**
+ * The version each record was loaded at, so a second editor's save is refused
+ * rather than silently overwriting the first. It comes off the payload the page
+ * already has, so no record is read twice, and each save replaces it with the
+ * version it wrote.
+ */
+const versions = new Map<string, string | null>();
+const versionKey = (entity: string, entityId: number) => `${entity}:${entityId}`;
+
+/** What the page loaded this record at. */
+export function rememberVersion(
+	entity: string,
+	entityId: number,
+	updatedAt: string | null,
+) {
+	versions.set(versionKey(entity, entityId), updatedAt);
+}
+
+export const versionOf = (t: FieldEditTarget): string | null =>
+	versions.get(versionKey(t.entity, t.entityId)) ?? null;

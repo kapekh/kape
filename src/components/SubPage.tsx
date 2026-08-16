@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect } from "react";
-import { rememberVersion } from "@/components/InlineEditBar";
+import { rememberVersion } from "@/lib/inline-edit";
 import { NavLink } from "@/components/NavLink";
 import {
 	type CmsMarker,
@@ -11,8 +11,11 @@ import {
 	type EditableEntity,
 	type FieldEditTarget,
 	useInlineEdit,
+	useStudioLink,
 } from "@/lib/inline-edit";
 import type { ResolvedPage, ResolvedPost } from "#/server/repo/content";
+import type { ResolvedPerson } from "#/server/repo/people";
+import type { ResolvedProject } from "#/server/repo/projects";
 
 type Crumb = { label: string; href?: string };
 
@@ -57,7 +60,38 @@ export const postRecord = (
 	updatedAt: post.updatedAt,
 });
 
-const AREA: Record<string, string> = { page: "pages", post: "posts" };
+/**
+ * A project's name and summary are translations rows like a page's title. A
+ * person's name is a column per language and the position one column for all of
+ * them, which `updateField` writes directly; neither table carries an
+ * `updatedAt`, so those two save without a version check.
+ */
+export const projectRecord = (
+	project: Pick<ResolvedProject, "id" | "name" | "summary" | "i18nFallback">,
+): PageRecord => ({
+	entity: "project",
+	entityId: project.id,
+	fields: { name: project.name, summary: project.summary },
+	fallback: project.i18nFallback,
+	updatedAt: null,
+});
+
+export const personRecord = (
+	person: Pick<ResolvedPerson, "id" | "name" | "position" | "i18nFallback">,
+): PageRecord => ({
+	entity: "person",
+	entityId: person.id,
+	fields: { name: person.name, position: person.position },
+	fallback: person.i18nFallback,
+	updatedAt: null,
+});
+
+const AREA: Record<string, string> = {
+	page: "pages",
+	post: "posts",
+	project: "projects",
+	person: "people",
+};
 
 /**
  * True while an admin who may edit this record's entity has the switch on. A
@@ -77,9 +111,19 @@ function useEditingRecord(record: PageRecord | null): boolean {
 const LABELS: Record<string, Record<string, string>> = {
 	page: { title: "Title", excerpt: "Brief", body: "Body" },
 	post: { title: "Title", excerpt: "Excerpt", body: "Body" },
+	project: { name: "Name", summary: "Summary", body: "Body" },
+	person: { name: "Name", position: "Position" },
+};
+
+// one column for every language, so an editor is told before they retype it
+const SHARED_ACROSS_LANGUAGES: Record<string, readonly string[]> = {
+	person: ["position"],
 };
 
 const FIELD_TARGET = /^field:([A-Za-z][A-Za-z0-9_]*)$/;
+
+// Enter saves these; the rest keep it for newlines and save on the modifier
+const ONE_LINE = new Set(["title", "name", "position"]);
 
 /**
  * What the bar needs to edit one of this record's own fields, read off the
@@ -102,8 +146,11 @@ export function recordFieldTarget(
 		target,
 		shown,
 		fellBack: record.fallback.includes(field),
-		multiline: field !== "title" || shown.includes("\n"),
+		multiline: !ONE_LINE.has(field) || shown.includes("\n"),
 		label: LABELS[record.entity]?.[field] ?? field,
+		note: SHARED_ACROSS_LANGUAGES[record.entity]?.includes(field)
+			? "One value for every language: what you type here is what every reader sees."
+			: undefined,
 	};
 }
 
@@ -139,60 +186,32 @@ const OUTLINE = "color-mix(in oklab, var(--primary) 45%, transparent)";
  */
 function FieldLayer({ record }: { record: PageRecord }) {
 	const { lang } = useLang();
-	const { setTarget, target } = useInlineEdit();
+	const { register } = useInlineEdit();
 	const on = useEditingRecord(record);
 	const scope = `[data-cms-entity="${record.entity}"][data-cms-entity-id="${record.entityId}"]`;
+	useStudioLink(record.entity, record.entityId, on);
 
 	useEffect(() => {
 		if (!on) return;
-		const open = (node: Element): boolean => {
-			if (!node.matches(scope)) return false;
-			const picked = recordFieldTarget(
-				record,
-				lang,
-				node.getAttribute("data-cms-target") ?? "",
-			);
-			if (!picked) return false;
-			setTarget(picked);
-			return true;
-		};
-		const marked = (e: Event): Element | null =>
-			(e.target as Element | null)?.closest?.("[data-cms-target]") ?? null;
-		const onClick = (e: MouseEvent) => {
-			const node = marked(e);
-			if (!node || !open(node)) return;
-			// the marked text often sits inside a link
-			e.preventDefault();
-			e.stopPropagation();
-			(node as HTMLElement).focus?.();
-		};
-		const onKeyDown = (e: KeyboardEvent) => {
-			if (e.key !== "Enter" && e.key !== " ") return;
-			const node = marked(e);
-			if (!node || node !== document.activeElement || !open(node)) return;
-			e.preventDefault();
-			e.stopPropagation();
-		};
-		document.addEventListener("click", onClick, true);
-		document.addEventListener("keydown", onKeyDown, true);
-		return () => {
-			document.removeEventListener("click", onClick, true);
-			document.removeEventListener("keydown", onKeyDown, true);
-		};
-	}, [on, record, lang, scope, setTarget]);
+		return register((node) =>
+			node.matches(scope)
+				? recordFieldTarget(
+						record,
+						lang,
+						node.getAttribute("data-cms-target") ?? "",
+					)
+				: null,
+		);
+	}, [on, record, lang, scope, register]);
 
 	if (!on) return null;
 	const address = (field: string) => `${scope}[data-cms-target="field:${field}"]`;
 	const editable = Object.keys(record.fields).map(address).join(",");
-	const selected =
-		target?.kind === "field" &&
-		target.entity === record.entity &&
-		target.entityId === record.entityId &&
-		FIELD_TARGET.test(target.target)
-			? `${address(target.target.slice("field:".length))}{outline:2px solid var(--primary);outline-offset:2px;background:color-mix(in oklab, var(--primary) 12%, transparent)}`
-			: "";
+	const hover = Object.keys(record.fields)
+		.map((f) => `${address(f)}:hover`)
+		.join(",");
 	return (
-		<style>{`${editable}{outline:1px dashed ${OUTLINE};outline-offset:2px;border-radius:2px;cursor:pointer}${selected}`}</style>
+		<style>{`${editable}{outline:1px dashed ${OUTLINE};outline-offset:2px;border-radius:2px;cursor:text}${hover}{outline-color:var(--primary);background:color-mix(in oklab, var(--primary) 8%, transparent)}`}</style>
 	);
 }
 
@@ -225,9 +244,12 @@ export function SubPage({
 	children: ReactNode;
 }) {
 	const { lang, t } = useLang();
+	const { revision } = useInlineEdit();
 	const mark = useRecordMark(record ?? null);
 	return (
-		<main className="text-foreground overflow-x-hidden">
+		// keyed: an edit leaves DOM nodes React no longer holds, so the tree is
+		// rebuilt rather than patched. See `revision` in lib/inline-edit.
+		<main key={revision} className="text-foreground overflow-x-hidden">
 			{record && <FieldLayer record={record} />}
 			{/* Hero */}
 			<section className="relative pt-28 pb-24 px-6 overflow-hidden">

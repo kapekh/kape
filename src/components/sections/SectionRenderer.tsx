@@ -6,6 +6,7 @@ import {
 	type FieldEditTarget,
 	isEditableEntity,
 	useInlineEdit,
+	useStudioLink,
 } from "#/lib/inline-edit";
 import {
 	type SectionField,
@@ -161,9 +162,9 @@ export function fieldEditTarget(
 const OUTLINE = "color-mix(in oklab, var(--primary) 45%, transparent)";
 
 /**
- * One delegated listener for every marked node in this renderer, mounted only
- * for an admin with the switch on. A signed-out visitor never reaches it: the
- * context is off until `auth.me` answers after hydration.
+ * What this renderer's marks address, lent to the edit surface for as long as
+ * it is mounted. A signed-out visitor never reaches it: the context is off
+ * until `auth.me` answers after hydration.
  */
 function EditLayer({
 	sections,
@@ -172,52 +173,22 @@ function EditLayer({
 	sections: SectionNode[];
 	identity: EditIdentity | null;
 }) {
-	const { setTarget, target } = useInlineEdit();
+	const { register } = useInlineEdit();
 	const on = useEditingSections() && identity !== null;
+	useStudioLink(identity?.entity, identity?.entityId, on);
 
 	useEffect(() => {
 		if (!on || !identity) return;
-		const open = (node: Element): boolean => {
+		return register((node) => {
 			const address = node.getAttribute("data-cms-target");
-			const picked = address && fieldEditTarget(sections, identity, address);
-			if (!picked) return false;
-			setTarget(picked);
-			return true;
-		};
-		const marked = (e: Event): Element | null =>
-			(e.target as Element | null)?.closest?.("[data-cms-target]") ?? null;
-		const onClick = (e: MouseEvent) => {
-			const node = marked(e);
-			if (!node || !open(node)) return;
-			// the marked text often sits inside a link or a button
-			e.preventDefault();
-			e.stopPropagation();
-			(node as HTMLElement).focus?.();
-		};
-		const onKeyDown = (e: KeyboardEvent) => {
-			if (e.key !== "Enter" && e.key !== " ") return;
-			const node = marked(e);
-			if (!node || node !== document.activeElement || !open(node)) return;
-			e.preventDefault();
-			e.stopPropagation();
-		};
-		document.addEventListener("click", onClick, true);
-		document.addEventListener("keydown", onKeyDown, true);
-		return () => {
-			document.removeEventListener("click", onClick, true);
-			document.removeEventListener("keydown", onKeyDown, true);
-		};
-	}, [on, identity, sections, setTarget]);
+			return address ? fieldEditTarget(sections, identity, address) : null;
+		});
+	}, [on, identity, sections, register]);
 
 	if (!on) return null;
-	// selecting by the address avoids mutating nodes React owns
-	const selected =
-		target?.kind === "field" && /^[\w:.[\]-]+$/.test(target.target)
-			? // scoped to this record: a listing row carries the same address for another one
-				`[data-cms-entity="${identity?.entity}"][data-cms-entity-id="${identity?.entityId}"][data-cms-target="${target.target}"]{outline:2px solid var(--primary);outline-offset:2px;background:color-mix(in oklab, var(--primary) 12%, transparent)}`
-			: "";
+	const sel = '[data-cms-target^="section:"]';
 	return (
-		<style>{`[data-cms-target^="section:"]{outline:1px dashed ${OUTLINE};outline-offset:2px;border-radius:2px;cursor:pointer}${selected}`}</style>
+		<style>{`${sel}{outline:1px dashed ${OUTLINE};outline-offset:2px;border-radius:2px;cursor:text}${sel}:hover{outline-color:var(--primary);background:color-mix(in oklab, var(--primary) 8%, transparent)}`}</style>
 	);
 }
 
@@ -2542,8 +2513,11 @@ export function SectionRenderer({
 	// the spread below flattens s.props, so identity travels beside it, not in it
 	const identity: EditIdentity | null =
 		entity && entityId != null && lang ? { entity, entityId, lang } : null;
+	// keyed: an edit leaves DOM nodes React no longer holds, so the tree is rebuilt
+	// rather than patched. See `revision` in lib/inline-edit.
+	const { revision } = useInlineEdit();
 	return (
-		<Identity.Provider value={identity}>
+		<Identity.Provider value={identity} key={revision}>
 			<EditLayer sections={sections} identity={identity} />
 			{sections.map((s, i) => {
 				const Template = templateFor(s.type);

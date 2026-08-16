@@ -68,7 +68,8 @@ vi.mock("../PublicOrgChart", () => ({ PublicOrgChart: () => <div /> }));
 vi.mock("../ContactForm", () => ({ ContactForm: () => <form /> }));
 vi.mock("../FormRenderer", () => ({ FormRenderer: () => <form /> }));
 
-import { InlineEditBar, rememberVersion } from "../InlineEditBar";
+import { rememberVersion } from "#/lib/inline-edit";
+import { InlineEditBar } from "../InlineEditBar";
 import { fieldEditTarget, SectionRenderer } from "./SectionRenderer";
 
 const PAGE_ID = 43;
@@ -220,12 +221,27 @@ async function editing(sections: SectionNode[], lang = "en") {
 const address = (sections: SectionNode[], type: string, path: string) =>
 	`section:${sections.find((s) => s.type === type)?.id}:${path}`;
 
+/** Click the text itself, which is where editing happens. */
 const clickTarget = (root: HTMLElement, target: string) => {
 	const node = root.querySelector<HTMLElement>(`[data-cms-target="${target}"]`);
 	if (!node) throw new Error(`no marker for ${target}`);
 	node.focus();
-	fireEvent.click(node);
+	fireEvent.mouseDown(node);
 	return node;
+};
+
+const isOpen = (node: HTMLElement) => node.getAttribute("contenteditable") !== null;
+
+/** Whether anything on the page is drawn as editable. */
+const outlines = (root: HTMLElement) =>
+	[...root.querySelectorAll("style")].some((s) =>
+		(s.textContent ?? "").includes("data-cms-target"),
+	);
+
+/** Type over an open node and save it, the way Enter or ⌘Enter would. */
+const typeAndSave = (node: HTMLElement, value: string) => {
+	node.textContent = value;
+	fireEvent.keyDown(node, { key: "Enter", ctrlKey: true });
 };
 
 afterEach(cleanup);
@@ -316,30 +332,35 @@ describe("editing a section field on the public page", () => {
 	it("offers nothing to a visitor, and nothing to an admin without pages", async () => {
 		const sections = probeSections();
 		const { container } = render(<Probe sections={sections} />);
-		expect(container.querySelector("style")).toBeNull();
-		clickTarget(container, address(sections, "hero", "props.title"));
-		expect(screen.queryByRole("textbox")).toBeNull();
+		expect(outlines(container)).toBe(false);
+		expect(
+			isOpen(clickTarget(container, address(sections, "hero", "props.title"))),
+		).toBe(false);
 
 		cleanup();
 		signIn(["settings"]);
 		const view = await editing(sections);
-		expect(view.container.querySelector("style")).toBeNull();
-		clickTarget(view.container, address(sections, "hero", "props.title"));
-		expect(screen.queryByRole("textbox")).toBeNull();
+		expect(outlines(view.container)).toBe(false);
+		expect(
+			isOpen(
+				clickTarget(view.container, address(sections, "hero", "props.title")),
+			),
+		).toBe(false);
 	});
 
-	it("opens the box on the field that was clicked and saves that one address", async () => {
+	it("edits the text where it is printed, and saves that one address", async () => {
 		signIn(["pages"]);
 		const sections = probeSections();
 		const { container } = await editing(sections);
 		const lead = address(sections, "hero", "props.lead");
-		clickTarget(container, lead);
+		const node = clickTarget(container, lead);
 
-		const box = screen.getByRole("textbox") as HTMLTextAreaElement;
-		expect(box.value).toBe("Hero lead");
-		fireEvent.change(box, { target: { value: "A new lead" } });
-		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+		// the node is the box: no panel, no second copy of the text
+		expect(isOpen(node)).toBe(true);
+		expect(node.textContent).toBe("Hero lead");
+		expect(screen.queryByRole("textbox")).toBeNull();
 
+		typeAndSave(node, "A new lead");
 		await waitFor(() =>
 			expect(state.saved).toEqual([
 				{
@@ -359,15 +380,10 @@ describe("editing a section field on the public page", () => {
 		const sections = probeSections();
 		const { container } = await editing(sections);
 		const card = address(sections, "cards", "props.items[1].body");
-		clickTarget(container, card);
+		const node = clickTarget(container, card);
 
-		expect((screen.getByRole("textbox") as HTMLInputElement).value).toBe(
-			"Card 1 body",
-		);
-		fireEvent.change(screen.getByRole("textbox"), {
-			target: { value: "Second card, rewritten" },
-		});
-		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+		expect(node.textContent).toBe("Card 1 body");
+		typeAndSave(node, "Second card, rewritten");
 
 		await waitFor(() =>
 			expect(state.saved[0]).toMatchObject({
@@ -377,22 +393,50 @@ describe("editing a section field on the public page", () => {
 		);
 	});
 
-	it("opens empty and quotes the default language where the text fell back", async () => {
+	it("keeps the accent syntax a heading renders as spans", async () => {
+		signIn(["pages"]);
+		const sections = probeSections();
+		const { container } = await editing(sections);
+		const title = address(sections, "hero", "props.title");
+		const node = clickTarget(container, title);
+
+		// the heading reads plainly on screen, asterisks and all only in the source
+		expect(node.textContent).toBe("Every section type");
+		const accent = node.querySelector("[data-cms-accent]");
+		if (accent) accent.textContent = "template";
+		fireEvent.keyDown(node, { key: "Enter", ctrlKey: true });
+
+		await waitFor(() =>
+			expect(state.saved[0]).toMatchObject({
+				target: title,
+				value: "Every *template* type",
+			}),
+		);
+	});
+
+	it("saves nothing when the text was not touched", async () => {
+		signIn(["pages"]);
+		const sections = probeSections();
+		const { container } = await editing(sections);
+		const node = clickTarget(container, address(sections, "hero", "props.title"));
+		fireEvent.keyDown(node, { key: "Enter", ctrlKey: true });
+
+		await waitFor(() => expect(state.saved).toEqual([]));
+	});
+
+	it("empties the node where the text fell back, and quotes what it was showing", async () => {
 		signIn(["pages"]);
 		const sections = probeSections();
 		const hero = sections.find((s) => s.type === "hero");
 		if (hero?.props) hero.props.i18nFallback = ["title", "lead"];
 		const lead = address(sections, "hero", "props.lead");
 		const { container } = await editing(sections, "km");
-		clickTarget(container, lead);
+		const node = clickTarget(container, lead);
 
-		expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toBe("");
+		expect(node.textContent).toBe("");
 		expect(screen.getByText(/showing “Hero lead”/)).toBeTruthy();
 
-		fireEvent.change(screen.getByRole("textbox"), {
-			target: { value: "អត្ថបទខ្មែរ" },
-		});
-		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+		typeAndSave(node, "អត្ថបទខ្មែរ");
 		await waitFor(() =>
 			expect(state.saved[0]).toMatchObject({
 				lang: "km",
@@ -402,7 +446,7 @@ describe("editing a section field on the public page", () => {
 		);
 	});
 
-	it("closes on Escape and puts the focus back where it was", async () => {
+	it("puts the text back on Escape and saves nothing", async () => {
 		signIn(["pages"]);
 		const sections = probeSections();
 		const { container } = await editing(sections);
@@ -410,25 +454,37 @@ describe("editing a section field on the public page", () => {
 			container,
 			address(sections, "cta", "props.ctaLabel"),
 		);
-		const box = screen.getByRole("textbox");
-		box.focus();
-		expect(document.activeElement).toBe(box);
+		const was = node.innerHTML;
+		const target = node.getAttribute("data-cms-target");
+		node.textContent = "half a thought";
+		fireEvent.keyDown(node, { key: "Escape" });
 
-		fireEvent.keyDown(box, { key: "Escape" });
-		expect(screen.queryByRole("textbox")).toBeNull();
-		expect(document.activeElement).toBe(node);
+		expect(isOpen(node)).toBe(false);
+		expect(node.innerHTML).toBe(was);
+		expect(state.saved).toEqual([]);
+		// the tree remounts, so the focus follows the address rather than the node
+		await waitFor(() =>
+			expect(document.activeElement?.getAttribute("data-cms-target")).toBe(
+				target,
+			),
+		);
 	});
 
-	it("says so when someone else changed the page first", async () => {
+	it("says so when someone else changed the page first, and keeps what was typed", async () => {
 		signIn(["pages"]);
 		const sections = probeSections();
 		const { container } = await editing(sections);
-		clickTarget(container, address(sections, "cta", "props.ctaLabel"));
+		const node = clickTarget(
+			container,
+			address(sections, "cta", "props.ctaLabel"),
+		);
 		state.conflict = true;
-		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+		typeAndSave(node, "Rewritten label");
 
 		expect(
 			await screen.findByText(/Someone else changed this record/),
 		).toBeTruthy();
+		expect(node.textContent).toBe("Rewritten label");
+		expect(isOpen(node)).toBe(true);
 	});
 });

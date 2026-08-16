@@ -170,8 +170,21 @@ const click = (root: HTMLElement, selector: string) => {
 	const node = root.querySelector<HTMLElement>(selector);
 	if (!node) throw new Error(`no node for ${selector}`);
 	node.focus();
-	fireEvent.click(node);
+	fireEvent.mouseDown(node);
 	return node;
+};
+
+const isOpen = (node: HTMLElement) => node.getAttribute("contenteditable") !== null;
+
+/** Whether anything on the page is drawn as editable. */
+const outlines = (root: HTMLElement) =>
+	[...root.querySelectorAll("style")].some((s) =>
+		(s.textContent ?? "").includes("data-cms-target"),
+	);
+
+const typeAndSave = (node: HTMLElement, value: string) => {
+	node.textContent = value;
+	fireEvent.keyDown(node, { key: "Enter", ctrlKey: true });
 };
 
 const clickField = (root: HTMLElement, record: PageRecord, field: string) =>
@@ -216,20 +229,19 @@ describe("the fields a page and a post carry", () => {
 			const { container } = await editing(record);
 			const opens: string[] = [];
 			for (const target of markersOf(container, record)) {
-				click(container, `[data-cms-target="${target}"]`);
-				const box = screen.queryByRole("textbox");
-				if (!box) continue;
+				const node = click(container, `[data-cms-target="${target}"]`);
+				if (!isOpen(node)) continue;
 				opens.push(target);
-				fireEvent.keyDown(box, { key: "Escape" });
+				fireEvent.keyDown(node, { key: "Escape" });
 			}
 			expect(opens).toEqual(Object.keys(record.fields).map((f) => `field:${f}`));
 
 			// the row a listing drew belongs to that record, not to this page
-			click(
+			const listed = click(
 				container,
 				`[data-cms-entity-id="${LISTED_POST_ID}"][data-cms-target="field:title"]`,
 			);
-			expect(screen.queryByRole("textbox")).toBeNull();
+			expect(isOpen(listed)).toBe(false);
 			cleanup();
 			// the switch remembers itself, and the next render would toggle it off
 			localStorage.clear();
@@ -251,38 +263,34 @@ describe("the fields a page and a post carry", () => {
 
 		expect(h1?.getAttribute("data-cms-target")).toBe("field:title");
 		expect(h1?.getAttribute("tabindex")).toBeNull();
-		expect(container.querySelector("style")).toBeNull();
-		clickField(container, album, "title");
-		expect(screen.queryByRole("textbox")).toBeNull();
+		expect(outlines(container)).toBe(false);
+		expect(isOpen(clickField(container, album, "title"))).toBe(false);
 	});
 });
 
 describe("editing a page's own text on the page it is printed on", () => {
 	it("offers nothing to a visitor, and nothing to an admin without the entity", async () => {
 		const { container } = render(<Probe record={page()} />);
-		expect(container.querySelector("style")).toBeNull();
-		clickField(container, page(), "title");
-		expect(screen.queryByRole("textbox")).toBeNull();
+		expect(outlines(container)).toBe(false);
+		expect(isOpen(clickField(container, page(), "title"))).toBe(false);
 
 		cleanup();
 		// pages, on a post: the same refusal the server makes for the other router
 		signIn(["pages"]);
 		const view = await editing(post());
-		expect(view.container.querySelector("style")).toBeNull();
-		clickField(view.container, post(), "title");
-		expect(screen.queryByRole("textbox")).toBeNull();
+		expect(outlines(view.container)).toBe(false);
+		expect(isOpen(clickField(view.container, post(), "title"))).toBe(false);
 	});
 
 	it("saves a page title against the version the payload carried", async () => {
 		signIn(["pages"]);
 		const record = page();
 		const { container } = await editing(record);
-		clickField(container, record, "title");
+		const node = clickField(container, record, "title");
 
-		const box = screen.getByRole("textbox") as HTMLInputElement;
-		expect(box.value).toBe("International Days");
-		fireEvent.change(box, { target: { value: "International Days 2026" } });
-		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+		expect(node.textContent).toBe("International Days");
+		expect(screen.queryByRole("textbox")).toBeNull();
+		typeAndSave(node, "International Days 2026");
 
 		await waitFor(() =>
 			expect(state.saved).toEqual([
@@ -302,11 +310,10 @@ describe("editing a page's own text on the page it is printed on", () => {
 		signIn(["posts"]);
 		const record = post();
 		const { container } = await editing(record);
-		clickField(container, record, "title");
-		fireEvent.change(screen.getByRole("textbox"), {
-			target: { value: "Kang Meas opens its library" },
-		});
-		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+		typeAndSave(
+			clickField(container, record, "title"),
+			"Kang Meas opens its library",
+		);
 
 		await waitFor(() =>
 			expect(state.saved).toEqual([
@@ -339,15 +346,12 @@ describe("editing a page's own text on the page it is printed on", () => {
 		signIn(["pages"]);
 		const record = page({ i18nFallback: ["excerpt"] });
 		const { container } = await editing(record, "km");
-		clickField(container, record, "excerpt");
+		const node = clickField(container, record, "excerpt");
 
-		expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toBe("");
+		expect(node.textContent).toBe("");
 		expect(screen.getByText(/showing “Global observances/)).toBeTruthy();
 
-		fireEvent.change(screen.getByRole("textbox"), {
-			target: { value: "ទិវាអន្តរជាតិ" },
-		});
-		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+		typeAndSave(node, "ទិវាអន្តរជាតិ");
 		await waitFor(() =>
 			expect(state.saved[0]).toMatchObject({
 				entity: "page",
@@ -362,12 +366,15 @@ describe("editing a page's own text on the page it is printed on", () => {
 		signIn(["posts"]);
 		const record = post();
 		const { container } = await editing(record);
-		clickField(container, record, "title");
+		const node = clickField(container, record, "title");
 		state.conflict = true;
-		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+		typeAndSave(node, "A title someone else beat me to");
 
 		expect(
 			await screen.findByText(/Someone else changed this record/),
 		).toBeTruthy();
+		// the refusal keeps what was typed, in the node, still editable
+		expect(node.textContent).toBe("A title someone else beat me to");
+		expect(isOpen(node)).toBe(true);
 	});
 });

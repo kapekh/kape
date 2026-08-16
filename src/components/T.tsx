@@ -2,9 +2,9 @@ import { type TParams, useLang } from "#/lib/i18n";
 import { useInlineEdit } from "#/lib/inline-edit";
 
 /**
- * A UI string that an admin in edit mode can click. `t()` stays as it is: it
- * returns a bare string and half its call sites are `alt`, `title` and
- * `aria-label`, where a node cannot go.
+ * A UI string that an admin in edit mode can type over where it is printed.
+ * `t()` stays as it is: it returns a bare string and half its call sites are
+ * `alt`, `title` and `aria-label`, where a node cannot go.
  */
 export function T({
 	k,
@@ -16,36 +16,22 @@ export function T({
 	params?: TParams;
 }) {
 	const { t } = useLang();
-	const { editing, may, target, setTarget } = useInlineEdit();
+	const { editing, may, revision } = useInlineEdit();
 	const text = t(k, fallback, params);
 	if (!editing || !may("settings")) return <>{text}</>;
 
-	const selected = target?.kind === "uiString" && target.key === k;
-	// unfilled: the editor must show the {slots} a translation has to keep, not this page's numbers
-	const open = () =>
-		setTarget({ kind: "uiString", key: k, shown: t(k, fallback) });
 	return (
 		// biome-ignore lint/a11y/useSemanticElements: these strings sit inside links, where a nested <button> is invalid
 		<span
+			// keyed: typing replaces the text node React holds, so it remounts
+			key={revision}
 			role="button"
 			tabIndex={0}
 			title={k}
-			onClick={(e) => {
-				e.preventDefault();
-				e.stopPropagation();
-				open();
-			}}
-			onKeyDown={(e) => {
-				if (e.key !== "Enter" && e.key !== " ") return;
-				e.preventDefault();
-				e.stopPropagation();
-				open();
-			}}
-			className={`cursor-pointer rounded-sm outline-offset-2 ${
-				selected
-					? "bg-primary/15 outline outline-2 outline-primary"
-					: "outline-dashed outline-1 outline-primary/50"
-			}`}
+			data-cms-ui-string={k}
+			// unfilled: an editor must see the {slots} a translation has to keep
+			data-cms-source={t(k, fallback)}
+			className="cursor-text rounded-sm outline-1 outline-primary/50 outline-dashed outline-offset-2 hover:bg-primary/10 hover:outline-primary"
 		>
 			{text}
 		</span>
