@@ -16,8 +16,8 @@ import {
 	ROUTER_AREA,
 } from "#/lib/permissions";
 import type { SectionNode } from "#/lib/sections";
-import { PAGE_TITLE_MAX } from "#/lib/slug";
 import { checkSettingValue } from "#/lib/site-theme";
+import { PAGE_TITLE_MAX } from "#/lib/slug";
 import type { DB } from "#/server/db";
 import { invalidateTags, tagSourceQuery } from "#/server/render-cache";
 import type { PageInput } from "#/server/repo/admin";
@@ -81,11 +81,11 @@ import {
 	movePage,
 	StaleWriteError,
 	updateDonor,
+	updateField,
 	updateHero,
 	updateLanguage,
 	updateNavItem,
 	updateOffice,
-	updateField,
 	updatePage,
 	updatePartner,
 	updatePost,
@@ -173,7 +173,7 @@ import {
 	roleExists,
 	updateRole,
 } from "#/server/repo/roles";
-import { resolveRouteCached } from "#/server/repo/route";
+import { publicPathFor, resolveRouteCached } from "#/server/repo/route";
 import { resolveSections } from "#/server/repo/sections";
 import {
 	getSettings,
@@ -951,6 +951,14 @@ const statInput = z.object({
 
 const adminRouter = {
 	overview: adminProcedure.query(({ ctx }) => adminOverview(ctx.db)),
+	publicPath: adminProcedure
+		.input(
+			z.object({
+				kind: z.enum(["page", "post", "project", "person"]),
+				id: z.number(),
+			}),
+		)
+		.query(({ ctx, input }) => publicPathFor(ctx.db, input.kind, input.id)),
 } satisfies TRPCRouterRecord;
 
 const adminSettingsRouter = {

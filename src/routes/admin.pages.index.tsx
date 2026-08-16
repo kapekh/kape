@@ -12,6 +12,7 @@ import {
 	TableScroll,
 	useListQuery,
 } from "#/components/admin/list-ui";
+import { viewOnSite } from "#/components/admin/view-on-site";
 import { Badge } from "#/components/ui/badge.tsx";
 import { Button } from "#/components/ui/button.tsx";
 import { PageHeader } from "#/components/ui/page-header.tsx";
@@ -182,7 +183,7 @@ function PagesList() {
 													<Link
 														to="/admin/pages/$id"
 														params={{ id: String(r.id) }}
-														className="block truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+														className="tap-target block truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
 													>
 														{r.title}
 													</Link>
@@ -206,6 +207,11 @@ function PagesList() {
 											<ActionMenu
 												label={`Actions for ${r.title}`}
 												items={[
+													...viewOnSite({
+														kind: "page",
+														slug: r.slug,
+														status: r.status,
+													}),
 													{
 														label: "Delete",
 														danger: true,

@@ -2475,6 +2475,7 @@ export async function adminListProjects(db: DB) {
 			id: r.id,
 			code: r.code,
 			slug: r.slug,
+			parentId: r.parentId,
 			status: r.status,
 			name: n.en ?? Object.values(n)[0] ?? r.code,
 		};

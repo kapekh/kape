@@ -12,6 +12,7 @@ import {
 	TableScroll,
 	useListQuery,
 } from "#/components/admin/list-ui";
+import { viewOnSite } from "#/components/admin/view-on-site";
 import { Badge } from "#/components/ui/badge.tsx";
 import { Button } from "#/components/ui/button.tsx";
 import { PageHeader } from "#/components/ui/page-header.tsx";
@@ -43,6 +44,7 @@ function ProjectsList() {
 		);
 	}
 
+	const slugById = new Map(rows.map((r) => [r.id, r.slug]));
 	const statuses = [...new Set(rows.map((r) => r.status))].sort();
 	const ofStatus = status ? rows.filter((r) => r.status === status) : rows;
 	const shown = ofStatus.filter((r) =>
@@ -167,7 +169,7 @@ function ProjectsList() {
 										<Link
 											to="/admin/projects/$id"
 											params={{ id: String(r.id) }}
-											className="block truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+											className="tap-target block truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
 										>
 											{r.name}
 										</Link>
@@ -184,6 +186,11 @@ function ProjectsList() {
 										<ActionMenu
 											label={`Actions for ${r.name}`}
 											items={[
+												...viewOnSite({
+													kind: "project",
+													slug: r.slug,
+													parentSlug: slugById.get(r.parentId ?? -1),
+												}),
 												{
 													label: "Delete",
 													danger: true,

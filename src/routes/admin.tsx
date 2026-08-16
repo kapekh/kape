@@ -16,7 +16,7 @@ import {
 	PanelLeft,
 	ShieldAlert,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { AdminHeaderProvider } from "#/components/admin/AdminHeader";
 import { AdminIcon } from "#/components/admin/AdminIcon";
@@ -27,6 +27,7 @@ import { ThemeToggle } from "#/components/ThemeToggle";
 import { Button } from "#/components/ui/button";
 import { EmptyState } from "#/components/ui/empty-state";
 import { PageHeader } from "#/components/ui/page-header";
+import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { adminPathEnabled, MODULES_SETTING } from "#/lib/modules";
 import { NAV_AREA } from "#/lib/permissions";
 import { adminTitle, siteLogo, siteShortName } from "#/lib/site-identity";
@@ -291,6 +292,48 @@ const NAV: NavGroup[] = [
 	},
 ];
 
+const RECORD_KIND = {
+	pages: "page",
+	posts: "post",
+	projects: "project",
+	people: "person",
+} as const;
+
+type ViewTarget = { href: string; label: string };
+
+const SITE: ViewTarget = { href: "/", label: "View site" };
+
+/**
+ * What the topbar's outward link opens: the record being edited when this screen
+ * edits one and the public site actually serves it, the home page otherwise.
+ * `refresh` re-asks, so publishing a draft and then reaching for the link works.
+ */
+function useViewTarget(pathname: string) {
+	const [target, setTarget] = useState<ViewTarget>(SITE);
+	const match = /^\/admin\/(pages|posts|projects|people)\/(\d+)$/.exec(
+		pathname,
+	);
+	const area = match?.[1] as keyof typeof RECORD_KIND | undefined;
+	const id = match ? Number(match[2]) : null;
+
+	const refresh = useCallback(() => {
+		if (!area || id === null) {
+			setTarget(SITE);
+			return;
+		}
+		const kind = RECORD_KIND[area];
+		trpcClient.admin.publicPath
+			.query({ kind, id })
+			.then((path) =>
+				setTarget(path ? { href: path, label: `View ${kind}` } : SITE),
+			)
+			.catch(() => setTarget(SITE));
+	}, [area, id]);
+
+	useEffect(refresh, [refresh]);
+	return { target, refresh };
+}
+
 function AdminLayout({ access }: { access: OkAccess }) {
 	const navigate = useNavigate();
 	const settings = Route.useLoaderData();
@@ -305,6 +348,8 @@ function AdminLayout({ access }: { access: OkAccess }) {
 		select: (s) => (s.location.search as { type?: string }).type,
 	});
 	const studio = /^\/admin\/pages\/(new|\d+)/.test(pathname);
+	const { target: viewTarget, refresh: refreshViewTarget } =
+		useViewTarget(pathname);
 
 	// Whether a sidebar item is the current route (content-type items match on ?type too).
 	const isActive = (it: NavItem) => {
@@ -416,7 +461,7 @@ function AdminLayout({ access }: { access: OkAccess }) {
 	const link =
 		"group flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-admin-ink-muted transition-colors duration-150 ease-out hover:bg-admin-accent-soft hover:text-admin-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50";
 	const linkActive =
-		"flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-admin-accent bg-admin-accent-soft shadow-[inset_3px_0_0_var(--admin-accent)]";
+		"flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-admin-accent-ink bg-admin-accent-soft shadow-[inset_3px_0_0_var(--admin-accent)]";
 	const menuItem =
 		"block w-full rounded-lg px-3 py-2 text-left text-sm text-admin-ink transition-colors duration-150 ease-out hover:bg-admin-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50";
 
@@ -585,12 +630,14 @@ function AdminLayout({ access }: { access: OkAccess }) {
 							<Compass className="size-4 shrink-0" aria-hidden="true" />
 						</button>
 						<a
-							href="/"
+							href={viewTarget.href}
 							target="_blank"
 							rel="noopener noreferrer"
+							onPointerEnter={refreshViewTarget}
+							onFocus={refreshViewTarget}
 							className="flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium text-admin-ink-muted transition-colors duration-150 ease-out hover:bg-admin-accent-soft hover:text-admin-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
 						>
-							View site
+							{viewTarget.label}
 							<ExternalLink className="size-4 shrink-0" aria-hidden="true" />
 						</a>
 						<div className="relative">
@@ -605,7 +652,7 @@ function AdminLayout({ access }: { access: OkAccess }) {
 							>
 								<span
 									aria-hidden="true"
-									className="grid size-8 place-items-center rounded-full bg-admin-accent-soft text-xs font-semibold uppercase text-admin-accent"
+									className="grid size-8 place-items-center rounded-full bg-admin-accent-soft text-xs font-semibold uppercase text-admin-accent-ink"
 								>
 									{email.slice(0, 2)}
 								</span>

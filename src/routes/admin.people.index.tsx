@@ -12,6 +12,7 @@ import {
 	TableScroll,
 	useListQuery,
 } from "#/components/admin/list-ui";
+import { viewOnSite } from "#/components/admin/view-on-site";
 import { Badge } from "#/components/ui/badge.tsx";
 import { Button } from "#/components/ui/button.tsx";
 import { PageHeader } from "#/components/ui/page-header.tsx";
@@ -192,7 +193,7 @@ function PeopleList() {
 										<Link
 											to="/admin/people/$id"
 											params={{ id: String(r.id) }}
-											className="truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+											className="tap-target truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
 										>
 											{r.nameEn}
 										</Link>
@@ -219,6 +220,11 @@ function PeopleList() {
 										<ActionMenu
 											label={`Actions for ${r.nameEn}`}
 											items={[
+												...viewOnSite({
+													kind: "person",
+													slug: r.slug,
+													isPublic: r.isPublic,
+												}),
 												{
 													label: "Delete person",
 													danger: true,

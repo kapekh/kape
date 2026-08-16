@@ -5,6 +5,7 @@ import {
 	legacyRedirect,
 	resolvesUnder,
 } from "#/lib/collections";
+import { type PublicRecordKind, publicPathOf } from "#/lib/public-path";
 
 import type { DB } from "../db";
 import {
@@ -16,7 +17,7 @@ import {
 	tagRecord,
 	tagSourceQuery,
 } from "../render-cache";
-import { projects } from "../schema";
+import { pages, people, posts, projects } from "../schema";
 import {
 	findPageRedirect,
 	getAlbum,
@@ -107,6 +108,53 @@ export async function resolveRoute(
 	if (to) return { kind: "redirect", to };
 
 	return { kind: "notfound" };
+}
+
+/** The record behind an admin screen, resolved to where the public site serves it. */
+export async function publicPathFor(
+	db: DB,
+	kind: PublicRecordKind,
+	id: number,
+): Promise<string | null> {
+	if (kind === "page") {
+		const [row] = await db
+			.select({ slug: pages.slug, status: pages.status })
+			.from(pages)
+			.where(and(eq(pages.tenantId, TENANT), eq(pages.id, id)))
+			.limit(1);
+		return row ? publicPathOf({ kind, ...row }) : null;
+	}
+
+	if (kind === "post") {
+		const [row] = await db
+			.select({
+				slug: posts.slug,
+				status: posts.status,
+				contentType: posts.contentType,
+			})
+			.from(posts)
+			.where(and(eq(posts.tenantId, TENANT), eq(posts.id, id)))
+			.limit(1);
+		return row ? publicPathOf({ kind, ...row }) : null;
+	}
+
+	if (kind === "project") {
+		const parent = alias(projects, "parent_project");
+		const [row] = await db
+			.select({ slug: projects.slug, parentSlug: parent.slug })
+			.from(projects)
+			.leftJoin(parent, eq(projects.parentId, parent.id))
+			.where(and(eq(projects.tenantId, TENANT), eq(projects.id, id)))
+			.limit(1);
+		return row ? publicPathOf({ kind, ...row }) : null;
+	}
+
+	const [row] = await db
+		.select({ slug: people.slug, isPublic: people.isPublic })
+		.from(people)
+		.where(and(eq(people.tenantId, TENANT), eq(people.id, id)))
+		.limit(1);
+	return row ? publicPathOf({ kind, ...row }) : null;
 }
 
 /** Tags a resolved route is filed under, so the right entries bust on a mutation. */
