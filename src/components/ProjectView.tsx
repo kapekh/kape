@@ -1,6 +1,6 @@
 import type { ResolvedProject } from "#/server/repo/projects";
 import { RichBody } from "@/components/RichBody";
-import { Section, SubPage } from "@/components/SubPage";
+import { projectRecord, Section, SubPage } from "@/components/SubPage";
 import { useT } from "@/lib/i18n";
 
 function formatDate(iso: string) {
@@ -54,6 +54,9 @@ export function ProjectView({
 			section={section}
 			title={project.name}
 			lead={project.summary || undefined}
+			record={projectRecord(project)}
+			titleField="name"
+			leadField="summary"
 			badge={
 				project.status === "current"
 					? t("project.current", "Current project")

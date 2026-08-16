@@ -32,6 +32,7 @@ function run<T>(body: string): T {
 			`import { db } from "${root}/src/server/db.ts";
 			 import * as admin from "${root}/src/server/repo/admin.ts";
 			 import { getPageBySlug } from "${root}/src/server/repo/content.ts";
+			 import * as people from "${root}/src/server/repo/people.ts";
 			 db.$client
 				.query("insert or ignore into languages (code, name, native_name, is_default, enabled, rtl, sort) values ('km','Khmer','ខ្មែរ',0,1,0,1)")
 				.run();
@@ -464,5 +465,47 @@ describe("updateField across entities", () => {
 		`);
 		expect(seen.refused).toContain("no version column");
 		expect(seen.written).toMatchObject({ wrote: "translation", updatedAt: null });
+	});
+
+	it("writes a person's name to the column for that language, and refuses to empty the default one", () => {
+		const seen = run<{
+			km: { name_en: string; name_km: string | null; position: string | null };
+			en: { name_en: string; name_km: string | null; position: string | null };
+			refused: string;
+			rows: unknown[];
+		}>(`
+			const personId = await people.createPerson(db, {
+				nameEn: "Sok Dara", nameKm: null, position: "Teacher", tier: "staff",
+				isPublic: true, slug: "sok-dara", photoMediaId: null, staffNo: null,
+				sex: null, phone: null, email: null, program: null, sort: 0,
+				bio: { en: "", km: "" },
+			});
+			const row = () => db.$client
+				.query("select name_en, name_km, position from people where id = ?")
+				.get(personId);
+			await admin.updateField(db, {
+				entity: "person", entityId: personId, lang: "km",
+				target: "field:name", value: "សុខ ដារ៉ា",
+			});
+			const km = row();
+			await admin.updateField(db, {
+				entity: "person", entityId: personId, lang: "en",
+				target: "field:position", value: "Head teacher",
+			});
+			const en = row();
+			const refused = await refusal(admin.updateField(db, {
+				entity: "person", entityId: personId, lang: "en",
+				target: "field:name", value: "   ",
+			}));
+			const rows = db.$client
+				.query("select field, lang from translations where entity_type = 'person' and entity_id = ?")
+				.all(personId);
+			return { km, en, refused, rows };
+		`);
+		// the Khmer name lands in its own column, and neither name is a translations row
+		expect(seen.km).toMatchObject({ name_en: "Sok Dara", name_km: "សុខ ដារ៉ា" });
+		expect(seen.en).toMatchObject({ position: "Head teacher" });
+		expect(seen.rows).toEqual([]);
+		expect(seen.refused).toContain("needs a name in the default language");
 	});
 });

@@ -818,13 +818,22 @@ const ENTITY_TABLES = {
 	project: projects,
 } as const;
 
-// people.name lives in name_en/name_km columns rather than a translations row, so it is not addressable here
 const ENTITY_FIELDS: Record<string, readonly string[]> = {
 	page: PAGE_FIELDS,
 	post: POST_FIELDS,
 	person: ["bio"],
 	project: ["name", "summary", "body"],
 };
+
+/**
+ * A person's name is a column per language and the position one column for all
+ * of them, so neither is a `translations` row and both are written here instead.
+ */
+const PERSON_NAME_COLUMN: Record<string, "nameEn" | "nameKm"> = {
+	en: "nameEn",
+	km: "nameKm",
+};
+const PERSON_COLUMN_FIELDS = ["name", "position"] as const;
 
 // projects carries no updated_at, so a compare-and-swap is impossible there
 const VERSIONED_TABLES = {
@@ -1067,6 +1076,43 @@ async function writeTranslationField(
 	return { wrote: "translation", cleared: false, updatedAt };
 }
 
+async function writePersonColumn(
+	db: DB,
+	input: UpdateFieldInput,
+	field: string,
+	value: string,
+): Promise<UpdateFieldResult> {
+	const updatedAt = await stampVersion(
+		db,
+		input.entity,
+		input.entityId,
+		input.expectedUpdatedAt,
+	);
+	if (field === "position") {
+		// one column for every language: saying so beats letting a Khmer editor
+		// silently rewrite what an English reader sees
+		await db
+			.update(people)
+			.set({ position: value || null })
+			.where(eq(people.id, input.entityId));
+		return { wrote: "translation", cleared: !value, updatedAt };
+	}
+	const column = PERSON_NAME_COLUMN[input.lang];
+	if (!column)
+		throw new Error(
+			`A person's name is stored per language in its own column, and there is none for "${input.lang}". Edit it in ${Object.keys(PERSON_NAME_COLUMN).join(" or ")}.`,
+		);
+	if (!value && column === "nameEn")
+		throw new Error(
+			"A person needs a name in the default language; every list and link uses it.",
+		);
+	await db
+		.update(people)
+		.set({ [column]: value || null })
+		.where(eq(people.id, input.entityId));
+	return { wrote: "translation", cleared: !value, updatedAt };
+}
+
 async function writeSectionField(
 	db: DB,
 	input: UpdateFieldInput,
@@ -1130,6 +1176,12 @@ export async function updateField(
 		.limit(1);
 	if (!row) throw new Error(`There is no ${input.entity} ${input.entityId}.`);
 	const value = input.value.trim();
+	if (
+		target.kind === "field" &&
+		input.entity === "person" &&
+		(PERSON_COLUMN_FIELDS as readonly string[]).includes(target.field)
+	)
+		return writePersonColumn(db, input, target.field, value);
 	return target.kind === "field"
 		? writeTranslationField(db, input, target.field, value)
 		: writeSectionField(db, input, target, value);

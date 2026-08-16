@@ -14,6 +14,7 @@ import { ShareButtons } from "@/components/ShareButtons";
 import {
 	type PageRecord,
 	pageRecord,
+	personRecord,
 	postRecord,
 	SubPage,
 	useRecordMark,
@@ -531,6 +532,9 @@ function ResolvedRoute() {
 				title={p.name}
 				lead={p.position || undefined}
 				heroImage={p.photoUrl || undefined}
+				record={personRecord(p)}
+				titleField="name"
+				leadField="position"
 			>
 				{p.photoUrl && (
 					<img
