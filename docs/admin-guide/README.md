@@ -206,6 +206,27 @@ Set **Status** to Published and **Save page**.
 
 Then use **View site** and look at it. Publishing is not the last step; looking is.
 
+### Fixing a word without coming back here
+
+On the public site, signed in, a small panel sits in the bottom-left corner: **Edit text on this
+page**. Turn it on and every piece of text you are allowed to change gets a dashed outline.
+
+Click one and you are typing in the page itself, in the finished layout, at the real size. **Enter**
+saves it for everyone. **Esc** puts back what was there. Clicking somewhere else also saves. On a
+longer field Enter starts a new line, so that one saves on **Ctrl+Enter** (**⌘Enter** on a Mac);
+the panel tells you which you are in.
+
+What it will not do is the rest of the record: the body of a page or a post, images, dates, the
+menu. The panel links to the full editor for whatever you are looking at, which is where those live.
+
+Two things worth knowing:
+
+- You are editing **the language you are looking at**. Open the Khmer version of the page to write
+  Khmer. Where a field has no Khmer of its own yet, the box opens empty and says which English words
+  it is standing in for.
+- A person's **Position** is one value for both languages, so changing it changes what every reader
+  sees. The panel says so before you type.
+
 ---
 
 ## 3. Writing a post

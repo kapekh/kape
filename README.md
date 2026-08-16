@@ -189,6 +189,26 @@ a section template + layout variant and carries authored `props`; dynamic sectio
 server-side so SSR + SEO stay intact. Editors compose pages in `/admin/pages`, and
 `SectionRenderer` renders them.
 
+### Inline editing
+
+An admin flips one switch on the public site and edits the text where it is printed: the marked node
+itself becomes the box (`contenteditable`), not a panel beside it. `InlineEditSurface` owns the whole
+interaction with one delegated listener; a renderer only says what its nodes address, by registering
+a resolver (`SectionRenderer`'s sections, `SubPage`'s record fields, `T`'s UI strings).
+
+Three things this costs, and what pays them:
+
+- The rendered node is not the stored source. `sourceOf` serialises it back — an accent span to
+  `*asterisks*`, a `<br>` to a newline — so a save writes what the studio's own form would.
+- Typing replaces the DOM nodes React holds. Every renderer keys its output on `revision`, bumped
+  when an edit ends, so React rebuilds the tree instead of patching nodes that left the document.
+- A save re-runs the route loader rather than reloading the page, which keeps the scroll position.
+  The loader reads through `ensureQueryData`, which returns whatever is cached, so the cache is
+  dropped first.
+
+Gated three times over: no admin-hint cookie means the client never asks who you are, `may(area)`
+decides what is marked, and `adminProcedure` refuses the write regardless of either.
+
 ### Rich text & forms
 
 Content is stored as **Tiptap JSON** and rendered server-side
