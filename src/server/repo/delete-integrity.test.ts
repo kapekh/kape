@@ -226,3 +226,50 @@ describe("deleting a user", () => {
 		expect(r.neverLeft).toBe(0);
 	});
 });
+
+describe("deleting a taxonomy term something still points at", () => {
+	const r = run(`
+		const termId = await admin.createTerm(db, {
+			taxonomy: "location", key: "kampong-cham", label: "Kampong Cham", sort: 0,
+		});
+		const spareId = await admin.createTerm(db, {
+			taxonomy: "location", key: "kandal", label: "Kandal", sort: 1,
+		});
+		const officeId = await admin.createOffice(db, {
+			name: "Head Office", province: "kampong-cham", address: "", phone: "",
+			email: "", lat: "", lng: "", isHq: true, sort: 0,
+		});
+		const left = () => n("select count(*) c from terms where id=?", termId);
+
+		out.refusal = await refusal(() => admin.deleteTerm(db, termId));
+		out.afterRefusal = left();
+		out.officeProvince = q("select province p from offices where id=?", officeId)[0].p;
+
+		out.spareRefusal = await refusal(() => admin.deleteTerm(db, spareId));
+		out.spareLeft = n("select count(*) c from terms where id=?", spareId);
+
+		exec("update offices set province = null where id = ?", officeId);
+		out.detachedRefusal = await refusal(() => admin.deleteTerm(db, termId));
+		out.afterDetached = left();
+	`);
+
+	it("is refused, and names what holds it", () => {
+		expect(r.refusal).toContain("Kampong Cham");
+		expect(r.refusal).toContain("1 office");
+	});
+
+	it("leaves the term and the row pointing at it alone", () => {
+		expect(r.afterRefusal).toBe(1);
+		expect(r.officeProvince).toBe("kampong-cham");
+	});
+
+	it("does not refuse a term nothing points at", () => {
+		expect(r.spareRefusal).toBe("");
+		expect(r.spareLeft).toBe(0);
+	});
+
+	it("goes through once nothing points at it", () => {
+		expect(r.detachedRefusal).toBe("");
+		expect(r.afterDetached).toBe(0);
+	});
+});

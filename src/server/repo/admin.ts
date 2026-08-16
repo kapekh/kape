@@ -2590,7 +2590,95 @@ export async function updateTerm(
 		.where(and(eq(terms.tenantId, TENANT), eq(terms.id, id)));
 }
 
+// a term key is stored as text, so nothing in the schema stops the row going and leaving a dangling key
+const TERM_HOLDERS: Record<
+	string,
+	{ noun: string; count: (db: DB, key: string) => Promise<number> }[]
+> = {
+	location: [
+		{
+			noun: "office",
+			count: (db, key) =>
+				countTermUse(db, offices, eq(offices.province, key)),
+		},
+		{
+			noun: "school",
+			count: (db, key) =>
+				countTermUse(db, schools, eq(schools.province, key)),
+		},
+		{
+			noun: "project",
+			count: async (db, key) => {
+				const rows = await db
+					.select({ areas: projects.targetAreas })
+					.from(projects)
+					.where(eq(projects.tenantId, TENANT));
+				return rows.filter((r) => r.areas.includes(key)).length;
+			},
+		},
+	],
+	partner_category: [
+		{
+			noun: "partner",
+			count: (db, key) =>
+				countTermUse(db, partners, eq(partners.category, key)),
+		},
+	],
+	publication_category: [
+		{ noun: "publication", count: (db, key) => countPostCategory(db, key) },
+	],
+	doc_category: [
+		{ noun: "document", count: (db, key) => countPostCategory(db, key) },
+	],
+};
+
+async function countTermUse(
+	db: DB,
+	table: typeof offices | typeof schools | typeof partners,
+	where: SQL,
+): Promise<number> {
+	const [row] = await db
+		.select({ n: count() })
+		.from(table)
+		.where(and(eq(table.tenantId, TENANT), where));
+	return row?.n ?? 0;
+}
+
+// the key lives in a post's meta JSON, not in a column of its own
+const countPostCategory = async (db: DB, key: string): Promise<number> => {
+	const [row] = await db
+		.select({ n: count() })
+		.from(posts)
+		.where(
+			and(
+				eq(posts.tenantId, TENANT),
+				sql`json_extract(${posts.meta}, '$.category') = ${key}`,
+			),
+		);
+	return row?.n ?? 0;
+};
+
+const plural = (n: number, noun: string) =>
+	`${n} ${noun}${n === 1 ? "" : "s"}`;
+
 export async function deleteTerm(db: DB, id: number): Promise<void> {
+	const [term] = await db
+		.select()
+		.from(terms)
+		.where(and(eq(terms.tenantId, TENANT), eq(terms.id, id)))
+		.limit(1);
+	if (!term) return;
+
+	const held: string[] = [];
+	for (const holder of TERM_HOLDERS[term.taxonomy] ?? []) {
+		const n = await holder.count(db, term.key);
+		if (n > 0) held.push(plural(n, holder.noun));
+	}
+	if (held.length)
+		throw new Error(
+			`"${term.label}" is still used by ${held.join(" and ")}. Move them to another term first, then delete this one.`,
+		);
+
 	await db
 		.delete(terms)
 		.where(and(eq(terms.tenantId, TENANT), eq(terms.id, id)));
