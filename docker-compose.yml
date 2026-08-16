@@ -1,5 +1,9 @@
 services:
   app:
+    # Both, deliberately. `docker compose pull` takes the image CI built and
+    # deploys in seconds; `docker compose up --build` still builds locally for
+    # anyone without the registry. Override APP_IMAGE to pin a specific commit.
+    image: ${APP_IMAGE:-ghcr.io/koompi/kape:latest}
     build:
       context: .
       args:

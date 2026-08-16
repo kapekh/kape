@@ -233,17 +233,39 @@ Large media needs R2 (`R2_*` in `.env`), or a direct-to-origin hostname.
 
 ## Updating
 
+A push to `main` deploys itself: `.github/workflows/deploy.yml` runs `tsc`, lint and the test suite,
+builds the image on a GitHub runner, pushes it to `ghcr.io/koompi/kape`, then SSHes in and restarts
+the droplet on the new image.
+Building on the runner rather than the droplet takes a deploy from 5-10 minutes to seconds, and a
+1 vCPU box never has to survive the Vite build.
+
+It needs, once:
+
+| Where | Name | Value |
+| --- | --- | --- |
+| Repo variable | `VITE_SITE_URL` | `https://www.example.org` — baked into the bundle at build time |
+| Repo variable | `DEPLOY_ENABLED` | `true`; anything else builds the image and stops |
+| Repo secret | `DEPLOY_HOST` | the droplet's IP |
+| Repo secret | `DEPLOY_SSH_KEY` | private half of a key whose public half is in `deploy`'s `authorized_keys` |
+| Repo secret | `DEPLOY_HOST_KEY` | the droplet's `known_hosts` line, so the runner is not trusting whatever answers |
+| On the droplet | `docker login ghcr.io` | a `read:packages` token, because a private repo's package is private too |
+
+Doing it by hand still works and is the rollback path:
+
 ```bash
 cd /srv/kape
 git pull
-docker compose up -d --build
+docker compose pull app && docker compose up -d   # the image CI built
+docker compose up -d --build                      # or build it here
 docker compose logs -f app
 ```
 
-The old container keeps serving until the new image is built.
+The old container keeps serving until the new image is ready.
 Nothing in `/data` is touched, and schema migrations apply on the new container's first import.
+To pin a specific commit, `APP_IMAGE=ghcr.io/koompi/kape:<sha> docker compose up -d`.
 
-Rolling back is the same with a commit: `git checkout <sha> && docker compose up -d --build`.
+Rolling back is one command, because every commit is a tag in the registry:
+`APP_IMAGE=ghcr.io/koompi/kape:<sha> docker compose up -d`.
 A database that has already migrated forward will not migrate back, so a rollback across a schema change needs a restore from step 8.
 
 ## Backups

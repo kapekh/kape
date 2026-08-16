@@ -1,0 +1,91 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# One production deploy at a time, and never cancel one halfway: the droplet
+# would be left having pulled an image it never started.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bunx tsc --noEmit
+      # 6 pre-existing noArrayIndexKey errors; the gate is the delta, so this
+      # reports without blocking. Drop continue-on-error once it reaches zero.
+      - run: bun run lint
+        continue-on-error: true
+      - run: bun run test
+
+  build:
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+          # vite inlines import.meta.env.VITE_* at build time, so the canonical,
+          # hreflang and OG URLs are decided here and not by the droplet's .env.
+          build-args: |
+            VITE_SITE_URL=${{ vars.VITE_SITE_URL }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build
+    # Set the DEPLOY_ENABLED repository variable to "true" once the droplet exists.
+    if: ${{ vars.DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Pull the new image and restart
+        env:
+          KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          HOST_KEY: ${{ secrets.DEPLOY_HOST_KEY }}
+          HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$KEY" >~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          # pinned, not scanned: ssh-keyscan on every run trusts whatever answers
+          printf '%s\n' "$HOST_KEY" >~/.ssh/known_hosts
+          ssh -i ~/.ssh/id_ed25519 "deploy@$HOST" \
+            'set -euo pipefail; cd /srv/kape; git pull --ff-only; docker compose pull app; docker compose up -d; docker image prune -f'
+
+      - name: Wait for the site to answer
+        env:
+          SITE: ${{ vars.VITE_SITE_URL }}
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 30); do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 10 "$SITE/" || true)
+            [ "$code" = "200" ] && echo "up after ${i}0s" && exit 0
+            sleep 10
+          done
+          echo "site did not return 200 within five minutes"
+          exit 1
