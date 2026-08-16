@@ -59,7 +59,10 @@ function LoginPage() {
 			});
 			if (res.ok) {
 				const { user } = (await res.json()) as { user: { role: string } };
-				const home = user.role === "admin" ? "/admin" : "/internalsources";
+				// /internalsources admits staff and admin only, so anyone else sent there
+				// bounces back here saying nothing. /admin answers a custom role with the
+				// areas it has, or explains that it has none.
+				const home = user.role === "staff" ? "/internalsources" : "/admin";
 				navigate({ to: redirect ?? home });
 			} else if (res.status === 401) {
 				setErr(t("login.invalid", "Invalid email or password."));
