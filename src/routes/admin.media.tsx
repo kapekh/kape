@@ -34,8 +34,14 @@ type MediaRow = Awaited<
 type MediaUsage = Awaited<
 	ReturnType<typeof trpcClient.adminMedia.usage.query>
 >[number];
-type Filter = "all" | "image" | "file";
-type Stats = { total: number; images: number; files: number; bytes: number };
+type Filter = "all" | "image" | "video" | "file";
+type Stats = {
+	total: number;
+	images: number;
+	videos: number;
+	files: number;
+	bytes: number;
+};
 
 const PAGE = 30;
 
@@ -92,6 +98,7 @@ const GRID =
 const FILTERS: { value: Filter; label: string }[] = [
 	{ value: "all", label: "All" },
 	{ value: "image", label: "Images" },
+	{ value: "video", label: "Videos" },
 	{ value: "file", label: "Files" },
 ];
 
@@ -353,11 +360,16 @@ function MediaLibrary() {
 	const previewSize = preview ? fmtBytes(preview.size) : null;
 	const filtered = debounced !== "" || filter !== "all";
 
+	// `files` is everything that is not an image, videos included, so the line
+	// subtracts them rather than counting a video twice.
 	const summary = stats
 		? [
 				plural(stats.total, "item"),
 				plural(stats.images, "image"),
-				stats.files ? plural(stats.files, "file") : null,
+				stats.videos ? plural(stats.videos, "video") : null,
+				stats.files - stats.videos
+					? plural(stats.files - stats.videos, "file")
+					: null,
 				fmtBytes(stats.bytes),
 			]
 				.filter(Boolean)

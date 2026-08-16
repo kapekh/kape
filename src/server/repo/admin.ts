@@ -1408,7 +1408,8 @@ export function adminListMedia(db: DB) {
 		.orderBy(desc(media.id));
 }
 
-export type MediaType = "all" | "image" | "file";
+// "file" stays "not an image", so a video answers both it and its own tab
+export type MediaType = "all" | "image" | "video" | "file";
 
 /** One page of media (newest first), filtered by type + a name/URL search. */
 export function adminListMediaPage(
@@ -1417,6 +1418,7 @@ export function adminListMediaPage(
 ) {
 	const conds = [eq(media.tenantId, TENANT)];
 	if (opts.type === "image") conds.push(like(media.contentType, "image/%"));
+	else if (opts.type === "video") conds.push(like(media.contentType, "video/%"));
 	else if (opts.type === "file") {
 		const notImage = or(
 			isNull(media.contentType),
@@ -1801,13 +1803,20 @@ export async function adminMediaStats(db: DB) {
 		.select({
 			total: sql<number>`count(*)`,
 			images: sql<number>`sum(case when ${media.contentType} like 'image/%' then 1 else 0 end)`,
+			videos: sql<number>`sum(case when ${media.contentType} like 'video/%' then 1 else 0 end)`,
 			bytes: sql<number>`coalesce(sum(${media.size}), 0)`,
 		})
 		.from(media)
 		.where(eq(media.tenantId, TENANT));
 	const total = Number(r?.total ?? 0);
 	const images = Number(r?.images ?? 0);
-	return { total, images, files: total - images, bytes: Number(r?.bytes ?? 0) };
+	return {
+		total,
+		images,
+		videos: Number(r?.videos ?? 0),
+		files: total - images,
+		bytes: Number(r?.bytes ?? 0),
+	};
 }
 
 export async function createMediaRecord(

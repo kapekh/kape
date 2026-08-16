@@ -1220,7 +1220,7 @@ const adminMediaRouter = {
 				limit: z.number().min(1).max(100).default(30),
 				offset: z.number().min(0).default(0),
 				query: z.string().optional(),
-				type: z.enum(["all", "image", "file"]).default("all"),
+				type: z.enum(["all", "image", "video", "file"]).default("all"),
 			}),
 		)
 		.query(({ ctx, input }) => adminListMediaPage(ctx.db, input)),
