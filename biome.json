@@ -14,7 +14,11 @@
 			"**/vite.config.ts",
 			"!**/src/routeTree.gen.ts",
 			"!**/src/styles.css",
-			"!**/feedback"
+			"!**/feedback",
+			"!**/dist",
+			"!**/.output",
+			"!**/.work",
+			"!**/node_modules"
 		]
 	},
 	"formatter": {
