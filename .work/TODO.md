@@ -36,6 +36,7 @@ held to without one was run.
 | 3, `VITE_SITE_URL` | Passed as a build arg it reaches the html: `og:url`, `rel=canonical` and all three `hreflang` links are absolute |
 | 1, `BIND_ADDR` | `docker compose config` renders `host_ip: 127.0.0.1`, so the app does not bypass `ufw` |
 | 5, `deploy/Caddyfile` | `caddy validate` says `Valid configuration`. Ran in `caddy:2`, since there is no caddy binary here |
+| 4, bringing the content across | Ran verbatim on the real `kape.db` and `public/uploads`. The container boots on the imported volumes saying `Already installed - skipping.`, serves the KAPE home page, renders Khmer, serves an upload as `image/png`, answers `/sitemap.xml` and `/search`, and 404s the deleted `j03-preview`. The header carries `/search` and `/sitemap.xml` as two separate links now, not the same one twice |
 
 **The prerender catch-up does not apply to this deployment.** `scripts/prerender-static.ts` writes
 `dist/static/` for a CDN or static host to serve. The container serves `dist/client` through
@@ -43,8 +44,9 @@ held to without one was run.
 Under docker + Caddy the runtime SSG is the `render_cache` table, which warms itself. Drop the step,
 or add a Caddy route serving `dist/static` if the static tier is actually wanted.
 
-Left for the droplet itself: DNS, the certificate, Cloudflare's proxy and the origin lockdown in
-step 6, and step 7's contact-form and upload checks.
+Left for the droplet itself, and only for it: DNS, the certificate, Cloudflare's proxy and the
+origin lockdown in step 6, and step 7's contact-form check. Rithy's call: no droplet yet.
+When there is one, the content goes across rather than a fresh install.
 
 ## Found while photographing the admin for the guide
 
