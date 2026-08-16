@@ -239,7 +239,7 @@ docs/                admin-guide/ (operator tours), CMS-CORE-REFERENCE, CONTENT-
 ## Docs
 
 For the people who run a site rather than build one:
-[the admin guide](docs/admin-guide/README.md), six tours from signing in to publishing,
+[the admin guide](docs/admin-guide/README.md), six illustrated tours from signing in to publishing,
 and a one-page [cheat sheet](docs/admin-guide/CHEATSHEET.md).
 
 Deeper specs live in [`docs/`](docs/):
