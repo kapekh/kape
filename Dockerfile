@@ -14,19 +14,14 @@ COPY . .
 # that emits relative URLs only.
 ARG VITE_SITE_URL=""
 ENV VITE_SITE_URL=$VITE_SITE_URL
-# gen-prerender-paths.ts (run by `bun run build`) imports src/server/db.ts,
-# which self-migrates on import. This throwaway DB is only used for the
-# build — the actual production data lives on a volume-mounted DATABASE_PATH
-# at runtime.
-ENV DATABASE_PATH=/app/build.db
-RUN bun run build
+# build:app skips gen-prerender-paths: no seeded db here, and scripts/, its only reader, never ships
+RUN bun run build:app
 
 FROM oven/bun:1 AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
-COPY --from=build /app/prerender-paths.json ./prerender-paths.json
 # Copy only what `bun run start` (vite preview) needs. The old `COPY . .` also
 # shipped internal notes and tooling into the runtime image - .work/ (job briefs,
 # reports, screenshots), feedback/, .claude/, .mcp.json, .cursorrules - which is

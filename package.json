@@ -8,7 +8,8 @@
   "scripts": {
     "dev": "PORT=${PORT:-3000} bun --bun vite dev --port ${PORT:-3000}",
     "generate-routes": "tsr generate",
-    "build": "bun scripts/gen-prerender-paths.ts && NODE_ENV=production bun --bun vite build",
+    "build:app": "NODE_ENV=production bun --bun vite build",
+    "build": "bun scripts/gen-prerender-paths.ts && bun run build:app",
     "prerender": "bun run build && bun scripts/prerender-static.ts",
     "preview": "bun --bun vite preview",
     "start": "NODE_ENV=production bun --bun vite preview --port ${PORT:-3000} --host",
