@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { useLang } from "@/lib/i18n";
+import { useInlineEdit } from "@/lib/inline-edit";
 import { localizedHref } from "@/lib/i18n-config";
 
 type Announcement = Awaited<
@@ -22,6 +23,7 @@ function readDismissed(): number[] {
 // stays mounted once opened: unmounting skips the native focus restore
 export function AnnouncementPopup() {
 	const { lang, t } = useLang();
+	const { editing } = useInlineEdit();
 	const ref = useRef<HTMLDialogElement>(null);
 	const [items, setItems] = useState<Announcement[]>([]);
 	const [index, setIndex] = useState(0);
@@ -44,9 +46,10 @@ export function AnnouncementPopup() {
 	useEffect(() => {
 		const d = ref.current;
 		if (!d) return;
-		if (open && !d.open) d.showModal();
-		else if (!open && d.open) d.close();
-	}, [open]);
+		// a modal over the page is nothing but an obstruction to an admin editing it
+		if (open && !editing && !d.open) d.showModal();
+		else if ((!open || editing) && d.open) d.close();
+	}, [open, editing]);
 
 	useEffect(() => {
 		const current = items[index];
