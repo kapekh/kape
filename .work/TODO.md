@@ -23,18 +23,49 @@ Browser evidence came from `:3081` on `.work/audit/audit.db`, a `VACUUM INTO` co
 | 5 | `deleteTerm` was a bare delete, so a term went and left the rows holding its key dangling | `43dcf6f` | Deleting Kampong Cham on `/admin/locations` now raises `"Kampong Cham" is still used by 1 office and 2 schools.` on screen and the term stays in the table. Four repo cases including the term nothing points at | redesign J04 |
 | 6 | Media had no Video tab and no video count | `ba938e8` | Videos lists the one `video/mp4` row on its own; Files still lists it beside the PDF, so that tab's meaning did not move; the header reads `123 items · 121 images · 1 video · 1 file` | redesign J10 |
 
+## Deploy, dry-run on this machine
+
+No DigitalOcean credentials here, so the droplet is not stood up. Everything the runbook can be
+held to without one was run.
+
+| step | result |
+|---|---|
+| 4, `docker compose up -d --build` | **Failed, now fixed** (`dcd15ce`). The build stage ran `bun run build`, whose first half reads prerender paths out of a database; the image's throwaway db is migrated and never seeded, so `languages` is empty and `gen-prerender-paths.ts` threw. Split out `build:app` and dropped the dead `prerender-paths.json` from the runtime image |
+| 4, first boot | Image builds (983MB). On an empty volume the entrypoint installs, prints the generated password once, and serves. `docker restart` prints `Already installed - skipping.` |
+| 3, `ALLOWED_HOSTS` | A request for `evil.example` comes back 403 `Blocked request`; `www.example.org` serves |
+| 3, `VITE_SITE_URL` | Passed as a build arg it reaches the html: `og:url`, `rel=canonical` and all three `hreflang` links are absolute |
+| 1, `BIND_ADDR` | `docker compose config` renders `host_ip: 127.0.0.1`, so the app does not bypass `ufw` |
+| 5, `deploy/Caddyfile` | `caddy validate` says `Valid configuration`. Ran in `caddy:2`, since there is no caddy binary here |
+
+**The prerender catch-up does not apply to this deployment.** `scripts/prerender-static.ts` writes
+`dist/static/` for a CDN or static host to serve. The container serves `dist/client` through
+`vite preview` and never looks at `dist/static`, and `scripts/` is not in the runtime image at all.
+Under docker + Caddy the runtime SSG is the `render_cache` table, which warms itself. Drop the step,
+or add a Caddy route serving `dist/static` if the static tier is actually wanted.
+
+Left for the droplet itself: DNS, the certificate, Cloudflare's proxy and the origin lockdown in
+step 6, and step 7's contact-form and upload checks.
+
 ## Found while photographing the admin for the guide
 
-Both are data in `kape.db`, not code, so neither is fixed here. `kape.db` was read once for a
-`VACUUM INTO` copy and never written to.
+Both are data in `kape.db`, not code. Both confirmed still present on 16 Aug.
 
 - **The top-bar Search link points at the sitemap.** `header_search_link` is `/sitemap.xml`, the same
   value as `header_sitemap_link`, so anyone who follows it gets the XML index rather than the search
-  page. The route exists. Fix on the running site under Site → Header, or:
-  `update site_settings set value = '/search' where key = 'header_search_link';`
+  page. The route exists. Fix on the running site under Site → Header.
 - **A test page from the redesign round is still in the tree.** Page 35, slug `j03-preview`, status
-  draft. It shows up in the admin's Pages list between Photo Galleries and Media. Delete it from
-  /admin/pages.
+  draft, no children, no nav item pointing at it. It shows up in the admin's Pages list between Photo
+  Galleries and Media. Delete it from /admin/pages.
+
+Both are written by `.work/deploy/datafix.ts`, which goes through `upsertSetting` and `deletePage`
+so the page's translation rows go with it. The write to `kape.db` was refused by the permission
+classifier, so it has not run:
+
+```
+DATABASE_PATH=kape.db bun .work/deploy/datafix.ts
+```
+
+Backup taken first: `.work/backups/kape-pre-datafix-2026-08-16T03-43-11.db`.
 
 ## Rithy's, not mine
 
