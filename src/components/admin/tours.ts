@@ -189,7 +189,7 @@ export const TOURS = {
 				body: "Add one to start, click a row to open it, reorder with the arrows. Static sections hold words you write; dynamic ones pull in posts or projects as they change.",
 			},
 			{
-				target: "#page-segment",
+				target: ["#page-segment", "[data-tour=page-settings]"],
 				title: "The parent and the segment make the URL",
 				body: "The line under the box shows the address you are about to get. Changing it changes where the page lives, and any link pointing at the old address stops working.",
 			},

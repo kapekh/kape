@@ -144,6 +144,46 @@ describe("admin tours", () => {
 		expect(screen.queryByRole("dialog")).toBeNull();
 	});
 
+	it("moves past a collapsed target to the next selector the step offers", () => {
+		const rect = (el: HTMLElement, box: [number, number, number, number]) => {
+			const [top, left, width, height] = box;
+			el.getBoundingClientRect = () =>
+				({
+					top,
+					left,
+					width,
+					height,
+					right: left + width,
+					bottom: top + height,
+					x: left,
+					y: top,
+				}) as DOMRect;
+		};
+		const collapsed = document.createElement("div");
+		collapsed.id = "page-segment";
+		rect(collapsed, [0, 0, 0, 0]);
+		const shown = document.createElement("div");
+		shown.setAttribute("data-tour", "page-settings");
+		rect(shown, [120, 40, 300, 56]);
+		document.body.append(collapsed, shown);
+
+		render(<TourHost />);
+		act(() => startTourOnce("pageBuilder"));
+		act(() => {
+			document.dispatchEvent(new KeyboardEvent("keydown", { key: "n" }));
+		});
+
+		// the ring is the target's box grown by PAD on every side
+		const ring = document.querySelector<HTMLElement>(".ring-admin-accent");
+		expect(ring, "the step spotlights nothing").toBeTruthy();
+		expect(ring?.style.top).toBe("114px");
+		expect(ring?.style.height).toBe("68px");
+
+		act(() => screen.getByRole("button", { name: "End tour" }).click());
+		collapsed.remove();
+		shown.remove();
+	});
+
 	it("does not let a second screen talk over a tour already running", () => {
 		render(<TourHost />);
 		act(() => startTourOnce("shell"));

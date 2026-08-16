@@ -62,6 +62,11 @@ const same = (a: Box | null, b: Box | null) =>
 		a.width === b.width &&
 		a.height === b.height);
 
+const isRendered = (el: HTMLElement) => {
+	const r = el.getBoundingClientRect();
+	return r.width > 0 && r.height > 0;
+};
+
 function TourRun({ id }: { id: TourId }) {
 	const tour = TOURS[id];
 	const [i, setI] = useState(0);
@@ -104,12 +109,13 @@ function TourRun({ id }: { id: TourId }) {
 			setBox(null);
 			return;
 		}
-		const el = [step.target]
+		// a collapsed target is in the DOM at zero size, so "exists" would stop at it
+		// and leave the alternative behind it unused
+		const found = [step.target]
 			.flat()
-			.reduce<HTMLElement | null>(
-				(found, sel) => found ?? document.querySelector<HTMLElement>(sel),
-				null,
-			);
+			.map((sel) => document.querySelector<HTMLElement>(sel))
+			.filter((e): e is HTMLElement => e !== null);
+		const el = found.find(isRendered) ?? found[0] ?? null;
 		if (!el) {
 			setBox(null);
 			return;
