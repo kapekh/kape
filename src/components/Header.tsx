@@ -519,7 +519,7 @@ export function Header({
 				{/* outside the header so backdrop-filter frosts the page, not the header's stacking context */}
 				{openNode && (
 					<div
-						className="hidden lg:block fixed left-1/2 z-40 w-full max-w-7xl -translate-x-1/2 overflow-y-auto rounded-b-2xl border border-t-0 border-border/60 bg-card/95 backdrop-blur-2xl shadow-[var(--shadow-soft)] thin-scroll animate-[mega-in_0.2s_ease-out] motion-reduce:animate-none"
+						className="hidden lg:block fixed left-1/2 z-40 w-full max-w-7xl -translate-x-1/2 overflow-y-auto rounded-b-2xl border border-t-0 border-border/60 bg-card/95 backdrop-blur-2xl shadow-[var(--shadow-soft)] animate-[mega-in_0.2s_ease-out] motion-reduce:animate-none"
 						style={{
 							top: panelTop,
 							maxHeight: `calc(100dvh - ${panelTop}px - 1rem)`,
@@ -624,7 +624,7 @@ export function Header({
 								</svg>
 							</button>
 						</div>
-						<div className="flex-1 overflow-y-auto thin-scroll p-3">
+						<div className="flex-1 overflow-y-auto p-3">
 							{nav.map((n) => (
 								<MobileNode
 									key={n.id}

@@ -98,7 +98,7 @@ export function TableScroll({
 			// biome-ignore lint/a11y/noNoninteractiveTabindex: a scroll container has to be focusable or the keyboard cannot reach the columns it hides
 			tabIndex={0}
 			aria-label={label}
-			className="thin-scroll overflow-x-auto rounded-xl border border-admin-border bg-admin-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50 max-md:rounded-none max-md:border-0 max-md:bg-transparent"
+			className="overflow-x-auto rounded-xl border border-admin-border bg-admin-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50 max-md:rounded-none max-md:border-0 max-md:bg-transparent"
 		>
 			{children}
 		</section>

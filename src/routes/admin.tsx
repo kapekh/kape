@@ -502,7 +502,7 @@ function AdminLayout({ access }: { access: OkAccess }) {
 
 				<CommandPalette nav={visibleNav} narrow={railNarrow} />
 
-				<nav className="hide-scroll flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-6">
+				<nav className="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-6">
 					{visibleNav.map((section) => {
 						const open =
 							railNarrow || !section.group || section.group === shownGroup;

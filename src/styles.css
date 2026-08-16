@@ -364,22 +364,10 @@
   .font-khmer { font-family: var(--font-khmer); }
   .font-display { font-family: var(--font-display); }
 
-  /* Very thin, subtle scrollbar (sidebar nav, etc.) */
-  .thin-scroll {
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
-  }
-  .thin-scroll::-webkit-scrollbar { width: 2px; height: 2px; }
-  .thin-scroll::-webkit-scrollbar-track { background: transparent; }
-  .thin-scroll::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 9999px;
-  }
-  .thin-scroll:hover::-webkit-scrollbar-thumb { background: var(--muted-foreground); }
-
-  /* Scrolls, shows no scrollbar */
-  .hide-scroll { scrollbar-width: none; }
-  .hide-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  /* No scrollbar anywhere. Scrolling itself is untouched: wheel, touch, keyboard
+     and programmatic scrolling all still work, in both axes. */
+  * { scrollbar-width: none; }
+  *::-webkit-scrollbar { width: 0; height: 0; }
 
   /* subtle paper texture via gradient */
   body::before {

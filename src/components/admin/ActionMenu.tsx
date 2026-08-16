@@ -118,7 +118,7 @@ export function ActionMenu({
 						left: pos.left,
 						zIndex: 50,
 					}}
-					className="thin-scroll w-36 rounded-xl border border-admin-border bg-admin-panel-raised p-1 shadow-[var(--shadow-soft)]"
+					className="w-36 rounded-xl border border-admin-border bg-admin-panel-raised p-1 shadow-[var(--shadow-soft)]"
 				>
 					{items.map((it, i) => (
 						<button

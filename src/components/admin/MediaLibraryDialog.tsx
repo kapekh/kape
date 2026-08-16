@@ -226,7 +226,7 @@ export function MediaLibraryDialog({
 						</button>
 					</div>
 				</div>
-				<div ref={scrollRef} className="thin-scroll overflow-y-auto p-4">
+				<div ref={scrollRef} className="overflow-y-auto p-4">
 					{loading ? (
 						<div
 							aria-busy="true"

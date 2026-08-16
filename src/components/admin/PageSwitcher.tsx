@@ -123,7 +123,7 @@ export function PageSwitcher() {
 					<div
 						role="listbox"
 						aria-label="Pages"
-						className="thin-scroll max-h-72 overflow-y-auto py-1"
+						className="max-h-72 overflow-y-auto py-1"
 					>
 						{filtered.length === 0 ? (
 							<p className="px-3 py-3 text-center text-[13px] text-admin-ink-muted">

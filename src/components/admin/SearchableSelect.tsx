@@ -128,7 +128,7 @@ export function SearchableSelect({
 							className={`${inputClass} h-10 pl-9`}
 						/>
 					</div>
-					<div className="thin-scroll max-h-56 overflow-y-auto p-1">
+					<div className="max-h-56 overflow-y-auto p-1">
 						{emptyOption !== undefined && (
 							<button
 								type="button"

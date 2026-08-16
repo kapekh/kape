@@ -225,7 +225,7 @@ function PaletteDialog({
 						id={listId}
 						role="listbox"
 						aria-label="Admin screens"
-						className="thin-scroll max-h-[min(24rem,50vh)] overflow-y-auto p-2"
+						className="max-h-[min(24rem,50vh)] overflow-y-auto p-2"
 					>
 						{hits.map((hit, i) => (
 							<Fragment key={`${hit.item.to}:${hit.item.type ?? ""}`}>

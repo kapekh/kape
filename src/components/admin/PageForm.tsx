@@ -369,7 +369,7 @@ export function PageForm({
 							: "Off the site until published."}
 					</span>
 				</div>
-				<div className="min-h-0 flex-1 xl:overflow-y-auto thin-scroll">
+				<div className="min-h-0 flex-1 xl:overflow-y-auto">
 					<InspectorGroup
 						id="page-sections"
 						data-tour="page-sections"
@@ -605,7 +605,7 @@ export function PageForm({
 						English · approximate
 					</span>
 				</div>
-				<div className="min-h-0 flex-1 overflow-y-auto thin-scroll">
+				<div className="min-h-0 flex-1 overflow-y-auto">
 					<div className="bg-background">
 						<PagePreview sections={sections} />
 					</div>

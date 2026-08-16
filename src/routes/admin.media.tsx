@@ -731,7 +731,7 @@ function MediaLibrary() {
 										Not referenced anywhere, so it is safe to delete.
 									</p>
 								) : (
-									<ul className="thin-scroll max-h-40 space-y-2 overflow-y-auto pr-1">
+									<ul className="max-h-40 space-y-2 overflow-y-auto pr-1">
 										{usage.map((u, i) => (
 											<li
 												// biome-ignore lint/suspicious/noArrayIndexKey: read-only usage list, no reorder or delete while mounted

@@ -160,7 +160,7 @@ function ItemsTable({
 		"border border-admin-border bg-admin-bg px-2 py-2 text-left text-xs font-medium uppercase tracking-wide text-admin-ink-muted whitespace-nowrap";
 	return (
 		<div className="overflow-hidden rounded-xl border border-admin-border">
-			<div className="overflow-x-auto thin-scroll">
+			<div className="overflow-x-auto">
 				<table className="w-full border-collapse text-sm [&_td]:border [&_td]:border-admin-border">
 					<thead>
 						<tr>
