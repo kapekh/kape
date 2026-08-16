@@ -1,6 +1,7 @@
 import { and, eq, inArray } from "drizzle-orm";
 
 import { LANGS } from "#/lib/i18n-config";
+import { defaultUiStrings } from "#/lib/ui-strings.default";
 import type { DB } from "../db";
 import { languages, translations, uiStrings } from "../schema";
 
@@ -129,7 +130,17 @@ export async function resolveOneWithFallback(
 	return { fields: values.get(id) ?? {}, fallback: fallback.get(id) ?? [] };
 }
 
-/** The UI-string dictionary for `lang`, with per-key fallback to the default language. */
+const shippedDefault = (key: string, lang: string): string | undefined =>
+	(defaultUiStrings[key] as Record<string, string | undefined> | undefined)?.[
+		lang
+	];
+
+/**
+ * The UI-string dictionary for `lang`, with per-key fallback to the default language.
+ *
+ * The shipped dictionary sits under the stored rows: a reset deletes the row, and without this
+ * the key would drop out of the payload and the visitor would read the call site's English.
+ */
 export async function getUiStrings(
 	db: DB,
 	lang: string,
@@ -147,18 +158,30 @@ export async function getUiStrings(
 			and(eq(uiStrings.tenantId, TENANT), inArray(uiStrings.lang, wanted)),
 		);
 
+	const stored = new Map<string, Record<string, string>>();
+	for (const r of rows) {
+		const forKey = stored.get(r.key) ?? {};
+		forKey[r.lang] = r.value;
+		stored.set(r.key, forKey);
+	}
+
 	const out: Record<string, string> = {};
-	for (const r of rows) if (r.lang === defaultLang) out[r.key] = r.value;
 	const fallback: string[] = [];
-	if (lang !== defaultLang) {
-		const translated = new Set<string>();
-		for (const r of rows) {
-			if (r.lang !== lang) continue;
-			out[r.key] = r.value;
-			translated.add(r.key);
+	const keys = new Set([
+		...Object.keys(defaultUiStrings),
+		...stored.keys(),
+	]);
+	for (const key of keys) {
+		const own = stored.get(key)?.[lang] ?? shippedDefault(key, lang);
+		if (own !== undefined) {
+			out[key] = own;
+			continue;
 		}
-		for (const key of Object.keys(out))
-			if (!translated.has(key)) fallback.push(key);
+		const other =
+			stored.get(key)?.[defaultLang] ?? shippedDefault(key, defaultLang);
+		if (other === undefined) continue;
+		out[key] = other;
+		if (lang !== defaultLang) fallback.push(key);
 	}
 	return { strings: out, fallback };
 }

@@ -110,6 +110,34 @@ describe("resetUiString", () => {
 		expect(seen.after).not.toEqual([{ lang: "en", value: DEFAULT_EN }]);
 	});
 
+	it("leaves the shipped default in the dictionary the visitor is served", () => {
+		const seen = run<{ before: string; after: string }>(`
+			const i18n = await import("${root}/src/server/repo/i18n.ts");
+			await ui.setUiString(db, "${KEY}", "en", "Casa");
+			const before = (await i18n.getUiStrings(db, "en")).strings["${KEY}"];
+			await ui.resetUiString(db, "${KEY}", "en");
+			return { before, after: (await i18n.getUiStrings(db, "en")).strings["${KEY}"] };
+		`);
+		expect(seen.before).toBe("Casa");
+		expect(seen.after).toBe(DEFAULT_EN);
+	});
+
+	it("serves a language its own shipped default rather than the default language's", () => {
+		const seen = run<{ value: string; fallback: boolean }>(`
+			const i18n = await import("${root}/src/server/repo/i18n.ts");
+			db.$client
+				.query("insert into languages (code, name, native_name, enabled, sort) values ('km', 'Khmer', 'ខ្មែរ', 1, 1)")
+				.run();
+			const dict = await i18n.getUiStrings(db, "km");
+			return {
+				value: dict.strings["${KEY}"],
+				fallback: dict.fallback.includes("${KEY}"),
+			};
+		`);
+		expect(seen.value).toBe(defaultUiStrings[KEY].km);
+		expect(seen.fallback).toBe(false);
+	});
+
 	it("still reports the default the key falls back to once the row is gone", () => {
 		const seen = run<{ defaults: Record<string, string>; values: unknown }>(`
 			await ui.resetUiString(db, "${KEY}", "en");
