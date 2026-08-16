@@ -1,6 +1,0 @@
-E: authenticated browser session of j25-media@kapekh.org (media-only role), fetch POST /api/media/upload
-  real PNG  -> HTTP 200  {"id":137,"url":"/uploads/26dd066c-...png"}
-  .sh as .png -> HTTP 415 {"error":"File contents do not match \".png\""}
-Screenshots: E-ui-1-media-role-access.png (role reaches media library),
-             E-ui-2-media-role-upload-success.png (count 126->127 after real upload),
-             E-ui-3-evil-rejected.png (count stays 127; evil refused).

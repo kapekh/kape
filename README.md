@@ -252,7 +252,7 @@ src/
   components/        UI — admin/ (builders, editors), sections/, public
   lib/               shared schema/helpers (sections, forms, i18n, richtext)
 drizzle/             SQL migrations + snapshots
-scripts/             seed + one-off migration/prerender scripts
+scripts/             prerender: path list, static tier, cache warmer
 docs/                admin-guide/ (operator tours), CMS-CORE-REFERENCE, CONTENT-MODEL, BUILD-PLAN
 ```
 

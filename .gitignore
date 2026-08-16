@@ -34,22 +34,16 @@ lovable.zip
 /kapecambodia-main/
 .review-shots/
 .playwright-mcp/
-.work/ux-shots/
-.work/j16-shots/
-.work/j18-shots/
-.work/j17-shots/
-.work/j22-shots/
-.work/j23-shots/
-.work/scratch/
-.work/*-shots/
-.work/i18n/*-shots/
-.work/ui-audit/shots/
-.work/ui-audit/fix*/
-# UAT instance: its own database copy and a multi-gigabyte dev log
-.work/uat/
 
+# Working notes, job briefs and round evidence. Local only: none of it is the
+# product, and git history holds what was there before.
+.work/
+
+# Local agent and editor tooling
 .lavish/
+.claude/
+.mcp.json
+.cursorrules
 
 # Client prototype: read-only reference, never ships
 feedback/
-.work/uat-c/

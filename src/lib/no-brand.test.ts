@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -20,6 +20,8 @@ const REPO = join(ROOT, "..");
 // files are read too: the project was scaffolded under the first customer's name
 // and it survived in `.cta.json` and the lockfile long after the rename.
 const SCANNED = [ROOT, join(REPO, "scripts")];
+// listed whether or not the repo still carries them, so deleting one is not a
+// silent way to stop scanning it
 const REPO_FILES = [".cta.json", "package.json", "bun.lock", "components.json"];
 
 // The loadable example-site fixture. Everything else is the product — including
@@ -58,7 +60,7 @@ describe("shipped source carries no customer branding", () => {
 				...SCANNED.flatMap(sourceFiles),
 				...REPO_FILES.map((f) => join(REPO, f)),
 			]
-				.filter((f) => f !== import.meta.filename)
+				.filter((f) => f !== import.meta.filename && existsSync(f))
 				.flatMap((f) =>
 					readFileSync(f, "utf8")
 						.split("\n")

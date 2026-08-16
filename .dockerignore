@@ -29,7 +29,6 @@ prerender-paths.json
 lovable.zip
 /kapecambodia-main/
 docs/
-form.png
 
 # Internal notes, agent tooling and dev artefacts: never needed to build or run,
 # and .work/ alone runs to tens of GB of logs and screenshots.
