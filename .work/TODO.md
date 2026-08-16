@@ -23,6 +23,19 @@ Browser evidence came from `:3081` on `.work/audit/audit.db`, a `VACUUM INTO` co
 | 5 | `deleteTerm` was a bare delete, so a term went and left the rows holding its key dangling | `43dcf6f` | Deleting Kampong Cham on `/admin/locations` now raises `"Kampong Cham" is still used by 1 office and 2 schools.` on screen and the term stays in the table. Four repo cases including the term nothing points at | redesign J04 |
 | 6 | Media had no Video tab and no video count | `ba938e8` | Videos lists the one `video/mp4` row on its own; Files still lists it beside the PDF, so that tab's meaning did not move; the header reads `123 items · 121 images · 1 video · 1 file` | redesign J10 |
 
+## Found while photographing the admin for the guide
+
+Both are data in `kape.db`, not code, so neither is fixed here. `kape.db` was read once for a
+`VACUUM INTO` copy and never written to.
+
+- **The top-bar Search link points at the sitemap.** `header_search_link` is `/sitemap.xml`, the same
+  value as `header_sitemap_link`, so anyone who follows it gets the XML index rather than the search
+  page. The route exists. Fix on the running site under Site → Header, or:
+  `update site_settings set value = '/search' where key = 'header_search_link';`
+- **A test page from the redesign round is still in the tree.** Page 35, slug `j03-preview`, status
+  draft. It shows up in the admin's Pages list between Photo Galleries and Media. Delete it from
+  /admin/pages.
+
 ## Rithy's, not mine
 
 Named with what it would cost, so the decision is one line rather than a re-audit.
