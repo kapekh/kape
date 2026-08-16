@@ -48,24 +48,21 @@ step 6, and step 7's contact-form and upload checks.
 
 ## Found while photographing the admin for the guide
 
-Both are data in `kape.db`, not code. Both confirmed still present on 16 Aug.
+Both were data in `kape.db`, not code. **Both fixed on 16 Aug** by
+`DATABASE_PATH=kape.db bun .work/deploy/datafix.ts`, which goes through `upsertSetting` and
+`deletePage` rather than raw SQL. Backup first:
+`.work/backups/kape-pre-datafix-2026-08-16T03-43-11.db`.
 
-- **The top-bar Search link points at the sitemap.** `header_search_link` is `/sitemap.xml`, the same
-  value as `header_sitemap_link`, so anyone who follows it gets the XML index rather than the search
-  page. The route exists. Fix on the running site under Site → Header.
-- **A test page from the redesign round is still in the tree.** Page 35, slug `j03-preview`, status
-  draft, no children, no nav item pointing at it. It shows up in the admin's Pages list between Photo
-  Galleries and Media. Delete it from /admin/pages.
+- **The top-bar Search link pointed at the sitemap.** `header_search_link` was `/sitemap.xml`, the
+  same value as `header_sitemap_link`, so anyone who followed it got the XML index rather than the
+  search page. Now `/search`.
+- **A test page from the redesign round was still in the tree.** Page 35, slug `j03-preview`, draft,
+  no children and no nav item pointing at it. Deleted, and its translation rows with it: the orphan
+  count is 0.
 
-Both are written by `.work/deploy/datafix.ts`, which goes through `upsertSetting` and `deletePage`
-so the page's translation rows go with it. The write to `kape.db` was refused by the permission
-classifier, so it has not run:
-
-```
-DATABASE_PATH=kape.db bun .work/deploy/datafix.ts
-```
-
-Backup taken first: `.work/backups/kape-pre-datafix-2026-08-16T03-43-11.db`.
+Nothing needed busting. `render_cache` holds route content only, not header settings, and all three
+rows are `v4` page/record entries that never mentioned the setting. That also retires the stray
+`v3::en::home` row listed below: the cache version has moved on and the row is gone.
 
 ## Rithy's, not mine
 
@@ -79,9 +76,6 @@ Named with what it would cost, so the decision is one line rather than a re-audi
   decision: should they stay put after saving, the way donors and posts do?
 - **J02's `toggleRail` deviation** at `admin.tsx:354-374`. Collapsing the rail on arrival at the page
   builder is a new side effect. Keep, or revert to the plain toggle.
-- **One stray row in `kape.db`.** `render_cache` key `v3::en::home`, written by a verification server
-  pointed at the client's database. Nothing serves it; the deployed server reads `v2`. Clears with
-  `sqlite3 kape.db "delete from render_cache where key='v3::en::home'; pragma wal_checkpoint(TRUNCATE);"`
 - **A post's body is not inline-editable.** The public payload carries rendered HTML, not the source,
   so there is nothing an editor could save back.
 - **`LANGS` is hardcoded** at `lib/i18n-config.ts:3`. A client who wants a third language needs a code
