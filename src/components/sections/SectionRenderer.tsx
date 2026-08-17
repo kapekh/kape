@@ -1594,6 +1594,39 @@ export function youtubeId(url: string): string | null {
 	return m ? m[1] : null;
 }
 
+/**
+ * maxres is 1280x720 and natively 16:9; hq is 480x360 with letterbox bars baked
+ * in, which is what the tile used to upscale and then crop. maxres is missing
+ * for older uploads, so every use needs the step-down below.
+ */
+export const youtubeThumb = (id: string) =>
+	`https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
+
+const steppedDown = (src: string) =>
+	src.includes("maxresdefault")
+		? src.replace("maxresdefault", "hqdefault")
+		: null;
+
+function onThumbError(e: React.SyntheticEvent<HTMLImageElement, Event>): void {
+	const next = steppedDown(e.currentTarget.src);
+	if (next) {
+		e.currentTarget.src = next;
+		return;
+	}
+	onImageError(e);
+}
+
+// the server-rendered thumb can fail before hydration, so the event is long gone
+function thumbFallbackRef(el: HTMLImageElement | null): void {
+	if (!el || !el.complete || el.naturalWidth !== 0) return;
+	const next = steppedDown(el.src);
+	if (next) {
+		el.src = next;
+		return;
+	}
+	imageFallbackRef(el);
+}
+
 type VideoGridProps = Common & {
 	moreHref?: string;
 	data?: SourceRow["videos"][];
@@ -1625,9 +1658,7 @@ function VideoGrid(p: VideoGridProps) {
 					<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 						{videos.map((v) => {
 							const id = youtubeId(v.youtubeUrl);
-							const thumb = id
-								? `https://i.ytimg.com/vi/${id}/hqdefault.jpg`
-								: imgFor(v);
+							const thumb = id ? youtubeThumb(id) : imgFor(v);
 							return (
 								<NavLink
 									key={v.id}
@@ -1641,8 +1672,8 @@ function VideoGrid(p: VideoGridProps) {
 											src={thumb}
 											alt={v.title || ""}
 											className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-											onError={onImageError}
-											ref={imageFallbackRef}
+											onError={onThumbError}
+											ref={thumbFallbackRef}
 										/>
 										<div className="absolute inset-0 bg-primary/20 transition group-hover:bg-primary/10" />
 										<div className="absolute inset-0 grid place-items-center">
