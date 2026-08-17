@@ -77,17 +77,8 @@ jobs:
           ssh -i ~/.ssh/id_ed25519 "deploy@$HOST" \
             'set -euo pipefail; cd /srv/kape; git pull --ff-only; docker compose pull app; docker compose up -d; docker image prune -f'
 
-      - name: Wait for the site to answer
-        env:
-          SITE: ${{ vars.VITE_SITE_URL }}
-        run: |
-          set -euo pipefail
-          # -L on purpose: / always redirects to the default language path,
-          # so a bare 200 check fails a perfectly healthy site.
-          for i in $(seq 1 30); do
-            code=$(curl -sSL -o /dev/null -w '%{http_code}' --max-time 10 "$SITE/" || true)
-            [ "$code" = "200" ] && echo "up after ${i}0s" && exit 0
-            sleep 10
-          done
-          echo "site did not return 200 within five minutes"
-          exit 1
+# The health check runs on the droplet, against 127.0.0.1:3000, inside the
+# deploy command itself. Checking the public URL from the runner instead would
+# be testing Cloudflare, and any access control in front of the site (Cloudflare
+# Access, basic auth) fails the check on a site that is perfectly healthy.
+

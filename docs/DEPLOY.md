@@ -304,6 +304,25 @@ It needs, once:
 | Repo secret | `DEPLOY_SSH_KEY` | private half of a key whose public half is in `deploy`'s `authorized_keys` |
 | Repo secret | `DEPLOY_HOST_KEY` | the droplet's `known_hosts` line, so the runner is not trusting whatever answers |
 | On the droplet | `docker login ghcr.io` | a `read:packages` token, because a private repo's package is private too |
+| On the droplet | `/usr/local/bin/kape-deploy.sh` | what CI's key is allowed to run, see below |
+
+Give CI its own key rather than reusing yours, and pin it to that one command.
+A leaked `DEPLOY_SSH_KEY` then buys a deploy, not a shell:
+
+```bash
+sudo install -o root -g root -m 755 /srv/kape/deploy/droplet-deploy.sh /usr/local/bin/kape-deploy.sh
+ssh-keygen -t ed25519 -f ~/.ssh/ci_deploy -N "" -C "github-actions"
+printf 'command="/usr/local/bin/kape-deploy.sh",no-agent-forwarding,no-port-forwarding,no-pty,no-X11-forwarding %s\n' \
+	"$(cat ~/.ssh/ci_deploy.pub)" >>~/.ssh/authorized_keys
+cat ~/.ssh/ci_deploy      # paste into the DEPLOY_SSH_KEY secret, then delete it here
+rm ~/.ssh/ci_deploy
+```
+
+Root owns the script on purpose: the `git pull` inside it must not be able to rewrite what the
+restricted key executes.
+It also holds the health check, which runs against `127.0.0.1:3000` rather than the public URL.
+Checking the public URL from the runner tests Cloudflare instead of the deploy, and anything you put
+in front of the site — Cloudflare Access, basic auth — then fails a release that is perfectly healthy.
 
 Doing it by hand still works and is the rollback path:
 
