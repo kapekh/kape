@@ -3,9 +3,12 @@ import { useEffect, useId, useState } from "react";
 
 import { Button } from "#/components/ui/button.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { formatSize, type Sized } from "#/lib/media-size";
 import { type MediaItem, MediaLibraryDialog } from "./MediaLibraryDialog";
 
 export type MediaLite = MediaItem;
+
+type Chosen = Sized & { for: string; url: string; type?: string | null };
 
 const IMG_EXT = /\.(png|jpe?g|webp|gif|svg|avif)(\?|$)/i;
 
@@ -18,6 +21,7 @@ export function MediaPicker({
 	accept,
 	aspect = "video",
 	label,
+	minWidth,
 }: {
 	/** Lands on the trigger, so a caption's `htmlFor` names this field. */
 	id?: string;
@@ -28,21 +32,24 @@ export function MediaPicker({
 	accept?: string;
 	aspect?: "video" | "square";
 	label?: string;
+	/** Width the slot renders at. Below it the image is upscaled, so warn. */
+	minWidth?: number;
 }) {
 	const [open, setOpen] = useState(false);
-	const [url, setUrl] = useState("");
-	const [type, setType] = useState<string | null>(null);
+	// keyed by the field value it describes: a value the parent swapped in is a
+	// different file, so a type or size read off the last pick no longer fits it
+	const [chosen, setChosen] = useState<Chosen>({ for: "", url: "" });
+	const [natural, setNatural] = useState<Sized & { for: string }>({ for: "" });
 	const chosenId = useId();
 
 	// Resolve an existing id-mode value to a preview URL (one-time per value).
 	useEffect(() => {
 		if (mode !== "id") {
-			setUrl(value);
+			setChosen((c) => (c.for === value ? c : { for: value, url: value }));
 			return;
 		}
 		if (!value) {
-			setUrl("");
-			setType(null);
+			setChosen({ for: "", url: "" });
 			return;
 		}
 		let alive = true;
@@ -50,8 +57,13 @@ export function MediaPicker({
 			.query({ id: Number(value) })
 			.then((f) => {
 				if (!alive) return;
-				setUrl(f?.url ?? "");
-				setType(f?.contentType ?? null);
+				setChosen({
+					for: value,
+					url: f?.url ?? "",
+					type: f?.contentType,
+					width: f?.width,
+					height: f?.height,
+				});
 			})
 			.catch(() => {});
 		return () => {
@@ -59,8 +71,15 @@ export function MediaPicker({
 		};
 	}, [mode, value]);
 
-	const previewUrl = mode === "id" ? url : value;
+	const fresh = chosen.for === value ? chosen : null;
+	const previewUrl = mode === "id" ? (fresh?.url ?? "") : value;
+	const type = fresh?.type ?? null;
 	const isImg = type ? type.startsWith("image/") : IMG_EXT.test(previewUrl);
+	// the preview decodes the real file, so it answers for url-mode fields too,
+	// where nothing but the address is stored
+	const measured = natural.for === previewUrl ? natural : fresh;
+	const size = formatSize(measured ?? {});
+	const upscaled = !!(minWidth && measured?.width && measured.width < minWidth);
 	const aspectCls = aspect === "square" ? "aspect-square" : "aspect-video";
 	const placeholder =
 		label ?? (kind === "image" ? "Choose image" : "Choose file");
@@ -71,15 +90,20 @@ export function MediaPicker({
 		: "";
 
 	function pick(m: MediaItem) {
-		onChange(mode === "id" ? String(m.id) : (m.url ?? ""));
-		setUrl(m.url ?? "");
-		setType(m.contentType);
+		const next = mode === "id" ? String(m.id) : (m.url ?? "");
+		onChange(next);
+		setChosen({
+			for: next,
+			url: m.url ?? "",
+			type: m.contentType,
+			width: m.width,
+			height: m.height,
+		});
 		setOpen(false);
 	}
 	function clear() {
 		onChange("");
-		setUrl("");
-		setType(null);
+		setChosen({ for: "", url: "" });
 	}
 
 	return (
@@ -98,6 +122,13 @@ export function MediaPicker({
 								src={previewUrl}
 								alt=""
 								className="h-full w-full object-cover"
+								onLoad={(e) =>
+									setNatural({
+										for: previewUrl,
+										width: e.currentTarget.naturalWidth,
+										height: e.currentTarget.naturalHeight,
+									})
+								}
 							/>
 							{/* Hover affordance over the larger preview. */}
 							<span className="absolute inset-0 grid place-items-center bg-black/0 text-sm font-medium text-transparent transition-colors duration-150 ease-out group-hover:bg-black/40 group-hover:text-white">
@@ -126,7 +157,14 @@ export function MediaPicker({
 						title={chosenName}
 					>
 						{chosenName}
+						{size && <span className="ml-2 tabular-nums">{size} px</span>}
 					</p>
+					{upscaled && (
+						<p className="mt-1 text-[13px] text-admin-warning-ink">
+							This slot renders about {minWidth}px wide, so this image is
+							stretched and will look soft. Upload a larger one if you have it.
+						</p>
+					)}
 					<div className="mt-2 flex flex-wrap items-center gap-2">
 						<Button
 							type="button"

@@ -14,6 +14,7 @@ import {
 import { Skeleton } from "#/components/ui/skeleton";
 import { Textarea } from "#/components/ui/textarea";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { MIN_FULL_WIDTH } from "#/lib/media-size";
 import type { SectionNode } from "#/lib/sections";
 import { PAGE_TITLE_MAX, segmentProblem } from "#/lib/slug";
 
@@ -525,6 +526,7 @@ export function PageForm({
 							mode="id"
 							kind="image"
 							aspect="video"
+							minWidth={MIN_FULL_WIDTH}
 						/>
 					</InspectorGroup>
 				</div>

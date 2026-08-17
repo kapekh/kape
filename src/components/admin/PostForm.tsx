@@ -13,6 +13,7 @@ import {
 } from "#/components/ui/select.tsx";
 import { Textarea } from "#/components/ui/textarea.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { MIN_FULL_WIDTH } from "#/lib/media-size";
 import {
 	cancelButtonClass,
 	EditorGrid,
@@ -345,6 +346,7 @@ export function PostForm({
 								kind="image"
 								value={coverMediaId}
 								label="Choose image"
+								minWidth={MIN_FULL_WIDTH}
 								onChange={setCoverMediaId}
 							/>
 						</FormSection>

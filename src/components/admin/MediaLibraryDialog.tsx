@@ -5,6 +5,7 @@ import { buttonVariants } from "#/components/ui/button.tsx";
 import { inputClass } from "#/components/ui/input.tsx";
 import { Skeleton } from "#/components/ui/skeleton.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { formatSize, isLowResolution } from "#/lib/media-size";
 import { useModalPanel } from "#/lib/use-modal-panel";
 import { toast } from "@/components/Dialogs";
 
@@ -12,6 +13,8 @@ export type MediaItem = {
 	id: number;
 	url: string | null;
 	contentType: string | null;
+	width?: number | null;
+	height?: number | null;
 };
 
 export function isImageMedia(m: {
@@ -28,6 +31,20 @@ const isVideoMedia = (m: MediaItem) => !!m.contentType?.startsWith("video/");
 /** The stored file is a UUID, but the URL still ends in the operator's name. */
 const nameOfMedia = (m: MediaItem) =>
 	(m.url ?? "").split("/").pop()?.split("?")[0] || `media-${m.id}`;
+
+const toItem = (x: {
+	id: number;
+	url: string | null;
+	contentType: string | null;
+	width: number | null;
+	height: number | null;
+}): MediaItem => ({
+	id: x.id,
+	url: x.url,
+	contentType: x.contentType,
+	width: x.width,
+	height: x.height,
+});
 
 const PAGE = 24;
 
@@ -68,24 +85,31 @@ export function MediaLibraryDialog({
 
 	const type = kind === "image" ? "image" : "all";
 
+	// a rejected query must still clear `loading`, or reopening the dialog only
+	// ever shows skeletons
 	const reset = useCallback(async () => {
 		const req = ++reqRef.current;
 		setLoading(true);
 		offsetRef.current = 0;
-		const rows = await trpcClient.adminMedia.page.query({
-			limit: PAGE,
-			offset: 0,
-			query: debounced,
-			type,
-		});
-		if (req !== reqRef.current) return;
-		offsetRef.current = rows.length;
-		hasMoreRef.current = rows.length === PAGE;
-		setItems(
-			rows.map((x) => ({ id: x.id, url: x.url, contentType: x.contentType })),
-		);
-		setLoading(false);
-		busyRef.current = false;
+		try {
+			const rows = await trpcClient.adminMedia.page.query({
+				limit: PAGE,
+				offset: 0,
+				query: debounced,
+				type,
+			});
+			if (req !== reqRef.current) return;
+			offsetRef.current = rows.length;
+			hasMoreRef.current = rows.length === PAGE;
+			setItems(rows.map(toItem));
+		} catch {
+			if (req !== reqRef.current) return;
+			hasMoreRef.current = false;
+			toast("Could not load the media library. Try again.", "error");
+		} finally {
+			if (req === reqRef.current) setLoading(false);
+			busyRef.current = false;
+		}
 	}, [debounced, type]);
 
 	async function loadMore() {
@@ -93,26 +117,24 @@ export function MediaLibraryDialog({
 		busyRef.current = true;
 		setLoadingMore(true);
 		const req = reqRef.current;
-		const rows = await trpcClient.adminMedia.page.query({
-			limit: PAGE,
-			offset: offsetRef.current,
-			query: debounced,
-			type,
-		});
-		if (req === reqRef.current) {
-			offsetRef.current += rows.length;
-			hasMoreRef.current = rows.length === PAGE;
-			setItems((prev) => [
-				...prev,
-				...rows.map((x) => ({
-					id: x.id,
-					url: x.url,
-					contentType: x.contentType,
-				})),
-			]);
+		try {
+			const rows = await trpcClient.adminMedia.page.query({
+				limit: PAGE,
+				offset: offsetRef.current,
+				query: debounced,
+				type,
+			});
+			if (req === reqRef.current) {
+				offsetRef.current += rows.length;
+				hasMoreRef.current = rows.length === PAGE;
+				setItems((prev) => [...prev, ...rows.map(toItem)]);
+			}
+		} catch {
+			// leaving busyRef set would kill scrolling for the rest of the session
+		} finally {
+			setLoadingMore(false);
+			busyRef.current = false;
 		}
-		setLoadingMore(false);
-		busyRef.current = false;
 	}
 	const loadMoreRef = useRef(loadMore);
 	loadMoreRef.current = loadMore;
@@ -150,9 +172,17 @@ export function MediaLibraryDialog({
 		setBusy(true);
 		const fd = new FormData();
 		fd.append("file", f);
-		const res = await fetch("/api/media/upload", { method: "POST", body: fd });
+		// a dropped connection would otherwise leave the Upload input disabled
+		const res = await fetch("/api/media/upload", {
+			method: "POST",
+			body: fd,
+		}).catch(() => null);
 		setBusy(false);
 		if (fileRef.current) fileRef.current.value = "";
+		if (!res) {
+			toast(`${f.name}: upload failed (no connection)`, "error");
+			return;
+		}
 		if (!res.ok) {
 			const body = (await res.json().catch(() => null)) as {
 				error?: string;
@@ -163,8 +193,19 @@ export function MediaLibraryDialog({
 			);
 			return;
 		}
-		const d = (await res.json()) as { id: number; url: string };
-		const item: MediaItem = { id: d.id, url: d.url, contentType: f.type };
+		const d = (await res.json()) as {
+			id: number;
+			url: string;
+			width: number | null;
+			height: number | null;
+		};
+		const item: MediaItem = {
+			id: d.id,
+			url: d.url,
+			contentType: f.type,
+			width: d.width,
+			height: d.height,
+		};
 		setItems((x) => [item, ...x]);
 		offsetRef.current += 1; // keep pagination aligned after the prepend
 		onSelect(item);
@@ -256,12 +297,14 @@ export function MediaLibraryDialog({
 											? m.id === selectedId
 											: selectedUrl != null && m.url === selectedUrl;
 									const name = nameOfMedia(m);
+									const size = formatSize(m);
+									const small = isLowResolution(m);
 									return (
 										<button
 											key={m.id}
 											type="button"
 											onClick={() => onSelect(m)}
-											aria-label={`${name} · ${m.contentType ?? "file"}`}
+											aria-label={`${name} · ${m.contentType ?? "file"}${size ? ` · ${size} pixels` : ""}${small ? " · too small for a full-width slot" : ""}`}
 											aria-pressed={selected}
 											className={`group relative aspect-square overflow-hidden rounded-lg border text-left transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50 ${selected ? "border-admin-accent ring-2 ring-admin-accent" : "border-admin-border hover:border-admin-accent"}`}
 										>
@@ -294,8 +337,16 @@ export function MediaLibraryDialog({
 													<FileText aria-hidden="true" className="size-8" />
 												</span>
 											)}
-											<span className="absolute inset-x-0 bottom-0 truncate bg-admin-ink/75 px-2 py-1 text-xs text-admin-panel">
-												{name}
+											<span className="absolute inset-x-0 bottom-0 bg-admin-ink/75 px-2 py-1 text-xs text-admin-panel">
+												<span className="block truncate">{name}</span>
+												{size && (
+													<span
+														className={`block truncate tabular-nums ${small ? "text-admin-warning" : "text-admin-panel/70"}`}
+													>
+														{size}
+														{small && " · small"}
+													</span>
+												)}
 											</span>
 										</button>
 									);

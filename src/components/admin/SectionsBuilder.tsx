@@ -12,6 +12,7 @@ import { Button } from "#/components/ui/button";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 
 import { DEFAULT_LANG } from "#/lib/i18n-config";
+import { MIN_FULL_WIDTH } from "#/lib/media-size";
 import { sectionsFor } from "#/lib/modules";
 import {
 	type SectionField,
@@ -123,6 +124,7 @@ function CellInput({
 					mode="url"
 					kind="image"
 					aspect="video"
+					minWidth={MIN_FULL_WIDTH}
 				/>
 			</div>
 		);
@@ -346,6 +348,7 @@ function CardsEditor({
 									mode="url"
 									kind="image"
 									aspect="video"
+									minWidth={MIN_FULL_WIDTH}
 								/>
 								{card.image && (
 									<label className="mt-2 flex cursor-pointer items-center gap-2 text-sm text-admin-ink">
@@ -525,6 +528,7 @@ function FieldInput({
 					mode="url"
 					kind="image"
 					aspect="video"
+					minWidth={MIN_FULL_WIDTH}
 				/>
 			) : field.kind === "form" ? (
 				<FormPicker id={fieldId} value={str} onChange={onChange} />

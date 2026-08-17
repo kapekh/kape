@@ -1492,11 +1492,17 @@ export function adminListMediaPage(
 		.offset(opts.offset);
 }
 
-/** Resolve specific media ids → {id, url, contentType} (e.g. saved cover ids). */
+/** Resolve specific media ids → url, type and intrinsic size (e.g. saved cover ids). */
 export async function adminMediaByIds(db: DB, ids: number[]) {
 	if (!ids.length) return [];
 	return db
-		.select({ id: media.id, url: media.url, contentType: media.contentType })
+		.select({
+			id: media.id,
+			url: media.url,
+			contentType: media.contentType,
+			width: media.width,
+			height: media.height,
+		})
 		.from(media)
 		.where(and(eq(media.tenantId, TENANT), inArray(media.id, ids)));
 }
@@ -1873,7 +1879,14 @@ export async function adminMediaStats(db: DB) {
 
 export async function createMediaRecord(
 	db: DB,
-	v: { r2Key: string; url: string; contentType?: string; size?: number },
+	v: {
+		r2Key: string;
+		url: string;
+		contentType?: string;
+		size?: number;
+		width?: number;
+		height?: number;
+	},
 ): Promise<number> {
 	const [row] = await db
 		.insert(media)
@@ -1883,6 +1896,8 @@ export async function createMediaRecord(
 			url: v.url,
 			contentType: v.contentType ?? null,
 			size: v.size ?? null,
+			width: v.width ?? null,
+			height: v.height ?? null,
 		})
 		.returning({ id: media.id });
 	return row.id;

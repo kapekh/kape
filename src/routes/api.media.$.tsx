@@ -2,7 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { parseCookies, SESSION_COOKIE, validateToken } from "#/server/auth";
 import { db } from "#/server/db";
-import { bytesMatchExtension } from "#/server/magic-bytes";
+import { imageSize } from "#/server/image-size";
+import {
+	bytesMatchExtension,
+	contentTypeForExtension,
+} from "#/server/magic-bytes";
 import { createMediaRecord } from "#/server/repo/admin";
 import { resolvePermissions } from "#/server/repo/roles";
 import { saveUpload } from "#/server/storage";
@@ -24,6 +28,16 @@ async function handler({ request }: { request: Request }) {
 	}
 
 	if (request.method === "POST" && action === "upload") {
+		const MAX_BYTES = 50 * 1024 * 1024; // 50 MB
+		// formData() buffers the whole body, so the declared length is the only
+		// place to stop a huge one before it is in memory
+		const declared = Number(request.headers.get("content-length"));
+		if (Number.isFinite(declared) && declared > MAX_BYTES + 1024 * 1024) {
+			return Response.json(
+				{ error: "File too large (max 50 MB)" },
+				{ status: 413 },
+			);
+		}
 		// Malformed multipart (an empty filename is enough) makes formData() throw.
 		// The body is attacker-controlled, so that has to be a 400, not a crash.
 		const form = await request.formData().catch(() => null);
@@ -38,8 +52,6 @@ async function handler({ request }: { request: Request }) {
 		if (!(file instanceof File) || !file.name)
 			return Response.json({ error: "No file" }, { status: 400 });
 
-		// Reject oversized uploads before buffering the bytes into memory.
-		const MAX_BYTES = 50 * 1024 * 1024; // 50 MB
 		if (file.size > MAX_BYTES) {
 			return Response.json(
 				{ error: "File too large (max 50 MB)" },
@@ -65,8 +77,10 @@ async function handler({ request }: { request: Request }) {
 			"mp4",
 			"webm",
 		]);
+		// `pop()` on a name with no dot returns the whole name, so an
+		// extension-less upload would never reach the `file.type` fallback
 		const ext = (
-			file.name.split(".").pop() ||
+			(file.name.includes(".") ? file.name.split(".").pop() : "") ||
 			file.type.split("/").pop() ||
 			"bin"
 		).toLowerCase();
@@ -85,18 +99,23 @@ async function handler({ request }: { request: Request }) {
 				{ status: 415 },
 			);
 		}
-		const stored = await saveUpload(
-			bytes,
-			file.type || "application/octet-stream",
-			ext,
-		);
+		const type = contentTypeForExtension(ext);
+		const stored = await saveUpload(bytes, type, ext);
+		const dims = imageSize(bytes);
 		const id = await createMediaRecord(db, {
 			r2Key: stored.key,
 			url: stored.url,
-			contentType: file.type,
+			contentType: type,
 			size: file.size,
+			width: dims?.width,
+			height: dims?.height,
 		});
-		return Response.json({ id, url: stored.url });
+		return Response.json({
+			id,
+			url: stored.url,
+			width: dims?.width ?? null,
+			height: dims?.height ?? null,
+		});
 	}
 
 	return Response.json({ error: "Not found" }, { status: 404 });

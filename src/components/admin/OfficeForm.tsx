@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useId, useState } from "react";
 
 import { Input } from "#/components/ui/input.tsx";
+import { MIN_FULL_WIDTH } from "#/lib/media-size";
 import {
 	cancelButtonClass,
 	EditorGrid,
@@ -267,6 +268,7 @@ export function OfficeForm({
 							value={imageMediaId}
 							onChange={setImageMediaId}
 							label="Choose image"
+							minWidth={MIN_FULL_WIDTH}
 						/>
 					</FormSection>
 				}

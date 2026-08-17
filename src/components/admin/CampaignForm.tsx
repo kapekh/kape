@@ -12,6 +12,7 @@ import {
 	SelectValue,
 } from "#/components/ui/select.tsx";
 import { Textarea } from "#/components/ui/textarea.tsx";
+import { MIN_FULL_WIDTH } from "#/lib/media-size";
 import {
 	cancelButtonClass,
 	EditorGrid,
@@ -423,6 +424,7 @@ export function CampaignForm({
 								value={coverMediaId}
 								onChange={setCoverMediaId}
 								label="Choose cover"
+								minWidth={MIN_FULL_WIDTH}
 							/>
 						</FormSection>
 						<FormSection title="Options">

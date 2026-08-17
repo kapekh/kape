@@ -9,6 +9,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "#/components/ui/select.tsx";
+import { MIN_FULL_WIDTH } from "#/lib/media-size";
 import {
 	cancelButtonClass,
 	EditorGrid,
@@ -288,6 +289,7 @@ export function SchoolForm({
 							value={coverMediaId}
 							onChange={setCoverMediaId}
 							label="Choose photo"
+							minWidth={MIN_FULL_WIDTH}
 						/>
 					</FormSection>
 				}
