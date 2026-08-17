@@ -40,6 +40,12 @@ adduser --disabled-password --gecos "" deploy
 usermod -aG sudo deploy
 rsync --archive --chown=deploy:deploy ~/.ssh /home/deploy/
 
+# The account has no password, so `sudo` can never prompt for one and every
+# later step that needs it fails. Key-only login is what makes this safe.
+echo 'deploy ALL=(ALL) NOPASSWD:ALL' >/etc/sudoers.d/deploy
+chmod 440 /etc/sudoers.d/deploy
+visudo -c -f /etc/sudoers.d/deploy
+
 # Build headroom on top of the 2 GB.
 fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
 echo '/swapfile none swap sw 0 0' >>/etc/fstab
@@ -55,6 +61,43 @@ Reconnect as `deploy` from here on.
 
 The app is published on `127.0.0.1:3000` (step 4), so it never appears in the firewall.
 That matters: Docker's published ports write their own iptables rules and bypass `ufw` entirely, so a `0.0.0.0` binding would be open to the internet no matter what `ufw` says.
+
+A DigitalOcean cloud firewall is worth adding for the same reason.
+It runs outside the droplet, so nothing on the box can write a rule around it:
+
+```bash
+doctl compute firewall create --name kape-web --droplet-ids <droplet-id> \
+  --inbound-rules "protocol:tcp,ports:22,address:0.0.0.0/0,address:::/0 protocol:tcp,ports:80,address:0.0.0.0/0,address:::/0 protocol:tcp,ports:443,address:0.0.0.0/0,address:::/0 protocol:icmp,address:0.0.0.0/0,address:::/0" \
+  --outbound-rules "protocol:tcp,ports:all,address:0.0.0.0/0,address:::/0 protocol:udp,ports:all,address:0.0.0.0/0,address:::/0 protocol:icmp,address:0.0.0.0/0,address:::/0"
+```
+
+### Locking down SSH
+
+Once you have logged in as `deploy` and confirmed `sudo` works, close the rest:
+
+```bash
+sudo tee /etc/ssh/sshd_config.d/99-hardening.conf >/dev/null <<'EOF'
+PermitRootLogin no
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitEmptyPasswords no
+AuthenticationMethods publickey
+X11Forwarding no
+AllowAgentForwarding no
+AllowTcpForwarding no
+MaxAuthTries 3
+LoginGraceTime 20
+AllowUsers deploy
+EOF
+sudo sshd -t && sudo systemctl restart ssh
+
+sudo apt install -y fail2ban
+printf '[sshd]\nenabled = true\nbackend = systemd\nmaxretry = 3\nfindtime = 10m\nbantime = 1h\n' | sudo tee /etc/fail2ban/jail.local
+sudo systemctl enable --now fail2ban
+```
+
+Verify from another terminal before closing the one you are in: `ssh deploy@<ip>` works, `ssh root@<ip>` comes back `Permission denied (publickey)`.
+`AllowUsers deploy` means a second operator needs adding to that line as well as to `authorized_keys`.
 
 ## 2. Deploy key and clone
 

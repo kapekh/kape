@@ -4,6 +4,12 @@
 
 www.example.org, example.org {
 	encode zstd gzip
+	# The app already sends CSP, Referrer-Policy, X-Frame-Options, X-Content-Type-Options
+	# and Permissions-Policy. HSTS is the proxy's, because only it knows TLS terminated here.
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
 	reverse_proxy 127.0.0.1:3000
 }
 
