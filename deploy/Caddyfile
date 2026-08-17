@@ -13,6 +13,23 @@ www.example.org, example.org {
 	reverse_proxy 127.0.0.1:3000
 }
 
+# A staging host serves real content and a live admin panel, so put it behind a
+# password. `caddy hash-password` prints the hash; the plaintext never lands here.
+# Caddy answers the ACME challenge from its own handler, ahead of this, so
+# certificates still issue and renew.
+#
+# dev.example.org {
+# 	encode zstd gzip
+# 	header {
+# 		X-Robots-Tag "noindex, nofollow"
+# 		-Server
+# 	}
+# 	basic_auth {
+# 		someone $2a$14$...
+# 	}
+# 	reverse_proxy 127.0.0.1:3000
+# }
+
 # Serving both names means two URLs for every page. If you prefer one, replace
 # the block above with these two and set VITE_SITE_URL to the surviving name.
 #
