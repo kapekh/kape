@@ -1588,7 +1588,8 @@ function PostList(p: PostListProps) {
 
 export function youtubeId(url: string): string | null {
 	const m = String(url || "").match(
-		/(?:youtu\.be\/|v=|\/embed\/|\/shorts\/)([\w-]{6,})/,
+		// `[?&]v=` and not a bare `v=`, which also matches inside ?rev= and ?srv=
+		/(?:youtu\.be\/|[?&]v=|\/embed\/|\/shorts\/)([\w-]{6,})/,
 	);
 	return m ? m[1] : null;
 }
