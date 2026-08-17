@@ -33,6 +33,7 @@ import {
 	localizedHref,
 	stripLang,
 } from "@/lib/i18n-config";
+import { isPlaceholder } from "@/lib/placeholder";
 import {
 	metaDescription,
 	pageTitle,
@@ -131,8 +132,10 @@ export const Route = createFileRoute("/$")({
 		} else if (r.kind === "article") {
 			title = pageTitle(r.post.title, settings);
 			description = r.post.excerpt || description;
+			image = r.post.coverUrl;
 		} else if (r.kind === "album") {
 			title = pageTitle(r.album.title, settings);
+			image = r.album.photos[0]?.url || null;
 		} else if (r.kind === "project") {
 			title = pageTitle(r.project.name, settings);
 		} else if (r.kind === "person") {
@@ -151,6 +154,9 @@ export const Route = createFileRoute("/$")({
 		const { links, absolute } = localeLinks(params._splat ?? "", siteUrl);
 		// og:url and og:image are ignored unless they are fully qualified.
 		if (absolute) meta.push({ property: "og:url", content: absolute });
+		// the stand-in image says less than the site's own social card, and it is
+		// an SVG, which most share previews will not render at all
+		if (isPlaceholder(image)) image = null;
 		if (image)
 			meta.push({
 				property: "og:image",
