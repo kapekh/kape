@@ -14,6 +14,7 @@ import {
 	PERMISSION_AREAS,
 	type PermissionArea,
 	ROUTER_AREA,
+	ungrantableAreas,
 } from "#/lib/permissions";
 import type { SectionNode } from "#/lib/sections";
 import { checkSettingValue } from "#/lib/site-theme";
@@ -324,6 +325,17 @@ const roleInput = z.object({
 	name: z.string().min(1),
 	permissions: z.array(z.enum(AREA_KEYS)).default([]),
 });
+function assertGrantable(ctx: TRPCContext, requested: PermissionArea[]) {
+	const over = ungrantableAreas(ctx, requested);
+	if (over.length === 0) return;
+	const labels = over
+		.map((a) => PERMISSION_AREAS.find((p) => p.key === a)?.label ?? a)
+		.join(", ");
+	throw new TRPCError({
+		code: "FORBIDDEN",
+		message: `You can't grant access you don't have yourself: ${labels}.`,
+	});
+}
 const adminRolesRouter = {
 	list: adminProcedure.query(({ ctx }) => adminListRoles(ctx.db)),
 	areas: adminProcedure.query(() => PERMISSION_AREAS),
@@ -332,10 +344,16 @@ const adminRolesRouter = {
 		.query(({ ctx, input }) => getRoleForEdit(ctx.db, input.id)),
 	create: adminProcedure
 		.input(roleInput.extend({ key: z.string().default("") }))
-		.mutation(({ ctx, input }) => createRole(ctx.db, input)),
+		.mutation(({ ctx, input }) => {
+			assertGrantable(ctx, input.permissions);
+			return createRole(ctx.db, input);
+		}),
 	update: adminProcedure
 		.input(roleInput.extend({ id: z.number() }))
-		.mutation(({ ctx, input }) => updateRole(ctx.db, input.id, input)),
+		.mutation(({ ctx, input }) => {
+			assertGrantable(ctx, input.permissions);
+			return updateRole(ctx.db, input.id, input);
+		}),
 	delete: adminProcedure
 		.input(z.object({ id: z.number() }))
 		.mutation(({ ctx, input }) => deleteRole(ctx.db, input.id)),

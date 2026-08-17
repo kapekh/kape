@@ -42,6 +42,19 @@ export const PERMISSION_AREAS: {
 
 export const ALL_AREAS: PermissionArea[] = PERMISSION_AREAS.map((a) => a.key);
 
+/**
+ * Areas a caller is asking to put on a role but does not hold themselves.
+ * Without this the `users` area buys every other one: edit your own role,
+ * tick everything, save.
+ */
+export function ungrantableAreas(
+	caller: { permissions: readonly string[]; isSuperAdmin: boolean },
+	requested: readonly PermissionArea[],
+): PermissionArea[] {
+	if (caller.isSuperAdmin) return [];
+	return requested.filter((a) => !caller.permissions.includes(a));
+}
+
 /** tRPC router key → permission area (server-side enforcement in adminProcedure). */
 export const ROUTER_AREA: Record<string, PermissionArea> = {
 	adminPages: "pages",
