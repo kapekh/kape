@@ -21,6 +21,7 @@ import { inputClass } from "#/components/ui/input.tsx";
 import { PageHeader } from "#/components/ui/page-header.tsx";
 import { Skeleton } from "#/components/ui/skeleton.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { formatSize, isLowResolution, MIN_FULL_WIDTH } from "#/lib/media-size";
 import { useModalPanel } from "#/lib/use-modal-panel";
 import { confirm, toast } from "@/components/Dialogs";
 
@@ -123,7 +124,7 @@ function MediaLibrary() {
 	const previewHeadingId = useId();
 	const closePreview = useCallback(() => setPreview(null), []);
 	const previewRef = useModalPanel(closePreview, !!preview);
-	const [usage, setUsage] = useState<MediaUsage[] | null>(null);
+	const [usage, setUsage] = useState<MediaUsage[] | "failed" | null>(null);
 	const fileRef = useRef<HTMLInputElement>(null);
 
 	// Resolve "where is this used" whenever the detail lightbox opens.
@@ -136,8 +137,10 @@ function MediaLibrary() {
 			.then((u) => {
 				if (alive) setUsage(u);
 			})
+			// an empty list would read as "used nowhere" and send Delete down the
+			// path with no warning on it, so a failure gets its own state
 			.catch(() => {
-				if (alive) setUsage([]);
+				if (alive) setUsage("failed");
 			});
 		return () => {
 			alive = false;
@@ -161,23 +164,33 @@ function MediaLibrary() {
 	);
 
 	// Load page 1 for the current filter/search (replaces the list).
+	// a rejected query must still clear `loading`, or the grid shows skeletons
+	// until the operator reloads the page
 	const reset = useCallback(async () => {
 		const req = ++reqRef.current;
 		setLoading(true);
 		offsetRef.current = 0;
-		const rows = await trpcClient.adminMedia.page.query({
-			limit: PAGE,
-			offset: 0,
-			query: debounced,
-			type: filter,
-		});
-		if (req !== reqRef.current) return; // a newer reset superseded us
-		offsetRef.current = rows.length;
-		hasMoreRef.current = rows.length === PAGE;
-		setItems(rows);
-		setHasMore(hasMoreRef.current);
-		setLoading(false);
-		busyRef.current = false;
+		try {
+			const rows = await trpcClient.adminMedia.page.query({
+				limit: PAGE,
+				offset: 0,
+				query: debounced,
+				type: filter,
+			});
+			if (req !== reqRef.current) return; // a newer reset superseded us
+			offsetRef.current = rows.length;
+			hasMoreRef.current = rows.length === PAGE;
+			setItems(rows);
+			setHasMore(hasMoreRef.current);
+		} catch {
+			if (req !== reqRef.current) return;
+			hasMoreRef.current = false;
+			setHasMore(false);
+			toast("Could not load the media library. Try again.", "error");
+		} finally {
+			if (req === reqRef.current) setLoading(false);
+			busyRef.current = false;
+		}
 	}, [debounced, filter]);
 
 	// Append the next page (infinite scroll).
@@ -186,20 +199,25 @@ function MediaLibrary() {
 		busyRef.current = true;
 		setLoadingMore(true);
 		const req = reqRef.current;
-		const rows = await trpcClient.adminMedia.page.query({
-			limit: PAGE,
-			offset: offsetRef.current,
-			query: debounced,
-			type: filter,
-		});
-		if (req === reqRef.current) {
-			offsetRef.current += rows.length;
-			hasMoreRef.current = rows.length === PAGE;
-			setItems((prev) => [...prev, ...rows]);
-			setHasMore(hasMoreRef.current);
+		try {
+			const rows = await trpcClient.adminMedia.page.query({
+				limit: PAGE,
+				offset: offsetRef.current,
+				query: debounced,
+				type: filter,
+			});
+			if (req === reqRef.current) {
+				offsetRef.current += rows.length;
+				hasMoreRef.current = rows.length === PAGE;
+				setItems((prev) => [...prev, ...rows]);
+				setHasMore(hasMoreRef.current);
+			}
+		} catch {
+			// leaving busyRef set would kill scrolling for the rest of the session
+		} finally {
+			setLoadingMore(false);
+			busyRef.current = false;
 		}
-		setLoadingMore(false);
-		busyRef.current = false;
 	}
 
 	// Keep the observer pointed at the freshest loadMore (latest filter/query).
@@ -225,8 +243,11 @@ function MediaLibrary() {
 		startTourOnce("media");
 	}, []);
 
-	// Infinite-scroll sentinel.
+	// re-runs on loading, so the sentinel is only observed once it is past the
+	// skeletons: the observer only fires on a change, so a sentinel that is
+	// already in view when the grid renders would never load page 2
 	useEffect(() => {
+		if (loading) return;
 		const el = sentinelRef.current;
 		if (!el) return;
 		const obs = new IntersectionObserver(
@@ -235,25 +256,31 @@ function MediaLibrary() {
 		);
 		obs.observe(el);
 		return () => obs.disconnect();
-	}, []);
+	}, [loading]);
 
 	async function uploadFiles(files: FileList | File[]) {
 		const list = [...files];
 		if (!list.length) return;
 		setUpload({ done: 0, total: list.length });
 		const failed: string[] = [];
-		for (let i = 0; i < list.length; i++) {
-			const fd = new FormData();
-			fd.append("file", list[i]);
-			const res = await fetch("/api/media/upload", {
-				method: "POST",
-				body: fd,
-			});
-			if (!res.ok) failed.push(`${list[i].name}: ${await reason(res)}`);
-			setUpload({ done: i + 1, total: list.length });
+		try {
+			for (let i = 0; i < list.length; i++) {
+				const fd = new FormData();
+				fd.append("file", list[i]);
+				// a dropped connection mid-batch would otherwise leave the header
+				// stuck on "Uploading n/N" and the file input disabled
+				const res = await fetch("/api/media/upload", {
+					method: "POST",
+					body: fd,
+				}).catch(() => null);
+				if (!res) failed.push(`${list[i].name}: upload failed (no connection)`);
+				else if (!res.ok) failed.push(`${list[i].name}: ${await reason(res)}`);
+				setUpload({ done: i + 1, total: list.length });
+			}
+		} finally {
+			setUpload(null);
+			if (fileRef.current) fileRef.current.value = "";
 		}
-		setUpload(null);
-		if (fileRef.current) fileRef.current.value = "";
 		await Promise.all([reset(), fetchStats()]); // new uploads sort to the top
 		if (failed.length) toast(failed.join("\n"), "error");
 	}
@@ -288,9 +315,14 @@ function MediaLibrary() {
 		// Always know whether the asset is referenced before destroying it.
 		const u =
 			knownUsage ??
-			(await trpcClient.adminMedia.usage
-				.query({ id })
-				.catch(() => [] as MediaUsage[]));
+			(await trpcClient.adminMedia.usage.query({ id }).catch(() => null));
+		if (!u) {
+			toast(
+				"Could not check where this image is used, so it was not deleted. Try again.",
+				"error",
+			);
+			return;
+		}
 		let msg = "Delete this media item? This can't be undone.";
 		if (u.length) {
 			const lines = u
@@ -320,12 +352,17 @@ function MediaLibrary() {
 		if (!ids.length || bulkBusy) return;
 		const usages = await Promise.all(
 			ids.map((id) =>
-				trpcClient.adminMedia.usage
-					.query({ id })
-					.catch(() => [] as MediaUsage[]),
+				trpcClient.adminMedia.usage.query({ id }).catch(() => null),
 			),
 		);
-		const inUse = usages.filter((u) => u.length > 0).length;
+		if (usages.some((u) => u === null)) {
+			toast(
+				"Could not check where these images are used, so nothing was deleted. Try again.",
+				"error",
+			);
+			return;
+		}
+		const inUse = usages.filter((u) => u && u.length > 0).length;
 		const msg = inUse
 			? `⚠ ${inUse} of these ${ids.length} item${ids.length > 1 ? "s" : ""} ${inUse > 1 ? "are" : "is"} still used by other records and will leave broken images.\n\nDelete all ${ids.length} anyway? This can't be undone.`
 			: `Delete ${plural(ids.length, "selected item")}? This can't be undone.`;
@@ -337,10 +374,12 @@ function MediaLibrary() {
 			);
 			const gone = ids.filter((_, i) => results[i].status === "fulfilled");
 			dropLocal(gone);
-			const stuck = results.length - gone.length;
-			if (stuck)
+			const stuck = results
+				.filter((r) => r.status === "rejected")
+				.map((r) => deleteReason(r.reason));
+			if (stuck.length)
 				toast(
-					`${plural(stuck, "item")} could not be deleted: still attached to a record.`,
+					`${plural(stuck.length, "item")} could not be deleted: ${[...new Set(stuck)].join("; ")}`,
 					"error",
 				);
 			else toast(`${plural(gone.length, "item")} deleted.`, "success");
@@ -559,11 +598,21 @@ function MediaLibrary() {
 									{extOf(m)}
 								</span>
 								<div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-black/80 to-transparent p-2 opacity-0 transition-opacity duration-150 ease-out group-focus-within:opacity-100 group-hover:opacity-100">
-									<span
-										className="pointer-events-auto truncate text-[13px] font-medium text-white"
-										title={name}
-									>
-										{name}
+									<span className="pointer-events-auto min-w-0">
+										<span
+											className="block truncate text-[13px] font-medium text-white"
+											title={name}
+										>
+											{name}
+										</span>
+										{formatSize(m) ? (
+											<span
+												className={`block truncate text-xs tabular-nums ${isLowResolution(m) ? "text-admin-warning" : "text-white/70"}`}
+											>
+												{formatSize(m)}
+												{isLowResolution(m) && " · small"}
+											</span>
+										) : null}
 									</span>
 									<span className="pointer-events-auto flex flex-none gap-2">
 										<button
@@ -695,6 +744,13 @@ function MediaLibrary() {
 								{previewSize ? <Meta label="Size" value={previewSize} /> : null}
 								<Meta label="Added" value={fmtDate(preview.createdAt)} />
 							</dl>
+							{isLowResolution(preview) ? (
+								<p className="mt-3 text-[13px] text-admin-warning-ink">
+									Under {MIN_FULL_WIDTH}px on its long edge. A cover, hero or
+									banner stretches this one and it will look soft. Fine for a
+									logo, an avatar or a small card.
+								</p>
+							) : null}
 							<div className="mt-4">
 								<div className="mb-1 text-[13px] font-medium text-admin-ink-muted">
 									URL
@@ -714,7 +770,7 @@ function MediaLibrary() {
 									<span className="text-[13px] font-medium text-admin-ink-muted">
 										Used in
 									</span>
-									{usage && (
+									{Array.isArray(usage) && (
 										<span
 											className={`rounded-full px-2 py-1 text-xs font-medium leading-none ${usage.length ? "bg-admin-accent-soft text-admin-accent-ink" : "bg-admin-neutral-soft text-admin-ink-muted"}`}
 										>
@@ -726,6 +782,10 @@ function MediaLibrary() {
 								</div>
 								{usage === null ? (
 									<p className="text-[13px] text-admin-ink-muted">Checking…</p>
+								) : usage === "failed" ? (
+									<p className="text-[13px] text-admin-warning-ink">
+										Could not check where this is used.
+									</p>
 								) : usage.length === 0 ? (
 									<p className="text-[13px] text-admin-ink-muted">
 										Not referenced anywhere, so it is safe to delete.
@@ -786,7 +846,9 @@ function MediaLibrary() {
 								<Button
 									type="button"
 									variant="danger"
-									onClick={() => del(preview.id, usage)}
+									onClick={() =>
+										del(preview.id, Array.isArray(usage) ? usage : null)
+									}
 								>
 									<Trash2 aria-hidden="true" />
 									Delete
