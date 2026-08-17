@@ -517,17 +517,27 @@ function AdminLayout({ access }: { access: OkAccess }) {
 						</button>
 					) : (
 						<>
-							<img
-								src={siteLogo(settings)}
-								alt={siteShortName(settings)}
-								className="h-9 w-9 shrink-0 rounded-lg object-cover ring-1 ring-admin-border"
-							/>
-							<div className="min-w-0 flex-1 leading-tight">
-								<div className="truncate text-sm font-semibold text-admin-ink">
-									{siteShortName(settings)}
-								</div>
-								<div className="text-[13px] text-admin-ink-muted">Admin</div>
-							</div>
+							<Link
+								to="/admin"
+								activeOptions={{ exact: true }}
+								onClick={closeDrawer}
+								className="flex min-w-0 flex-1 items-center gap-3 rounded-lg px-1 py-1 -mx-1 transition-colors duration-150 ease-out hover:bg-admin-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+							>
+								<img
+									src={siteLogo(settings)}
+									alt=""
+									className="h-9 w-9 shrink-0 rounded-lg object-cover ring-1 ring-admin-border"
+								/>
+								<span className="min-w-0 flex-1 leading-tight">
+									<span className="block truncate text-sm font-semibold text-admin-ink">
+										{siteShortName(settings)}
+									</span>
+									<span className="block text-[13px] text-admin-ink-muted">
+										Admin
+									</span>
+								</span>
+								<span className="sr-only">— go to the dashboard</span>
+							</Link>
 							<button
 								type="button"
 								onClick={isDesktop ? toggleRail : closeDrawer}
