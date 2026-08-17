@@ -81,3 +81,38 @@ export function bytesMatchExtension(ext: string, bytes: Uint8Array): boolean {
 	const sniffed = sniffType(bytes);
 	return sniffed !== null && allowed.includes(sniffed);
 }
+
+/** True when the extension has a signature `bytesMatchExtension` can check. */
+export function hasSignature(ext: string): boolean {
+	return ext.toLowerCase() in EXT_TO_TYPES;
+}
+
+const EXT_TO_CONTENT_TYPE: Record<string, string> = {
+	png: "image/png",
+	jpg: "image/jpeg",
+	jpeg: "image/jpeg",
+	webp: "image/webp",
+	gif: "image/gif",
+	avif: "image/avif",
+	pdf: "application/pdf",
+	mp4: "video/mp4",
+	webm: "video/webm",
+	txt: "text/plain; charset=utf-8",
+	csv: "text/csv; charset=utf-8",
+	doc: "application/msword",
+	docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+	xls: "application/vnd.ms-excel",
+	xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+	ppt: "application/vnd.ms-powerpoint",
+	pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+};
+
+/**
+ * The type an object is stored and later served with. Derived from the
+ * allow-listed extension, never from the uploader's `file.type`: R2 hands that
+ * back verbatim, so a client-chosen `text/html` would render as a page on our
+ * own origin.
+ */
+export function contentTypeForExtension(ext: string): string {
+	return EXT_TO_CONTENT_TYPE[ext.toLowerCase()] ?? "application/octet-stream";
+}

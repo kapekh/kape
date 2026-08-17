@@ -10,6 +10,11 @@ import {
 	validateSubmission,
 } from "#/lib/forms";
 import { db } from "#/server/db";
+import {
+	bytesMatchExtension,
+	contentTypeForExtension,
+	hasSignature,
+} from "#/server/magic-bytes";
 import { sendContactEmail } from "#/server/mail";
 import { clientIp, rateLimit } from "#/server/ratelimit";
 import {
@@ -31,6 +36,10 @@ const validEmail = (v: unknown) =>
 
 const ATTACH_EXT = new Set(ATTACHMENT_EXTS);
 
+// a form can carry several file fields, so the whole-body cap is a multiple of
+// the per-attachment one
+const BODY_MAX_BYTES = 4 * ATTACHMENT_MAX_BYTES;
+
 /** Validate + persist a single form attachment. Returns the servable URL or an error. */
 async function saveFormAttachment(
 	file: File,
@@ -38,18 +47,20 @@ async function saveFormAttachment(
 	if (file.size > ATTACHMENT_MAX_BYTES)
 		return { error: "Attachment is too large (max 10 MB).", status: 413 };
 	const ext = (
-		file.name.split(".").pop() ||
+		(file.name.includes(".") ? file.name.split(".").pop() : "") ||
 		file.type.split("/").pop() ||
 		"bin"
 	).toLowerCase();
 	if (!ATTACH_EXT.has(ext))
 		return { error: `File type ".${ext}" is not allowed.`, status: 415 };
 	const bytes = new Uint8Array(await file.arrayBuffer());
-	const stored = await saveUpload(
-		bytes,
-		file.type || "application/octet-stream",
-		ext,
-	);
+	// anyone on the internet reaches this, so the bytes have to back the
+	// extension up wherever a signature exists (txt and csv have none)
+	if (hasSignature(ext) && !bytesMatchExtension(ext, bytes))
+		return { error: `File contents do not match ".${ext}".`, status: 415 };
+	// never `file.type`: R2 serves the stored type back, so a client-chosen
+	// text/html would run as a page on our own origin
+	const stored = await saveUpload(bytes, contentTypeForExtension(ext), ext);
 	return { url: stored.url };
 }
 
@@ -61,6 +72,15 @@ async function handler({ request }: { request: Request }) {
 	let body: Record<string, unknown> = {};
 	const fileEntries: Record<string, File> = {};
 	if (contentType.includes("multipart/form-data")) {
+		// formData() buffers the whole body, and this route is unauthenticated and
+		// reached before the rate limiter, so cap it on the declared length first
+		const declared = Number(request.headers.get("content-length"));
+		if (Number.isFinite(declared) && declared > BODY_MAX_BYTES) {
+			return Response.json(
+				{ error: "Attachment is too large (max 10 MB)." },
+				{ status: 413 },
+			);
+		}
 		const fd = await request.formData().catch(() => null);
 		if (fd) {
 			// getAll, not entries: a checkbox group posts its key once per pick.

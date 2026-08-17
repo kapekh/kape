@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { bytesMatchExtension, sniffType } from "./magic-bytes";
+import { ATTACHMENT_EXTS } from "#/lib/forms";
+
+import {
+	bytesMatchExtension,
+	contentTypeForExtension,
+	hasSignature,
+	sniffType,
+} from "./magic-bytes";
 import {
 	backoffDelayMs,
 	countEvent,
@@ -120,5 +127,42 @@ describe("magic-byte sniffing", () => {
 	it("rejects unknown extensions outright", () => {
 		expect(bytesMatchExtension("sh", SHELL)).toBe(false);
 		expect(bytesMatchExtension("exe", PNG)).toBe(false);
+	});
+});
+
+describe("stored content type", () => {
+	// R2 hands the stored type back on every GET, so anything the uploader
+	// chose would be a stored-XSS vector on our own origin.
+	const RENDERS_AS_PAGE = new Set([
+		"text/html",
+		"application/xhtml+xml",
+		"image/svg+xml",
+		"text/javascript",
+		"application/javascript",
+	]);
+	it("never yields a type a browser renders as a page", () => {
+		for (const ext of [...ATTACHMENT_EXTS, "mp4", "webm"]) {
+			const type = contentTypeForExtension(ext).split(";")[0].trim();
+			expect(RENDERS_AS_PAGE.has(type)).toBe(false);
+		}
+	});
+
+	it("maps each allow-listed extension to its own type", () => {
+		expect(contentTypeForExtension("PNG")).toBe("image/png");
+		expect(contentTypeForExtension("jpg")).toBe("image/jpeg");
+		expect(contentTypeForExtension("pdf")).toBe("application/pdf");
+	});
+
+	it("falls back to a non-rendering type for anything unmapped", () => {
+		expect(contentTypeForExtension("bin")).toBe("application/octet-stream");
+		expect(contentTypeForExtension("html")).toBe("application/octet-stream");
+	});
+
+	// txt and csv have no signature, so the form route has to skip the check
+	// for them rather than reject every plain-text attachment.
+	it("knows which extensions can be signature-checked", () => {
+		expect(hasSignature("png")).toBe(true);
+		expect(hasSignature("txt")).toBe(false);
+		expect(hasSignature("csv")).toBe(false);
 	});
 });
