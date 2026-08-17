@@ -53,7 +53,12 @@ export async function saveUpload(
 	ext: string,
 ): Promise<StoredObject> {
 	const id = crypto.randomUUID();
-	const safeExt = ext.replace(/[^a-z0-9]/gi, "").slice(0, 8) || "bin";
+	// lowercased to match LOCAL_KEY below, which decides what deleteUpload unlinks
+	const safeExt =
+		ext
+			.toLowerCase()
+			.replace(/[^a-z0-9]/g, "")
+			.slice(0, 8) || "bin";
 
 	if (r2) {
 		const key = `media/${id}.${safeExt}`;
