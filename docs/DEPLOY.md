@@ -201,7 +201,10 @@ On the droplet:
 ```bash
 cd /srv/kape
 docker compose down
-docker run --rm -v kape_cms-data:/data -v /tmp:/in alpine cp /in/kape-deploy.db /data/cms.db
+# The -wal and -shm files MUST go with the old .db. SQLite replays a leftover WAL
+# on open, so copying only cms.db silently restores the database you replaced.
+docker run --rm -v kape_cms-data:/data -v /tmp:/in alpine sh -c \
+	'rm -f /data/cms.db /data/cms.db-wal /data/cms.db-shm && cp /in/kape-deploy.db /data/cms.db'
 docker run --rm -v kape_cms-uploads:/up -v /tmp:/in alpine sh -c 'tar xzf /in/uploads.tgz -C /tmp && cp -a /tmp/uploads/. /up/'
 docker compose up -d
 rm /tmp/kape-deploy.db /tmp/uploads.tgz
@@ -209,6 +212,15 @@ rm /tmp/kape-deploy.db /tmp/uploads.tgz
 
 Migrations run on import, so a database from an older schema is upgraded on the next boot.
 Log in with the accounts that database already holds; the installer will not create another administrator over it.
+
+Count something before you trust it.
+`Already installed - skipping.` in the logs only proves *a* database is there, not that it is yours:
+
+```bash
+docker compose exec -T app bun -e 'import { Database } from "bun:sqlite";
+const db = new Database("/data/cms.db", { readonly: true });
+for (const t of ["pages", "posts", "media", "users"]) console.log(t, db.query(`select count(*) c from "${t}"`).get().c);'
+```
 
 ## 5. Caddy and the certificate
 
