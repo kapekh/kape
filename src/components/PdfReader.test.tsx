@@ -25,13 +25,15 @@ function pointer(kind: "fine" | "coarse") {
 	);
 }
 
-function Docs({ href }: { href: string }) {
+function Docs({ href, onDownload }: { href: string; onDownload?: () => void }) {
 	const { openPdf, reader } = usePdfReader();
 	return (
 		<div>
 			<a
 				href={href}
-				onClick={(e) => openPdf(e, { url: href, title: "Annual Report" })}
+				onClick={(e) =>
+					openPdf(e, { url: href, title: "Annual Report", onDownload })
+				}
 			>
 				Open
 			</a>
@@ -85,6 +87,20 @@ describe("usePdfReader", () => {
 
 		expect(screen.queryByTitle("Annual Report")).toBeNull();
 		expect(screen.getByText(/could not be loaded/i)).toBeTruthy();
+	});
+
+	it("offers the open document for offline, and counts that", () => {
+		pointer("fine");
+		const saved = vi.fn();
+		render(<Docs href="/uploads/report.pdf" onDownload={saved} />);
+		fireEvent.click(screen.getByRole("link", { name: "Open" }));
+
+		const save = screen.getByRole("link", { name: "Download" });
+		expect(save.getAttribute("href")).toBe("/uploads/report.pdf");
+		expect(save.hasAttribute("download")).toBe(true);
+
+		fireEvent.click(save);
+		expect(saved).toHaveBeenCalledTimes(1);
 	});
 
 	// once focus is inside the plugin, Esc and Shift+Tab both stop working

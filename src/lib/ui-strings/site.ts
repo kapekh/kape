@@ -52,6 +52,7 @@ export const site: Record<string, { en: string; km?: string }> = {
 	},
 
 	"pdf.close": { en: "Close", km: "បិទ" },
+	"pdf.download": { en: "Download", km: "ទាញយក" },
 	"pdf.failed": {
 		en: "This document could not be loaded. It may have been moved or removed.",
 	},

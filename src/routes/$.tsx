@@ -306,19 +306,33 @@ function PublicationFile({
 }) {
 	const t = useT();
 	const { openPdf, reader } = usePdfReader();
+	const track = (kind: "read" | "download") =>
+		trpcClient.posts.trackDocument.mutate({ id, kind }).catch(() => {});
 	return (
-		<div className="mb-8">
+		<div className="mb-8 flex flex-wrap items-center gap-3">
 			<a
 				href={fileUrl}
 				target="_blank"
 				rel="noreferrer"
 				onClick={(e) => {
-					trpcClient.posts.trackDownload.mutate({ id }).catch(() => {});
-					openPdf(e, { url: fileUrl, title });
+					track("read");
+					openPdf(e, {
+						url: fileUrl,
+						title,
+						onDownload: () => track("download"),
+					});
 				}}
 				className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
 			>
 				{t("publications.open", "Open the document")}
+			</a>
+			<a
+				href={fileUrl}
+				download
+				onClick={() => track("download")}
+				className="inline-flex items-center gap-2 rounded-full border border-border px-6 py-3 text-sm font-semibold text-foreground transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+			>
+				{t("publications.download", "Download")}
 			</a>
 			{reader}
 		</div>

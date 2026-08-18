@@ -157,15 +157,17 @@ export type Readership = {
 		contentType: string;
 		title: string;
 		reads: number;
+		downloads: number;
 	}[];
 	totalViews: number;
 	totalReads: number;
+	totalDownloads: number;
 };
 
 /**
  * What the public actually reads: pages by view, documents by how often the
- * reader opened the file. Both counters are write-on-read and unfiltered, so a
- * crawler counts as a reader.
+ * reader was opened on the file and how often it was saved. Every counter is
+ * write-on-read and unfiltered, so a crawler counts as a reader.
  */
 export async function readership(
 	db: DB,
@@ -187,14 +189,16 @@ export async function readership(
 		.from(posts)
 		.where(and(eq(posts.tenantId, TENANT), eq(posts.status, "published")));
 	const read = rows
-		.map((r) => ({
-			...r,
-			reads: Number(
-				(r.meta as Record<string, unknown> | null)?.downloadCount ?? 0,
-			),
-		}))
-		.filter((r) => r.reads > 0)
-		.sort((a, b) => b.reads - a.reads);
+		.map((r) => {
+			const m = r.meta as Record<string, unknown> | null;
+			return {
+				...r,
+				reads: Number(m?.readCount ?? 0),
+				downloads: Number(m?.downloadCount ?? 0),
+			};
+		})
+		.filter((r) => r.reads + r.downloads > 0)
+		.sort((a, b) => b.reads + b.downloads - (a.reads + a.downloads));
 	const titles = await resolveTranslations(
 		db,
 		"post",
@@ -213,9 +217,11 @@ export async function readership(
 			contentType: r.contentType,
 			title: titles.get(r.id)?.title ?? r.slug,
 			reads: r.reads,
+			downloads: r.downloads,
 		})),
 		totalViews: views.reduce((sum, v) => sum + v.count, 0),
 		totalReads: read.reduce((sum, r) => sum + r.reads, 0),
+		totalDownloads: read.reduce((sum, r) => sum + r.downloads, 0),
 	};
 }
 

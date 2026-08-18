@@ -225,6 +225,46 @@ describe("posts.publications", () => {
 	});
 });
 
+describe("posts.trackDocument", () => {
+	const out = run([
+		{
+			sql: `INSERT OR IGNORE INTO content_types (key, name, sort) VALUES ('publication', 'Publications', 1)`,
+		},
+		{
+			sql: `INSERT INTO posts (id, tenant_id, content_type, slug, status, published_at, meta) VALUES
+				(901, 1, 'publication', 'c10-track', 'published', '2024-01-01',
+					json_object('fileUrl', '/uploads/c10-track.pdf'))
+				RETURNING id`,
+		},
+		{ call: "posts.trackDocument", input: { id: 901, kind: "read" } },
+		{ call: "posts.trackDocument", input: { id: 901, kind: "read" } },
+		{ call: "posts.trackDocument", input: { id: 901, kind: "download" } },
+		{
+			sql: `SELECT json_extract(meta, '$.readCount') AS reads,
+				json_extract(meta, '$.downloadCount') AS downloads
+				FROM posts WHERE id = 901`,
+		},
+		{ call: "posts.publications", input: { lang: "en", category: "" } },
+	]);
+
+	it("moves only the counter the visitor used", () => {
+		expect(failed(out[2])).toBeNull();
+		expect(rowsOf(out[5])).toEqual([{ reads: 2, downloads: 1 }]);
+	});
+
+	it("hands both counters to the listing", () => {
+		const value = ("ok" in out[6] && out[6].ok ? out[6].value : []) as {
+			slug: string;
+			readCount: number;
+			downloadCount: number;
+		}[];
+		expect(value.find((p) => p.slug === "c10-track")).toMatchObject({
+			readCount: 2,
+			downloadCount: 1,
+		});
+	});
+});
+
 describe("a publication and a video resolve with what they are for", () => {
 	const out = run([
 		{
@@ -483,9 +523,13 @@ describe("what the public reads", () => {
 		},
 		{
 			sql: `INSERT INTO posts (tenant_id, content_type, slug, status, published_at, meta) VALUES
-				(1, 'publication', 'c10-read-a', 'published', '2024-01-01', json_object('downloadCount', 7)),
-				(1, 'publication', 'c10-read-b', 'published', '2024-01-02', json_object('downloadCount', 2)),
-				(1, 'publication', 'c10-read-c', 'published', '2024-01-03', json_object())
+				(1, 'publication', 'c10-read-a', 'published', '2024-01-01',
+					json_object('readCount', 7, 'downloadCount', 1)),
+				(1, 'publication', 'c10-read-b', 'published', '2024-01-02',
+					json_object('readCount', 2, 'downloadCount', 4)),
+				(1, 'publication', 'c10-read-c', 'published', '2024-01-03',
+					json_object('downloadCount', 3)),
+				(1, 'publication', 'c10-read-d', 'published', '2024-01-04', json_object())
 				RETURNING id`,
 		},
 		{ call: "admin.readership", input: { lang: "en" } },
@@ -493,9 +537,10 @@ describe("what the public reads", () => {
 
 	type Report = {
 		pages: { path: string; count: number }[];
-		documents: { slug: string; reads: number }[];
+		documents: { slug: string; reads: number; downloads: number }[];
 		totalViews: number;
 		totalReads: number;
+		totalDownloads: number;
 	};
 	const report = (r: Result): Report => {
 		if (!("ok" in r) || !r.ok)
@@ -519,10 +564,14 @@ describe("what the public reads", () => {
 	});
 
 	it("ranks documents by opens and leaves out the ones nobody opened", () => {
-		expect(report(out[7]).documents.map((d) => [d.slug, d.reads])).toEqual([
-			["c10-read-a", 7],
-			["c10-read-b", 2],
+		expect(
+			report(out[7]).documents.map((d) => [d.slug, d.reads, d.downloads]),
+		).toEqual([
+			["c10-read-a", 7, 1],
+			["c10-read-b", 2, 4],
+			["c10-read-c", 0, 3],
 		]);
 		expect(report(out[7]).totalReads).toBe(9);
+		expect(report(out[7]).totalDownloads).toBe(8);
 	});
 });

@@ -118,7 +118,7 @@ import {
 	listPublications,
 	listTerms,
 	listVideos,
-	trackDownload,
+	trackDocument,
 } from "#/server/repo/content";
 import {
 	adminListDonations,
@@ -684,10 +684,10 @@ const postsRouter = {
 			listPublications(ctx.db, input.lang, input.category),
 		),
 	// public mutation, so no blanket bust: drop just the publication listings
-	trackDownload: publicProcedure
-		.input(z.object({ id: z.number() }))
+	trackDocument: publicProcedure
+		.input(z.object({ id: z.number(), kind: z.enum(["read", "download"]) }))
 		.mutation(async ({ ctx, input }) => {
-			await trackDownload(ctx.db, input.id);
+			await trackDocument(ctx.db, input.id, input.kind);
 			await invalidateTags(ctx.db, [tagSourceQuery("publications")]);
 		}),
 } satisfies TRPCRouterRecord;

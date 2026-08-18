@@ -499,7 +499,13 @@ function RankedList({
 	loading,
 	empty,
 }: {
-	rows: { key: string; label: string; postId?: number; n: number }[];
+	rows: {
+		key: string;
+		label: string;
+		postId?: number;
+		n: number;
+		sub?: string;
+	}[];
 	loading: boolean;
 	empty: string;
 }) {
@@ -519,17 +525,24 @@ function RankedList({
 		<ul className="mt-4 space-y-3">
 			{rows.map((r) => (
 				<li key={r.key} className="flex items-center gap-3 text-sm">
-					<span className="w-44 shrink-0 truncate text-admin-ink">
-						{r.postId === undefined ? (
-							r.label
-						) : (
-							<Link
-								to="/admin/posts/$id"
-								params={{ id: String(r.postId) }}
-								className="tap-target rounded-lg transition-colors duration-150 ease-out hover:text-admin-accent-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
-							>
-								{r.label}
-							</Link>
+					<span className="w-44 shrink-0 text-admin-ink">
+						<span className="block truncate">
+							{r.postId === undefined ? (
+								r.label
+							) : (
+								<Link
+									to="/admin/posts/$id"
+									params={{ id: String(r.postId) }}
+									className="tap-target rounded-lg transition-colors duration-150 ease-out hover:text-admin-accent-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+								>
+									{r.label}
+								</Link>
+							)}
+						</span>
+						{r.sub && (
+							<span className="block truncate text-[12px] text-admin-ink-muted">
+								{r.sub}
+							</span>
 						)}
 					</span>
 					<span
@@ -582,9 +595,11 @@ function DocumentReads({ read }: { read: Readership | null }) {
 				Documents opened
 			</h2>
 			<p className="mt-1 text-[13px] text-admin-ink-muted">
-				{read ? `${read.totalReads.toLocaleString()} opened in total. ` : ""}
-				Counted whether the reader opened the file in the browser or downloaded
-				it.
+				{read
+					? `${read.totalReads.toLocaleString()} read on the page, ${read.totalDownloads.toLocaleString()} downloaded. `
+					: ""}
+				Ranked by the two together, and nothing here tells a reader from a
+				crawler.
 			</p>
 			<RankedList
 				loading={read === null}
@@ -593,7 +608,8 @@ function DocumentReads({ read }: { read: Readership | null }) {
 					key: String(d.id),
 					label: d.title,
 					postId: d.id,
-					n: d.reads,
+					n: d.reads + d.downloads,
+					sub: `${d.reads.toLocaleString()} read · ${d.downloads.toLocaleString()} downloaded`,
 				}))}
 			/>
 		</Card>

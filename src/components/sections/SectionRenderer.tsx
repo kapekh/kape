@@ -1941,12 +1941,17 @@ function PublicationList(p: PublicationListProps) {
 	const items: SourceRow["publications"][] = Array.isArray(p.data)
 		? p.data
 		: [];
-	// Optimistic bump so the counter the reader just incremented is visibly theirs.
-	const [bumped, setBumped] = useState<Record<number, number>>({});
+	// Optimistic bump so the counter the visitor just moved is visibly theirs.
+	const [bumped, setBumped] = useState<
+		Record<number, { read: number; download: number }>
+	>({});
 	const { openPdf, reader } = usePdfReader();
-	const track = (id: number) => {
-		setBumped((b) => ({ ...b, [id]: (b[id] ?? 0) + 1 }));
-		trpcClient.posts.trackDownload.mutate({ id }).catch(() => {});
+	const track = (id: number, kind: "read" | "download") => {
+		setBumped((b) => {
+			const at = b[id] ?? { read: 0, download: 0 };
+			return { ...b, [id]: { ...at, [kind]: at[kind] + 1 } };
+		});
+		trpcClient.posts.trackDocument.mutate({ id, kind }).catch(() => {});
 	};
 
 	const list = p.layout === "list";
@@ -1965,22 +1970,29 @@ function PublicationList(p: PublicationListProps) {
 				) : (
 					<div className={`grid gap-4 ${list ? "" : cols}`}>
 						{items.map((it) => {
-							const n =
-								it.downloadCount == null
-									? null
-									: Number(it.downloadCount) + (bumped[it.id] ?? 0);
-							return (
+							const at = bumped[it.id];
+							const reads = Number(it.readCount ?? 0) + (at?.read ?? 0);
+							const downloads =
+								Number(it.downloadCount ?? 0) + (at?.download ?? 0);
+							const save = it.fileUrl ? (
 								<a
+									href={it.fileUrl}
+									download
+									onClick={() => track(it.id, "download")}
+									aria-label={t(
+										"publications.downloadFile",
+										"Download {title}",
+										{ title: it.title },
+									)}
+									className="relative z-10 inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-[var(--accent-ink)] hover:underline"
+								>
+									{Icon.download("h-4 w-4")} PDF
+								</a>
+							) : null;
+							return (
+								<div
 									key={it.id}
-									href={it.fileUrl || "#"}
-									target={it.fileUrl ? "_blank" : undefined}
-									rel="noreferrer"
-									onClick={(e) => {
-										if (!it.fileUrl) return;
-										track(it.id);
-										openPdf(e, { url: it.fileUrl, title: it.title });
-									}}
-									className={`group rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-[var(--shadow-soft)] ${stacked ? "flex h-full flex-col" : "flex items-center gap-4"}`}
+									className={`group relative rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-[var(--shadow-soft)] ${stacked ? "flex h-full flex-col" : "flex items-center gap-4"}`}
 								>
 									{it.image ? (
 										<img
@@ -2002,42 +2014,57 @@ function PublicationList(p: PublicationListProps) {
 											stacked ? "mt-3 flex flex-1 flex-col" : "min-w-0 flex-1"
 										}
 									>
-										<div
-											{...row("post", it.id, "title")}
-											className={`font-medium text-foreground group-hover:text-[var(--accent)] transition ${stacked ? "line-clamp-3 text-balance" : ""}`}
+										{/* stretched link: the card reads, the pill saves */}
+										<a
+											href={it.fileUrl || "#"}
+											target={it.fileUrl ? "_blank" : undefined}
+											rel="noreferrer"
+											onClick={(e) => {
+												if (!it.fileUrl) return;
+												track(it.id, "read");
+												openPdf(e, {
+													url: it.fileUrl,
+													title: it.title,
+													onDownload: () => track(it.id, "download"),
+												});
+											}}
+											className="after:absolute after:inset-0 after:rounded-2xl"
 										>
-											{it.title}
-										</div>
+											<div
+												{...row("post", it.id, "title")}
+												className={`font-medium text-foreground group-hover:text-[var(--accent)] transition ${stacked ? "line-clamp-3 text-balance" : ""}`}
+											>
+												{it.title}
+											</div>
+										</a>
 										{it.year && (
 											<div className="text-xs text-muted-foreground">
 												{it.year}
 											</div>
 										)}
-										{n != null && (
-											<div
-												className={`text-xs text-muted-foreground ${stacked ? "mt-auto pt-1" : "mt-1"}`}
-											>
-												{t(
-													n === 1
-														? "publications.downloadsOne"
-														: "publications.downloads",
-													n === 1 ? "{n} download" : "{n} downloads",
-													{ n: n.toLocaleString() },
-												)}
-											</div>
-										)}
-										{stacked && (
-											<span className="mt-3 inline-flex items-center gap-1 self-start text-xs font-semibold text-[var(--accent-ink)]">
-												{Icon.download("h-4 w-4")} PDF
-											</span>
-										)}
+										<div
+											className={`text-xs text-muted-foreground ${stacked ? "mt-auto pt-1" : "mt-1"}`}
+										>
+											{t(
+												reads === 1
+													? "publications.readsOne"
+													: "publications.reads",
+												reads === 1 ? "{n} read" : "{n} reads",
+												{ n: reads.toLocaleString() },
+											)}
+											{" · "}
+											{t(
+												downloads === 1
+													? "publications.downloadsOne"
+													: "publications.downloads",
+												downloads === 1 ? "{n} download" : "{n} downloads",
+												{ n: downloads.toLocaleString() },
+											)}
+										</div>
+										{stacked && <div className="mt-3 self-start">{save}</div>}
 									</div>
-									{!stacked && (
-										<span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-[var(--accent-ink)]">
-											{Icon.download("h-4 w-4")} PDF
-										</span>
-									)}
-								</a>
+									{!stacked && save}
+								</div>
 							);
 						})}
 					</div>

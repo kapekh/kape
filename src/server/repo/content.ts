@@ -255,6 +255,7 @@ export async function listPosts(
 export type PublicationItem = PostListItem & {
 	year: string;
 	fileUrl: string | null;
+	readCount: number;
 	downloadCount: number;
 };
 
@@ -306,14 +307,21 @@ export async function listPublications(
 					r.coverMediaId != null ? (covers.get(r.coverMediaId) ?? null) : null,
 				year: String(m.year ?? ""),
 				fileUrl: m.fileUrl ? String(m.fileUrl) : null,
+				readCount: Number(m.readCount ?? 0),
 				downloadCount: Number(m.downloadCount ?? 0),
 			};
 		})
 		.sort((a, b) => b.year.localeCompare(a.year));
 }
 
-/** Increment a post's download counter (stored in meta.downloadCount). */
-export async function trackDownload(db: DB, id: number): Promise<void> {
+export type DocumentUse = "read" | "download";
+
+/** Increment a post's read or download counter (meta.readCount, meta.downloadCount). */
+export async function trackDocument(
+	db: DB,
+	id: number,
+	kind: DocumentUse,
+): Promise<void> {
 	const [p] = await db
 		.select()
 		.from(posts)
@@ -321,7 +329,8 @@ export async function trackDownload(db: DB, id: number): Promise<void> {
 		.limit(1);
 	if (!p) return;
 	const m = (p.meta ?? {}) as Record<string, unknown>;
-	m.downloadCount = Number(m.downloadCount ?? 0) + 1;
+	const key = kind === "read" ? "readCount" : "downloadCount";
+	m[key] = Number(m[key] ?? 0) + 1;
 	await db.update(posts).set({ meta: m }).where(eq(posts.id, id));
 }
 

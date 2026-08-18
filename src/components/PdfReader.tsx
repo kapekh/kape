@@ -2,7 +2,11 @@ import { type MouseEvent, useEffect, useRef, useState } from "react";
 
 import { useT } from "@/lib/i18n";
 
-export type PdfDoc = { url: string; title?: string | null };
+export type PdfDoc = {
+	url: string;
+	title?: string | null;
+	onDownload?: () => void;
+};
 
 /** True for hrefs the reader can open. Query and hash are ignored. */
 export function isPdfUrl(url?: string | null): boolean {
@@ -59,6 +63,14 @@ export function PdfReader({
 						<h2 className="min-w-0 flex-1 truncate text-sm font-medium md:text-base">
 							{doc.title}
 						</h2>
+						<a
+							href={doc.url}
+							download
+							onClick={doc.onDownload}
+							className="shrink-0 rounded-full bg-white/10 px-4 py-2 text-xs font-semibold transition hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white"
+						>
+							{t("pdf.download", "Download")}
+						</a>
 						<a
 							href={doc.url}
 							target="_blank"

@@ -48,9 +48,13 @@ export const sections: Record<string, { en: string; km?: string }> = {
 	"project.startDate": { en: "Start date" },
 	"project.targetAreas": { en: "Target areas" },
 
+	"publications.download": { en: "Download", km: "ទាញយក" },
+	"publications.downloadFile": { en: "Download {title}" },
 	// Two keys, not a suffix built in JSX: Khmer cannot express `download` + `s`.
 	"publications.downloads": { en: "{n} downloads" },
 	"publications.downloadsOne": { en: "{n} download" },
+	"publications.reads": { en: "{n} reads" },
+	"publications.readsOne": { en: "{n} read" },
 
 	"related.more": { en: "More from" },
 
