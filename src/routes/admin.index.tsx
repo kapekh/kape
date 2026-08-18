@@ -15,12 +15,14 @@ import { EmptyState } from "#/components/ui/empty-state";
 import { PageHeader } from "#/components/ui/page-header";
 import { Skeleton } from "#/components/ui/skeleton";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { DEFAULT_LANG } from "#/lib/i18n-config";
 import { enabledModules } from "#/lib/modules";
 import type { SiteSettings } from "#/lib/site-identity";
 
 export const Route = createFileRoute("/admin/")({ component: Dashboard });
 
 type Overview = Awaited<ReturnType<typeof trpcClient.admin.overview.query>>;
+type Readership = Awaited<ReturnType<typeof trpcClient.admin.readership.query>>;
 type Post = Awaited<
 	ReturnType<typeof trpcClient.adminPosts.list.query>
 >[number];
@@ -63,6 +65,7 @@ const shortDate = (iso: string) =>
 function Dashboard() {
 	const [o, setO] = useState<Overview | null>(null);
 	const [posts, setPosts] = useState<Post[] | null>(null);
+	const [read, setRead] = useState<Readership | null>(null);
 
 	useEffect(() => {
 		trpcClient.admin.overview
@@ -72,6 +75,10 @@ function Dashboard() {
 		trpcClient.adminPosts.list
 			.query()
 			.then(setPosts)
+			.catch(() => {});
+		trpcClient.admin.readership
+			.query({ lang: DEFAULT_LANG })
+			.then(setRead)
 			.catch(() => {});
 	}, []);
 
@@ -146,6 +153,11 @@ function Dashboard() {
 					<Traffic series={series} maxV={maxV} total={o?.visitsTotal ?? 0} />
 				</div>
 				<ByType rows={byType} loading={posts === null} />
+			</div>
+
+			<div className="grid gap-6 lg:grid-cols-2">
+				<MostRead read={read} />
+				<DocumentReads read={read} />
 			</div>
 
 			<Card padding="none">
@@ -477,6 +489,113 @@ function ByType({
 					</ul>
 				</>
 			)}
+		</Card>
+	);
+}
+
+/** One row of a ranked list: a label, a proportional bar and its number. */
+function RankedList({
+	rows,
+	loading,
+	empty,
+}: {
+	rows: { key: string; label: string; postId?: number; n: number }[];
+	loading: boolean;
+	empty: string;
+}) {
+	const top = rows[0]?.n ?? 1;
+	if (loading)
+		return (
+			<div className="mt-4 space-y-3">
+				{["a", "b", "c", "d", "e"].map((k) => (
+					<Skeleton key={k} className="h-4 w-full" />
+				))}
+				<span className="sr-only">Loading…</span>
+			</div>
+		);
+	if (rows.length === 0)
+		return <p className="mt-4 text-[13px] text-admin-ink-muted">{empty}</p>;
+	return (
+		<ul className="mt-4 space-y-3">
+			{rows.map((r) => (
+				<li key={r.key} className="flex items-center gap-3 text-sm">
+					<span className="w-44 shrink-0 truncate text-admin-ink">
+						{r.postId === undefined ? (
+							r.label
+						) : (
+							<Link
+								to="/admin/posts/$id"
+								params={{ id: String(r.postId) }}
+								className="tap-target rounded-lg transition-colors duration-150 ease-out hover:text-admin-accent-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+							>
+								{r.label}
+							</Link>
+						)}
+					</span>
+					<span
+						aria-hidden="true"
+						className="h-2 flex-1 overflow-hidden rounded-full bg-admin-neutral-soft"
+					>
+						<span
+							data-count={r.n}
+							className="block h-full rounded-full bg-admin-accent/70"
+							style={{ width: `${(r.n / top) * 100}%` }}
+						/>
+					</span>
+					<span className="w-12 shrink-0 text-right tabular-nums text-admin-ink-muted">
+						{r.n.toLocaleString()}
+					</span>
+				</li>
+			))}
+		</ul>
+	);
+}
+
+function MostRead({ read }: { read: Readership | null }) {
+	return (
+		<Card padding="lg">
+			<h2 className="text-base font-semibold text-admin-ink">
+				Most-viewed pages
+			</h2>
+			<p className="mt-1 text-[13px] text-admin-ink-muted">
+				{read ? `${read.totalViews.toLocaleString()} views so far. ` : ""}
+				Every language of a page counts as that page, and nothing here tells a
+				reader from a crawler.
+			</p>
+			<RankedList
+				loading={read === null}
+				empty="No page has been opened yet."
+				rows={(read?.pages ?? []).map((p) => ({
+					key: p.path,
+					label: p.path,
+					n: p.count,
+				}))}
+			/>
+		</Card>
+	);
+}
+
+function DocumentReads({ read }: { read: Readership | null }) {
+	return (
+		<Card padding="lg">
+			<h2 className="text-base font-semibold text-admin-ink">
+				Documents opened
+			</h2>
+			<p className="mt-1 text-[13px] text-admin-ink-muted">
+				{read ? `${read.totalReads.toLocaleString()} opened in total. ` : ""}
+				Counted whether the reader opened the file in the browser or downloaded
+				it.
+			</p>
+			<RankedList
+				loading={read === null}
+				empty="No document has been opened yet."
+				rows={(read?.documents ?? []).map((d) => ({
+					key: String(d.id),
+					label: d.title,
+					postId: d.id,
+					n: d.reads,
+				}))}
+			/>
 		</Card>
 	);
 }

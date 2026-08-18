@@ -67,11 +67,12 @@ export async function resolveRoute(
 	db: DB,
 	rawPath: string,
 	lang: string,
+	listPage = 1,
 ): Promise<ResolvedRoute> {
 	const path = rawPath.replace(/^\/+|\/+$/g, ""); // trim slashes
 
 	// before the legacy rules, so an admin can author a page at a legacy path
-	const page = await getPageBySlug(db, path, lang);
+	const page = await getPageBySlug(db, path, lang, listPage);
 	if (page) return { kind: "page", page };
 
 	// 2. Legacy nested path → flat path (301), so old links never 404.
@@ -184,12 +185,14 @@ export async function resolveRouteCached(
 	db: DB,
 	rawPath: string,
 	lang: string,
+	listPage = 1,
 ): Promise<ResolvedRoute> {
 	const path = rawPath.replace(/^\/+|\/+$/g, "");
-	const key = cacheKey(path, lang);
+	// a paginated page is a different document at the same path
+	const key = cacheKey(listPage > 1 ? `${path}?page=${listPage}` : path, lang);
 	const hit = await cacheGet<ResolvedRoute>(db, key);
 	if (hit) return hit;
-	const resolved = await resolveRoute(db, path, lang);
+	const resolved = await resolveRoute(db, path, lang, listPage);
 	if (resolved.kind !== "redirect" && resolved.kind !== "notfound") {
 		await cacheSet(db, key, resolved, tagsFor(resolved));
 	}

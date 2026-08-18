@@ -16,10 +16,11 @@ import { Header } from "../components/Header";
 import { InlineEditBar } from "../components/InlineEditBar";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import { LanguageProvider } from "../lib/i18n";
-import { InlineEditProvider } from "../lib/inline-edit";
 import { detectLang } from "../lib/i18n-config";
+import { InlineEditProvider } from "../lib/inline-edit";
 import {
 	metaDescription,
+	siteFavicon,
 	siteLogo,
 	siteTitle,
 	socialImage,
@@ -83,7 +84,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 				},
 				{ rel: "stylesheet", href: themeFontUrl(settings) },
 				{ rel: "stylesheet", href: appCss },
-				{ rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
+				{ rel: "icon", href: siteFavicon(settings) },
 				{ rel: "apple-touch-icon", href: siteLogo(settings) },
 				{ rel: "manifest", href: "/manifest.json" },
 			],

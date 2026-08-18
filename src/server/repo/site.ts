@@ -6,6 +6,7 @@ import {
 	heroSlides,
 	media,
 	offices,
+	pageViews,
 	partners,
 	posts,
 	siteSettings,
@@ -150,10 +151,48 @@ export async function listPartners(db: DB) {
 	return attachMediaUrl(db, rows, "logoMediaId", "logoUrl");
 }
 
+/**
+ * The page a view is filed under. The language prefix goes, so a page reads as
+ * one page however many languages it is published in, and a query string with
+ * it: `?page=2` is the same article list.
+ */
+export function viewPath(raw: string): string | null {
+	const path = String(raw || "").split(/[?#]/)[0];
+	if (!path.startsWith("/")) return null;
+	const stripped = path.replace(/^\/[a-z]{2}(?=\/|$)/i, "") || "/";
+	// an admin screen is not readership, and neither is a file
+	if (/^\/(admin|internalsources|api|uploads|login)(\/|$)/.test(stripped))
+		return null;
+	return stripped.length > 512 ? null : stripped;
+}
+
+/** Record one view of one page. Unknown or non-public paths are not counted. */
+export async function recordPageView(db: DB, raw: string): Promise<void> {
+	const path = viewPath(raw);
+	if (!path) return;
+	await db
+		.insert(pageViews)
+		.values({
+			tenantId: TENANT,
+			path,
+			count: 1,
+			lastViewedAt: new Date().toISOString(),
+		})
+		.onConflictDoUpdate({
+			target: [pageViews.tenantId, pageViews.path],
+			set: {
+				count: sql`${pageViews.count} + 1`,
+				lastViewedAt: new Date().toISOString(),
+			},
+		});
+}
+
 /** Record one visit for today and return {today, month, total}. (Write-on-read counter.) */
 export async function recordAndGetVisits(
 	db: DB,
+	path?: string,
 ): Promise<{ today: number; month: number; total: number }> {
+	if (path) await recordPageView(db, path);
 	const today = new Date().toISOString().slice(0, 10);
 	await db
 		.insert(visitorDaily)

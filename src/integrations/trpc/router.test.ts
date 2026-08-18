@@ -328,3 +328,201 @@ describe("unpublished content stays off the public API", () => {
 		expect((value(out[7]) as { kind?: string } | null)?.kind).toBe("article");
 	});
 });
+
+describe("a listing section split across numbered pages", () => {
+	const listing = {
+		call: "adminPages.create",
+		input: {
+			segment: "c10-paged",
+			parentId: null,
+			status: "published",
+			coverMediaId: null,
+			sections: [
+				{
+					id: "list",
+					type: "postList",
+					layout: "grid-3",
+					query: { source: "posts", contentType: "news" },
+					props: { title: "News", perPage: "2" },
+				},
+			],
+			translations: [{ lang: "en", title: "C10 paged", excerpt: "", body: "" }],
+		},
+	};
+	const out = run([
+		listing,
+		{
+			sql: `INSERT INTO posts (tenant_id, content_type, slug, status, published_at, meta) VALUES
+				(1, 'news', 'c10-p1', 'published', '2024-01-01', json_object()),
+				(1, 'news', 'c10-p2', 'published', '2024-01-02', json_object()),
+				(1, 'news', 'c10-p3', 'published', '2024-01-03', json_object()),
+				(1, 'news', 'c10-p4', 'published', '2024-01-04', json_object()),
+				(1, 'news', 'c10-p5', 'published', '2024-01-05', json_object())
+				RETURNING id`,
+		},
+		{ call: "routes.resolve", input: { path: "c10-paged", lang: "en" } },
+		{
+			call: "routes.resolve",
+			input: { path: "c10-paged", lang: "en", page: 2 },
+		},
+		{
+			call: "routes.resolve",
+			input: { path: "c10-paged", lang: "en", page: 9 },
+		},
+	]);
+
+	type Listed = {
+		data: { slug: string }[];
+		pageInfo: {
+			page: number;
+			perPage: number;
+			total: number;
+			totalPages: number;
+		};
+	};
+	const list = (r: Result): Listed => {
+		if (!("ok" in r) || !r.ok)
+			throw new Error(`call failed: ${JSON.stringify(r)}`);
+		return (r.value as { page: { sections: { props: Listed }[] } }).page
+			.sections[0].props;
+	};
+
+	it("serves the first page, newest first, and counts the whole list", () => {
+		expect(list(out[2]).data.map((p) => p.slug)).toEqual(["c10-p5", "c10-p4"]);
+		expect(list(out[2]).pageInfo).toEqual({
+			page: 1,
+			perPage: 2,
+			total: 5,
+			totalPages: 3,
+		});
+	});
+
+	it("serves the next slice at ?page=2", () => {
+		expect(list(out[3]).data.map((p) => p.slug)).toEqual(["c10-p3", "c10-p2"]);
+		expect(list(out[3]).pageInfo.page).toBe(2);
+	});
+
+	it("clamps a page past the end to the last one rather than serving nothing", () => {
+		expect(list(out[4]).data.map((p) => p.slug)).toEqual(["c10-p1"]);
+		expect(list(out[4]).pageInfo.page).toBe(3);
+	});
+});
+
+describe("the crumb back to a page's parent", () => {
+	const parent = (segment: string, status: string) => ({
+		call: "adminPages.create",
+		input: {
+			segment,
+			parentId: null,
+			status,
+			coverMediaId: null,
+			sections: [],
+			translations: [{ lang: "en", title: segment, excerpt: "", body: "" }],
+		},
+	});
+	const child = (segment: string, parentId: number) => ({
+		call: "adminPages.create",
+		input: {
+			segment,
+			parentId,
+			status: "published",
+			coverMediaId: null,
+			sections: [],
+			translations: [{ lang: "en", title: segment, excerpt: "", body: "" }],
+		},
+	});
+	const out = run([
+		parent("c10-live-parent", "published"),
+		child("c10-live-kid", 1),
+		parent("c10-draft-parent", "draft"),
+		child("c10-draft-kid", 3),
+		{
+			call: "routes.resolve",
+			input: { path: "c10-live-parent/c10-live-kid", lang: "en" },
+		},
+		{
+			call: "routes.resolve",
+			input: { path: "c10-draft-parent/c10-draft-kid", lang: "en" },
+		},
+	]);
+
+	const crumb = (r: Result) => {
+		if (!("ok" in r) || !r.ok)
+			throw new Error(`call failed: ${JSON.stringify(r)}`);
+		const { page } = r.value as {
+			page: { parentTitle: string | null; parentSlug: string | null };
+		};
+		return page;
+	};
+
+	it("names the parent and where it lives", () => {
+		expect(crumb(out[4])).toMatchObject({
+			parentTitle: "c10-live-parent",
+			parentSlug: "c10-live-parent",
+		});
+	});
+
+	it("leaves an unpublished parent unlinked, since that crumb would 404", () => {
+		expect(crumb(out[5])).toMatchObject({
+			parentTitle: "c10-draft-parent",
+			parentSlug: null,
+		});
+	});
+});
+
+describe("what the public reads", () => {
+	const out = run([
+		{ call: "site.view", input: { path: "/en/news" } },
+		{ call: "site.view", input: { path: "/km/news" } },
+		{ call: "site.view", input: { path: "/en/who-we-are" } },
+		{ call: "site.view", input: { path: "/en/admin" } },
+		{ sql: "SELECT path, count FROM page_views ORDER BY count DESC" },
+		{
+			sql: `INSERT OR IGNORE INTO content_types (key, name, sort)
+				VALUES ('publication', 'Publication', 5) RETURNING key`,
+		},
+		{
+			sql: `INSERT INTO posts (tenant_id, content_type, slug, status, published_at, meta) VALUES
+				(1, 'publication', 'c10-read-a', 'published', '2024-01-01', json_object('downloadCount', 7)),
+				(1, 'publication', 'c10-read-b', 'published', '2024-01-02', json_object('downloadCount', 2)),
+				(1, 'publication', 'c10-read-c', 'published', '2024-01-03', json_object())
+				RETURNING id`,
+		},
+		{ call: "admin.readership", input: { lang: "en" } },
+	]);
+
+	type Report = {
+		pages: { path: string; count: number }[];
+		documents: { slug: string; reads: number }[];
+		totalViews: number;
+		totalReads: number;
+	};
+	const report = (r: Result): Report => {
+		if (!("ok" in r) || !r.ok)
+			throw new Error(`call failed: ${JSON.stringify(r)}`);
+		return r.value as Report;
+	};
+
+	it("files both languages of a page under one path and skips the admin", () => {
+		expect(rowsOf(out[4])).toEqual([
+			{ path: "/news", count: 2 },
+			{ path: "/who-we-are", count: 1 },
+		]);
+	});
+
+	it("ranks pages by views and reports the total", () => {
+		expect(report(out[7]).pages).toEqual([
+			{ path: "/news", count: 2, lastViewedAt: expect.any(String) },
+			{ path: "/who-we-are", count: 1, lastViewedAt: expect.any(String) },
+		]);
+		expect(report(out[7]).totalViews).toBe(3);
+	});
+
+	it("ranks documents by opens and leaves out the ones nobody opened", () => {
+		expect(report(out[7]).documents.map((d) => [d.slug, d.reads])).toEqual([
+			["c10-read-a", 7],
+			["c10-read-b", 2],
+		]);
+		expect(report(out[7]).totalReads).toBe(9);
+	});
+});

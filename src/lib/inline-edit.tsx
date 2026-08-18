@@ -266,7 +266,8 @@ export function useInlineEdit(): Ctx {
  * version it wrote.
  */
 const versions = new Map<string, string | null>();
-const versionKey = (entity: string, entityId: number) => `${entity}:${entityId}`;
+const versionKey = (entity: string, entityId: number) =>
+	`${entity}:${entityId}`;
 
 /** What the page loaded this record at. */
 export function rememberVersion(
@@ -277,5 +278,9 @@ export function rememberVersion(
 	versions.set(versionKey(entity, entityId), updatedAt);
 }
 
+/** What the page loaded this record at, for anything that saves without a text box. */
+export const versionFor = (entity: string, entityId: number): string | null =>
+	versions.get(versionKey(entity, entityId)) ?? null;
+
 export const versionOf = (t: FieldEditTarget): string | null =>
-	versions.get(versionKey(t.entity, t.entityId)) ?? null;
+	versionFor(t.entity, t.entityId);

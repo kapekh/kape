@@ -80,6 +80,7 @@ import {
 	MediaInUseError,
 	moveNavItem,
 	movePage,
+	readership,
 	StaleWriteError,
 	updateDonor,
 	updateField,
@@ -184,6 +185,7 @@ import {
 	listPartners,
 	listStats,
 	recordAndGetVisits,
+	recordPageView,
 } from "#/server/repo/site";
 import { staffDocuments, staffEvents, staffNews } from "#/server/repo/staff";
 import {
@@ -426,7 +428,17 @@ const siteRouter = {
 	projectLocations: publicProcedure
 		.input(langInput)
 		.query(({ ctx, input }) => listProjectLocations(ctx.db, input.lang)),
-	visits: publicProcedure.query(({ ctx }) => recordAndGetVisits(ctx.db)),
+	visits: publicProcedure
+		.input(z.object({ path: z.string().max(2048).optional() }).optional())
+		.query(({ ctx, input }) => recordAndGetVisits(ctx.db, input?.path)),
+	// a query, not a mutation: every mutation clears the whole render cache, and
+	// this one fires on each navigation
+	view: publicProcedure
+		.input(z.object({ path: z.string().max(2048) }))
+		.query(async ({ ctx, input }) => {
+			await recordPageView(ctx.db, input.path);
+			return null;
+		}),
 } satisfies TRPCRouterRecord;
 
 const projectsRouter = {
@@ -617,9 +629,14 @@ const pagesRouter = {
 // Single resolver for the public catch-all route (page tree + flat collections + redirects).
 const routesRouter = {
 	resolve: publicProcedure
-		.input(langInput.extend({ path: z.string() }))
+		.input(
+			langInput.extend({
+				path: z.string(),
+				page: z.number().int().positive().optional(),
+			}),
+		)
 		.query(({ ctx, input }) =>
-			resolveRouteCached(ctx.db, input.path, input.lang),
+			resolveRouteCached(ctx.db, input.path, input.lang, input.page ?? 1),
 		),
 } satisfies TRPCRouterRecord;
 
@@ -969,6 +986,9 @@ const statInput = z.object({
 
 const adminRouter = {
 	overview: adminProcedure.query(({ ctx }) => adminOverview(ctx.db)),
+	readership: adminProcedure
+		.input(langInput)
+		.query(({ ctx, input }) => readership(ctx.db, input.lang)),
 	publicPath: adminProcedure
 		.input(
 			z.object({

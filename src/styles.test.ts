@@ -88,7 +88,10 @@ describe("design tokens", () => {
 	it("declares each token once, so there is no second block to keep in step", () => {
 		const seen = new Set<string>();
 		const twice: string[] = [];
-		for (const d of css.matchAll(/(?:^|\n|\{)\s*(--[a-z0-9-]+)\s*:/g)) {
+		// a section band redeclares the layer-2 tokens for its own subtree on
+		// purpose: that scoped override is how the ink turns over on a brand colour
+		const outside = css.replace(/\.section-band[^{]*\{[^}]*\}/g, "");
+		for (const d of outside.matchAll(/(?:^|\n|\{)\s*(--[a-z0-9-]+)\s*:/g)) {
 			if (d[1].startsWith("--color-") || d[1].startsWith("--radius-")) continue;
 			if (seen.has(d[1])) twice.push(d[1]);
 			seen.add(d[1]);

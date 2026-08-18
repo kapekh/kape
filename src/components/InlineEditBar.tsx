@@ -22,7 +22,7 @@ export function InlineEditBar() {
 					htmlFor="inline-edit-mode"
 					className="flex-1 font-medium text-foreground"
 				>
-					Edit text on this page
+					Edit this page
 				</label>
 				<Switch
 					id="inline-edit-mode"
@@ -35,7 +35,7 @@ export function InlineEditBar() {
 					{status.kind === "idle" && (
 						<p className="text-muted-foreground">
 							{editable
-								? "Click any outlined text and type. Enter saves, Esc undoes."
+								? "Click any outlined text and type. Enter saves, Esc undoes. The chip at the top of a section changes its background."
 								: "Nothing on this page is yours to edit."}
 						</p>
 					)}

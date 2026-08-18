@@ -2,11 +2,16 @@
 import { COLLECTIONS, NON_PUBLIC_CONTENT_TYPES } from "#/lib/collections";
 import type { QuerySource, SectionNode } from "#/lib/sections";
 
-type Listing = { type: string; layout: string; source: QuerySource };
+type Listing = {
+	type: string;
+	layout: string;
+	source: QuerySource;
+	perPage?: number;
+};
 
 /** Which listing section renders each collection. Checked against SECTION_DEFS in install.test.ts. */
 const LISTING: Record<string, Listing> = {
-	news: { type: "postList", layout: "grid-3", source: "posts" },
+	news: { type: "postList", layout: "grid-3", source: "posts", perPage: 15 },
 	stories: { type: "postList", layout: "grid-3", source: "posts" },
 	videos: { type: "videoGrid", layout: "grid-3", source: "videos" },
 	galleries: { type: "albumGrid", layout: "grid-3", source: "albums" },
@@ -42,7 +47,10 @@ export const LANDINGS: Landing[] = Object.entries(COLLECTIONS)
 					source: l.source,
 					...(l.source === "posts" ? { contentType: col.contentType } : {}),
 				},
-				props: { title: col.label },
+				props: {
+					title: col.label,
+					...(l.perPage ? { perPage: String(l.perPage) } : {}),
+				},
 			},
 		};
 	});

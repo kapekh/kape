@@ -118,7 +118,9 @@ describe("updateField, field: targets", () => {
 			return { before, after: rows(id) };
 		`);
 		expect(seen.after).toHaveLength(seen.before.length);
-		const changed = seen.after.filter((r, i) => r.value !== seen.before[i].value);
+		const changed = seen.after.filter(
+			(r, i) => r.value !== seen.before[i].value,
+		);
 		expect(changed).toEqual([
 			{
 				id: changed[0]?.id,
@@ -143,12 +145,12 @@ describe("updateField, field: targets", () => {
 			});
 			return { before, after: rows(id) };
 		`);
-		expect(seen.before.some((r) => r.lang === "km" && r.field === "excerpt")).toBe(
-			true,
-		);
-		expect(seen.after.some((r) => r.lang === "km" && r.field === "excerpt")).toBe(
-			false,
-		);
+		expect(
+			seen.before.some((r) => r.lang === "km" && r.field === "excerpt"),
+		).toBe(true);
+		expect(
+			seen.after.some((r) => r.lang === "km" && r.field === "excerpt"),
+		).toBe(false);
 		expect(seen.after).toHaveLength(seen.before.length - 1);
 	});
 
@@ -212,6 +214,87 @@ describe("updateField, section targets", () => {
 		});
 		expect(seen.km).toBe("អ្វីដែលយើងធ្វើ");
 		expect(seen.en).toBe("What we do");
+	});
+
+	it("writes a background to the shared props whatever language is showing", () => {
+		const seen = run<{ b0: Record<string, unknown>; km: string; en: string }>(`
+			const id = await fixture("j03-section-tone");
+			await admin.updateField(db, {
+				entity: "page", entityId: id, lang: "km",
+				target: "section:b0:props.tone", value: "primary",
+			});
+			const kmPage = await getPageBySlug(db, "j03-section-tone", "km");
+			const enPage = await getPageBySlug(db, "j03-section-tone", "en");
+			return {
+				b0: sections(id)[1].props,
+				km: kmPage.sections[1].props.tone,
+				en: enPage.sections[1].props.tone,
+			};
+		`);
+		expect(seen.b0.tone).toBe("primary");
+		// a choice is one value for the site: it never lands in the overlay
+		expect(seen.b0.i18n).toMatchObject({ km: { title: "សសរស្តម្ភ" } });
+		expect(
+			(seen.b0.i18n as Record<string, Record<string, unknown>>).km.tone,
+		).toBeUndefined();
+		expect(seen.km).toBe("primary");
+		expect(seen.en).toBe("primary");
+	});
+
+	it("clears a background back to the default by dropping the key", () => {
+		const seen = run<Record<string, unknown>>(`
+			const id = await fixture("j03-section-tone-clear");
+			await admin.updateField(db, {
+				entity: "page", entityId: id, lang: "en",
+				target: "section:b0:props.tone", value: "muted",
+			});
+			await admin.updateField(db, {
+				entity: "page", entityId: id, lang: "en",
+				target: "section:b0:props.tone", value: "",
+			});
+			return sections(id)[1].props;
+		`);
+		expect("tone" in seen).toBe(false);
+	});
+
+	it("refuses a background the section does not offer, writing nothing", () => {
+		const seen = run<{ refused: string; props: Record<string, unknown> }>(`
+			const id = await fixture("j03-section-tone-bad");
+			const refused = await refusal(admin.updateField(db, {
+				entity: "page", entityId: id, lang: "en",
+				target: "section:b0:props.tone", value: "neon",
+			}));
+			return { refused, props: sections(id)[1].props };
+		`);
+		expect(seen.refused).toContain("neon");
+		expect("tone" in seen.props).toBe(false);
+	});
+
+	it("stores an editor's own background colour, shared across languages", () => {
+		const seen = run<{ props: Record<string, unknown>; km: string }>(`
+			const id = await fixture("j03-section-colour");
+			await admin.updateField(db, {
+				entity: "page", entityId: id, lang: "km",
+				target: "section:b0:props.toneColor", value: "#2e7d32",
+			});
+			const kmPage = await getPageBySlug(db, "j03-section-colour", "km");
+			return { props: sections(id)[1].props, km: kmPage.sections[1].props.toneColor };
+		`);
+		expect(seen.props.toneColor).toBe("#2e7d32");
+		expect(seen.km).toBe("#2e7d32");
+	});
+
+	it("refuses a background colour CSS cannot parse, writing nothing", () => {
+		const seen = run<{ refused: string; props: Record<string, unknown> }>(`
+			const id = await fixture("j03-section-colour-bad");
+			const refused = await refusal(admin.updateField(db, {
+				entity: "page", entityId: id, lang: "en",
+				target: "section:b0:props.toneColor", value: "red; } body { display:none",
+			}));
+			return { refused, props: sections(id)[1].props };
+		`);
+		expect(seen.refused).toMatch(/could end the style rule/);
+		expect("toneColor" in seen.props).toBe(false);
 	});
 
 	it("blanking a translated section field falls the language back to the default", () => {
@@ -464,7 +547,10 @@ describe("updateField across entities", () => {
 			return { refused, written };
 		`);
 		expect(seen.refused).toContain("no version column");
-		expect(seen.written).toMatchObject({ wrote: "translation", updatedAt: null });
+		expect(seen.written).toMatchObject({
+			wrote: "translation",
+			updatedAt: null,
+		});
 	});
 
 	it("writes a person's name to the column for that language, and refuses to empty the default one", () => {

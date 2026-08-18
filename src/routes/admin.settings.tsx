@@ -58,6 +58,11 @@ const IDENTITY: Field[] = [
 		hint: "Path to your own logo, e.g. /uploads/logo.png. Empty shows the product's plain mark.",
 	},
 	{
+		key: "favicon_url",
+		label: "Favicon",
+		hint: "The mark in the browser tab, e.g. /uploads/favicon.ico. A square .ico or .png, 48px or larger. Empty shows the product's plain mark.",
+	},
+	{
 		key: "og_image",
 		label: "Social share image",
 		hint: "Shown when a link to this site is posted. Defaults to the logo.",

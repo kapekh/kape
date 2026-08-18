@@ -253,6 +253,7 @@ type CardBtn = { label?: string; href?: string };
 type Card = {
 	image?: string;
 	imageAsBg?: boolean;
+	caption?: string;
 	title?: string;
 	body?: string;
 	href?: string;
@@ -361,6 +362,16 @@ function CardsEditor({
 											className="size-4 accent-admin-accent"
 										/>
 										Use image as card background
+									</label>
+								)}
+								{card.image && (
+									<label className="mt-2 block">
+										<span className={fieldLabel}>Image caption</span>
+										<input
+											className={fieldInput}
+											value={card.caption ?? ""}
+											onChange={(e) => patch(i, { caption: e.target.value })}
+										/>
 									</label>
 								)}
 							</div>
@@ -530,6 +541,33 @@ function FieldInput({
 					aspect="video"
 					minWidth={MIN_FULL_WIDTH}
 				/>
+			) : field.kind === "colour" ? (
+				<div className="flex items-center gap-2">
+					<input
+						type="color"
+						aria-label={`${field.label} colour wheel`}
+						value={/^#[0-9a-f]{6}$/i.test(str) ? str : "#1f4e79"}
+						onChange={(e) => onChange(e.target.value)}
+						className="h-10 w-14 cursor-pointer rounded-lg border border-admin-border bg-admin-panel p-1"
+					/>
+					<input
+						id={fieldId}
+						className={fieldInput}
+						value={str}
+						placeholder="#1F4E79, or any CSS colour"
+						onChange={(e) => onChange(e.target.value)}
+					/>
+					{str && (
+						<button
+							type="button"
+							className={iconBtn}
+							aria-label={`Clear ${field.label}`}
+							onClick={() => onChange("")}
+						>
+							<X aria-hidden="true" className="size-4" />
+						</button>
+					)}
+				</div>
 			) : field.kind === "form" ? (
 				<FormPicker id={fieldId} value={str} onChange={onChange} />
 			) : field.kind === "select" ? (

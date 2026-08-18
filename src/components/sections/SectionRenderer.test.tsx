@@ -13,6 +13,16 @@ vi.mock("@/lib/i18n", () => ({
 	useT: () => (_k: string, f?: string) => f ?? "",
 }));
 
+vi.mock("@tanstack/react-router", () => ({
+	useLocation: () => ({ pathname: "/en/news" }),
+	useLoaderData: () => ({}),
+	Link: ({ to, children, ...rest }: Record<string, unknown>) => (
+		<a href={to as string} {...rest}>
+			{children as never}
+		</a>
+	),
+}));
+
 vi.mock("../ContactForm", () => ({
 	ContactForm: () => <form aria-label="contact" />,
 }));
@@ -58,5 +68,98 @@ describe("a form section", () => {
 		);
 
 		expect(screen.getByRole("form", { name: "volunteer" })).toBeTruthy();
+	});
+});
+
+const splitWith = (props: Record<string, unknown>) =>
+	[{ id: "s2", type: "split", layout: "media-right", props }] as SectionNode[];
+
+describe("an image caption", () => {
+	it("prints under the picture it belongs to", () => {
+		render(
+			<SectionRenderer
+				sections={splitWith({
+					image: "/uploads/lab.jpg",
+					imageCaption: "Grade 9 ICT lab, Kampot",
+				})}
+			/>,
+		);
+
+		expect(screen.getByText("Grade 9 ICT lab, Kampot").tagName).toBe(
+			"FIGCAPTION",
+		);
+	});
+
+	it("leaves no empty line where a slot has none", () => {
+		const { container } = render(
+			<SectionRenderer sections={splitWith({ image: "/uploads/lab.jpg" })} />,
+		);
+
+		expect(container.querySelector("figcaption")).toBeNull();
+	});
+});
+
+describe("a section's background", () => {
+	const richtext = (props: Record<string, unknown>) =>
+		[{ id: "s3", type: "richtext", props }] as SectionNode[];
+
+	it("paints a brand band and turns the ink over inside it", () => {
+		const { container } = render(
+			<SectionRenderer sections={richtext({ tone: "primary" })} />,
+		);
+
+		const band = container.querySelector("section");
+		expect(band?.className).toContain("section-band");
+		expect(band?.className).toContain("section-band-primary");
+	});
+
+	it("leaves a section with no background alone", () => {
+		const { container } = render(<SectionRenderer sections={richtext({})} />);
+
+		expect(container.querySelector("section")?.className).not.toContain(
+			"section-band",
+		);
+	});
+});
+
+describe("a paginated post list", () => {
+	const listing = (page: number, totalPages: number) =>
+		[
+			{
+				id: "list",
+				type: "postList",
+				layout: "grid-3",
+				props: {
+					title: "News",
+					linkBase: "/news",
+					data: [
+						{ id: 1, slug: "one", title: "One", excerpt: "", image: null },
+					],
+					pageInfo: { page, perPage: 15, total: totalPages * 15, totalPages },
+				},
+			},
+		] as SectionNode[];
+
+	it("links every other page and marks the one being read", () => {
+		const { container } = render(<SectionRenderer sections={listing(2, 3)} />);
+
+		const pager = container.querySelector("nav[aria-label='Pagination']");
+		if (!pager) throw new Error("no pager rendered");
+		const hrefs = [...pager.querySelectorAll("a")].map((a) =>
+			a.getAttribute("href"),
+		);
+		expect(hrefs).toEqual([
+			"/en/news",
+			"/en/news",
+			"/en/news?page=3",
+			"/en/news?page=3",
+		]);
+		expect(pager.querySelector('[aria-current="page"]')?.textContent).toBe("2");
+	});
+
+	it("draws no pager when everything fits on one page", () => {
+		const { container } = render(<SectionRenderer sections={listing(1, 1)} />);
+
+		expect(container.querySelector("nav[aria-label='Pagination']")).toBeNull();
 	});
 });

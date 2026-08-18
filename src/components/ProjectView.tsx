@@ -28,15 +28,18 @@ function DateBox({ label, iso }: { label: string; iso: string }) {
 export function ProjectView({
 	project,
 	section,
+	sectionHref,
 }: {
 	project: ResolvedProject | null;
 	section: string;
+	sectionHref?: string;
 }) {
 	const t = useT();
 	if (!project) {
 		return (
 			<SubPage
 				section={section}
+				sectionHref={sectionHref}
 				title={t("project.notfound.title", "Project not found")}
 			>
 				<p className="text-muted-foreground">
@@ -52,6 +55,7 @@ export function ProjectView({
 	return (
 		<SubPage
 			section={section}
+			sectionHref={sectionHref}
 			title={project.name}
 			lead={project.summary || undefined}
 			record={projectRecord(project)}

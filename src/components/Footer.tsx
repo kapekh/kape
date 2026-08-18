@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useLocation } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { FOOTER_DEFAULTS } from "@/lib/footer-defaults";
@@ -66,12 +67,21 @@ export function Footer({ settings }: { settings: Record<string, string> }) {
 	const [visits, setVisits] = useState<{ today: number; total: number } | null>(
 		null,
 	);
+	// the footer outlives a route change, so the first load records the visit and
+	// the page, and every navigation after it records only the page
+	const { pathname } = useLocation();
+	const counted = useRef(false);
 	useEffect(() => {
+		if (counted.current) {
+			trpcClient.site.view.query({ path: pathname }).catch(() => {});
+			return;
+		}
+		counted.current = true;
 		trpcClient.site.visits
-			.query()
+			.query({ path: pathname })
 			.then(setVisits)
 			.catch(() => {});
-	}, []);
+	}, [pathname]);
 
 	// Locale-aware setting: prefer a `<key>_<lang>` variant (e.g. footer_blurb_km)
 	// on non-default locales, else fall back to the base key / default.

@@ -42,6 +42,7 @@ export type FieldKind =
 	| "items"
 	| "cards"
 	| "select"
+	| "colour"
 	| "form";
 
 export type SectionField = {
@@ -72,13 +73,50 @@ const EYEBROW: SectionField = {
 	kind: "text",
 };
 
+// brand bands flip every colour token inside the section, see .section-band
+export const SECTION_TONES: { value: string; label: string }[] = [
+	{ value: "", label: "Default" },
+	{ value: "card", label: "Card" },
+	{ value: "muted", label: "Muted" },
+	{ value: "primary", label: "Primary" },
+	{ value: "accent", label: "Accent" },
+	{ value: "dark", label: "Dark" },
+];
+
+export const isSectionTone = (v: string): boolean =>
+	SECTION_TONES.some((t) => t.value === v);
+
 const TONE: SectionField = {
 	key: "tone",
 	label: "Background",
 	kind: "select",
+	options: SECTION_TONES,
+};
+
+const TONE_COLOUR: SectionField = {
+	key: "toneColor",
+	label: "Custom background",
+	kind: "colour",
+	help: "Any colour. It overrides the background above, and the text on it is lightened or darkened to stay legible. Empty uses the background above.",
+};
+
+/** Both background controls; every section that offers one offers the other. */
+const TONE_FIELDS: SectionField[] = [TONE, TONE_COLOUR];
+
+// empty = the whole list on one page; the page number comes off ?page=
+const PER_PAGE: SectionField = {
+	key: "perPage",
+	label: "Posts per page",
+	kind: "select",
+	help: "Off shows every post on one page. Any other value adds numbered pages under the list.",
 	options: [
-		{ value: "card", label: "Card" },
-		{ value: "muted", label: "Muted" },
+		{ value: "", label: "Off (one page)" },
+		{ value: "6", label: "6" },
+		{ value: "9", label: "9" },
+		{ value: "12", label: "12" },
+		{ value: "15", label: "15" },
+		{ value: "18", label: "18" },
+		{ value: "24", label: "24" },
 	],
 };
 
@@ -110,6 +148,12 @@ export const SECTION_DEFS: SectionDef[] = [
 			{ key: "title", label: "Title", kind: "text" },
 			{ key: "lead", label: "Lead", kind: "textarea" },
 			{ key: "image", label: "Background / side image", kind: "image" },
+			{
+				key: "imageCaption",
+				label: "Image caption",
+				kind: "text",
+				help: "Shown under the image. Leave empty for no caption.",
+			},
 			{ key: "ctaLabel", label: "Button label", kind: "text" },
 			{ key: "ctaHref", label: "Button link", kind: "url" },
 			{ key: "cta2Label", label: "Secondary button", kind: "text" },
@@ -134,6 +178,7 @@ export const SECTION_DEFS: SectionDef[] = [
 					{ key: "label", label: "Label", kind: "text" },
 				],
 			},
+			...TONE_FIELDS,
 		],
 	},
 	{
@@ -149,7 +194,7 @@ export const SECTION_DEFS: SectionDef[] = [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
 			{ key: "body", label: "Body", kind: "richtext" },
-			TONE,
+			...TONE_FIELDS,
 		],
 	},
 	{
@@ -166,7 +211,7 @@ export const SECTION_DEFS: SectionDef[] = [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
 			{ key: "items", label: "Cards", kind: "cards" },
-			TONE,
+			...TONE_FIELDS,
 			CENTER,
 		],
 	},
@@ -205,6 +250,12 @@ export const SECTION_DEFS: SectionDef[] = [
 			},
 			{ key: "image", label: "Band background image", kind: "image" },
 			{
+				key: "imageCaption",
+				label: "Image caption",
+				kind: "text",
+				help: "Shown under the image. Leave empty for no caption.",
+			},
+			{
 				key: "items",
 				label: "Stats",
 				kind: "items",
@@ -214,6 +265,7 @@ export const SECTION_DEFS: SectionDef[] = [
 					{ key: "label", label: "Label", kind: "text" },
 				],
 			},
+			...TONE_FIELDS,
 		],
 	},
 	{
@@ -230,6 +282,7 @@ export const SECTION_DEFS: SectionDef[] = [
 			{ key: "ctaHref", label: "Primary link", kind: "url" },
 			{ key: "cta2Label", label: "Secondary button", kind: "text" },
 			{ key: "cta2Href", label: "Secondary link", kind: "url" },
+			...TONE_FIELDS,
 		],
 	},
 	{
@@ -264,7 +317,7 @@ export const SECTION_DEFS: SectionDef[] = [
 					{ key: "href", label: "Link", kind: "url" },
 				],
 			},
-			TONE,
+			...TONE_FIELDS,
 		],
 	},
 	{
@@ -281,9 +334,15 @@ export const SECTION_DEFS: SectionDef[] = [
 			{ key: "title", label: "Title", kind: "text" },
 			{ key: "body", label: "Body", kind: "richtext" },
 			{ key: "image", label: "Image", kind: "image" },
+			{
+				key: "imageCaption",
+				label: "Image caption",
+				kind: "text",
+				help: "Shown under the image. Leave empty for no caption.",
+			},
 			{ key: "statValue", label: "Overlay stat value", kind: "text" },
 			{ key: "statLabel", label: "Overlay stat label", kind: "text" },
-			TONE,
+			...TONE_FIELDS,
 		],
 	},
 	{
@@ -308,7 +367,7 @@ export const SECTION_DEFS: SectionDef[] = [
 					},
 				],
 			},
-			TONE,
+			...TONE_FIELDS,
 		],
 	},
 	{
@@ -329,7 +388,7 @@ export const SECTION_DEFS: SectionDef[] = [
 			EYEBROW,
 			{ key: "title", label: "Title", kind: "text" },
 			{ key: "body", label: "Intro", kind: "textarea" },
-			TONE,
+			...TONE_FIELDS,
 		],
 	},
 	{
@@ -354,10 +413,11 @@ export const SECTION_DEFS: SectionDef[] = [
 					{ key: "title", label: "Title", kind: "text" },
 					{ key: "issuer", label: "Issuer", kind: "text" },
 					{ key: "year", label: "Year", kind: "text" },
+					{ key: "caption", label: "Caption", kind: "text" },
 					{ key: "fileUrl", label: "PDF link", kind: "url" },
 				],
 			},
-			TONE,
+			...TONE_FIELDS,
 			CENTER,
 		],
 	},
@@ -374,7 +434,7 @@ export const SECTION_DEFS: SectionDef[] = [
 		fields: [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
-			TONE,
+			...TONE_FIELDS,
 			CENTER,
 		],
 	},
@@ -401,7 +461,8 @@ export const SECTION_DEFS: SectionDef[] = [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
 			{ key: "moreHref", label: "“See all” link", kind: "url" },
-			TONE,
+			PER_PAGE,
+			...TONE_FIELDS,
 		],
 	},
 	{
@@ -415,7 +476,7 @@ export const SECTION_DEFS: SectionDef[] = [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
 			{ key: "moreHref", label: "“All videos” link", kind: "url" },
-			TONE,
+			...TONE_FIELDS,
 		],
 	},
 	{
@@ -428,7 +489,7 @@ export const SECTION_DEFS: SectionDef[] = [
 		fields: [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
-			TONE,
+			...TONE_FIELDS,
 		],
 	},
 	{
@@ -438,6 +499,9 @@ export const SECTION_DEFS: SectionDef[] = [
 		description: "Downloadable publications or documents.",
 		layouts: [
 			{ value: "grid-2", label: "2-column cards" },
+			{ value: "grid-3", label: "3-column cards" },
+			{ value: "grid-4", label: "4-column cards" },
+			{ value: "grid-5", label: "5-column cards" },
 			{ value: "list", label: "List" },
 		],
 		sources: [
@@ -451,7 +515,7 @@ export const SECTION_DEFS: SectionDef[] = [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
 			{ key: "category", label: "Category filter", kind: "text" },
-			TONE,
+			...TONE_FIELDS,
 		],
 	},
 	{
@@ -464,7 +528,7 @@ export const SECTION_DEFS: SectionDef[] = [
 		fields: [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
-			TONE,
+			...TONE_FIELDS,
 		],
 	},
 	{
@@ -480,7 +544,7 @@ export const SECTION_DEFS: SectionDef[] = [
 		fields: [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
-			TONE,
+			...TONE_FIELDS,
 		],
 	},
 	{
@@ -497,7 +561,7 @@ export const SECTION_DEFS: SectionDef[] = [
 		fields: [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
-			TONE,
+			...TONE_FIELDS,
 		],
 	},
 	{
@@ -514,7 +578,7 @@ export const SECTION_DEFS: SectionDef[] = [
 		fields: [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
-			TONE,
+			...TONE_FIELDS,
 		],
 	},
 	{
@@ -533,7 +597,7 @@ export const SECTION_DEFS: SectionDef[] = [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
 			{ key: "moreHref", label: "“See all” link", kind: "url" },
-			TONE,
+			...TONE_FIELDS,
 		],
 	},
 	{
@@ -546,7 +610,7 @@ export const SECTION_DEFS: SectionDef[] = [
 		fields: [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
-			TONE,
+			...TONE_FIELDS,
 		],
 	},
 ];
@@ -555,6 +619,19 @@ export const sectionDef = (type: string): SectionDef | undefined =>
 	SECTION_DEFS.find((d) => d.type === type);
 
 const TEXT_KINDS = new Set<FieldKind>(["text", "textarea", "richtext"]);
+
+/** True for a field whose value is one colour, not text: a custom background. */
+export const isColourField = (type: string, key: string): boolean =>
+	sectionDef(type)?.fields.find((f) => f.key === key)?.kind === "colour";
+
+// one value for every language, so it never goes in the i18n overlay
+export function choiceField(
+	type: string,
+	key: string,
+): SectionField | undefined {
+	const field = sectionDef(type)?.fields.find((f) => f.key === key);
+	return field?.kind === "select" ? field : undefined;
+}
 
 /** The fields a section offers for per-language translation, given its current props. */
 export function translatableFields(

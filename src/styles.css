@@ -270,6 +270,72 @@
     oklch(from var(--primary) l c h / 0.35),
     oklch(from var(--primary) 0.12 c h / 0.65)
   );
+  /* The colours a section band is allowed to be, resolved here and only here.
+     A custom property computes where it is declared, so these keep the real
+     colour even inside a band that has redefined --primary for its own text.
+     Without them a primary band would paint itself in its own ink. */
+  --band-primary: var(--primary);
+  --band-primary-ink: var(--primary-foreground);
+  --band-accent: var(--accent);
+  --band-accent-ink: var(--accent-foreground);
+  --band-dark: light-dark(
+    oklch(from var(--primary) 0.24 calc(c - 0.01) h),
+    oklch(0.16 calc(0.015 * var(--paper-chroma)) calc(60 + var(--paper-hue)))
+  );
+  --band-dark-ink: oklch(from var(--background) 0.97 c h);
+}
+
+/*
+ * ---- Section bands. What an editor picks as a section's background. ----
+ *
+ * A paper tone (card, muted) is a Tailwind class on the section and needs
+ * nothing here. A brand band is a colour dark enough that the ink on it has to
+ * turn over, so the band redefines the layer-2 tokens for its own subtree:
+ * every `text-primary` heading, `bg-card` card and `border-border` rule inside
+ * it follows without the templates knowing they are on one. The background
+ * itself comes from the --band-* aliases above, which are immune to that.
+ */
+@layer components {
+  .section-band {
+    background: var(--band-bg);
+    color: var(--band-ink);
+    --foreground: var(--band-ink);
+    --card-foreground: var(--band-ink);
+    --popover-foreground: var(--band-ink);
+    --primary: var(--band-ink);
+    --secondary-ink: var(--band-ink);
+    --accent-ink: var(--band-ink);
+    --muted-foreground: color-mix(in oklch, var(--band-ink) 76%, transparent);
+    --card: color-mix(in oklch, var(--band-ink) 10%, transparent);
+    --popover: var(--card);
+    --muted: color-mix(in oklch, var(--band-ink) 14%, transparent);
+    --border: color-mix(in oklch, var(--band-ink) 26%, transparent);
+    --input: var(--border);
+    /* the call-to-action band writes in these two rather than the ink tokens */
+    --warm-foreground: var(--band-ink);
+    --warm-foreground-muted: color-mix(in oklch, var(--band-ink) 80%, transparent);
+  }
+
+  .section-band-primary { --band-bg: var(--band-primary); --band-ink: var(--band-primary-ink); }
+  .section-band-accent  { --band-bg: var(--band-accent);  --band-ink: var(--band-accent-ink); }
+  .section-band-dark    { --band-bg: var(--band-dark);    --band-ink: var(--band-dark-ink); }
+
+  /* An editor's own colour, set inline as --band-custom. The ink follows that
+     colour's lightness by the same measure --primary-foreground uses, so a pale
+     pick gets dark text and a deep one gets paper. */
+  .section-band-custom {
+    --band-bg: var(--band-custom);
+    --band-ink: oklch(from var(--band-custom) clamp(0.16, (0.57 + c * 0.1 - l) * 1000, 0.985) calc(0.012 * var(--paper-chroma)) calc(80 + var(--paper-hue)));
+  }
+
+  /* An image credit under a picture: the caption an editor may put on any image
+     slot. Quiet enough to stay a credit, and it inherits the band's ink. */
+  .image-caption {
+    margin-top: 0.75rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--muted-foreground);
+  }
 }
 
 /*

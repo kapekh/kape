@@ -17,11 +17,14 @@ import type { SQLiteColumn, SQLiteTable } from "drizzle-orm/sqlite-core";
 
 import { DEFAULT_LANG } from "#/lib/i18n-config";
 import {
-	sectionDef,
+	choiceField,
+	isColourField,
 	type SectionField,
 	type SectionNode,
+	sectionDef,
 	translatableFields,
 } from "#/lib/sections";
+import { checkThemeValue } from "#/lib/site-theme";
 import { PAGE_TITLE_MAX, segmentProblem } from "#/lib/slug";
 import type { DB } from "../db";
 import {
@@ -39,6 +42,7 @@ import {
 	offices,
 	type ProjectSnapshot,
 	pages,
+	pageViews,
 	partners,
 	people,
 	postMedia,
@@ -57,6 +61,7 @@ import {
 	visitorDaily,
 } from "../schema";
 import { deleteUpload } from "../storage";
+import { resolveTranslations } from "./i18n";
 import { attachMediaUrl } from "./media-util";
 
 /** Dashboard overview counts + visitor totals. */
@@ -141,6 +146,76 @@ export async function adminOverview(db: DB) {
 		visitsTotal: vrows.reduce((s, r) => s + r.count, 0),
 		visitorSeries: series,
 		submissions: { contact, newsletter, alumni },
+	};
+}
+
+export type Readership = {
+	pages: { path: string; count: number; lastViewedAt: string | null }[];
+	documents: {
+		id: number;
+		slug: string;
+		contentType: string;
+		title: string;
+		reads: number;
+	}[];
+	totalViews: number;
+	totalReads: number;
+};
+
+/**
+ * What the public actually reads: pages by view, documents by how often the
+ * reader opened the file. Both counters are write-on-read and unfiltered, so a
+ * crawler counts as a reader.
+ */
+export async function readership(
+	db: DB,
+	lang: string,
+	limit = 10,
+): Promise<Readership> {
+	const views = await db
+		.select()
+		.from(pageViews)
+		.where(eq(pageViews.tenantId, TENANT))
+		.orderBy(desc(pageViews.count));
+	const rows = await db
+		.select({
+			id: posts.id,
+			slug: posts.slug,
+			contentType: posts.contentType,
+			meta: posts.meta,
+		})
+		.from(posts)
+		.where(and(eq(posts.tenantId, TENANT), eq(posts.status, "published")));
+	const read = rows
+		.map((r) => ({
+			...r,
+			reads: Number(
+				(r.meta as Record<string, unknown> | null)?.downloadCount ?? 0,
+			),
+		}))
+		.filter((r) => r.reads > 0)
+		.sort((a, b) => b.reads - a.reads);
+	const titles = await resolveTranslations(
+		db,
+		"post",
+		read.slice(0, limit).map((r) => r.id),
+		lang,
+	);
+	return {
+		pages: views.slice(0, limit).map((v) => ({
+			path: v.path,
+			count: v.count,
+			lastViewedAt: v.lastViewedAt,
+		})),
+		documents: read.slice(0, limit).map((r) => ({
+			id: r.id,
+			slug: r.slug,
+			contentType: r.contentType,
+			title: titles.get(r.id)?.title ?? r.slug,
+			reads: r.reads,
+		})),
+		totalViews: views.reduce((sum, v) => sum + v.count, 0),
+		totalReads: read.reduce((sum, r) => sum + r.reads, 0),
 	};
 }
 
@@ -903,7 +978,7 @@ async function stampVersion(
 
 const TEXT_KINDS = new Set(["text", "textarea", "richtext"]);
 // cards are edited by a bespoke editor rather than declared itemFields
-const CARD_TEXT_FIELDS = ["title", "body"];
+const CARD_TEXT_FIELDS = ["title", "body", "caption"];
 
 const textItemFields = (container: SectionField): string[] =>
 	container.kind === "cards"
@@ -944,6 +1019,28 @@ function writeSectionProp(
 	lang: string,
 	value: string,
 ): Record<string, unknown> {
+	// a custom background is a colour, checked by the same parser the theme uses
+	if (isColourField(node.type ?? "", target.field)) {
+		const why = checkThemeValue("colour", value);
+		if (why) throw new Error(why);
+		const next = { ...props };
+		if (value) next[target.field] = value;
+		else delete next[target.field];
+		return next;
+	}
+	// a choice is one value for every language: shared props, never the overlay
+	const choice = choiceField(node.type ?? "", target.field);
+	if (choice) {
+		const allowed = (choice.options ?? []).map((o) => o.value);
+		if (!allowed.includes(value))
+			throw new Error(
+				`"${value}" is not one of the values "${target.field}" takes on a ${node.type} section. It takes ${allowed.map((v) => v || "(empty)").join(", ")}.`,
+			);
+		const next = { ...props };
+		if (value) next[target.field] = value;
+		else delete next[target.field];
+		return next;
+	}
 	const offered = translatableFields(node.type ?? "", props).map((f) => f.key);
 	if (!offered.includes(target.field))
 		throw new Error(
@@ -1008,8 +1105,7 @@ export function applySectionValue(
 	value: string,
 ): SectionNode[] {
 	const node = sections.find((s) => s?.id === target.sectionId);
-	if (!node)
-		throw new Error(`No section "${target.sectionId}" on this page.`);
+	if (!node) throw new Error(`No section "${target.sectionId}" on this page.`);
 	const props = { ...(node.props ?? {}) };
 	const next =
 		target.kind === "sectionProp"
@@ -1120,7 +1216,9 @@ async function writeSectionField(
 	value: string,
 ): Promise<UpdateFieldResult> {
 	if (input.entity !== "page")
-		throw new Error(`Only a page carries sections; a ${input.entity} has none.`);
+		throw new Error(
+			`Only a page carries sections; a ${input.entity} has none.`,
+		);
 	const [page] = await db
 		.select({ sections: pages.sections })
 		.from(pages)
@@ -1470,7 +1568,8 @@ export function adminListMediaPage(
 ) {
 	const conds = [eq(media.tenantId, TENANT)];
 	if (opts.type === "image") conds.push(like(media.contentType, "image/%"));
-	else if (opts.type === "video") conds.push(like(media.contentType, "video/%"));
+	else if (opts.type === "video")
+		conds.push(like(media.contentType, "video/%"));
 	else if (opts.type === "file") {
 		const notImage = or(
 			isNull(media.contentType),
@@ -2675,13 +2774,11 @@ const TERM_HOLDERS: Record<
 	location: [
 		{
 			noun: "office",
-			count: (db, key) =>
-				countTermUse(db, offices, eq(offices.province, key)),
+			count: (db, key) => countTermUse(db, offices, eq(offices.province, key)),
 		},
 		{
 			noun: "school",
-			count: (db, key) =>
-				countTermUse(db, schools, eq(schools.province, key)),
+			count: (db, key) => countTermUse(db, schools, eq(schools.province, key)),
 		},
 		{
 			noun: "project",
@@ -2735,8 +2832,7 @@ const countPostCategory = async (db: DB, key: string): Promise<number> => {
 	return row?.n ?? 0;
 };
 
-const plural = (n: number, noun: string) =>
-	`${n} ${noun}${n === 1 ? "" : "s"}`;
+const plural = (n: number, noun: string) => `${n} ${noun}${n === 1 ? "" : "s"}`;
 
 export async function deleteTerm(db: DB, id: number): Promise<void> {
 	const [term] = await db

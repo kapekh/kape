@@ -215,6 +215,7 @@ function FieldLayer({ record }: { record: PageRecord }) {
 
 export function SubPage({
 	section,
+	sectionHref,
 	title,
 	lead,
 	heroImage,
@@ -227,6 +228,8 @@ export function SubPage({
 	children,
 }: {
 	section: string;
+	/** Where the section crumb goes. Absent leaves it plain text. */
+	sectionHref?: string;
 	title: string;
 	lead?: string;
 	heroImage?: string;
@@ -267,19 +270,31 @@ export function SubPage({
 				<div className="mx-auto max-w-7xl text-primary-foreground">
 					<nav className="flex flex-wrap items-center gap-2 text-xs opacity-85">
 						<NavLink
+							exact
 							href={localizedHref("/", lang)}
 							className="tap-target hover:underline"
 						>
 							{t("nav.home", "Home")}
 						</NavLink>
 						<span aria-hidden>/</span>
-						<span>{section}</span>
+						{sectionHref ? (
+							<NavLink
+								exact
+								href={localizedHref(sectionHref, lang)}
+								className="tap-target hover:underline"
+							>
+								{section}
+							</NavLink>
+						) : (
+							<span>{section}</span>
+						)}
 						{crumbs?.map((c, i) => (
 							// biome-ignore lint/suspicious/noArrayIndexKey: server-rendered list, no reorder or delete while mounted
 							<span key={i} className="flex items-center gap-2">
 								<span aria-hidden>/</span>
 								{c.href ? (
 									<NavLink
+										exact
 										href={localizedHref(c.href, lang)}
 										className="tap-target hover:underline"
 									>

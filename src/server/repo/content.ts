@@ -57,6 +57,7 @@ export type ResolvedPage = {
 	bodyHtml: string; // server-rendered HTML
 	sections: SectionNode[] | null; // page-builder sections (dynamic ones already resolved)
 	parentTitle: string | null; // breadcrumb: the structural parent's own title
+	parentSlug: string | null; // where that crumb links, null when the parent is unpublished
 	// only when the page has no content of its own, so a hub renders a child index
 	children?: ChildLink[];
 	i18nFallback: string[]; // fields showing the default language, for the inline editor
@@ -111,6 +112,7 @@ export async function getPageBySlug(
 	db: DB,
 	slug: string,
 	lang: string,
+	listPage = 1,
 ): Promise<ResolvedPage | null> {
 	const [page] = await db
 		.select()
@@ -142,7 +144,7 @@ export async function getPageBySlug(
 	}
 	const sections =
 		Array.isArray(page.sections) && page.sections.length
-			? await resolveSections(db, page.sections, lang)
+			? await resolveSections(db, page.sections, lang, { page: listPage })
 			: null;
 	const bodyHtml = renderBody(fields.body ?? null);
 	// A parent page with no content of its own becomes a hub: surface its
@@ -150,10 +152,19 @@ export async function getPageBySlug(
 	const children = isEmptyPageBody(bodyHtml, sections)
 		? await getChildPages(db, page.id, lang)
 		: undefined;
-	const parentTitle =
-		page.parentId == null
-			? null
-			: ((await resolveOne(db, "page", page.parentId, lang)).title ?? null);
+	let parentTitle: string | null = null;
+	let parentSlug: string | null = null;
+	if (page.parentId != null) {
+		parentTitle =
+			(await resolveOne(db, "page", page.parentId, lang)).title ?? null;
+		const [parent] = await db
+			.select({ slug: pages.slug, status: pages.status })
+			.from(pages)
+			.where(and(eq(pages.tenantId, TENANT), eq(pages.id, page.parentId)))
+			.limit(1);
+		// an unpublished parent is a 404, so that crumb stays plain text
+		parentSlug = parent?.status === "published" ? parent.slug : null;
+	}
 	return {
 		id: page.id,
 		slug: page.slug,
@@ -165,6 +176,7 @@ export async function getPageBySlug(
 		bodyHtml,
 		sections,
 		parentTitle,
+		parentSlug,
 		children,
 		i18nFallback: fallback,
 		updatedAt: page.updatedAt,

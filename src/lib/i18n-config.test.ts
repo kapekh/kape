@@ -51,3 +51,22 @@ describe("stripLang", () => {
 		});
 	});
 });
+
+// /report.pdf → /en/report.pdf → /report.pdf loops forever unless the unprefixed
+// path is recognised as functional before a language prefix is added to it
+describe("a file path never enters the language redirect", () => {
+	for (const file of [
+		"/annual-report-2025.pdf",
+		"/sitemap.xml",
+		"/robots.txt",
+	]) {
+		it(`treats ${file} the same with and without a prefix`, () => {
+			expect(isFunctional(file)).toBe(true);
+			expect(isFunctional(stripLang(`/en${file}`).path)).toBe(true);
+		});
+	}
+
+	it("still routes a page whose slug has a dot in a segment", () => {
+		expect(isFunctional("/who-we-are/strategy-2.0")).toBe(false);
+	});
+});

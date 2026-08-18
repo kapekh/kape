@@ -80,6 +80,10 @@ export const metaDescription = (s: SiteSettings) =>
 // /logo.png is the product's neutral mark, so an install shows something and nobody else's crest
 export const siteLogo = (s: SiteSettings) => val(s, "logo_url") || "/logo.png";
 
+// same rule as the logo: the shipped .ico is the product's, an install points at its own
+export const siteFavicon = (s: SiteSettings) =>
+	val(s, "favicon_url") || "/favicon.ico";
+
 /** Image for a shared link. Falls back to the logo, which every install has. */
 export const socialImage = (s: SiteSettings) =>
 	val(s, "og_image") || siteLogo(s);

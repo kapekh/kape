@@ -458,6 +458,24 @@ export const alumniRegistrations = sqliteTable("alumni_registrations", {
 });
 
 /** Per-day visitor counter (per-doc read/download counts live in posts.meta). */
+/**
+ * Views per public page, lifetime. The language prefix is stripped before the
+ * row is found, so /en/news and /km/news are the same page.
+ */
+export const pageViews = sqliteTable(
+	"page_views",
+	{
+		tenantId: integer("tenant_id")
+			.notNull()
+			.default(1)
+			.references(() => tenants.id),
+		path: text("path").notNull(),
+		count: integer("count").notNull().default(0),
+		lastViewedAt: text("last_viewed_at"),
+	},
+	(t) => [primaryKey({ columns: [t.tenantId, t.path] })],
+);
+
 export const visitorDaily = sqliteTable(
 	"visitor_daily",
 	{

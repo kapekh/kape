@@ -85,6 +85,13 @@ const PUBLIC_TOKENS: Record<string, string> = {
 		"0 20px 40px -15px light-dark( oklch(from var(--primary) l c h / 0.35), oklch(from var(--primary) 0.12 c h / 0.65) )",
 	"--shadow-soft":
 		"0 30px 60px -20px light-dark( oklch(from var(--foreground) l c h / 0.25), oklch(from var(--background) 0.06 c h / 0.7) )",
+	"--band-accent": "var(--accent)",
+	"--band-accent-ink": "var(--accent-foreground)",
+	"--band-dark":
+		"light-dark( oklch(from var(--primary) 0.24 calc(c - 0.01) h), oklch(0.16 calc(0.015 * var(--paper-chroma)) calc(60 + var(--paper-hue))) )",
+	"--band-dark-ink": "oklch(from var(--background) 0.97 c h)",
+	"--band-primary": "var(--primary)",
+	"--band-primary-ink": "var(--primary-foreground)",
 	"--warm-foreground": "oklch(from var(--primary) 0.24 calc(c - 0.01) h)",
 	"--warm-foreground-muted": "oklch(from var(--primary) 0.30 calc(c - 0.03) h)",
 };

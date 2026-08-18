@@ -12,8 +12,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { InlineEditBar } from "#/components/InlineEditBar";
 import { T } from "#/components/T";
 import { ADMIN_HINT_COOKIE } from "./admin-hint";
-import { InlineEditProvider } from "./inline-edit";
 import { LanguageProvider } from "./i18n";
+import { InlineEditProvider } from "./inline-edit";
 
 const state = vi.hoisted(() => ({
 	me: null as { permissions: string[]; isSuperAdmin: boolean } | null,
@@ -96,7 +96,7 @@ describe("inline editing on the public site", () => {
 		render(<Page />);
 		await screen.findByText("Hello");
 		expect(state.meCalls).toBe(0);
-		expect(screen.queryByLabelText(/edit text/i)).toBeNull();
+		expect(screen.queryByLabelText(/edit this page/i)).toBeNull();
 		expect(screen.getByRole("heading").innerHTML).toBe("Hello");
 	});
 
@@ -104,13 +104,13 @@ describe("inline editing on the public site", () => {
 		setHint(true);
 		render(<Page />);
 		await waitFor(() => expect(state.meCalls).toBe(1));
-		expect(screen.queryByLabelText(/edit text/i)).toBeNull();
+		expect(screen.queryByLabelText(/edit this page/i)).toBeNull();
 	});
 
 	it("marks strings only once an admin turns edit mode on", async () => {
 		signIn();
 		render(<Page />);
-		const toggle = await screen.findByLabelText(/edit text/i);
+		const toggle = await screen.findByLabelText(/edit this page/i);
 		expect(screen.queryByRole("button", { name: "Hello" })).toBeNull();
 
 		fireEvent.click(toggle);
@@ -120,7 +120,7 @@ describe("inline editing on the public site", () => {
 	it("types over the string where it is printed, and saves the language in the URL", async () => {
 		signIn();
 		render(<Page />);
-		fireEvent.click(await screen.findByLabelText(/edit text/i));
+		fireEvent.click(await screen.findByLabelText(/edit this page/i));
 		const node = screen.getByRole("button", { name: "Hello" });
 
 		fireEvent.mouseDown(node);
@@ -144,7 +144,7 @@ describe("inline editing on the public site", () => {
 	it("empties the node for a key no language has a row for, and says what it was showing", async () => {
 		signIn();
 		render(<Page />);
-		fireEvent.click(await screen.findByLabelText(/edit text/i));
+		fireEvent.click(await screen.findByLabelText(/edit this page/i));
 		const node = screen.getByRole("button", { name: "Built in" });
 
 		fireEvent.mouseDown(node);
@@ -155,7 +155,7 @@ describe("inline editing on the public site", () => {
 	it("starts empty on a page falling back to English, and writes the asked-for language", async () => {
 		signIn();
 		render(<Page lang="km" />);
-		fireEvent.click(await screen.findByLabelText(/edit text/i));
+		fireEvent.click(await screen.findByLabelText(/edit this page/i));
 		const node = screen.getByRole("button", { name: "Hello" });
 
 		fireEvent.mouseDown(node);
@@ -165,16 +165,14 @@ describe("inline editing on the public site", () => {
 		node.textContent = "សួស្តី";
 		fireEvent.keyDown(node, { key: "Enter" });
 		await waitFor(() =>
-			expect(state.saved).toEqual([
-				{ key: KEY, lang: "km", value: "សួស្តី" },
-			]),
+			expect(state.saved).toEqual([{ key: KEY, lang: "km", value: "សួស្តី" }]),
 		);
 	});
 
 	it("puts the text back on Escape, and saves nothing", async () => {
 		signIn();
 		render(<Page />);
-		fireEvent.click(await screen.findByLabelText(/edit text/i));
+		fireEvent.click(await screen.findByLabelText(/edit this page/i));
 		const node = screen.getByRole("button", { name: "Hello" });
 
 		fireEvent.mouseDown(node);
@@ -195,7 +193,7 @@ describe("inline editing on the public site", () => {
 		signIn();
 		state.fail = "You cannot edit settings.";
 		render(<Page />);
-		fireEvent.click(await screen.findByLabelText(/edit text/i));
+		fireEvent.click(await screen.findByLabelText(/edit this page/i));
 		const node = screen.getByRole("button", { name: "Hello" });
 
 		fireEvent.mouseDown(node);
@@ -210,7 +208,7 @@ describe("inline editing on the public site", () => {
 	it("saves when the editor clicks away rather than losing the change", async () => {
 		signIn();
 		render(<Page />);
-		fireEvent.click(await screen.findByLabelText(/edit text/i));
+		fireEvent.click(await screen.findByLabelText(/edit this page/i));
 		const node = screen.getByRole("button", { name: "Hello" });
 
 		fireEvent.mouseDown(node);

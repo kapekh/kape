@@ -8,6 +8,7 @@ export const Route = createFileRoute("/")({
 		throw redirect({
 			to: "/$",
 			params: { _splat: DEFAULT_LANG },
+			search: { page: undefined },
 			statusCode: 301,
 		});
 	},

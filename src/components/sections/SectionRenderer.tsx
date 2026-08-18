@@ -1,4 +1,4 @@
-import { useLoaderData } from "@tanstack/react-router";
+import { useLoaderData, useLocation } from "@tanstack/react-router";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
@@ -15,7 +15,7 @@ import {
 	translatableFields,
 } from "#/lib/sections";
 import type { JobItem, PostListItem } from "#/server/repo/content";
-import type { SourceRow } from "#/server/repo/sections";
+import type { PageInfo, SourceRow } from "#/server/repo/sections";
 import { useLang, useT } from "@/lib/i18n";
 import { localizedHref } from "@/lib/i18n-config";
 import {
@@ -32,12 +32,15 @@ import { NavLink } from "../NavLink";
 import { usePdfReader } from "../PdfReader";
 import { PublicOrgChart } from "../PublicOrgChart";
 import { RichBody } from "../RichBody";
+import { SectionBackground } from "./SectionBackground";
 
 type Common = {
 	layout?: string;
 	eyebrow?: string;
 	title?: string;
 	tone?: string;
+	/** An editor's own background colour, which beats `tone`. */
+	toneColor?: string;
 };
 
 /* ------------------------------------------------------------------ */
@@ -103,6 +106,7 @@ const SECTION_TARGET =
 const CARD_ITEM_FIELDS: SectionField[] = [
 	{ key: "title", label: "Title", kind: "text" },
 	{ key: "body", label: "Body", kind: "textarea" },
+	{ key: "caption", label: "Image caption", kind: "text" },
 ];
 
 const TEXT_KINDS = new Set(["text", "textarea", "richtext"]);
@@ -205,12 +209,45 @@ const Container = ({
 }) => <div className={`mx-auto max-w-7xl px-6 ${className}`}>{children}</div>;
 
 const PAD = "py-20 md:py-24";
-const toneBg = (t?: string) =>
-	t === "card"
-		? "bg-card border-y border-border"
-		: t === "muted"
-			? "bg-muted/40 border-y border-border"
-			: "";
+
+const TONE_CLASS: Record<string, string> = {
+	card: "bg-card border-y border-border",
+	muted: "bg-muted/40 border-y border-border",
+	primary: "section-band section-band-primary",
+	accent: "section-band section-band-accent",
+	dark: "section-band section-band-dark",
+};
+const toneBg = (t?: string) => (t ? (TONE_CLASS[t] ?? "") : "");
+
+// a custom colour beats the preset; the class reads it back off --band-custom
+type Toned = { tone?: string; toneColor?: string };
+
+/** A `<section>` wearing whichever background the editor chose. */
+function Band({
+	p,
+	className = "",
+	style,
+	children,
+	...rest
+}: {
+	p: Toned;
+	className?: string;
+	style?: React.CSSProperties;
+	children: React.ReactNode;
+} & React.HTMLAttributes<HTMLElement>) {
+	const custom = p.toneColor
+		? ({ "--band-custom": p.toneColor } as React.CSSProperties)
+		: null;
+	return (
+		<section
+			className={`${className} ${custom ? "section-band section-band-custom" : toneBg(p.tone)}`}
+			style={custom ? { ...style, ...custom } : style}
+			{...rest}
+		>
+			{children}
+		</section>
+	);
+}
 const card =
 	"rounded-3xl border border-border bg-card shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-[var(--shadow-soft)]";
 
@@ -288,6 +325,32 @@ const Empty = ({ children }: { children: React.ReactNode }) => (
 		{children}
 	</p>
 );
+
+// renders empty while editing: an unwritten caption needs a node to click into
+function ImageCaption({
+	path,
+	text,
+	className = "",
+	light = false,
+}: {
+	path: string;
+	text?: string;
+	className?: string;
+	light?: boolean;
+}) {
+	const marks = useMark()(path);
+	const editing = useEditingSections();
+	const addressable = "data-cms-target" in marks;
+	if (!text && !(editing && addressable)) return null;
+	return (
+		<figcaption
+			{...marks}
+			className={`image-caption ${light ? "text-white/80 [text-shadow:0_1px_8px_rgba(0,0,0,0.6)]" : ""} ${className}`}
+		>
+			{text}
+		</figcaption>
+	);
+}
 
 const Blob = ({ className }: { className: string }) => (
 	<div
@@ -403,6 +466,7 @@ type HeroStat = { value?: string; label?: string };
 type HeroProps = Common & {
 	lead?: string;
 	image?: string;
+	imageCaption?: string;
 	ctaLabel?: string;
 	ctaHref?: string;
 	cta2Label?: string;
@@ -543,7 +607,7 @@ function Hero(p: HeroProps) {
 	// Showcase: split text + slideshow (the homepage hero).
 	if ((layout === "carousel" || layout === "showcase") && slides.length) {
 		return (
-			<section className="relative overflow-hidden">
+			<Band p={p} className="relative overflow-hidden">
 				<Container className="grid items-center gap-12 py-16 lg:grid-cols-12 lg:py-24">
 					<div className="relative z-10 lg:col-span-6">
 						{p.eyebrow && (
@@ -591,13 +655,13 @@ function Hero(p: HeroProps) {
 						<Slideshow slides={slides} />
 					</div>
 				</Container>
-			</section>
+			</Band>
 		);
 	}
 
 	if (layout === "split") {
 		return (
-			<section className="py-16 md:py-24">
+			<Band p={p} className="py-16 md:py-24">
 				<Container className="grid items-center gap-12 lg:grid-cols-2">
 					<div>
 						{p.eyebrow && (
@@ -619,23 +683,29 @@ function Hero(p: HeroProps) {
 						{ctas()}
 					</div>
 					{p.image && (
-						<img
-							src={p.image}
-							alt={p.title || ""}
-							className="rounded-3xl object-cover w-full aspect-[4/3] shadow-[var(--shadow-soft)]"
-							onError={onImageError}
-							ref={imageFallbackRef}
-						/>
+						<figure className="m-0">
+							<img
+								src={p.image}
+								alt={p.title || ""}
+								className="rounded-3xl object-cover w-full aspect-[4/3] shadow-[var(--shadow-soft)]"
+								onError={onImageError}
+								ref={imageFallbackRef}
+							/>
+							<ImageCaption path="imageCaption" text={p.imageCaption} />
+						</figure>
 					)}
 				</Container>
-			</section>
+			</Band>
 		);
 	}
 
 	// Banner (full-bleed) — used by sub-pages / simple heroes.
 	const bg = p.image;
 	return (
-		<section className="relative flex min-h-[60vh] items-center overflow-hidden bg-primary">
+		<Band
+			p={p}
+			className={`relative flex min-h-[60vh] items-center overflow-hidden ${p.tone || p.toneColor ? "" : "bg-primary"}`}
+		>
 			<div className="absolute inset-0">
 				{bg && (
 					<img
@@ -672,8 +742,14 @@ function Hero(p: HeroProps) {
 					</p>
 				)}
 				{ctas(true)}
+				<ImageCaption
+					path="imageCaption"
+					text={p.imageCaption}
+					className="mt-8"
+					light
+				/>
 			</Container>
-		</section>
+		</Band>
 	);
 }
 
@@ -686,12 +762,12 @@ type RichTextProps = Common & { bodyHtml?: string };
 
 function RichText(p: RichTextProps) {
 	return (
-		<section className={`${PAD} ${toneBg(p.tone)}`}>
+		<Band p={p} className={PAD}>
 			<Container className={p.layout === "narrow" ? "max-w-3xl" : "max-w-4xl"}>
 				<Heading eyebrow={p.eyebrow} title={p.title} />
 				<RichBody className="prose-body" html={p.bodyHtml ?? ""} />
 			</Container>
-		</section>
+		</Band>
 	);
 }
 
@@ -699,6 +775,7 @@ type CardButton = { label?: string; href?: string };
 type CardItem = {
 	image?: string;
 	imageAsBg?: boolean;
+	caption?: string;
 	title?: string;
 	body?: string;
 	href?: string;
@@ -744,7 +821,7 @@ function Cards(p: CardsProps) {
 	};
 
 	return (
-		<section className={`${PAD} ${toneBg(p.tone)}`}>
+		<Band p={p} className={PAD}>
 			<Container>
 				<Heading eyebrow={p.eyebrow} title={p.title} center={!!p.center} />
 				<div className={`grid grid-cols-1 ${cols} gap-5`}>
@@ -782,6 +859,11 @@ function Cards(p: CardsProps) {
 												{it.body}
 											</p>
 										)}
+										<ImageCaption
+											path={`items[${n}].caption`}
+											text={it.caption}
+											light
+										/>
 										{footer(it, true)}
 									</div>
 								</div>
@@ -804,6 +886,13 @@ function Cards(p: CardsProps) {
 									/>
 								) : null}
 								<div className="flex flex-1 flex-col p-6">
+									{it.image && (
+										<ImageCaption
+											path={`items[${n}].caption`}
+											text={it.caption}
+											className="mt-0 mb-3"
+										/>
+									)}
 									{!it.image && (
 										<div className="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)] font-display text-lg font-bold">
 											{n + 1}
@@ -832,7 +921,7 @@ function Cards(p: CardsProps) {
 					})}
 				</div>
 			</Container>
-		</section>
+		</Band>
 	);
 }
 
@@ -915,6 +1004,7 @@ type StatsProps = Common & {
 	valueSize?: string;
 	labelSize?: string;
 	image?: string;
+	imageCaption?: string;
 	items?: StatRow[];
 };
 
@@ -930,7 +1020,7 @@ function Stats(p: StatsProps) {
 	const labelClass = STAT_LABEL_SIZE[p.labelSize ?? ""] ?? STAT_LABEL_SIZE.xs;
 	if (!band) {
 		return (
-			<section className={PAD}>
+			<Band p={p} className={PAD}>
 				<Container>
 					<Heading eyebrow={p.eyebrow} title={p.title} />
 					<div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-x-8 gap-y-10">
@@ -962,7 +1052,7 @@ function Stats(p: StatsProps) {
 						))}
 					</div>
 				</Container>
-			</section>
+			</Band>
 		);
 	}
 	return (
@@ -1010,6 +1100,12 @@ function Stats(p: StatsProps) {
 						/>
 					))}
 				</div>
+				<ImageCaption
+					path="imageCaption"
+					text={p.imageCaption}
+					className="mt-12"
+					light
+				/>
 			</Container>
 		</section>
 	);
@@ -1028,9 +1124,14 @@ function Cta(p: CtaProps) {
 	const t = useT();
 	const mark = useMark();
 	return (
-		<section
+		<Band
+			p={p}
 			className="relative overflow-hidden py-24"
-			style={{ background: "var(--gradient-warm)" }}
+			style={
+				p.tone || p.toneColor
+					? undefined
+					: { background: "var(--gradient-warm)" }
+			}
 		>
 			<Blob className="-left-20 -top-20 h-80 w-80 bg-[var(--gold)]/40" />
 			<Blob className="-bottom-20 -right-20 h-80 w-80 bg-primary/30" />
@@ -1075,7 +1176,7 @@ function Cta(p: CtaProps) {
 					)}
 				</div>
 			</div>
-		</section>
+		</Band>
 	);
 }
 
@@ -1094,7 +1195,7 @@ function Resources(p: ResourcesProps) {
 	const cols = p.layout === "cols-2" ? "md:grid-cols-2" : "";
 	const { openPdf, reader } = usePdfReader();
 	return (
-		<section className={`${PAD} ${toneBg(p.tone)}`}>
+		<Band p={p} className={PAD}>
 			<Container>
 				<Heading eyebrow={p.eyebrow} title={p.title} />
 				{items.length === 0 ? (
@@ -1159,12 +1260,13 @@ function Resources(p: ResourcesProps) {
 				)}
 				{reader}
 			</Container>
-		</section>
+		</Band>
 	);
 }
 
 type SplitProps = Common & {
 	image?: string;
+	imageCaption?: string;
 	bodyHtml?: string;
 	statValue?: string;
 	statLabel?: string;
@@ -1200,6 +1302,11 @@ function Split(p: SplitProps) {
 					</div>
 				</div>
 			)}
+			<ImageCaption
+				path="imageCaption"
+				text={p.imageCaption}
+				className={p.statValue ? "mt-12" : ""}
+			/>
 		</div>
 	) : null;
 	const text = (
@@ -1221,7 +1328,7 @@ function Split(p: SplitProps) {
 		</div>
 	);
 	return (
-		<section className={`${PAD} ${toneBg(p.tone)}`}>
+		<Band p={p} className={PAD}>
 			<Container className="grid items-center gap-16 lg:grid-cols-2">
 				{mediaLeft ? (
 					<>
@@ -1235,7 +1342,7 @@ function Split(p: SplitProps) {
 					</>
 				)}
 			</Container>
-		</section>
+		</Band>
 	);
 }
 
@@ -1255,7 +1362,7 @@ function Pills(p: PillsProps) {
 				return { label, href: href || "#" };
 			});
 	return (
-		<section className={`${PAD} ${toneBg(p.tone)}`}>
+		<Band p={p} className={PAD}>
 			<Container>
 				<Heading eyebrow={p.eyebrow} title={p.title} />
 				<div className="space-y-7">
@@ -1286,7 +1393,7 @@ function Pills(p: PillsProps) {
 					))}
 				</div>
 			</Container>
-		</section>
+		</Band>
 	);
 }
 
@@ -1304,7 +1411,7 @@ function FormSection(p: FormProps) {
 	// and intro are only used for the quick contact layout.
 	const builtForm = !!p.formSlug;
 	return (
-		<section className={`${PAD} ${toneBg(p.tone)}`}>
+		<Band p={p} className={PAD}>
 			<Container className="max-w-2xl">
 				{!builtForm && <Heading eyebrow={p.eyebrow} title={p.title} center />}
 				{!builtForm && p.body && (
@@ -1319,7 +1426,7 @@ function FormSection(p: FormProps) {
 					{p.formSlug ? <FormRenderer slug={p.formSlug} /> : <ContactForm />}
 				</div>
 			</Container>
-		</section>
+		</Band>
 	);
 }
 
@@ -1334,6 +1441,7 @@ type PostListProps = Common & {
 	moreHref?: string;
 	linkBase?: string;
 	data?: PostRow[];
+	pageInfo?: PageInfo;
 };
 
 function PostCard({
@@ -1400,6 +1508,76 @@ function PostCard({
 	);
 }
 
+function pageWindow(page: number, total: number): (number | "gap")[] {
+	if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+	const near = [page - 1, page, page + 1].filter((n) => n > 1 && n < total);
+	const out: (number | "gap")[] = [1];
+	if (near[0] > 2) out.push("gap");
+	out.push(...near);
+	if (near[near.length - 1] < total - 1) out.push("gap");
+	out.push(total);
+	return out;
+}
+
+// a plain anchor, not a Link: the page is server-rendered per ?page=, and a
+// crawler has to see every page of the list as its own url
+function Pager({ info }: { info: PageInfo }) {
+	const t = useT();
+	const { pathname } = useLocation();
+	const href = (n: number) => (n <= 1 ? pathname : `${pathname}?page=${n}`);
+	const { page, totalPages } = info;
+	const step =
+		"tap-target inline-flex h-10 min-w-10 items-center justify-center rounded-full border border-border px-3 text-sm font-medium transition";
+	return (
+		<nav
+			className="mt-12 flex flex-wrap items-center justify-center gap-2"
+			aria-label={t("pager.label", "Pagination")}
+		>
+			{page > 1 && (
+				<a
+					href={href(page - 1)}
+					rel="prev"
+					className={`${step} hover:bg-muted`}
+				>
+					← {t("pager.prev", "Previous")}
+				</a>
+			)}
+			{pageWindow(page, totalPages).map((n, i) =>
+				n === "gap" ? (
+					<span
+						// biome-ignore lint/suspicious/noArrayIndexKey: a gap has no identity beyond its place in the window
+						key={`gap-${i}`}
+						className="px-1 text-sm text-muted-foreground"
+					>
+						…
+					</span>
+				) : n === page ? (
+					<span
+						key={n}
+						aria-current="page"
+						className={`${step} border-primary bg-primary text-primary-foreground`}
+					>
+						{n}
+					</span>
+				) : (
+					<a key={n} href={href(n)} className={`${step} hover:bg-muted`}>
+						{n}
+					</a>
+				),
+			)}
+			{page < totalPages && (
+				<a
+					href={href(page + 1)}
+					rel="next"
+					className={`${step} hover:bg-muted`}
+				>
+					{t("pager.next", "Next")} →
+				</a>
+			)}
+		</nav>
+	);
+}
+
 function PostList(p: PostListProps) {
 	const L = useL();
 	const t = useT();
@@ -1412,7 +1590,7 @@ function PostList(p: PostListProps) {
 	const link = (slug: string) => (base ? L(`${base}/${slug}`) : "#");
 	const layout = p.layout ?? "grid-3";
 	return (
-		<section className={`${PAD} ${toneBg(p.tone)}`}>
+		<Band p={p} className={PAD}>
 			<Container>
 				<div className="mb-12 flex items-end justify-between gap-4 flex-wrap">
 					<Heading eyebrow={p.eyebrow} title={p.title} />
@@ -1581,8 +1759,9 @@ function PostList(p: PostListProps) {
 						))}
 					</div>
 				)}
+				{p.pageInfo && p.pageInfo.totalPages > 1 && <Pager info={p.pageInfo} />}
 			</Container>
-		</section>
+		</Band>
 	);
 }
 
@@ -1639,7 +1818,7 @@ function VideoGrid(p: VideoGridProps) {
 	const H = useItemHeading(Boolean(p.title || p.eyebrow));
 	const videos: SourceRow["videos"][] = Array.isArray(p.data) ? p.data : [];
 	return (
-		<section className={`${PAD} ${toneBg(p.tone)}`}>
+		<Band p={p} className={PAD}>
 			<Container>
 				<div className="mb-12 flex items-end justify-between gap-4 flex-wrap">
 					<Heading eyebrow={p.eyebrow} title={p.title} />
@@ -1694,7 +1873,7 @@ function VideoGrid(p: VideoGridProps) {
 					</div>
 				)}
 			</Container>
-		</section>
+		</Band>
 	);
 }
 
@@ -1706,7 +1885,7 @@ function AlbumGrid(p: AlbumGridProps) {
 	const row = useRowMark();
 	const albums: SourceRow["albums"][] = Array.isArray(p.data) ? p.data : [];
 	return (
-		<section className={`${PAD} ${toneBg(p.tone)}`}>
+		<Band p={p} className={PAD}>
 			<Container>
 				<Heading eyebrow={p.eyebrow} title={p.title} />
 				{albums.length === 0 ? (
@@ -1741,9 +1920,18 @@ function AlbumGrid(p: AlbumGridProps) {
 					</div>
 				)}
 			</Container>
-		</section>
+		</Band>
 	);
 }
+
+const NARROW_PUBLICATION_LAYOUTS = new Set(["grid-3", "grid-4", "grid-5"]);
+
+const PUBLICATION_COLS: Record<string, string> = {
+	"grid-2": "md:grid-cols-2",
+	"grid-3": "sm:grid-cols-2 lg:grid-cols-3",
+	"grid-4": "sm:grid-cols-2 lg:grid-cols-4",
+	"grid-5": "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5",
+};
 
 type PublicationListProps = Common & { data?: SourceRow["publications"][] };
 
@@ -1762,8 +1950,12 @@ function PublicationList(p: PublicationListProps) {
 	};
 
 	const list = p.layout === "list";
+	const cols = PUBLICATION_COLS[p.layout ?? ""] ?? PUBLICATION_COLS["grid-2"];
+	// three across or more leaves no room to read a title beside its cover, so
+	// the card stands the cover up and puts everything under it
+	const stacked = NARROW_PUBLICATION_LAYOUTS.has(p.layout ?? "");
 	return (
-		<section className={`${PAD} ${toneBg(p.tone)}`}>
+		<Band p={p} className={PAD}>
 			<Container>
 				<Heading eyebrow={p.eyebrow} title={p.title} />
 				{items.length === 0 ? (
@@ -1771,7 +1963,7 @@ function PublicationList(p: PublicationListProps) {
 						{t("empty.publications", "No publications in this category yet.")}
 					</Empty>
 				) : (
-					<div className={`grid gap-4 ${list ? "" : "md:grid-cols-2"}`}>
+					<div className={`grid gap-4 ${list ? "" : cols}`}>
 						{items.map((it) => {
 							const n =
 								it.downloadCount == null
@@ -1788,27 +1980,31 @@ function PublicationList(p: PublicationListProps) {
 										track(it.id);
 										openPdf(e, { url: it.fileUrl, title: it.title });
 									}}
-									className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-[var(--shadow-soft)]"
+									className={`group rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-[var(--shadow-soft)] ${stacked ? "flex h-full flex-col" : "flex items-center gap-4"}`}
 								>
 									{it.image ? (
 										<img
 											src={it.image}
 											alt={it.title || ""}
-											className={`shrink-0 rounded-xl object-cover ring-1 ring-border ${list ? "h-16 w-12" : "h-24 w-[4.5rem]"}`}
+											className={`rounded-xl object-cover ring-1 ring-border ${stacked ? "aspect-[3/4] w-full" : `shrink-0 ${list ? "h-16 w-12" : "h-24 w-[4.5rem]"}`}`}
 											onError={onImageError}
 											ref={imageFallbackRef}
 										/>
 									) : (
 										<div
-											className={`grid shrink-0 place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)] ${list ? "h-12 w-12" : "h-24 w-[4.5rem]"}`}
+											className={`grid place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)] ${stacked ? "aspect-[3/4] w-full" : `shrink-0 ${list ? "h-12 w-12" : "h-24 w-[4.5rem]"}`}`}
 										>
-											{Icon.doc("h-6 w-6")}
+											{Icon.doc(stacked ? "h-10 w-10" : "h-6 w-6")}
 										</div>
 									)}
-									<div className="min-w-0 flex-1">
+									<div
+										className={
+											stacked ? "mt-3 flex flex-1 flex-col" : "min-w-0 flex-1"
+										}
+									>
 										<div
 											{...row("post", it.id, "title")}
-											className="font-medium text-foreground group-hover:text-[var(--accent)] transition"
+											className={`font-medium text-foreground group-hover:text-[var(--accent)] transition ${stacked ? "line-clamp-3 text-balance" : ""}`}
 										>
 											{it.title}
 										</div>
@@ -1818,7 +2014,9 @@ function PublicationList(p: PublicationListProps) {
 											</div>
 										)}
 										{n != null && (
-											<div className="mt-1 text-xs text-muted-foreground">
+											<div
+												className={`text-xs text-muted-foreground ${stacked ? "mt-auto pt-1" : "mt-1"}`}
+											>
 												{t(
 													n === 1
 														? "publications.downloadsOne"
@@ -1828,10 +2026,17 @@ function PublicationList(p: PublicationListProps) {
 												)}
 											</div>
 										)}
+										{stacked && (
+											<span className="mt-3 inline-flex items-center gap-1 self-start text-xs font-semibold text-[var(--accent-ink)]">
+												{Icon.download("h-4 w-4")} PDF
+											</span>
+										)}
 									</div>
-									<span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-[var(--accent-ink)]">
-										{Icon.download("h-4 w-4")} PDF
-									</span>
+									{!stacked && (
+										<span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-[var(--accent-ink)]">
+											{Icon.download("h-4 w-4")} PDF
+										</span>
+									)}
 								</a>
 							);
 						})}
@@ -1839,7 +2044,7 @@ function PublicationList(p: PublicationListProps) {
 				)}
 				{reader}
 			</Container>
-		</section>
+		</Band>
 	);
 }
 
@@ -1856,7 +2061,7 @@ function People(p: PeopleProps) {
 			.map((w) => w[0])
 			.join("");
 	return (
-		<section className={`${PAD} ${toneBg(p.tone)}`}>
+		<Band p={p} className={PAD}>
 			<Container>
 				<Heading eyebrow={p.eyebrow} title={p.title} />
 				{people.length === 0 ? (
@@ -1897,7 +2102,7 @@ function People(p: PeopleProps) {
 					</div>
 				)}
 			</Container>
-		</section>
+		</Band>
 	);
 }
 
@@ -1935,7 +2140,7 @@ function MapSection(p: MapProps) {
 		? [markers[0].lat, markers[0].lng]
 		: [12.5, 104.9];
 	return (
-		<section className={`${PAD} ${toneBg(p.tone)}`}>
+		<Band p={p} className={PAD}>
 			<Container>
 				<Heading eyebrow={p.eyebrow} title={p.title} />
 				{/* an empty map centred on the country reads as a broken page, not as "nothing here yet" */}
@@ -1947,7 +2152,7 @@ function MapSection(p: MapProps) {
 					</div>
 				)}
 			</Container>
-		</section>
+		</Band>
 	);
 }
 
@@ -1965,7 +2170,7 @@ function Directory(p: DirectoryProps) {
 		? Object.keys(rows[0]).filter((k) => k !== "id")
 		: [];
 	return (
-		<section className={`${PAD} ${toneBg(p.tone)}`}>
+		<Band p={p} className={PAD}>
 			<Container>
 				<Heading eyebrow={p.eyebrow} title={p.title} />
 				{rows.length === 0 ? (
@@ -2003,7 +2208,7 @@ function Directory(p: DirectoryProps) {
 					</div>
 				)}
 			</Container>
-		</section>
+		</Band>
 	);
 }
 
@@ -2094,7 +2299,7 @@ function Partners(p: PartnersProps) {
 	const H = useItemHeading(Boolean(p.title || p.eyebrow));
 	if (p.layout === "marquee") {
 		return (
-			<section className={`${PAD} ${toneBg(p.tone)}`}>
+			<Band p={p} className={PAD}>
 				<Container>
 					<Heading eyebrow={p.eyebrow} title={p.title} />
 				</Container>
@@ -2105,7 +2310,7 @@ function Partners(p: PartnersProps) {
 				) : (
 					<PartnerMarquee rows={rows} />
 				)}
-			</section>
+			</Band>
 		);
 	}
 	const byCat = new Map<string, PartnerRow[]>();
@@ -2114,7 +2319,7 @@ function Partners(p: PartnersProps) {
 		byCat.set(k, [...(byCat.get(k) ?? []), r]);
 	}
 	return (
-		<section className={`${PAD} ${toneBg(p.tone)}`}>
+		<Band p={p} className={PAD}>
 			<Container>
 				<Heading eyebrow={p.eyebrow} title={p.title} />
 				{rows.length === 0 ? (
@@ -2164,7 +2369,7 @@ function Partners(p: PartnersProps) {
 					</div>
 				)}
 			</Container>
-		</section>
+		</Band>
 	);
 }
 
@@ -2184,7 +2389,7 @@ function ProjectList(p: ProjectListProps) {
 	const cols =
 		p.layout === "grid-2" ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-3";
 	return (
-		<section className={`${PAD} ${toneBg(p.tone)}`}>
+		<Band p={p} className={PAD}>
 			<Container>
 				<div className="mb-12 flex items-end justify-between gap-4 flex-wrap">
 					<Heading eyebrow={p.eyebrow} title={p.title} />
@@ -2265,7 +2470,7 @@ function ProjectList(p: ProjectListProps) {
 					</div>
 				)}
 			</Container>
-		</section>
+		</Band>
 	);
 }
 
@@ -2274,6 +2479,7 @@ type CertificateItem = {
 	title?: string;
 	issuer?: string;
 	year?: string;
+	caption?: string;
 	fileUrl?: string;
 };
 
@@ -2294,7 +2500,7 @@ function Certificates(p: CertificatesProps) {
 				? "sm:grid-cols-2 lg:grid-cols-4"
 				: "sm:grid-cols-2 lg:grid-cols-3";
 	return (
-		<section className={`${PAD} ${toneBg(p.tone)}`}>
+		<Band p={p} className={PAD}>
 			<Container>
 				<Heading eyebrow={p.eyebrow} title={p.title} center={!!p.center} />
 				{items.length === 0 ? (
@@ -2322,6 +2528,11 @@ function Certificates(p: CertificatesProps) {
 										)}
 									</div>
 									<div className="mt-4">
+										<ImageCaption
+											path={`items[${n}].caption`}
+											text={it.caption}
+											className="mt-0 mb-2"
+										/>
 										{it.title && (
 											<h3
 												{...mark(`items[${n}].title`)}
@@ -2369,7 +2580,7 @@ function Certificates(p: CertificatesProps) {
 				)}
 				{reader}
 			</Container>
-		</section>
+		</Band>
 	);
 }
 
@@ -2416,7 +2627,7 @@ function SiteMap(p: SiteMapProps) {
 	);
 
 	return (
-		<section className={`${PAD} ${toneBg(p.tone)}`}>
+		<Band p={p} className={PAD}>
 			<Container>
 				<Heading eyebrow={p.eyebrow} title={p.title} center={!!p.center} />
 				{nav.length === 0 ? (
@@ -2458,7 +2669,7 @@ function SiteMap(p: SiteMapProps) {
 					</div>
 				)}
 			</Container>
-		</section>
+		</Band>
 	);
 }
 
@@ -2474,12 +2685,12 @@ function OrgChart(p: OrgChartProps) {
 
 	if (roots.length === 0) {
 		return (
-			<section className={`${PAD} ${toneBg(p.tone)}`}>
+			<Band p={p} className={PAD}>
 				<Container>
 					<Heading eyebrow={p.eyebrow} title={p.title} />
 					<Empty>{t("empty.orgchart", "No organizational chart yet.")}</Empty>
 				</Container>
-			</section>
+			</Band>
 		);
 	}
 
@@ -2555,6 +2766,7 @@ export function SectionRenderer({
 	// keyed: an edit leaves DOM nodes React no longer holds, so the tree is rebuilt
 	// rather than patched. See `revision` in lib/inline-edit.
 	const { revision } = useInlineEdit();
+	const editingSections = useEditingSections();
 	return (
 		<Identity.Provider value={identity} key={revision}>
 			<EditLayer sections={sections} identity={identity} />
@@ -2574,8 +2786,17 @@ export function SectionRenderer({
 						data-cms-section={s.id}
 						data-cms-section-type={s.type}
 						data-cms-section-index={i}
-						className="scroll-mt-28"
+						className="relative scroll-mt-28"
 					>
+						{editingSections && identity && (
+							<SectionBackground
+								identity={identity}
+								sectionId={s.id}
+								type={s.type}
+								tone={(s.props as Toned | undefined)?.tone}
+								toneColor={(s.props as Toned | undefined)?.toneColor}
+							/>
+						)}
 						<SectionId.Provider value={s.id}>
 							<OwnsPageTitle.Provider value={i === titleIndex}>
 								{body}

@@ -69,11 +69,32 @@ function collectionLabel(
 	return key ? t(key, label) : label;
 }
 
+/** The landing a record's own collection crumb points back at. */
+function collectionPath(label: string): string | undefined {
+	const def = Object.values(COLLECTIONS).find((c) => c.label === label);
+	return def ? `/${def.prefix}` : undefined;
+}
+
 export const Route = createFileRoute("/$")({
-	loader: async ({ context, params, location }) => {
+	// unknown params ride through: /donate/success reads ?order= off the raw string
+	validateSearch: (search: Record<string, unknown>) => {
+		const n = Number(search.page);
+		return {
+			...search,
+			page: Number.isFinite(n) && n > 1 ? Math.floor(n) : undefined,
+		};
+	},
+	loaderDeps: ({ search }: { search: { page?: number } }) => ({
+		page: search.page,
+	}),
+	loader: async ({ context, params, location, deps }) => {
 		const raw = params._splat ?? "";
 		const { lang, path, prefixed } = stripLang(`/${raw}`);
 		if (!prefixed) {
+			// A file or a functional route never takes a language prefix, and adding
+			// one sends it straight back here: /report.pdf → /en/report.pdf →
+			// /report.pdf. Reaching the catch-all means nothing served it.
+			if (isFunctional(path)) throw notFound();
 			// No language prefix → canonical default-language URL. The query string
 			// has to survive: the payment provider returns to /donate/success?order=…
 			throw redirect({
@@ -87,12 +108,17 @@ export const Route = createFileRoute("/$")({
 		}
 		const slug = path === "/" ? "home" : path.replace(/^\//, "");
 		const resolved = await context.queryClient.ensureQueryData(
-			context.trpc.routes.resolve.queryOptions({ path: slug, lang }),
+			context.trpc.routes.resolve.queryOptions({
+				path: slug,
+				lang,
+				page: deps.page,
+			}),
 		);
 		if (resolved.kind === "redirect") {
 			throw redirect({
 				to: "/$",
 				params: { _splat: `${lang}/${resolved.to}` },
+				search: { page: undefined },
 				statusCode: 301,
 			});
 		}
@@ -347,6 +373,7 @@ function ResolvedRoute() {
 				<SubPage
 					wide
 					section={page.parentTitle ?? page.title}
+					sectionHref={page.parentSlug ? `/${page.parentSlug}` : undefined}
 					title={page.title}
 					lead={page.excerpt || undefined}
 					heroImage={page.coverUrl || undefined}
@@ -372,6 +399,7 @@ function ResolvedRoute() {
 				<SubPage
 					wide
 					section={page.parentTitle ?? page.title}
+					sectionHref={page.parentSlug ? `/${page.parentSlug}` : undefined}
 					title={page.title}
 					lead={page.excerpt || undefined}
 					heroImage={page.coverUrl || undefined}
@@ -417,6 +445,7 @@ function ResolvedRoute() {
 		return (
 			<SubPage
 				section={page.parentTitle ?? page.title}
+				sectionHref={page.parentSlug ? `/${page.parentSlug}` : undefined}
 				title={page.title}
 				lead={page.excerpt || undefined}
 				heroImage={page.coverUrl || undefined}
@@ -457,6 +486,7 @@ function ResolvedRoute() {
 		return (
 			<SubPage
 				section={collectionLabel(t, r.label)}
+				sectionHref={collectionPath(r.label)}
 				title={post.title}
 				lead={post.excerpt || undefined}
 				heroImage={post.coverUrl || undefined}
@@ -520,6 +550,7 @@ function ResolvedRoute() {
 		return (
 			<SubPage
 				section={collectionLabel(t, r.label)}
+				sectionHref={collectionPath(r.label)}
 				title={album.title}
 				lead={t("album.lead", "Click any photo to view it larger.")}
 				record={record}
@@ -535,6 +566,7 @@ function ResolvedRoute() {
 		return (
 			<SubPage
 				section={collectionLabel(t, r.label)}
+				sectionHref={collectionPath(r.label)}
 				title={p.name}
 				lead={p.position || undefined}
 				heroImage={p.photoUrl || undefined}
@@ -560,7 +592,11 @@ function ResolvedRoute() {
 
 	if (r.kind === "project") {
 		return (
-			<ProjectView project={r.project} section={collectionLabel(t, r.label)} />
+			<ProjectView
+				project={r.project}
+				section={collectionLabel(t, r.label)}
+				sectionHref={collectionPath(r.label)}
+			/>
 		);
 	}
 

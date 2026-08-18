@@ -12,8 +12,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ADMIN_HINT_COOKIE } from "#/lib/admin-hint";
 import { LanguageProvider } from "#/lib/i18n";
 import { InlineEditProvider } from "#/lib/inline-edit";
-import type { ResolvedPage, ResolvedPost } from "#/server/repo/content";
 import { parseFieldTarget } from "#/server/repo/admin";
+import type { ResolvedPage, ResolvedPost } from "#/server/repo/content";
 
 const state = vi.hoisted(() => ({
 	me: null as { permissions: string[]; isSuperAdmin: boolean } | null,
@@ -48,7 +48,6 @@ vi.mock("@/components/NavLink", () => ({
 	),
 }));
 
-import { cmsMark } from "./sections/SectionRenderer";
 import { InlineEditBar } from "./InlineEditBar";
 import {
 	type PageRecord,
@@ -57,6 +56,7 @@ import {
 	SubPage,
 	useRecordMark,
 } from "./SubPage";
+import { cmsMark } from "./sections/SectionRenderer";
 
 const PAGE_ID = 40;
 const POST_ID = 2;
@@ -155,7 +155,7 @@ const signIn = (permissions: string[]) => {
 /** Sign in, render, turn the switch on. */
 async function editing(record: PageRecord, lang = "en") {
 	const view = render(<Probe record={record} lang={lang} />);
-	fireEvent.click(await screen.findByLabelText(/edit text/i));
+	fireEvent.click(await screen.findByLabelText(/edit this page/i));
 	return view;
 }
 
@@ -174,7 +174,8 @@ const click = (root: HTMLElement, selector: string) => {
 	return node;
 };
 
-const isOpen = (node: HTMLElement) => node.getAttribute("contenteditable") !== null;
+const isOpen = (node: HTMLElement) =>
+	node.getAttribute("contenteditable") !== null;
 
 /** Whether anything on the page is drawn as editable. */
 const outlines = (root: HTMLElement) =>
@@ -234,7 +235,9 @@ describe("the fields a page and a post carry", () => {
 				opens.push(target);
 				fireEvent.keyDown(node, { key: "Escape" });
 			}
-			expect(opens).toEqual(Object.keys(record.fields).map((f) => `field:${f}`));
+			expect(opens).toEqual(
+				Object.keys(record.fields).map((f) => `field:${f}`),
+			);
 
 			// the row a listing drew belongs to that record, not to this page
 			const listed = click(

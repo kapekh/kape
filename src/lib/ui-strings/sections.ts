@@ -32,6 +32,10 @@ export const sections: Record<string, { en: string; km?: string }> = {
 	"jobs.col.location": { en: "Location" },
 	"jobs.col.position": { en: "Position" },
 
+	"pager.label": { en: "Pagination" },
+	"pager.next": { en: "Next" },
+	"pager.prev": { en: "Previous" },
+
 	"partners.uncategorised": { en: "Partners" },
 
 	"project.current": { en: "Current project" },

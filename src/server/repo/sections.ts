@@ -33,7 +33,42 @@ import { listOffices, listPartners } from "./site";
 import { staffDirectory, staffDocuments, staffEvents } from "./staff";
 
 // allowSource is for sections the client just handed us; without it the preview procedure is a read path into every domain table
-export type ResolveOptions = { allowSource?: (s: QuerySource) => boolean };
+export type ResolveOptions = {
+	allowSource?: (s: QuerySource) => boolean;
+	/** 1-based, off `?page=`. Only sections carrying a `perPage` read it. */
+	page?: number;
+};
+
+/** What the renderer needs to draw a pager under a paginated list. */
+export type PageInfo = {
+	page: number;
+	perPage: number;
+	total: number;
+	totalPages: number;
+};
+
+// a paginated list has to know its length, so it cannot stop at the query's limit
+const PAGINATED_MAX = 500;
+
+const perPageOf = (props: Record<string, unknown>): number => {
+	const n = Number(props.perPage);
+	return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+};
+
+function paginate(
+	rows: unknown[],
+	perPage: number,
+	requested: number,
+): { rows: unknown[]; pageInfo: PageInfo } {
+	const total = rows.length;
+	const totalPages = Math.max(1, Math.ceil(total / perPage));
+	const page = Math.min(Math.max(1, requested), totalPages);
+	const start = (page - 1) * perPage;
+	return {
+		rows: rows.slice(start, start + perPage),
+		pageInfo: { page, perPage, total, totalPages },
+	};
+}
 
 // resolved rows reach the renderer as untyped JSON, so a source whose repo function changes shape fails here
 export type SourceRow = {
@@ -57,6 +92,7 @@ async function resolveQuery(
 	q: SectionQuery,
 	lang: string,
 	opts?: ResolveOptions,
+	limit?: number,
 ): Promise<SourceRow[QuerySource][] | null> {
 	if (opts?.allowSource && !opts.allowSource(q.source)) return null;
 	switch (q.source) {
@@ -64,14 +100,14 @@ async function resolveQuery(
 			const ct = q.contentType ?? "news";
 			if (NON_PUBLIC_CONTENT_TYPES.has(ct)) return [];
 			if (ct === "job") return listJobs(db, lang);
-			return listPosts(db, ct, lang, q.limit ?? 12);
+			return listPosts(db, ct, lang, limit ?? q.limit ?? 12);
 		}
 		case "videos":
 			return listVideos(db, lang);
 		case "albums":
 			return listAlbums(db, lang);
 		case "publications":
-			return listPublications(db, lang, q.category, q.limit ?? 24);
+			return listPublications(db, lang, q.category, limit ?? q.limit ?? 24);
 		case "people": {
 			const all = await listPeople(db, lang);
 			// Optional section filter (board | smt | pm | team) so a page can show
@@ -87,7 +123,7 @@ async function resolveQuery(
 		case "partners":
 			return listPartners(db);
 		case "projects":
-			return listProjectCards(db, lang, q.category, q.limit);
+			return listProjectCards(db, lang, q.category, limit ?? q.limit);
 		case "staff":
 			return staffDirectory(db);
 		case "events":
@@ -137,7 +173,21 @@ export async function resolveSections(
 				props.bodyHtml = renderBody(props.body);
 			}
 			if (s?.query) {
-				props.data = await resolveQuery(db, s.query, lang, opts);
+				const perPage = perPageOf(props);
+				const rows = await resolveQuery(
+					db,
+					s.query,
+					lang,
+					opts,
+					perPage ? PAGINATED_MAX : undefined,
+				);
+				if (perPage && Array.isArray(rows)) {
+					const paged = paginate(rows, perPage, opts?.page ?? 1);
+					props.data = paged.rows;
+					props.pageInfo = paged.pageInfo;
+				} else {
+					props.data = rows;
+				}
 				if (s.query.source === "posts") {
 					props.linkBase = POST_LINK_BASE[s.query.contentType ?? "news"] ?? "";
 				}

@@ -213,7 +213,7 @@ const signIn = (permissions: string[]) => {
 /** Sign in, render, turn the switch on. */
 async function editing(sections: SectionNode[], lang = "en") {
 	const view = render(<Probe sections={sections} lang={lang} />);
-	fireEvent.click(await screen.findByLabelText(/edit text/i));
+	fireEvent.click(await screen.findByLabelText(/edit this page/i));
 	return view;
 }
 
@@ -230,7 +230,8 @@ const clickTarget = (root: HTMLElement, target: string) => {
 	return node;
 };
 
-const isOpen = (node: HTMLElement) => node.getAttribute("contenteditable") !== null;
+const isOpen = (node: HTMLElement) =>
+	node.getAttribute("contenteditable") !== null;
 
 /** Whether anything on the page is drawn as editable. */
 const outlines = (root: HTMLElement) =>
@@ -418,7 +419,10 @@ describe("editing a section field on the public page", () => {
 		signIn(["pages"]);
 		const sections = probeSections();
 		const { container } = await editing(sections);
-		const node = clickTarget(container, address(sections, "hero", "props.title"));
+		const node = clickTarget(
+			container,
+			address(sections, "hero", "props.title"),
+		);
 		fireEvent.keyDown(node, { key: "Enter", ctrlKey: true });
 
 		await waitFor(() => expect(state.saved).toEqual([]));

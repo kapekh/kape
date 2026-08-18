@@ -30,6 +30,7 @@ export async function seedSiteSettings() {
 			// The client's crest, kept byte for byte at this path; /logo.png is now
 			// the product's own neutral mark and belongs to nobody.
 			logo_url: "/fixture/kape-logo.png",
+			favicon_url: "/fixture/kape-favicon.ico",
 			og_image: "/fixture/kape-logo.png",
 			footer_blurb:
 				"KAPE works at every level of formal education across 15 provinces in Cambodia — from preschools to Master's programs in Mentoring.",

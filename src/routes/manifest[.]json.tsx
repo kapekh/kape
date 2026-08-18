@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { DEFAULT_LANG } from "#/lib/i18n-config";
 import {
 	siteDescription,
+	siteFavicon,
 	siteLogo,
 	siteShortName,
 	siteTitle,
@@ -20,11 +21,7 @@ async function handler() {
 		name: siteTitle(settings),
 		...(description ? { description } : {}),
 		icons: [
-			{
-				src: "favicon.ico",
-				sizes: "64x64 32x32 24x24 16x16",
-				type: "image/x-icon",
-			},
+			{ src: siteFavicon(settings), sizes: "48x48 32x32 16x16" },
 			{
 				src: siteLogo(settings),
 				type: "image/png",
