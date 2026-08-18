@@ -1,5 +1,20 @@
 import { createMiddleware, createStart } from "@tanstack/react-start";
 
+export const contentSecurityPolicy = [
+	"default-src 'self'",
+	"base-uri 'self'",
+	// pdf reader embeds uploads with <object>
+	"object-src 'self'",
+	"frame-ancestors 'self'",
+	"img-src 'self' data: https:",
+	"media-src 'self' https:",
+	"font-src 'self' https://fonts.gstatic.com data:",
+	// unpkg serves the Leaflet stylesheet used by the project-location map.
+	"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com",
+	"script-src 'self' 'unsafe-inline'",
+	"connect-src 'self'",
+].join("; ");
+
 // CSP is production-only: in dev it blocks Vite's HMR
 const securityHeaders = createMiddleware({ type: "request" }).server(
 	async ({ next }) => {
@@ -14,22 +29,7 @@ const securityHeaders = createMiddleware({ type: "request" }).server(
 			process.env.NODE_ENV === "production" &&
 			!h.has("content-security-policy")
 		) {
-			h.set(
-				"Content-Security-Policy",
-				[
-					"default-src 'self'",
-					"base-uri 'self'",
-					"object-src 'none'",
-					"frame-ancestors 'self'",
-					"img-src 'self' data: https:",
-					"media-src 'self' https:",
-					"font-src 'self' https://fonts.gstatic.com data:",
-					// unpkg serves the Leaflet stylesheet used by the project-location map.
-					"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com",
-					"script-src 'self' 'unsafe-inline'",
-					"connect-src 'self'",
-				].join("; "),
-			);
+			h.set("Content-Security-Policy", contentSecurityPolicy);
 		}
 		return result;
 	},
