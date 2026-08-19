@@ -187,6 +187,7 @@ function ItemsTable({
 							</tr>
 						)}
 						{rows.map((row, i) => (
+							// biome-ignore lint/suspicious/noArrayIndexKey: the row is the authored payload and carries no id, and every keystroke replaces the object, so position is the only identity there is
 							<tr key={i}>
 								<td className="w-7 bg-admin-bg px-1 text-center align-middle text-[13px] text-admin-ink-muted">
 									{i + 1}
@@ -300,6 +301,7 @@ function CardsEditor({
 				const btns = cardButtons(card);
 				return (
 					<div
+						// biome-ignore lint/suspicious/noArrayIndexKey: the row is the authored payload and carries no id, and every keystroke replaces the object, so position is the only identity there is
 						key={i}
 						className="rounded-xl border border-admin-border bg-admin-panel p-3"
 					>
@@ -396,6 +398,7 @@ function CardsEditor({
 								<legend className={fieldLabel}>Buttons</legend>
 								<div className="space-y-1.5">
 									{btns.map((b, bi) => (
+										// biome-ignore lint/suspicious/noArrayIndexKey: the row is the authored payload and carries no id, and every keystroke replaces the object, so position is the only identity there is
 										<div key={bi} className="flex gap-1.5">
 											<input
 												className={`${fieldInput} flex-1`}

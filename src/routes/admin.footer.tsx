@@ -44,7 +44,9 @@ const KEYS = [
 	"copyright_km",
 ] as const;
 
-type Link = { label: string; href: string };
+// `key` is the row's identity while it is edited; it is never saved, since
+// serializeLinks writes the label and href only
+type Link = { key: string; label: string; href: string };
 const parseLinks = (raw: string): Link[] =>
 	raw
 		.split(",")
@@ -52,7 +54,7 @@ const parseLinks = (raw: string): Link[] =>
 		.filter(Boolean)
 		.map((pair) => {
 			const [label, href] = pair.split("|").map((s) => s.trim());
-			return { label: label ?? "", href: href ?? "" };
+			return { key: crypto.randomUUID(), label: label ?? "", href: href ?? "" };
 		})
 		.filter((l) => l.label || l.href);
 
@@ -81,7 +83,7 @@ function LinkRows({
 	return (
 		<div className="mt-4 space-y-2">
 			{rows.map((l, i) => (
-				<div key={i} className="flex items-center gap-2">
+				<div key={l.key} className="flex items-center gap-2">
 					<input
 						className={`${fieldInput} flex-1`}
 						placeholder="Label"
@@ -110,7 +112,12 @@ function LinkRows({
 			<Button
 				variant="secondary"
 				size="sm"
-				onClick={() => setRows((ls) => [...ls, { label: "", href: "" }])}
+				onClick={() =>
+					setRows((ls) => [
+						...ls,
+						{ key: crypto.randomUUID(), label: "", href: "" },
+					])
+				}
 			>
 				<Plus aria-hidden="true" className="size-4" />
 				{addLabel}
@@ -119,13 +126,14 @@ function LinkRows({
 	);
 }
 
-type Social = { name: string; url: string; logoUrl: string };
+type Social = { key: string; name: string; url: string; logoUrl: string };
 const parseSocials = (raw?: string): Social[] => {
 	if (!raw) return [];
 	try {
 		const arr = JSON.parse(raw);
 		return Array.isArray(arr)
 			? arr.map((s) => ({
+					key: crypto.randomUUID(),
 					name: String(s?.name ?? ""),
 					url: String(s?.url ?? ""),
 					logoUrl: String(s?.logoUrl ?? ""),
@@ -147,7 +155,9 @@ const legacySocials = (m: Record<string, string>): Social[] => {
 		{ name: "Facebook", url: m.social_facebook ?? "", logoUrl: "" },
 		{ name: "YouTube", url: m.youtube_url ?? "", logoUrl: "" },
 		{ name: "Telegram", url: tg, logoUrl: "" },
-	].filter((s) => s.url);
+	]
+		.filter((s) => s.url)
+		.map((s) => ({ ...s, key: crypto.randomUUID() }));
 };
 
 function FooterAdmin() {
@@ -376,7 +386,7 @@ function FooterAdmin() {
 					<div className="mt-1 space-y-3">
 						{socials.map((sc, i) => (
 							<div
-								key={i}
+								key={sc.key}
 								className="rounded-xl border border-admin-border bg-admin-bg p-3"
 							>
 								<div className="flex items-start gap-3">
@@ -444,7 +454,10 @@ function FooterAdmin() {
 							variant="secondary"
 							size="sm"
 							onClick={() =>
-								setSocials((ls) => [...ls, { name: "", url: "", logoUrl: "" }])
+								setSocials((ls) => [
+									...ls,
+									{ key: crypto.randomUUID(), name: "", url: "", logoUrl: "" },
+								])
 							}
 						>
 							<Plus aria-hidden="true" className="size-4" />

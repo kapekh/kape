@@ -50,6 +50,8 @@ type Initial =
 	| (Omit<FormBuilderValue, "status"> & { status: string; id?: number })
 	| null;
 
+type EditorField = FormField & { rid: string };
+
 const slugify = (s: string) =>
 	s
 		.toLowerCase()
@@ -87,7 +89,11 @@ export function FormBuilder({
 	);
 	const [notifyEmail, setNotifyEmail] = useState(initial?.notifyEmail ?? "");
 	const [deadline, setDeadline] = useState(initial?.deadline ?? "");
-	const [fields, setFields] = useState<FormField[]>(initial?.fields ?? []);
+	// `rid` is the row's identity while it is edited: a field's own key is empty
+	// until it is named, and the list reorders. Stripped before the form is saved.
+	const [fields, setFields] = useState<EditorField[]>(() =>
+		(initial?.fields ?? []).map((f) => ({ ...f, rid: crypto.randomUUID() })),
+	);
 	// which field's settings are open; a builder that shows every field's settings
 	// at once is a wall, and only one field is ever being edited
 	const [openField, setOpenField] = useState<number | null>(null);
@@ -136,7 +142,10 @@ export function FormBuilder({
 		);
 	};
 	const addField = () => {
-		setFields((fs) => [...fs, { key: "", label: "", type: "text" }]);
+		setFields((fs) => [
+			...fs,
+			{ rid: crypto.randomUUID(), key: "", label: "", type: "text" },
+		]);
 		setOpenField(fields.length);
 	};
 
@@ -147,7 +156,7 @@ export function FormBuilder({
 			return;
 		}
 		const cleaned = fields
-			.map((f, idx) => {
+			.map(({ rid: _rid, ...f }, idx) => {
 				const options = f.options
 					?.map((o) => o.trim())
 					.filter(Boolean)
@@ -312,7 +321,7 @@ export function FormBuilder({
 										(f.type === "content" ? "Content block" : "Untitled field");
 									return (
 										<div
-											key={i}
+											key={f.rid}
 											className={`overflow-hidden rounded-lg border ${f.type === "section" ? "border-admin-accent/40 bg-admin-accent-soft" : "border-admin-border bg-admin-panel"}`}
 										>
 											<div className="flex items-center gap-1 pr-2">

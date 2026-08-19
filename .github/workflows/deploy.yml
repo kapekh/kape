@@ -21,10 +21,7 @@ jobs:
           bun-version: latest
       - run: bun install --frozen-lockfile
       - run: bunx tsc --noEmit
-      # 6 pre-existing noArrayIndexKey errors; the gate is the delta, so this
-      # reports without blocking. Drop continue-on-error once it reaches zero.
       - run: bun run lint
-        continue-on-error: true
       - run: bun run test
 
   build:
