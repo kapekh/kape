@@ -167,10 +167,7 @@ export async function getUiStrings(
 
 	const out: Record<string, string> = {};
 	const fallback: string[] = [];
-	const keys = new Set([
-		...Object.keys(defaultUiStrings),
-		...stored.keys(),
-	]);
+	const keys = new Set([...Object.keys(defaultUiStrings), ...stored.keys()]);
 	for (const key of keys) {
 		const own = stored.get(key)?.[lang] ?? shippedDefault(key, lang);
 		if (own !== undefined) {

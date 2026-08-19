@@ -1,13 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-
+import { EditorSkeleton } from "#/components/admin/EditorSkeleton";
 import {
 	type LangOpt,
 	PostForm,
 	type PostFormValue,
 	type TypeOpt,
 } from "#/components/admin/PostForm";
-import { EditorSkeleton } from "#/components/admin/EditorSkeleton";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { saveErrorMessage } from "#/lib/save-error";
 import { toast } from "@/components/Dialogs";
@@ -57,8 +56,7 @@ function EditPost() {
 
 	if (notFound)
 		return <p className="text-sm text-muted-foreground">Post not found.</p>;
-	if (!data || !langs.length)
-		return <EditorSkeleton />;
+	if (!data || !langs.length) return <EditorSkeleton />;
 
 	return (
 		<PostForm

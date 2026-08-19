@@ -23,7 +23,11 @@ function SectionSkeleton({ fields }: { fields: number }) {
 }
 
 /** The editor's own shape while it loads, so the page does not jump when it arrives. */
-export function EditorSkeleton({ label = "Loading the editor…" }: { label?: string }) {
+export function EditorSkeleton({
+	label = "Loading the editor…",
+}: {
+	label?: string;
+}) {
 	return (
 		<div>
 			<output className="sr-only">{label}</output>

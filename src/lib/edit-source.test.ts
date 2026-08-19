@@ -40,8 +40,8 @@ describe("the source behind a node edited in place", () => {
 	});
 
 	it("keeps an emptied accent span out of the source rather than saving **", () => {
-		expect(
-			sourceOf(node('Plain <span data-cms-accent=""> </span>text')),
-		).toBe("Plain text");
+		expect(sourceOf(node('Plain <span data-cms-accent=""> </span>text'))).toBe(
+			"Plain text",
+		);
 	});
 });

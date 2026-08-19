@@ -287,9 +287,7 @@ export function CampaignForm({
 										{(p) => (
 											<Select
 												value={currency}
-												onValueChange={(v) =>
-													setCurrency(v as "USD" | "KHR")
-												}
+												onValueChange={(v) => setCurrency(v as "USD" | "KHR")}
 											>
 												<SelectTrigger
 													id={p.id}

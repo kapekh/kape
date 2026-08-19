@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-
+import { EditorSkeleton } from "#/components/admin/EditorSkeleton";
 import type { LangOpt } from "#/components/admin/PostForm";
 import {
 	type DonorOpt,
@@ -8,7 +8,6 @@ import {
 	type ProjectFormValue,
 } from "#/components/admin/ProjectForm";
 import { useModules } from "#/components/admin/useModules";
-import { EditorSkeleton } from "#/components/admin/EditorSkeleton";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { saveErrorMessage } from "#/lib/save-error";
 import { toast } from "@/components/Dialogs";

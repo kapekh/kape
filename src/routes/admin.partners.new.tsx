@@ -1,12 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-
+import { EditorSkeleton } from "#/components/admin/EditorSkeleton";
 import {
 	PartnerForm,
 	type PartnerFormValue,
 	type TermOpt,
 } from "#/components/admin/PartnerForm";
-import { EditorSkeleton } from "#/components/admin/EditorSkeleton";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { saveErrorMessage } from "#/lib/save-error";
 import { toast } from "@/components/Dialogs";

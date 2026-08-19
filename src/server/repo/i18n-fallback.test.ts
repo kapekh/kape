@@ -49,7 +49,11 @@ describe("section overlay fallback", () => {
 	});
 
 	it("skips fields the section is not showing", async () => {
-		const [s] = await resolveSections(noDb, [hero({ title: "Our work" })], "km");
+		const [s] = await resolveSections(
+			noDb,
+			[hero({ title: "Our work" })],
+			"km",
+		);
 		expect(s.props?.i18nFallback).toEqual(["title"]);
 	});
 

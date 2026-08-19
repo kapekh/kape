@@ -48,7 +48,9 @@ describe("AdminIcon on lucide", () => {
 
 	it("draws something for every one of them", () => {
 		for (const name of NAV_NAMES) {
-			const { container } = render(<AdminIcon name={name} className="h-4 w-4" />);
+			const { container } = render(
+				<AdminIcon name={name} className="h-4 w-4" />,
+			);
 			const svg = container.querySelector("svg");
 			expect(svg, name).not.toBeNull();
 			expect(svg?.children.length, name).toBeGreaterThan(0);
@@ -63,7 +65,9 @@ describe("AdminIcon on lucide", () => {
 	});
 
 	it("passes its class through, because the nav sizes it", () => {
-		const { container } = render(<AdminIcon name="pages" className="h-4 w-4" />);
+		const { container } = render(
+			<AdminIcon name="pages" className="h-4 w-4" />,
+		);
 		expect(container.querySelector("svg")?.getAttribute("class")).toContain(
 			"h-4 w-4",
 		);

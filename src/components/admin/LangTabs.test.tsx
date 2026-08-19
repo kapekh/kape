@@ -14,14 +14,11 @@ const LANGS = [
 ];
 
 const renderTabs = () =>
-	render(
-		<LangTabs languages={LANGS}>
-			{(l) => <p>panel {l.code}</p>}
-		</LangTabs>,
-	);
+	render(<LangTabs languages={LANGS}>{(l) => <p>panel {l.code}</p>}</LangTabs>);
 
 const tabs = () => screen.getAllByRole("tab");
-const selected = () => tabs().find((t) => t.getAttribute("aria-selected") === "true");
+const selected = () =>
+	tabs().find((t) => t.getAttribute("aria-selected") === "true");
 
 describe("LangTabs", () => {
 	it("points each tab at the panel it controls", () => {

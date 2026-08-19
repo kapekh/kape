@@ -227,7 +227,8 @@ export function InlineEditSurface() {
 		const stored = target.kind === "uiString" ? target.own : !target.fellBack;
 		const named = target.kind === "uiString" ? lang : target.lang;
 		const langName =
-			languages.find((l) => l.code === named)?.nativeName ?? named.toUpperCase();
+			languages.find((l) => l.code === named)?.nativeName ??
+			named.toUpperCase();
 		now.current.setStatus({
 			kind: "editing",
 			label: target.label,

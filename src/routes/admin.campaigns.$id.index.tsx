@@ -39,8 +39,7 @@ function EditCampaign() {
 		}
 	}
 
-	if (!initial)
-		return <EditorSkeleton />;
+	if (!initial) return <EditorSkeleton />;
 	return (
 		<CampaignForm
 			initial={initial}
