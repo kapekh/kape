@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
-import { act, fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import {
+	act,
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+} from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@tanstack/react-router", () => ({
 	Link: ({ children }: { children?: React.ReactNode }) => (
@@ -34,6 +40,8 @@ const initial = {
 	notifyEmail: null,
 };
 
+afterEach(cleanup);
+
 describe("FormBuilder", () => {
 	// the row identity React needs is the builder's own; a form saved with it
 	// would carry a per-session id into every submission's column list
@@ -54,6 +62,20 @@ describe("FormBuilder", () => {
 			expect(Object.keys(field)).not.toContain("rid");
 
 		// the builder checks its slug on a 350ms timer, which outlives a fast test
+		await act(() => new Promise((r) => setTimeout(r, 400)));
+	});
+
+	it("moves a field's own row when the field moves", async () => {
+		render(
+			<FormBuilder title="Edit form" initial={initial} onSubmit={() => {}} />,
+		);
+
+		const remove = screen.getByRole("button", { name: "Remove Year" });
+		fireEvent.click(screen.getByRole("button", { name: "Move Year up" }));
+
+		// keyed by the row, not by the slot: the row travels, it is not rewritten
+		expect(screen.getByRole("button", { name: "Remove Year" })).toBe(remove);
+
 		await act(() => new Promise((r) => setTimeout(r, 400)));
 	});
 });
