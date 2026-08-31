@@ -219,8 +219,8 @@ export async function getNavTree(db: DB, lang: string): Promise<NavNode[]> {
 		}
 	}
 
-	// Items with children are dropdown groups — they never link anywhere.
-	for (const node of nodeById.values()) {
+	// top-level with children is a dropdown trigger, never a link; deeper items keep their target
+	for (const node of roots) {
 		if (node.children.length > 0) node.href = null;
 	}
 	return roots;

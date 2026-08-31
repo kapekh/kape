@@ -51,12 +51,23 @@ function MegaLink({
 			)}
 		</>
 	);
-	return href ? (
+	const self = href ? (
 		<NavLink href={href} onClick={onNavigate} className={cls}>
 			{inner}
 		</NavLink>
 	) : (
 		<span className={cls}>{inner}</span>
+	);
+	if (item.children.length === 0) return self;
+	return (
+		<div className="break-inside-avoid">
+			{self}
+			<div className="ml-3 border-l border-border pl-3">
+				{item.children.map((c) => (
+					<MegaLink key={c.id} item={c} lang={lang} onNavigate={onNavigate} />
+				))}
+			</div>
+		</div>
 	);
 }
 
