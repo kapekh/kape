@@ -2538,6 +2538,7 @@ export type ProjectLocationInput = {
 export type ProjectInput = {
 	code: string;
 	slug: string;
+	parentId: number | null;
 	status: string;
 	sort: number;
 	startDate: string;
@@ -2555,6 +2556,7 @@ function projectColumns(input: ProjectInput) {
 	return {
 		code: input.code,
 		slug: input.slug,
+		parentId: input.parentId,
 		status: input.status,
 		sort: input.sort,
 		startDate: input.startDate || null,
@@ -2562,6 +2564,38 @@ function projectColumns(input: ProjectInput) {
 		targetAreas: input.targetAreas.map((a) => a.trim()).filter(Boolean),
 		snapshots: input.snapshots.filter((s) => s.value.trim() && s.label.trim()),
 	};
+}
+
+/** URLs nest one level (`/projects/<parent>/<slug>`), so a parent cannot itself be a child. */
+async function requireValidProjectParent(
+	db: DB,
+	parentId: number | null,
+	id?: number,
+): Promise<void> {
+	if (parentId == null) return;
+	if (parentId === id)
+		throw new Error("A project cannot be its own parent project.");
+	const [parent] = await db
+		.select({ id: projects.id, parentId: projects.parentId })
+		.from(projects)
+		.where(and(eq(projects.tenantId, TENANT), eq(projects.id, parentId)))
+		.limit(1);
+	if (!parent) throw new Error("That parent project no longer exists.");
+	if (parent.parentId != null)
+		throw new Error(
+			"That project is already a sub-project. Projects nest one level deep.",
+		);
+	if (id != null) {
+		const [child] = await db
+			.select({ id: projects.id })
+			.from(projects)
+			.where(and(eq(projects.tenantId, TENANT), eq(projects.parentId, id)))
+			.limit(1);
+		if (child)
+			throw new Error(
+				"This project has sub-projects of its own, so it cannot become one.",
+			);
+	}
 }
 
 export async function adminListProjects(db: DB) {
@@ -2649,6 +2683,7 @@ export async function getProjectForEdit(db: DB, id: number) {
 		id: p.id,
 		code: p.code,
 		slug: p.slug,
+		parentId: p.parentId,
 		status: p.status,
 		sort: p.sort,
 		startDate: p.startDate ?? "",
@@ -2697,6 +2732,7 @@ export async function createProject(
 	input: ProjectInput,
 ): Promise<number> {
 	await requireFreeSlug(db, "project", input.slug);
+	await requireValidProjectParent(db, input.parentId);
 	const [p] = await db
 		.insert(projects)
 		.values({ tenantId: TENANT, ...projectColumns(input) })
@@ -2710,6 +2746,7 @@ export async function updateProject(
 	input: ProjectInput,
 ): Promise<void> {
 	await requireFreeSlug(db, "project", input.slug, id);
+	await requireValidProjectParent(db, input.parentId, id);
 	await db
 		.update(projects)
 		.set(projectColumns(input))

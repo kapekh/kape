@@ -1217,6 +1217,7 @@ const adminDonorsRouter = {
 const projectInput = z.object({
 	code: z.string().min(1),
 	slug: z.string().min(1),
+	parentId: z.number().nullable().default(null),
 	status: z.enum(["current", "past"]),
 	sort: z.number(),
 	startDate: z.string(),

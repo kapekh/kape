@@ -155,3 +155,71 @@ describe("the front page", () => {
 		expect(rows).toEqual([{ slug: "home", parent_id: null }]);
 	});
 });
+
+const projectInput = (over: Record<string, unknown>) =>
+	JSON.stringify({
+		code: "X",
+		slug: "x",
+		parentId: null,
+		status: "current",
+		sort: 0,
+		startDate: "",
+		endDate: "",
+		targetAreas: [],
+		snapshots: [],
+		translations: [{ lang: "en", name: "X", summary: "", body: "" }],
+		donorIds: [],
+		locations: [],
+		...over,
+	});
+
+// /projects/<parent>/<slug> is the deepest URL resolveRoute builds
+describe("sub-projects", () => {
+	it("accepts one level of nesting", () => {
+		expect(
+			attempt(
+				`const p = await admin.createProject(db, ${projectInput({ code: "IEP", slug: "iep" })});
+				 await admin.createProject(db, ${projectInput({ code: "DWD", slug: "dwd" })});
+				 const dwd = q("select id from projects where slug = 'dwd'")[0].id;
+				 await admin.updateProject(db, dwd, JSON.parse(JSON.stringify({ ...${projectInput({ code: "DWD", slug: "dwd" })}, parentId: p })))`,
+			),
+		).toBe("");
+	});
+
+	it("refuses a second level", () => {
+		expect(
+			attempt(
+				`const dwd = q("select id from projects where slug = 'dwd'")[0].id;
+				 await admin.createProject(db, JSON.parse(JSON.stringify({ ...${projectInput({ code: "SUB", slug: "sub" })}, parentId: dwd })))`,
+			),
+		).toContain("one level deep");
+	});
+
+	it("refuses a project that is its own parent", () => {
+		expect(
+			attempt(
+				`const iep = q("select id from projects where slug = 'iep'")[0].id;
+				 await admin.updateProject(db, iep, JSON.parse(JSON.stringify({ ...${projectInput({ code: "IEP", slug: "iep" })}, parentId: iep })))`,
+			),
+		).toContain("its own parent");
+	});
+
+	it("refuses to demote a project that already has sub-projects", () => {
+		expect(
+			attempt(
+				`const iep = q("select id from projects where slug = 'iep'")[0].id;
+				 await admin.createProject(db, ${projectInput({ code: "TOP", slug: "top" })});
+				 const top = q("select id from projects where slug = 'top'")[0].id;
+				 await admin.updateProject(db, iep, JSON.parse(JSON.stringify({ ...${projectInput({ code: "IEP", slug: "iep" })}, parentId: top })))`,
+			),
+		).toContain("sub-projects of its own");
+	});
+
+	it("refuses a parent that does not exist", () => {
+		expect(
+			attempt(
+				`await admin.createProject(db, JSON.parse(JSON.stringify({ ...${projectInput({ code: "ORPHAN", slug: "orphan" })}, parentId: 99999 })))`,
+			),
+		).toContain("no longer exists");
+	});
+});

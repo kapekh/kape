@@ -4,6 +4,8 @@ import { EditorSkeleton } from "#/components/admin/EditorSkeleton";
 import type { LangOpt } from "#/components/admin/PostForm";
 import {
 	type DonorOpt,
+	type ParentOpt,
+	parentOptions,
 	ProjectForm,
 	type ProjectFormValue,
 } from "#/components/admin/ProjectForm";
@@ -26,6 +28,7 @@ function EditProject() {
 	const [data, setData] = useState<ProjectEdit | null>(null);
 	const [langs, setLangs] = useState<LangOpt[]>([]);
 	const [donors, setDonors] = useState<DonorOpt[]>([]);
+	const [parents, setParents] = useState<ParentOpt[]>([]);
 	const [notFound, setNotFound] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [savedAt, setSavedAt] = useState<string | null>(null);
@@ -38,12 +41,14 @@ function EditProject() {
 			trpcClient.adminProjects.get.query({ id: pid }),
 			trpcClient.i18n.languages.query(),
 			modules.list("fundraising", () => trpcClient.adminDonors.list.query()),
+			trpcClient.adminProjects.list.query(),
 		])
-			.then(([d, l, dn]) => {
+			.then(([d, l, dn, ps]) => {
 				if (!d) setNotFound(true);
 				else setData(d);
 				setLangs(l);
 				setDonors(dn.map((x) => ({ id: x.id, name: x.name })));
+				setParents(parentOptions(ps, pid));
 			})
 			.catch((e) => setError(saveErrorMessage(e)))
 			// In `finally`, so a query that fails leaves a screen that says so rather
@@ -78,6 +83,7 @@ function EditProject() {
 			initial={data}
 			languages={langs}
 			donors={donors}
+			parents={parents}
 			onSubmit={onSubmit}
 			saving={saving}
 			title="Edit project"

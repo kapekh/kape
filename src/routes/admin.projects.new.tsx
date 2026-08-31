@@ -4,6 +4,8 @@ import { EditorSkeleton } from "#/components/admin/EditorSkeleton";
 import type { LangOpt } from "#/components/admin/PostForm";
 import {
 	type DonorOpt,
+	type ParentOpt,
+	parentOptions,
 	ProjectForm,
 	type ProjectFormValue,
 } from "#/components/admin/ProjectForm";
@@ -20,6 +22,7 @@ function NewProject() {
 	const navigate = useNavigate();
 	const [langs, setLangs] = useState<LangOpt[]>([]);
 	const [donors, setDonors] = useState<DonorOpt[]>([]);
+	const [parents, setParents] = useState<ParentOpt[]>([]);
 	const [saving, setSaving] = useState(false);
 	const [ready, setReady] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -29,10 +32,12 @@ function NewProject() {
 		Promise.all([
 			trpcClient.i18n.languages.query(),
 			modules.list("fundraising", () => trpcClient.adminDonors.list.query()),
+			trpcClient.adminProjects.list.query(),
 		])
-			.then(([l, d]) => {
+			.then(([l, d, ps]) => {
 				setLangs(l);
 				setDonors(d.map((x) => ({ id: x.id, name: x.name })));
+				setParents(parentOptions(ps, null));
 			})
 			.catch((e) => setError(saveErrorMessage(e)))
 			// In `finally`, so a query that fails leaves a screen that says so rather
@@ -67,6 +72,7 @@ function NewProject() {
 			initial={null}
 			languages={langs}
 			donors={donors}
+			parents={parents}
 			onSubmit={onSubmit}
 			saving={saving}
 			title="New project"

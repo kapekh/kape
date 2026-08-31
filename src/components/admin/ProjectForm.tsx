@@ -29,7 +29,21 @@ import { useFieldErrors } from "./useFieldErrors";
 import { useModules } from "./useModules";
 
 export type DonorOpt = { id: number; name: string };
+export type ParentOpt = { id: number; name: string };
+
+/** URLs nest one level, so only a top-level project can be a parent. */
+export function parentOptions(
+	rows: { id: number; parentId: number | null; name: string }[],
+	selfId: number | null,
+): ParentOpt[] {
+	return rows
+		.filter((r) => r.parentId == null && r.id !== selfId)
+		.map((r) => ({ id: r.id, name: r.name }));
+}
 export type ProjectStatus = "current" | "past";
+
+// radix rejects "" as an item value
+const NO_PARENT = "none";
 export type Snapshot = { value: string; label: string };
 export type ProjectLocation = {
 	schoolName: string;
@@ -40,6 +54,7 @@ export type ProjectLocation = {
 export type ProjectFormValue = {
 	code: string;
 	slug: string;
+	parentId: number | null;
 	status: ProjectStatus;
 	sort: number;
 	startDate: string;
@@ -54,6 +69,7 @@ export type ProjectFormValue = {
 type Initial = {
 	code: string;
 	slug: string;
+	parentId: number | null;
 	status: string;
 	sort: number;
 	startDate: string;
@@ -69,6 +85,7 @@ export function ProjectForm({
 	initial,
 	languages,
 	donors,
+	parents,
 	onSubmit,
 	saving,
 	title,
@@ -77,6 +94,7 @@ export function ProjectForm({
 	initial: Initial;
 	languages: LangOpt[];
 	donors: DonorOpt[];
+	parents: ParentOpt[];
 	onSubmit: (v: ProjectFormValue) => void;
 	saving?: boolean;
 	title: string;
@@ -88,6 +106,9 @@ export function ProjectForm({
 	const [slug, setSlug] = useState(initial?.slug ?? "");
 	const [status, setStatus] = useState<ProjectStatus>(
 		(initial?.status as ProjectStatus) ?? "current",
+	);
+	const [parentId, setParentId] = useState<number | null>(
+		initial?.parentId ?? null,
 	);
 	const [donorIds, setDonorIds] = useState<number[]>(initial?.donorIds ?? []);
 	// a row's identity is its own, not its index: removing the first one must not
@@ -153,6 +174,7 @@ export function ProjectForm({
 		onSubmit({
 			code,
 			slug,
+			parentId,
 			status,
 			sort: initial?.sort ?? 0,
 			startDate,
@@ -178,6 +200,7 @@ export function ProjectForm({
 		JSON.stringify({
 			code,
 			slug,
+			parentId,
 			status,
 			donorIds,
 			locations,
@@ -440,6 +463,37 @@ export function ProjectForm({
 											onChange={(e) => setSlug(e.target.value)}
 											placeholder="ngs"
 										/>
+									)}
+								</Field>
+								<Field
+									label="Parent project"
+									hint="Makes this a sub-project, served at /projects/<parent>/<slug>."
+								>
+									{(p) => (
+										<Select
+											value={parentId == null ? NO_PARENT : String(parentId)}
+											onValueChange={(v) =>
+												setParentId(v === NO_PARENT ? null : Number(v))
+											}
+										>
+											<SelectTrigger
+												id={p.id}
+												aria-label="Parent project"
+												className="w-full"
+											>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value={NO_PARENT}>
+													None — a top-level project
+												</SelectItem>
+												{parents.map((o) => (
+													<SelectItem key={o.id} value={String(o.id)}>
+														{o.name}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
 									)}
 								</Field>
 								<Field label="Status">
