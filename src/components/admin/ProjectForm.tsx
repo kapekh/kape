@@ -545,7 +545,8 @@ export function ProjectForm({
 							title="Donors"
 							description="Funders backing this project."
 						>
-							<div className="space-y-3">
+							{/* own scrollport: a long register left its last donors below a pinned rail */}
+							<div className="max-h-80 space-y-3 overflow-y-auto overscroll-contain">
 								{donors.length === 0 ? (
 									<span className="text-[13px] text-admin-ink-muted">
 										{modules.has("fundraising")
