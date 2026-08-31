@@ -14,7 +14,9 @@ import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { DEFAULT_LANG } from "#/lib/i18n-config";
 import { MIN_FULL_WIDTH } from "#/lib/media-size";
 import { sectionsFor } from "#/lib/modules";
+import { PEOPLE_TIERS } from "#/lib/people-tiers";
 import {
+	type QuerySource,
 	type SectionField,
 	type SectionNode,
 	sectionDef,
@@ -600,6 +602,56 @@ function FieldInput({
 	);
 }
 
+// typed vocabulary beats a free-text guess: `board-of-directors` matched no tier and showed nobody
+function categoryOptions(source: QuerySource, current: string) {
+	if (source !== "people") return null;
+	// a stored value outside the list is named, not silently shown as "Everyone"
+	return current && !PEOPLE_TIERS.some((t) => t.value === current)
+		? [{ value: current, label: `${current} — no such group` }, ...PEOPLE_TIERS]
+		: PEOPLE_TIERS;
+}
+
+function CategoryFilter({
+	options,
+	value,
+	onChange,
+}: {
+	options: { value: string; label: string }[] | null;
+	value: string;
+	onChange: (v: string) => void;
+}) {
+	const id = useId();
+	return (
+		<div>
+			<label className={fieldLabel} htmlFor={id}>
+				Category filter
+			</label>
+			{options ? (
+				<select
+					id={id}
+					className={fieldInput}
+					value={value}
+					onChange={(e) => onChange(e.target.value)}
+				>
+					<option value="">Everyone</option>
+					{options.map((o) => (
+						<option key={o.value} value={o.value}>
+							{o.label}
+						</option>
+					))}
+				</select>
+			) : (
+				<input
+					id={id}
+					className={fieldInput}
+					value={value}
+					onChange={(e) => onChange(e.target.value)}
+				/>
+			)}
+		</div>
+	);
+}
+
 /** Editor body for a single section: layout + source/query (dynamic) + fields,
  *  plus a per-language tab for translating the section's text props. */
 function SectionEditor({
@@ -623,6 +675,19 @@ function SectionEditor({
 	const props = node.props ?? {};
 	const setProp = (key: string, v: unknown) =>
 		onChange({ ...node, props: { ...props, [key]: v } });
+	const categories = categoryOptions(
+		node.query?.source ?? sources[0]?.value,
+		node.query?.category ?? "",
+	);
+	const setCategory = (v: string) =>
+		onChange({
+			...node,
+			query: {
+				...node.query,
+				source: node.query?.source ?? sources[0].value,
+				category: v || undefined,
+			},
+		});
 
 	// When a built form is picked, it supplies its own layout, title, intro and
 	// submit button — so the section's layout selector + those fields are hidden.
@@ -781,23 +846,11 @@ function SectionEditor({
 							}
 						/>
 					</label>
-					<label className="block">
-						<span className={fieldLabel}>Category filter</span>
-						<input
-							className={fieldInput}
-							value={node.query?.category ?? ""}
-							onChange={(e) =>
-								onChange({
-									...node,
-									query: {
-										...node.query,
-										source: node.query?.source ?? sources[0].value,
-										category: e.target.value || undefined,
-									},
-								})
-							}
-						/>
-					</label>
+					<CategoryFilter
+						options={categories}
+						value={node.query?.category ?? ""}
+						onChange={setCategory}
+					/>
 				</div>
 			)}
 

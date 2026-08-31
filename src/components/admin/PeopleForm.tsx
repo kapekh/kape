@@ -9,6 +9,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "#/components/ui/select.tsx";
+import { PEOPLE_TIERS } from "#/lib/people-tiers";
 import {
 	cancelButtonClass,
 	EditorGrid,
@@ -57,14 +58,6 @@ type Initial = {
 	sort: number;
 	bio?: Record<string, string>;
 } | null;
-
-const TIERS = [
-	{ value: "board", label: "Board of Directors" },
-	{ value: "smt", label: "Senior Management Team" },
-	{ value: "pm", label: "Program Manager / Team Leader" },
-	{ value: "team", label: "Team member" },
-	{ value: "staff", label: "Staff (internal directory only)" },
-];
 
 // radix rejects "" as an item value; the stored value is still "" for "not recorded"
 const NO_SEX = "unspecified";
@@ -337,7 +330,7 @@ export function PeopleForm({
 												<SelectValue />
 											</SelectTrigger>
 											<SelectContent>
-												{TIERS.map((t) => (
+												{PEOPLE_TIERS.map((t) => (
 													<SelectItem key={t.value} value={t.value}>
 														{t.label}
 													</SelectItem>
