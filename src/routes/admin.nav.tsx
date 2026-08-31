@@ -17,12 +17,14 @@ import {
 import type { LangOpt } from "#/components/admin/PostForm";
 import { SearchableSelect } from "#/components/admin/SearchableSelect";
 import { useDirtyGuard } from "#/components/admin/useDirty";
+import { useModules } from "#/components/admin/useModules";
 import { Button } from "#/components/ui/button";
 import { Card } from "#/components/ui/card";
 import { PageHeader } from "#/components/ui/page-header";
 import { SkeletonRows } from "#/components/ui/skeleton";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { HEADER_DEFAULTS } from "#/lib/header-defaults";
+import { publicPathOf } from "#/lib/public-path";
 import { saveErrorMessage } from "#/lib/save-error";
 import { confirm, toast } from "@/components/Dialogs";
 
@@ -269,7 +271,9 @@ function NavItemForm({
 										targetRef,
 									)}
 									placeholder={
-										targetKind === "post" ? "Select a post…" : "Select a page…"
+										targetKind === "post"
+											? "Select a post…"
+											: "Select a page or project…"
 									}
 								/>
 							)}
@@ -332,17 +336,34 @@ function NavBuilder() {
 	const [posts, setPosts] = useState<RefOpt[]>([]);
 	const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
 	const didInit = useRef(false);
+	const modules = useModules();
 
 	const refresh = useCallback(async () => {
-		const [it, l, pg, po] = await Promise.all([
+		const [it, l, pg, po, pr] = await Promise.all([
 			trpcClient.adminNav.list.query(),
 			trpcClient.i18n.languages.query(),
 			trpcClient.adminPages.list.query(),
 			trpcClient.adminPosts.list.query(),
+			modules.list("projects", () => trpcClient.adminProjects.list.query()),
 		]);
 		setItems(it);
 		setLangs(l);
-		setPages(pg.map((p) => ({ slug: p.slug, title: p.title })));
+		// projects share the page picker: menu refs have always been projects/<slug>
+		const parentSlug = new Map(pr.map((p) => [p.id, p.slug]));
+		setPages([
+			...pg.map((p) => ({ slug: p.slug, title: p.title })),
+			...pr.map((p) => ({
+				slug: (
+					publicPathOf({
+						kind: "project",
+						slug: p.slug,
+						parentSlug: p.parentId != null ? parentSlug.get(p.parentId) : null,
+					}) ?? ""
+				).replace(/^\//, ""),
+				title: p.name,
+				contentType: "project",
+			})),
+		]);
 		setPosts(
 			po.map((p) => ({
 				slug: p.slug,
@@ -360,7 +381,7 @@ function NavBuilder() {
 			didInit.current = true;
 		}
 		setLoading(false);
-	}, []);
+	}, [modules.list]);
 
 	const toggle = (id: number) =>
 		setCollapsed((s) => {
