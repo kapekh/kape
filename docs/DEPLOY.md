@@ -288,6 +288,42 @@ Large media needs R2 (`R2_*` in `.env`), or a direct-to-origin hostname.
 
 ## Updating
 
+### From a workstation, with no CI (`deploy/ship.sh`)
+
+This is how KAPE deploys today, because GitHub Actions will not start a run on the org's billing.
+
+```bash
+deploy/ship.sh              # gates, push, snapshot, build on the droplet, swap, health check
+deploy/ship.sh --no-checks  # when tsc, lint and the suite just ran
+```
+
+It needs `deploy/.host` (untracked) holding `deploy@<ip>`, or `KAPE_DEPLOY_HOST` in the environment,
+and an ssh key that opens a **shell** on the droplet — CI's key is pinned to one command and cannot
+be used for this.
+
+It refuses a dirty tree and a branch that is not `main`, so a deploy always names a commit that is
+on GitHub.
+Two things it does that a hand-typed `docker compose up -d --build` does not:
+
+- **The build runs detached, under `nohup`.** On 2 GB the build's memory pressure resets the ssh
+  session, and a foreground build dies with it — leaving you to wonder whether it half-finished.
+- **The running image is tagged `kape:previous` before the swap**, so a bad release is one command
+  away from undone rather than a hunt through `docker images` for a dangling id.
+
+A build that fails never reaches the swap, so the old container keeps serving.
+If the health check fails, it prints the container's logs and the rollback line:
+
+```bash
+ssh deploy@<ip> 'cd /srv/kape && APP_IMAGE=kape:previous docker compose up -d'
+```
+
+Building on the droplet costs 3-5 minutes against CI's seconds. That is the whole trade.
+
+### From CI
+
+**Disabled at present** — re-enable with `gh workflow enable Deploy` once the org's billing is
+clear, and the two paths can coexist: `ship.sh` overwrites the same `:latest` tag CI pushes.
+
 A push to `main` deploys itself: `.github/workflows/deploy.yml` runs `tsc`, lint and the test suite,
 builds the image on a GitHub runner, pushes it to `ghcr.io/koompi/kape`, then SSHes in and restarts
 the droplet on the new image.
