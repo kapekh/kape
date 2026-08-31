@@ -47,3 +47,6 @@ lovable.zip
 
 # Client prototype: read-only reference, never ships
 feedback/
+
+# workstation deploy target (origin address stays out of git)
+deploy/.host
