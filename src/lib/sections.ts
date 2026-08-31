@@ -206,6 +206,7 @@ export const SECTION_DEFS: SectionDef[] = [
 			{ value: "cols-2", label: "2 columns" },
 			{ value: "cols-3", label: "3 columns" },
 			{ value: "cols-4", label: "4 columns" },
+			{ value: "logos", label: "Logo wall (small, whole tile links)" },
 		],
 		fields: [
 			EYEBROW,

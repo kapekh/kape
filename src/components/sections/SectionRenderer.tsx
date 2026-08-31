@@ -820,6 +820,25 @@ function Cards(p: CardsProps) {
 		);
 	};
 
+	if (p.layout === "logos")
+		return (
+			<Band p={p} className={PAD}>
+				<Container>
+					<Heading eyebrow={p.eyebrow} title={p.title} center={!!p.center} />
+					<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+						{items.map((it, n) => (
+							<LogoTile
+								// biome-ignore lint/suspicious/noArrayIndexKey: server-rendered list, no reorder or delete while mounted
+								key={n}
+								item={it}
+								index={n}
+							/>
+						))}
+					</div>
+				</Container>
+			</Band>
+		);
+
 	return (
 		<Band p={p} className={PAD}>
 			<Container>
@@ -922,6 +941,56 @@ function Cards(p: CardsProps) {
 				</div>
 			</Container>
 		</Band>
+	);
+}
+
+/** A logo, uncropped, on a tile the reader can click. Names and blurbs stay. */
+function LogoTile({ item, index }: { item: CardItem; index: number }) {
+	const L = useL();
+	const mark = useMark();
+	const href = item.href || item.buttons?.find((b) => b?.href)?.href || "";
+	const inner = (
+		<>
+			<span className="grid h-20 place-items-center rounded-xl border border-border bg-white p-3 transition group-hover:border-[var(--accent)]">
+				{item.image ? (
+					// title renders beside it and names the tile; alt would read twice
+					<img
+						src={item.image}
+						alt=""
+						className="max-h-14 max-w-full object-contain"
+						onError={onImageError}
+						ref={imageFallbackRef}
+					/>
+				) : (
+					<span className="t-meta font-medium text-foreground/70">
+						{item.title}
+					</span>
+				)}
+			</span>
+			{item.image && item.title && (
+				<span
+					{...mark(`items[${index}].title`)}
+					className="mt-2 block text-center text-xs font-medium text-foreground/80"
+				>
+					{item.title}
+				</span>
+			)}
+			{item.body && (
+				<span
+					{...mark(`items[${index}].body`)}
+					className="mt-1 line-clamp-2 block text-center text-[11px] leading-snug text-muted-foreground"
+				>
+					{item.body}
+				</span>
+			)}
+		</>
+	);
+	return href ? (
+		<NavLink href={L(href)} className="group block">
+			{inner}
+		</NavLink>
+	) : (
+		<div className="group">{inner}</div>
 	);
 }
 
