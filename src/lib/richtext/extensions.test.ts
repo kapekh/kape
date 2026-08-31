@@ -61,6 +61,28 @@ describe("trusted rich text", () => {
 	});
 });
 
+describe("image alignment", () => {
+	const doc = (align: unknown) => ({
+		type: "doc",
+		content: [
+			{ type: "image", attrs: { src: "/uploads/ed.jpg", align } },
+			{
+				type: "paragraph",
+				content: [{ type: "text", text: "Warm greetings" }],
+			},
+		],
+	});
+
+	it("round-trips a float onto the stored image", () => {
+		expect(renderBody(doc("right"))).toContain('data-align="right"');
+	});
+
+	it("drops an alignment it does not offer", () => {
+		expect(renderBody(doc("centre"))).not.toContain("data-align");
+		expect(renderBody(doc(null))).not.toContain("data-align");
+	});
+});
+
 describe("untrusted rich text", () => {
 	it("still renders plain prose", () => {
 		expect(

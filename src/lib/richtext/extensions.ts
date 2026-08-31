@@ -30,6 +30,26 @@ const ResponsiveTable = Table.extend({
 	},
 });
 
+export const IMAGE_ALIGNS = ["left", "right"] as const;
+export type ImageAlign = (typeof IMAGE_ALIGNS)[number];
+
+// data attribute, not a utility class: the stored HTML is styled by .prose-body, which the reader and the editor share
+const AlignedImage = Image.extend({
+	addAttributes() {
+		return {
+			...this.parent?.(),
+			align: {
+				default: null,
+				parseHTML: (el: HTMLElement) => el.getAttribute("data-align"),
+				renderHTML: (attrs: Record<string, unknown>) =>
+					IMAGE_ALIGNS.includes(attrs.align as ImageAlign)
+						? { "data-align": attrs.align as string }
+						: {},
+			},
+		};
+	},
+});
+
 // one list for the editor and the server renderer, or stored JSON stops rendering the way it was authored; link protocols are restricted as XSS defence
 export const richTextExtensions = [
 	StarterKit.configure({
@@ -39,7 +59,7 @@ export const richTextExtensions = [
 			HTMLAttributes: { rel: "noopener noreferrer nofollow", target: "_blank" },
 		},
 	}),
-	Image,
+	AlignedImage,
 	FormEmbed,
 	ResponsiveTable.configure({
 		HTMLAttributes: { class: "w-full min-w-[32rem] border-collapse text-sm" },

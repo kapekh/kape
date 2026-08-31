@@ -16,6 +16,7 @@ import {
 	Redo2,
 	Table as TableIcon,
 	Undo2,
+	WrapText,
 	X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -23,7 +24,7 @@ import { Button } from "#/components/ui/button.tsx";
 import { Skeleton } from "#/components/ui/skeleton.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { emptyDescriptionList } from "#/lib/richtext/description-list";
-import { richTextExtensions } from "#/lib/richtext/extensions";
+import { type ImageAlign, richTextExtensions } from "#/lib/richtext/extensions";
 import { prompt } from "@/components/Dialogs";
 import { MediaLibraryDialog } from "./MediaLibraryDialog";
 
@@ -49,6 +50,13 @@ const TABLE_ACTIONS: [
 	["Delete column", Minus, "Col", (c) => c.deleteColumn()],
 	["Toggle header row", null, "Header", (c) => c.toggleHeaderRow()],
 	["Delete table", X, "Table", (c) => c.deleteTable()],
+];
+
+// wrapping the text is what the author is choosing; "float" is not their word
+const IMAGE_WRAPS: [string, ImageAlign | null][] = [
+	["Wrap left", "left"],
+	["Wrap right", "right"],
+	["Full width", null],
 ];
 
 function ToolGroup({
@@ -140,6 +148,9 @@ export function RichTextEditor({
 			blockquote: editor?.isActive("blockquote") ?? false,
 			link: editor?.isActive("link") ?? false,
 			table: editor?.isActive("table") ?? false,
+			image: editor?.isActive("image") ?? false,
+			imageAlign: (editor?.getAttributes("image").align ??
+				null) as ImageAlign | null,
 		}),
 	});
 	const inTable = marks?.table ?? false;
@@ -247,6 +258,35 @@ export function RichTextEditor({
 								editor.chain().focus().insertContent(emptyDescriptionList).run()
 							}
 						/>
+						{marks?.image && (
+							<span className="flex flex-wrap items-center gap-1 rounded-lg border border-admin-accent/40 bg-admin-accent-soft px-1 py-1">
+								{IMAGE_WRAPS.map(([label, align]) => (
+									<Button
+										key={label}
+										type="button"
+										variant="ghost"
+										size="sm"
+										aria-label={label}
+										aria-pressed={marks.imageAlign === align}
+										className={
+											marks.imageAlign === align
+												? "text-admin-ink"
+												: "text-admin-ink-muted"
+										}
+										onClick={() =>
+											editor
+												.chain()
+												.focus()
+												.updateAttributes("image", { align })
+												.run()
+										}
+									>
+										<WrapText aria-hidden="true" className="size-4" />
+										{label}
+									</Button>
+								))}
+							</span>
+						)}
 						{inTable && (
 							<span className="flex flex-wrap items-center gap-1 rounded-lg border border-admin-accent/40 bg-admin-accent-soft px-1 py-1">
 								{TABLE_ACTIONS.map(([label, Icon, text, run]) => (
