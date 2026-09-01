@@ -87,7 +87,22 @@ export type SourceRow = {
 	documents: Awaited<ReturnType<typeof staffDocuments>>[number];
 };
 
+// every dynamic section offers a Limit; only some sources take one, so cut here too
 async function resolveQuery(
+	db: DB,
+	q: SectionQuery,
+	lang: string,
+	opts?: ResolveOptions,
+	limit?: number,
+): Promise<SourceRow[QuerySource][] | null> {
+	const rows = await selectSource(db, q, lang, opts, limit);
+	const n = limit ?? q.limit;
+	return Array.isArray(rows) && typeof n === "number" && n > 0
+		? rows.slice(0, n)
+		: rows;
+}
+
+async function selectSource(
 	db: DB,
 	q: SectionQuery,
 	lang: string,

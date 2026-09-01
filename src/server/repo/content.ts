@@ -400,7 +400,8 @@ export async function listVideos(db: DB, lang: string): Promise<VideoItem[]> {
 				eq(posts.status, "published"),
 			),
 		)
-		.orderBy(desc(posts.id));
+		// sqlite puts NULL last under DESC, so undated videos sink
+		.orderBy(desc(posts.publishedAt), desc(posts.id));
 	const f = await resolveTranslations(
 		db,
 		"post",

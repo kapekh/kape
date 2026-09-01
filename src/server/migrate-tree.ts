@@ -277,7 +277,7 @@ async function buildHomePage(db: DB) {
 			id: "videos",
 			type: "videoGrid",
 			layout: "grid-3",
-			query: { source: "videos" },
+			query: { source: "videos", limit: 6 },
 			props: {
 				eyebrow: "Watch",
 				title: "From the classroom",
