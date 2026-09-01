@@ -7,8 +7,9 @@ import { renderCache } from "./schema";
 const ENABLED = process.env.SSG_CACHE !== "off";
 const TTL_SECONDS = 7 * 24 * 60 * 60; // backstop; precise invalidation is the primary mechanism
 
-// bump when the rendered HTML or the cached payload's shape changes; old rows age out on the TTL
-const FORMAT = "v4";
+// bump when the rendered HTML or the cached payload's shape changes; old rows age out on the TTL.
+// v5: a person carries tier, program and colleagues, and a section honours its limit.
+const FORMAT = "v5";
 
 export const cacheKey = (path: string, lang: string) =>
 	`${FORMAT}::${lang || "en"}::${path.replace(/^\/+|\/+$/g, "")}`;

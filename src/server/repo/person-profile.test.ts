@@ -53,6 +53,7 @@ const out = execFileSync(
 		 const subject = await getPersonBySlug(db, "subject", "en");
 		 const crowded = await getPersonBySlug(db, "crowded-subject", "en");
 		 console.log(JSON.stringify({
+			keys: Object.keys(subject).sort(),
 			tier: subject.tier,
 			program: subject.program,
 			colleagues: subject.colleagues.map((c) => c.name).sort(),
@@ -67,6 +68,7 @@ const out = execFileSync(
 );
 
 const result = JSON.parse(out.trim().split("\n").at(-1) as string) as {
+	keys: string[];
 	tier: string;
 	program: string;
 	colleagues: string[];
@@ -83,6 +85,22 @@ describe("person profile", () => {
 	it("lists only public people of the same tier, never the subject", () => {
 		expect(result.colleagues).toEqual(["Peer One", "Peer Two"]);
 		expect(result.crowdedSelf).toBe(false);
+	});
+
+	// this payload is cached whole; a new key needs FORMAT bumped in render-cache.ts
+	it("keeps the shape the render cache format was last bumped for", () => {
+		expect(result.keys).toEqual([
+			"bodyHtml",
+			"colleagues",
+			"i18nFallback",
+			"id",
+			"name",
+			"photoUrl",
+			"position",
+			"program",
+			"slug",
+			"tier",
+		]);
 	});
 
 	it("caps a large tier so the profile does not turn into a directory", () => {
