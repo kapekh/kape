@@ -113,6 +113,9 @@ export function PersonView({
 	const t = useT();
 	const { lang } = useLang();
 	const group = groupLabel(person.tier, t);
+	const program = person.program.trim();
+	const showProgram =
+		program !== "" && program.toLowerCase() !== group.toLowerCase();
 
 	return (
 		<SubPage
@@ -136,7 +139,7 @@ export function PersonView({
 							{group && (
 								<Detail label={t("person.group", "Group")} value={group} />
 							)}
-							{person.program && (
+							{showProgram && (
 								<Detail
 									label={t("person.program", "Program")}
 									value={person.program}
