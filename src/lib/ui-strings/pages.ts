@@ -37,6 +37,19 @@ export const pages: Record<string, { en: string; km?: string }> = {
 	"nav.backSite": { en: "Back to the site" },
 	"nav.explore": { en: "Explore" },
 
+	"person.about": { en: "About {name}" },
+	"person.alsoin": { en: "Also in {group}" },
+	"person.back": { en: "← Back to the whole team" },
+	"person.group": { en: "Group" },
+	"person.more": { en: "More of the team" },
+	"person.nobio": { en: "No profile has been written yet." },
+	"person.program": { en: "Program" },
+
+	"tier.board": { en: "Board of Directors" },
+	"tier.pm": { en: "Programs & Team Leadership" },
+	"tier.smt": { en: "Senior Management Team" },
+	"tier.team": { en: "Our Team" },
+
 	"publications.open": { en: "Open the document" },
 	"videos.watch": { en: "Watch the video" },
 

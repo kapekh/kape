@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, ne } from "drizzle-orm";
 
 import { DEFAULT_LANG } from "#/lib/i18n-config";
 import type { DB } from "../db";
@@ -46,15 +46,63 @@ export async function listPeople(db: DB, lang: string): Promise<PersonItem[]> {
 	}));
 }
 
-export type ResolvedPerson = {
+export type Colleague = {
 	id: number;
 	slug: string;
 	name: string;
 	position: string;
 	photoUrl: string | null;
+};
+
+export type ResolvedPerson = {
+	id: number;
+	slug: string;
+	name: string;
+	position: string;
+	/** `people.tier`, which the profile shows as the group this person sits in. */
+	tier: string;
+	/** Department, e.g. "Digital Education Programming". Shown when set. */
+	program: string;
+	photoUrl: string | null;
 	bodyHtml: string;
 	i18nFallback: string[];
+	/** Everyone else public in the same tier, so a profile is not a dead end. */
+	colleagues: Colleague[];
 };
+
+const COLLEAGUES_SHOWN = 6;
+
+async function colleaguesOf(
+	db: DB,
+	person: { id: number; tier: string },
+	lang: string,
+): Promise<Colleague[]> {
+	const rows = await db
+		.select()
+		.from(people)
+		.where(
+			and(
+				eq(people.tenantId, TENANT),
+				eq(people.isPublic, true),
+				eq(people.tier, person.tier),
+				ne(people.id, person.id),
+			),
+		)
+		.orderBy(asc(people.sort));
+	const withUrl = await attachMediaUrl(
+		db,
+		rows.slice(0, COLLEAGUES_SHOWN),
+		"photoMediaId",
+		"photoUrl",
+	);
+	return withUrl.map((r) => ({
+		id: r.id,
+		slug: r.slug ?? "",
+		name: pickName(r, lang),
+		position: r.position ?? "",
+		photoUrl: r.photoUrl,
+	}));
+}
 
 /** A single public profile by slug, with the bilingual bio rendered to HTML. */
 export async function getPersonBySlug(
@@ -96,9 +144,12 @@ export async function getPersonBySlug(
 		slug: p.slug ?? "",
 		name: pickName(p, lang),
 		position: p.position ?? "",
+		tier: p.tier,
+		program: p.program ?? "",
 		photoUrl,
 		bodyHtml: renderBody(f.bio ?? null),
 		i18nFallback: fallback,
+		colleagues: await colleaguesOf(db, p, lang),
 	};
 }
 

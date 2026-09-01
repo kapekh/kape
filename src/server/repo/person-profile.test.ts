@@ -1,0 +1,91 @@
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterAll, describe, expect, it } from "vitest";
+
+// against a real installed database: who counts as a colleague is SQL
+const dir = mkdtempSync(join(tmpdir(), "person-profile-"));
+const dbPath = join(dir, "people.db");
+const root = process.cwd();
+
+afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+execFileSync("bun", ["src/server/install.ts"], {
+	env: {
+		...process.env,
+		DATABASE_PATH: dbPath,
+		SITE_NAME: "Test Org",
+		ADMIN_EMAIL: "owner@test.example",
+		ADMIN_PASSWORD: "test-install-password",
+		SSG_CACHE: "off",
+	},
+	encoding: "utf8",
+});
+
+const out = execFileSync(
+	"bun",
+	[
+		"-e",
+		`import { db } from "${root}/src/server/db.ts";
+		 import { people } from "${root}/src/server/schema.ts";
+		 import { getPersonBySlug } from "${root}/src/server/repo/people.ts";
+
+		 const add = (nameEn, tier, isPublic, extra = {}) =>
+			db.insert(people).values({
+				tenantId: 1,
+				nameEn,
+				slug: nameEn.toLowerCase().replaceAll(" ", "-"),
+				tier,
+				isPublic,
+				sort: 0,
+				...extra,
+			});
+
+		 await add("Subject", "pm", true, { position: "Lead", program: "NGS" });
+		 await add("Peer One", "pm", true);
+		 await add("Peer Two", "pm", true);
+		 await add("Hidden Peer", "pm", false);
+		 await add("Other Tier", "board", true);
+		 for (let i = 0; i < 8; i++) await add("Crowd " + i, "team", true);
+		 await add("Crowded Subject", "team", true);
+
+		 const subject = await getPersonBySlug(db, "subject", "en");
+		 const crowded = await getPersonBySlug(db, "crowded-subject", "en");
+		 console.log(JSON.stringify({
+			tier: subject.tier,
+			program: subject.program,
+			colleagues: subject.colleagues.map((c) => c.name).sort(),
+			crowdedCount: crowded.colleagues.length,
+			crowdedSelf: crowded.colleagues.some((c) => c.slug === "crowded-subject"),
+		 }));`,
+	],
+	{
+		env: { ...process.env, DATABASE_PATH: dbPath, SSG_CACHE: "off" },
+		encoding: "utf8",
+	},
+);
+
+const result = JSON.parse(out.trim().split("\n").at(-1) as string) as {
+	tier: string;
+	program: string;
+	colleagues: string[];
+	crowdedCount: number;
+	crowdedSelf: boolean;
+};
+
+describe("person profile", () => {
+	it("carries the group and program the sidebar shows", () => {
+		expect(result.tier).toBe("pm");
+		expect(result.program).toBe("NGS");
+	});
+
+	it("lists only public people of the same tier, never the subject", () => {
+		expect(result.colleagues).toEqual(["Peer One", "Peer Two"]);
+		expect(result.crowdedSelf).toBe(false);
+	});
+
+	it("caps a large tier so the profile does not turn into a directory", () => {
+		expect(result.crowdedCount).toBe(6);
+	});
+});

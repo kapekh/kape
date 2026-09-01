@@ -8,13 +8,13 @@ import { JsonLd } from "@/components/JsonLd";
 import { PhotoGrid } from "@/components/Lightbox";
 import { NavLink } from "@/components/NavLink";
 import { usePdfReader } from "@/components/PdfReader";
+import { PersonView } from "@/components/PersonView";
 import { ProjectView } from "@/components/ProjectView";
 import { RichBody } from "@/components/RichBody";
 import { ShareButtons } from "@/components/ShareButtons";
 import {
 	type PageRecord,
 	pageRecord,
-	personRecord,
 	postRecord,
 	SubPage,
 	useRecordMark,
@@ -576,31 +576,12 @@ function ResolvedRoute() {
 	}
 
 	if (r.kind === "person") {
-		const p = r.person;
 		return (
-			<SubPage
+			<PersonView
+				person={r.person}
 				section={collectionLabel(t, r.label)}
 				sectionHref={collectionPath(r.label)}
-				title={p.name}
-				lead={p.position || undefined}
-				heroImage={p.photoUrl || undefined}
-				record={personRecord(p)}
-				titleField="name"
-				leadField="position"
-			>
-				{p.photoUrl && (
-					<img
-						src={p.photoUrl}
-						alt={p.name}
-						className="mb-8 h-40 w-40 rounded-full object-cover shadow-[var(--shadow-soft)] ring-4 ring-card"
-					/>
-				)}
-				{p.bodyHtml ? (
-					<RichBody className="prose-body" html={p.bodyHtml} />
-				) : (
-					<p className="text-muted-foreground">{p.position}</p>
-				)}
-			</SubPage>
+			/>
 		);
 	}
 
