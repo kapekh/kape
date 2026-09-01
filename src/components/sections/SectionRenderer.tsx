@@ -30,6 +30,7 @@ import { FormRenderer } from "../FormRenderer";
 import { type MapMarker, MapView } from "../MapView";
 import { NavLink } from "../NavLink";
 import { usePdfReader } from "../PdfReader";
+import { PersonPhotoEdit, useMayEditPeople } from "../PersonPhotoEdit";
 import { PublicOrgChart } from "../PublicOrgChart";
 import { RichBody } from "../RichBody";
 import { SectionBackground } from "./SectionBackground";
@@ -2149,6 +2150,7 @@ type PeopleProps = Common & { data?: SourceRow["people"][] };
 function People(p: PeopleProps) {
 	const L = useL();
 	const t = useT();
+	const mayEditPeople = useMayEditPeople();
 	const people: SourceRow["people"][] = Array.isArray(p.data) ? p.data : [];
 	const initials = (name: string) =>
 		String(name || "")
@@ -2161,39 +2163,61 @@ function People(p: PeopleProps) {
 			<Container>
 				<Heading eyebrow={p.eyebrow} title={p.title} />
 				{people.length === 0 ? (
-					<Empty>{t("empty.people", "No team members listed yet.")}</Empty>
+					<Empty>
+						{t("empty.people", "No team members listed yet.")}
+						{mayEditPeople && (
+							<>
+								{" "}
+								<a
+									href="/admin/people/new"
+									className="font-semibold text-primary underline underline-offset-4"
+								>
+									Add the first one
+								</a>
+								.
+							</>
+						)}
+					</Empty>
 				) : (
 					<div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-5">
 						{people.map((person) => (
-							<NavLink
-								key={person.id}
-								href={L(`/team/${person.slug}`)}
-								className="group text-center"
-							>
-								<div className="mx-auto h-24 w-24 overflow-hidden rounded-full shadow-md ring-4 ring-card transition group-hover:scale-105">
-									{person.photoUrl ? (
-										<img
-											src={person.photoUrl}
-											alt={person.name || ""}
-											className="h-full w-full object-cover"
-											onError={onImageError}
-											ref={imageFallbackRef}
-										/>
-									) : (
-										<div className="grid h-full w-full place-items-center bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] text-primary-foreground font-display text-2xl font-bold">
-											{initials(person.name)}
+							<div key={person.id} className="group relative text-center">
+								<NavLink
+									href={L(`/team/${person.slug}`)}
+									className="block text-center"
+								>
+									<div className="mx-auto h-24 w-24 overflow-hidden rounded-full shadow-md ring-4 ring-card transition group-hover:scale-105">
+										{person.photoUrl ? (
+											<img
+												src={person.photoUrl}
+												alt={person.name || ""}
+												className="h-full w-full object-cover"
+												onError={onImageError}
+												ref={imageFallbackRef}
+											/>
+										) : (
+											<div className="grid h-full w-full place-items-center bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] text-primary-foreground font-display text-2xl font-bold">
+												{initials(person.name)}
+											</div>
+										)}
+									</div>
+									<div className="mt-3 text-sm font-semibold text-primary group-hover:text-[var(--accent)] transition">
+										{person.name}
+									</div>
+									{person.position && (
+										<div className="text-xs text-muted-foreground">
+											{person.position}
 										</div>
 									)}
-								</div>
-								<div className="mt-3 text-sm font-semibold text-primary group-hover:text-[var(--accent)] transition">
-									{person.name}
-								</div>
-								{person.position && (
-									<div className="text-xs text-muted-foreground">
-										{person.position}
-									</div>
+								</NavLink>
+								{mayEditPeople && (
+									<PersonPhotoEdit
+										personId={person.id}
+										name={person.name}
+										hasPhoto={Boolean(person.photoUrl)}
+									/>
 								)}
-							</NavLink>
+							</div>
 						))}
 					</div>
 				)}

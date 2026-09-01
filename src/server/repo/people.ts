@@ -241,6 +241,20 @@ export async function updatePerson(
 	await writeBio(db, id, input.bio);
 }
 
+// narrow on purpose: the public grid holds no other field to send back
+export async function setPersonPhoto(
+	db: DB,
+	id: number,
+	photoMediaId: number | null,
+): Promise<boolean> {
+	const rows = await db
+		.update(people)
+		.set({ photoMediaId, updatedAt: new Date().toISOString() })
+		.where(and(eq(people.tenantId, TENANT), eq(people.id, id)))
+		.returning({ id: people.id });
+	return rows.length > 0;
+}
+
 export async function deletePerson(db: DB, id: number): Promise<void> {
 	await db
 		.delete(translations)

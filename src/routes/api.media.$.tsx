@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { ALLOWED_UPLOAD_EXT } from "#/lib/upload-types";
 import { parseCookies, SESSION_COOKIE, validateToken } from "#/server/auth";
 import { db } from "#/server/db";
 import { imageSize } from "#/server/image-size";
@@ -58,25 +59,7 @@ async function handler({ request }: { request: Request }) {
 				{ status: 413 },
 			);
 		}
-		// Allow-list of safe upload types (images, documents, video). Excludes SVG
-		// and HTML, which can carry script when served from our own origin.
-		const ALLOWED_EXT = new Set([
-			"png",
-			"jpg",
-			"jpeg",
-			"webp",
-			"gif",
-			"avif",
-			"pdf",
-			"doc",
-			"docx",
-			"xls",
-			"xlsx",
-			"ppt",
-			"pptx",
-			"mp4",
-			"webm",
-		]);
+		const ALLOWED_EXT = new Set<string>(ALLOWED_UPLOAD_EXT);
 		// `pop()` on a name with no dot returns the whole name, so an
 		// extension-less upload would never reach the `file.type` fallback
 		const ext = (

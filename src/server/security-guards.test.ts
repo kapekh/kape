@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { ATTACHMENT_EXTS } from "#/lib/forms";
+import { ALLOWED_UPLOAD_EXT, IMAGE_ACCEPT } from "#/lib/upload-types";
 
 import {
 	bytesMatchExtension,
@@ -164,5 +165,28 @@ describe("stored content type", () => {
 		expect(hasSignature("png")).toBe(true);
 		expect(hasSignature("txt")).toBe(false);
 		expect(hasSignature("csv")).toBe(false);
+	});
+});
+
+describe("upload allow-list", () => {
+	it("stores nothing a browser renders as a page", () => {
+		for (const ext of ALLOWED_UPLOAD_EXT) {
+			expect(ext).not.toBe("svg");
+			expect(contentTypeForExtension(ext)).not.toBe("application/octet-stream");
+		}
+	});
+
+	it("offers an image field only extensions the upload route stores", () => {
+		const offered = IMAGE_ACCEPT.split(",").map((a) => a.replace(/^\./, ""));
+		expect(offered.length).toBeGreaterThan(0);
+		for (const ext of offered)
+			expect(ALLOWED_UPLOAD_EXT).toContain(
+				ext as (typeof ALLOWED_UPLOAD_EXT)[number],
+			);
+	});
+
+	// a phone offers HEIC under `image/*` and the route answers 415
+	it("does not offer heic", () => {
+		expect(IMAGE_ACCEPT).not.toMatch(/heic|heif/i);
 	});
 });

@@ -10,6 +10,7 @@ import {
 	SelectValue,
 } from "#/components/ui/select.tsx";
 import { PEOPLE_TIERS } from "#/lib/people-tiers";
+import { IMAGE_ACCEPT } from "#/lib/upload-types";
 import {
 	cancelButtonClass,
 	EditorGrid,
@@ -307,7 +308,7 @@ export function PeopleForm({
 							<MediaPicker
 								mode="id"
 								kind="image"
-								accept="image/*"
+								accept={IMAGE_ACCEPT}
 								aspect="square"
 								value={photoMediaId}
 								onChange={setPhotoMediaId}

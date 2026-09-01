@@ -158,6 +158,7 @@ import {
 	getPerson,
 	listPeople,
 	type PersonInput,
+	setPersonPhoto,
 	staffDirectory,
 	updatePerson,
 } from "#/server/repo/people";
@@ -954,6 +955,17 @@ const adminPeopleRouter = {
 	update: adminProcedure
 		.input(personInput.extend({ id: z.number() }))
 		.mutation(({ ctx, input }) => updatePerson(ctx.db, input.id, input)),
+	setPhoto: adminProcedure
+		.input(z.object({ id: z.number(), photoMediaId: z.number().nullable() }))
+		.mutation(async ({ ctx, input }) => {
+			const found = await setPersonPhoto(ctx.db, input.id, input.photoMediaId);
+			if (!found)
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "That team member no longer exists.",
+				});
+			return { ok: true };
+		}),
 	delete: adminProcedure
 		.input(z.object({ id: z.number() }))
 		.mutation(({ ctx, input }) => deletePerson(ctx.db, input.id)),
