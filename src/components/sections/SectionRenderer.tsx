@@ -378,7 +378,7 @@ const GRIP =
 function useRowOrder<Row extends { id: number }>(
 	rows: Row[],
 	{
-		on,
+		on: many,
 		label,
 		name,
 		save,
@@ -395,6 +395,8 @@ function useRowOrder<Row extends { id: number }>(
 ) {
 	const { setStatus } = useInlineEdit();
 	const router = useRouter({ warn: false });
+	// one row is nothing to reorder, so it gets no grip rather than a dead one
+	const on = many && rows.length > 1;
 	const byId = new Map(rows.map((r) => [r.id, r]));
 	const sortable = useSortable<number>({
 		ids: rows.map((r) => r.id),
