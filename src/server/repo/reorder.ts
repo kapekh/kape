@@ -28,6 +28,8 @@ type OrderedScope = {
 	/** drizzle property name of the order column, because `set` keys on the property, not the column */
 	sortProp: "sort" | "sortOrder";
 	where: SQL | undefined;
+	// breaks a tie the way the list the editor dragged breaks it; defaults to `key`
+	tie?: AnySQLiteColumn;
 };
 
 type TenantOrdered = SQLiteTable & {
@@ -61,7 +63,7 @@ async function renumber<Id extends SortableId>(
 		.select({ id: scope.key })
 		.from(scope.table)
 		.where(scope.where)
-		.orderBy(asc(sort), asc(scope.key));
+		.orderBy(asc(sort), asc(scope.tie ?? scope.key));
 	if (rows.length < 2) return;
 	const ordered = applyOrder(
 		rows.map((r) => r.id as Id),
@@ -101,7 +103,8 @@ export function reorderOffices(db: DB, ids: number[]): Promise<void> {
 }
 
 export function reorderSchools(db: DB, ids: number[]): Promise<void> {
-	return renumber(db, tenantScope(schools), ids);
+	// the schools list ties on name, so the first renumber has to read it that way
+	return renumber(db, { ...tenantScope(schools), tie: schools.name }, ids);
 }
 
 export function reorderDonors(db: DB, ids: number[]): Promise<void> {
