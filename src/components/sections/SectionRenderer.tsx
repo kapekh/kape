@@ -12,6 +12,7 @@ import {
 	sharedNote,
 	useInlineEdit,
 	useStudioLink,
+	versionFor,
 } from "#/lib/inline-edit";
 import { saveErrorMessage } from "#/lib/save-error";
 import {
@@ -33,6 +34,7 @@ import {
 
 import { ContactForm } from "../ContactForm";
 import { FormRenderer } from "../FormRenderer";
+import { InlineImageEdit } from "../InlineImageEdit";
 import { type MapMarker, MapView } from "../MapView";
 import { NavLink } from "../NavLink";
 import { usePdfReader } from "../PdfReader";
@@ -41,6 +43,7 @@ import { PublicOrgChart } from "../PublicOrgChart";
 import { RichBody } from "../RichBody";
 import { DragHandle, SortableStatus, useSortable } from "../ui/sortable";
 import { SectionBackground } from "./SectionBackground";
+import { SectionMove } from "./SectionMove";
 
 type Common = {
 	layout?: string;
@@ -283,6 +286,61 @@ function EditLayer({
 	return (
 		<style>{`${sel}{outline:1px dashed ${OUTLINE};outline-offset:2px;border-radius:2px;cursor:text}${sel}:hover{outline-color:var(--primary);background:color-mix(in oklab, var(--primary) 8%, transparent)}`}</style>
 	);
+}
+
+/**
+ * The camera button on one of this section's own images, addressed like any
+ * other prop. Null for a visitor, so nothing is added to the public render.
+ */
+function ImageEdit({
+	path,
+	label,
+	hasImage,
+	className,
+}: {
+	path: string;
+	label: string;
+	hasImage: boolean;
+	className: string;
+}) {
+	const identity = useContext(Identity);
+	const sectionId = useContext(SectionId);
+	const on = useEditingSections();
+	// only a page carries sections, which is what updateField will take
+	if (!on || !sectionId || identity?.entity !== "page") return null;
+	return (
+		<InlineImageEdit
+			label={label}
+			hasImage={hasImage}
+			className={`absolute ${className}`}
+			save={async (media) => {
+				const result = await trpcClient.adminPages.updateField.mutate({
+					entity: "page",
+					entityId: identity.entityId,
+					lang: identity.lang,
+					target: `section:${sectionId}:props.${path}`,
+					value: media.url ?? "",
+					expectedUpdatedAt: versionFor(identity.entity, identity.entityId),
+				});
+				rememberVersion(identity.entity, identity.entityId, result.updatedAt);
+			}}
+		/>
+	);
+}
+
+/** The positioned box a camera button needs when the card it belongs to is a
+ *  link, which a button may not sit inside. Nothing at all for a visitor. */
+function ImageAnchor({ children }: { children: React.ReactNode }) {
+	const on = useEditingSections();
+	if (!on) return <>{children}</>;
+	return <div className="relative">{children}</div>;
+}
+
+/** `relative` only while editing, so a camera button anchors to this box without
+ *  changing a byte of what a visitor is served. */
+function useAnchored(): (className: string) => string {
+	const on = useEditingSections();
+	return (className) => (on ? `relative ${className}` : className);
 }
 
 // only a marker the mark itself declared editable carries its source text
@@ -708,6 +766,15 @@ function Slideshow({ slides }: { slides: HeroSlide[] }) {
 								ref={imageFallbackRef}
 							/>
 						)}
+						{/* one button, on the slide on screen: the others are still in the dom */}
+						{idx === i && (
+							<ImageEdit
+								path={`slides[${idx}].image`}
+								label={`slide ${idx + 1} image`}
+								hasImage={Boolean(s.image)}
+								className="right-4 top-4"
+							/>
+						)}
 						<div className="absolute inset-0 bg-gradient-to-t from-primary/85 via-primary/20 to-transparent" />
 						<div className="absolute inset-x-0 bottom-0 p-7 md:p-9 text-primary-foreground">
 							{s.kicker && (
@@ -768,6 +835,7 @@ function Hero(p: HeroProps) {
 	const L = useL();
 	const t = useT();
 	const mark = useMark();
+	const anchored = useAnchored();
 	const layout = p.layout ?? "banner";
 	const slides: HeroSlide[] = Array.isArray(p.slides) ? p.slides : [];
 	const stats: HeroStat[] = Array.isArray(p.stats) ? p.stats : [];
@@ -876,13 +944,19 @@ function Hero(p: HeroProps) {
 						{ctas()}
 					</div>
 					{p.image && (
-						<figure className="m-0">
+						<figure className={anchored("m-0")}>
 							<img
 								src={p.image}
 								alt={p.title || ""}
 								className="rounded-3xl object-cover w-full aspect-[4/3] shadow-[var(--shadow-soft)]"
 								onError={onImageError}
 								ref={imageFallbackRef}
+							/>
+							<ImageEdit
+								path="image"
+								label="hero image"
+								hasImage
+								className="right-3 top-3"
 							/>
 							<ImageCaption path="imageCaption" text={p.imageCaption} />
 						</figure>
@@ -910,6 +984,12 @@ function Hero(p: HeroProps) {
 					/>
 				)}
 				<div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/45" />
+				<ImageEdit
+					path="image"
+					label="hero background"
+					hasImage={Boolean(bg)}
+					className="bottom-4 right-4"
+				/>
 			</div>
 			<Container className="relative py-24 text-center text-primary-foreground">
 				{p.eyebrow && (
@@ -980,6 +1060,7 @@ function Cards(p: CardsProps) {
 	const L = useL();
 	const t = useT();
 	const mark = useMark();
+	const anchored = useAnchored();
 	const cols =
 		p.layout === "cols-2"
 			? "md:grid-cols-2"
@@ -1053,6 +1134,12 @@ function Cards(p: CardsProps) {
 										onError={onImageError}
 										ref={imageFallbackRef}
 									/>
+									<ImageEdit
+										path={`items[${n}].image`}
+										label={`card ${n + 1} image`}
+										hasImage
+										className="right-3 top-3"
+									/>
 									<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/10" />
 									<div className="relative text-white">
 										{it.title && (
@@ -1086,16 +1173,26 @@ function Cards(p: CardsProps) {
 							<div
 								// biome-ignore lint/suspicious/noArrayIndexKey: server-rendered list, no reorder or delete while mounted
 								key={n}
-								className="flex flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-sm transition hover:-translate-y-1 hover:border-[var(--accent)] hover:shadow-[var(--shadow-soft)]"
+								className={anchored(
+									"flex flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-sm transition hover:-translate-y-1 hover:border-[var(--accent)] hover:shadow-[var(--shadow-soft)]",
+								)}
 							>
 								{it.image ? (
-									<img
-										src={it.image}
-										alt={it.title || ""}
-										className="aspect-video w-full object-cover"
-										onError={onImageError}
-										ref={imageFallbackRef}
-									/>
+									<>
+										<img
+											src={it.image}
+											alt={it.title || ""}
+											className="aspect-video w-full object-cover"
+											onError={onImageError}
+											ref={imageFallbackRef}
+										/>
+										<ImageEdit
+											path={`items[${n}].image`}
+											label={`card ${n + 1} image`}
+											hasImage
+											className="right-3 top-3"
+										/>
+									</>
 								) : null}
 								<div className="flex flex-1 flex-col p-6">
 									{it.image && (
@@ -1178,12 +1275,22 @@ function LogoTile({ item, index }: { item: CardItem; index: number }) {
 			)}
 		</>
 	);
-	return href ? (
-		<NavLink href={L(href)} className="group block">
-			{inner}
-		</NavLink>
-	) : (
-		<div className="group">{inner}</div>
+	return (
+		<ImageAnchor>
+			{href ? (
+				<NavLink href={L(href)} className="group block">
+					{inner}
+				</NavLink>
+			) : (
+				<div className="group">{inner}</div>
+			)}
+			<ImageEdit
+				path={`items[${index}].image`}
+				label={`logo ${index + 1}`}
+				hasImage={Boolean(item.image)}
+				className="right-1 top-1"
+			/>
+		</ImageAnchor>
 	);
 }
 
@@ -1205,6 +1312,7 @@ function StatItem({
 	labelClass?: string;
 }) {
 	const mark = useMark();
+	const anchored = useAnchored();
 	const digits = String(value).replace(/[^0-9]/g, "");
 	const target = digits ? Number(digits) : 0;
 	const n = useCount(target, run);
@@ -1214,7 +1322,7 @@ function StatItem({
 		? String(value).replace(/[\d,]+/, n.toLocaleString())
 		: value;
 	return (
-		<div className="group">
+		<div className={anchored("group")}>
 			{icon && (
 				<img
 					src={icon}
@@ -1224,6 +1332,12 @@ function StatItem({
 					ref={imageFallbackRef}
 				/>
 			)}
+			<ImageEdit
+				path={`items[${index}].icon`}
+				label={`stat ${index + 1} icon`}
+				hasImage={Boolean(icon)}
+				className="left-0 top-0"
+			/>
 			<div
 				aria-hidden="true"
 				{...mark(`items[${index}].value`)}
@@ -1288,29 +1402,37 @@ function Stats(p: StatsProps) {
 					<div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-x-8 gap-y-10">
 						{items.map((it, n) => (
 							// biome-ignore lint/suspicious/noArrayIndexKey: server-rendered list, no reorder or delete while mounted
-							<div key={n}>
-								{it.icon && (
-									<img
-										src={it.icon}
-										alt=""
-										className="mb-3 h-10 w-10 object-contain"
-										onError={onImageError}
-										ref={imageFallbackRef}
-									/>
-								)}
-								<div
-									{...mark(`items[${n}].value`)}
-									className={`font-display ${valueClass} font-semibold tabular-nums tracking-tight text-primary whitespace-nowrap`}
-								>
-									{it.value}
+							<ImageAnchor key={n}>
+								<div>
+									{it.icon && (
+										<img
+											src={it.icon}
+											alt=""
+											className="mb-3 h-10 w-10 object-contain"
+											onError={onImageError}
+											ref={imageFallbackRef}
+										/>
+									)}
+									<div
+										{...mark(`items[${n}].value`)}
+										className={`font-display ${valueClass} font-semibold tabular-nums tracking-tight text-primary whitespace-nowrap`}
+									>
+										{it.value}
+									</div>
+									<div
+										{...mark(`items[${n}].label`)}
+										className={`mt-2 ${labelClass} text-muted-foreground`}
+									>
+										{it.label}
+									</div>
 								</div>
-								<div
-									{...mark(`items[${n}].label`)}
-									className={`mt-2 ${labelClass} text-muted-foreground`}
-								>
-									{it.label}
-								</div>
-							</div>
+								<ImageEdit
+									path={`items[${n}].icon`}
+									label={`stat ${n + 1} icon`}
+									hasImage={Boolean(it.icon)}
+									className="left-0 top-0"
+								/>
+							</ImageAnchor>
 						))}
 					</div>
 				</Container>
@@ -1334,6 +1456,12 @@ function Stats(p: StatsProps) {
 				/>
 			)}
 			<div className="absolute inset-0 bg-primary/70" />
+			<ImageEdit
+				path="image"
+				label="band background"
+				hasImage={Boolean(p.image)}
+				className="bottom-4 right-4"
+			/>
 			<Container className="relative">
 				<div className="mb-16 max-w-3xl">
 					{p.eyebrow && (
@@ -1548,6 +1676,12 @@ function Split(p: SplitProps) {
 					ref={imageFallbackRef}
 				/>
 			</div>
+			<ImageEdit
+				path="image"
+				label="section image"
+				hasImage
+				className="right-3 top-3"
+			/>
 			{p.statValue && (
 				<div className="absolute -bottom-8 -right-6 max-w-[220px] rounded-2xl bg-card p-6 shadow-[var(--shadow-lift)] ring-1 ring-border">
 					<div
@@ -2926,26 +3060,32 @@ function Certificates(p: CertificatesProps) {
 									</div>
 								</>
 							);
-							return it.fileUrl ? (
-								<a
-									// biome-ignore lint/suspicious/noArrayIndexKey: server-rendered list, no reorder or delete while mounted
-									key={n}
-									href={it.fileUrl}
-									target="_blank"
-									rel="noreferrer"
-									onClick={(e) =>
-										it.fileUrl &&
-										openPdf(e, { url: it.fileUrl, title: it.title })
-									}
-									className="group block"
-								>
-									{body}
-								</a>
-							) : (
+							return (
 								// biome-ignore lint/suspicious/noArrayIndexKey: server-rendered list, no reorder or delete while mounted
-								<div key={n} className="group block">
-									{body}
-								</div>
+								<ImageAnchor key={n}>
+									{it.fileUrl ? (
+										<a
+											href={it.fileUrl}
+											target="_blank"
+											rel="noreferrer"
+											onClick={(e) =>
+												it.fileUrl &&
+												openPdf(e, { url: it.fileUrl, title: it.title })
+											}
+											className="group block"
+										>
+											{body}
+										</a>
+									) : (
+										<div className="group block">{body}</div>
+									)}
+									<ImageEdit
+										path={`items[${n}].image`}
+										label={`certificate ${n + 1} image`}
+										hasImage={Boolean(it.image)}
+										className="right-3 top-3"
+									/>
+								</ImageAnchor>
 							);
 						})}
 					</div>
@@ -3162,13 +3302,21 @@ export function SectionRenderer({
 						className="relative scroll-mt-28"
 					>
 						{editingSections && identity && (
-							<SectionBackground
-								identity={identity}
-								sectionId={s.id}
-								type={s.type}
-								tone={(s.props as Toned | undefined)?.tone}
-								toneColor={(s.props as Toned | undefined)?.toneColor}
-							/>
+							<>
+								<SectionBackground
+									identity={identity}
+									sectionId={s.id}
+									type={s.type}
+									tone={(s.props as Toned | undefined)?.tone}
+									toneColor={(s.props as Toned | undefined)?.toneColor}
+								/>
+								<SectionMove
+									identity={identity}
+									ids={sections.map((n) => n.id)}
+									index={i}
+									type={s.type}
+								/>
+							</>
 						)}
 						<SectionId.Provider value={s.id}>
 							<OwnsPageTitle.Provider value={i === titleIndex}>

@@ -394,15 +394,88 @@ describe("updateField refusals", () => {
 	});
 
 	it("refuses a prop the section does not offer as translatable text", () => {
-		const seen = run<{ image: string; refused: string }>(`
+		const seen = run<{ href: string; refused: string }>(`
 			const id = await fixture("j03-not-text");
 			const refused = await refusal(admin.updateField(db, {
 				entity: "page", entityId: id, lang: "en",
-				target: "section:hero:props.image", value: "/uploads/evil.jpg",
+				target: "section:hero:props.ctaHref", value: "/somewhere",
 			}));
-			return { refused, image: sections(id)[0].props.image };
+			return { refused, href: sections(id)[0].props.ctaHref ?? "" };
 		`);
 		expect(seen.refused).toContain("not translatable text");
+		expect(seen.href).toBe("");
+	});
+
+	it("writes an image to the shared props whatever language is showing", () => {
+		const seen = run<{
+			hero: Record<string, unknown>;
+			km: string;
+			en: string;
+		}>(`
+			const id = await fixture("j03-section-image");
+			await admin.updateField(db, {
+				entity: "page", entityId: id, lang: "km",
+				target: "section:hero:props.image", value: "/uploads/new-hero.jpg",
+			});
+			const kmPage = await getPageBySlug(db, "j03-section-image", "km");
+			const enPage = await getPageBySlug(db, "j03-section-image", "en");
+			return {
+				hero: sections(id)[0].props,
+				km: kmPage.sections[0].props.image,
+				en: enPage.sections[0].props.image,
+			};
+		`);
+		expect(seen.hero.image).toBe("/uploads/new-hero.jpg");
+		// one file for every reader: it never lands in the overlay
+		expect(seen.hero.i18n).toEqual({ km: { title: "ការងាររបស់យើង" } });
+		expect(seen.km).toBe("/uploads/new-hero.jpg");
+		expect(seen.en).toBe("/uploads/new-hero.jpg");
+	});
+
+	it("writes a repeater item's image to the shared array, not the overlay", () => {
+		const seen = run<{
+			items: Record<string, unknown>[];
+			overlay: Record<string, unknown>[];
+		}>(`
+			const id = await fixture("j03-item-image");
+			await admin.updateField(db, {
+				entity: "page", entityId: id, lang: "km",
+				target: "section:b0:props.items[0].image", value: "/uploads/swapped.jpg",
+			});
+			const props = sections(id)[1].props;
+			return { items: props.items, overlay: props.i18n.km.items };
+		`);
+		expect(seen.items[0].image).toBe("/uploads/swapped.jpg");
+		expect(seen.items[0].title).toBe("One");
+		expect(seen.overlay[0].title).toBe("មួយ");
+		expect(seen.overlay[0].image).toBe("/uploads/a.jpg");
+	});
+
+	it("clears an image by dropping the key", () => {
+		const seen = run<Record<string, unknown>>(`
+			const id = await fixture("j03-image-clear");
+			await admin.updateField(db, {
+				entity: "page", entityId: id, lang: "en",
+				target: "section:hero:props.image", value: "",
+			});
+			return sections(id)[0].props;
+		`);
+		expect("image" in seen).toBe(false);
+	});
+
+	it("refuses anything that is not an image address, writing nothing", () => {
+		const seen = run<{ refused: string[]; image: string }>(`
+			const id = await fixture("j03-image-junk");
+			const refused = [];
+			for (const value of ["javascript:alert(1)", "//evil.example/x.jpg", "uploads/x.jpg"])
+				refused.push(await refusal(admin.updateField(db, {
+					entity: "page", entityId: id, lang: "en",
+					target: "section:hero:props.image", value,
+				})));
+			return { refused, image: sections(id)[0].props.image };
+		`);
+		for (const why of seen.refused)
+			expect(why).toContain("not an image address");
 		expect(seen.image).toBe("/uploads/hero.jpg");
 	});
 

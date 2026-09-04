@@ -1,5 +1,9 @@
 import type { Colleague, ResolvedPerson } from "#/server/repo/people";
 import { NavLink } from "@/components/NavLink";
+import {
+	PersonPhotoEdit,
+	useMayEditPeople,
+} from "@/components/PersonPhotoEdit";
 import { RichBody } from "@/components/RichBody";
 import { personRecord, SubPage } from "@/components/SubPage";
 import { useLang, useT } from "@/lib/i18n";
@@ -112,6 +116,7 @@ export function PersonView({
 }) {
 	const t = useT();
 	const { lang } = useLang();
+	const mayEdit = useMayEditPeople();
 	const group = groupLabel(person.tier, t);
 	const program = person.program.trim();
 	const showProgram =
@@ -132,8 +137,22 @@ export function PersonView({
 			<div className="grid gap-8 lg:grid-cols-[20rem_minmax(0,1fr)] lg:gap-12">
 				<div className="mx-auto w-full max-w-xs lg:sticky lg:top-28 lg:max-w-none lg:self-start">
 					<div className="overflow-hidden rounded-3xl border border-border bg-card shadow-[var(--shadow-soft)]">
-						<div className="aspect-[4/5] bg-muted">
+						<div
+							className={
+								mayEdit
+									? "group relative aspect-[4/5] bg-muted"
+									: "aspect-[4/5] bg-muted"
+							}
+						>
 							<Portrait name={person.name} photoUrl={person.photoUrl} />
+							{mayEdit && (
+								<PersonPhotoEdit
+									personId={person.id}
+									name={person.name}
+									hasPhoto={Boolean(person.photoUrl)}
+									shape="portrait"
+								/>
+							)}
 						</div>
 						<dl className="divide-y divide-border">
 							{group && (

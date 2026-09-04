@@ -634,6 +634,26 @@ export function choiceField(
 	return field?.kind === "select" ? field : undefined;
 }
 
+// one file for every language, so it never goes in the i18n overlay
+export function imageField(
+	type: string,
+	key: string,
+): SectionField | undefined {
+	const field = sectionDef(type)?.fields.find((f) => f.key === key);
+	return field?.kind === "image" ? field : undefined;
+}
+
+// what MediaPicker stores: the media row's url, which is a path under this site
+// unless object storage is configured, and then an absolute one
+const SITE_PATH = /^\/[^/\s][^\s]*$/;
+const ABSOLUTE = /^https?:\/\/[^\s]+$/i;
+
+/** Why this is not an image address, or null when it is one. Empty clears the field. */
+export function checkImageValue(value: string): string | null {
+	if (!value || SITE_PATH.test(value) || ABSOLUTE.test(value)) return null;
+	return `"${value}" is not an image address. Pick one from the media library, or give a path on this site like /uploads/photo.jpg, or a full https:// address.`;
+}
+
 /** The fields a section offers for per-language translation, given its current props. */
 export function translatableFields(
 	type: string,

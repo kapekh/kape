@@ -17,7 +17,9 @@ import type { SQLiteColumn, SQLiteTable } from "drizzle-orm/sqlite-core";
 
 import { DEFAULT_LANG } from "#/lib/i18n-config";
 import {
+	checkImageValue,
 	choiceField,
+	imageField,
 	isColourField,
 	type SectionField,
 	type SectionNode,
@@ -985,6 +987,7 @@ async function stampVersion(
 const TEXT_KINDS = new Set(["text", "textarea", "richtext"]);
 // cards are edited by a bespoke editor rather than declared itemFields
 const CARD_TEXT_FIELDS = ["title", "body", "caption"];
+const CARD_IMAGE_FIELDS = ["image"];
 
 const textItemFields = (container: SectionField): string[] =>
 	container.kind === "cards"
@@ -992,6 +995,25 @@ const textItemFields = (container: SectionField): string[] =>
 		: (container.itemFields ?? [])
 				.filter((f) => TEXT_KINDS.has(f.kind))
 				.map((f) => f.key);
+
+const imageItemFields = (container: SectionField): string[] =>
+	container.kind === "cards"
+		? CARD_IMAGE_FIELDS
+		: (container.itemFields ?? [])
+				.filter((f) => f.kind === "image")
+				.map((f) => f.key);
+
+/** One value for every language: written beside the props, never into the overlay. */
+function setShared(
+	props: Record<string, unknown>,
+	field: string,
+	value: string,
+): Record<string, unknown> {
+	const next = { ...props };
+	if (value) next[field] = value;
+	else delete next[field];
+	return next;
+}
 
 /**
  * Write one key into the per-language overlay, mirroring `SectionsBuilder`'s
@@ -1029,12 +1051,13 @@ function writeSectionProp(
 	if (isColourField(node.type ?? "", target.field)) {
 		const why = checkThemeValue("colour", value);
 		if (why) throw new Error(why);
-		const next = { ...props };
-		if (value) next[target.field] = value;
-		else delete next[target.field];
-		return next;
+		return setShared(props, target.field, value);
 	}
-	// a choice is one value for every language: shared props, never the overlay
+	if (imageField(node.type ?? "", target.field)) {
+		const why = checkImageValue(value);
+		if (why) throw new Error(why);
+		return setShared(props, target.field, value);
+	}
 	const choice = choiceField(node.type ?? "", target.field);
 	if (choice) {
 		const allowed = (choice.options ?? []).map((o) => o.value);
@@ -1042,10 +1065,7 @@ function writeSectionProp(
 			throw new Error(
 				`"${value}" is not one of the values "${target.field}" takes on a ${node.type} section. It takes ${allowed.map((v) => v || "(empty)").join(", ")}.`,
 			);
-		const next = { ...props };
-		if (value) next[target.field] = value;
-		else delete next[target.field];
-		return next;
+		return setShared(props, target.field, value);
 	}
 	const offered = translatableFields(node.type ?? "", props).map((f) => f.key);
 	if (!offered.includes(target.field))
@@ -1070,11 +1090,17 @@ function writeSectionItem(
 		throw new Error(
 			`"${target.key}" is not a repeater on a ${node.type} section.`,
 		);
-	const offered = textItemFields(container);
-	if (!offered.includes(target.field))
-		throw new Error(
-			`"${target.field}" is not translatable text on a ${target.key} item. It offers ${offered.join(", ") || "none"}.`,
-		);
+	const image = imageItemFields(container).includes(target.field);
+	if (image) {
+		const why = checkImageValue(value);
+		if (why) throw new Error(why);
+	} else {
+		const offered = textItemFields(container);
+		if (!offered.includes(target.field))
+			throw new Error(
+				`"${target.field}" is not translatable text on a ${target.key} item. It offers ${offered.join(", ") || "none"}.`,
+			);
+	}
 	const shared = Array.isArray(props[target.key])
 		? (props[target.key] as Record<string, unknown>[])
 		: [];
@@ -1082,8 +1108,9 @@ function writeSectionItem(
 	const overlay = (props.i18n as Record<string, Record<string, unknown>>)?.[
 		lang
 	]?.[target.key];
+	// an image is one file for every language, so it is written to the shared array
 	const base =
-		lang === DEFAULT_LANG || !Array.isArray(overlay)
+		image || lang === DEFAULT_LANG || !Array.isArray(overlay)
 			? shared
 			: (overlay as Record<string, unknown>[]);
 	if (target.index >= base.length)
@@ -1093,11 +1120,12 @@ function writeSectionItem(
 	const items = base.map((it, n) => {
 		if (n !== target.index) return { ...it };
 		const next = { ...it };
-		if (value === "" && lang !== DEFAULT_LANG) delete next[target.field];
+		if (value === "" && (image || lang !== DEFAULT_LANG))
+			delete next[target.field];
 		else next[target.field] = value;
 		return next;
 	});
-	if (lang === DEFAULT_LANG) return { ...props, [target.key]: items };
+	if (image || lang === DEFAULT_LANG) return { ...props, [target.key]: items };
 	// an overlay that has drifted back to the shared array carries nothing, so it goes
 	const same = JSON.stringify(items) === JSON.stringify(shared);
 	return setOverlay(props, lang, target.key, same ? "" : items);
