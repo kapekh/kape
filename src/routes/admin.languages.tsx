@@ -4,7 +4,14 @@ import { useCallback, useEffect, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import { FormSection, fieldLabel } from "#/components/admin/form-ui";
-import { TableScroll } from "#/components/admin/list-ui";
+import {
+	dragRow,
+	ReorderCell,
+	ReorderHead,
+	SortableStatus,
+	TableScroll,
+	useListReorder,
+} from "#/components/admin/list-ui";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import { EmptyState } from "#/components/ui/empty-state";
@@ -50,6 +57,22 @@ function LanguagesAdmin() {
 
 	// Keyed by language code so one row's toggle does not freeze the whole table.
 	const [busy, setBusy] = useState<string | null>(null);
+
+	const reorder = useListReorder({
+		rows: langs,
+		id: (l: Lang) => l.code,
+		describe: (l: Lang) => l.name,
+		save: async (codes) => {
+			await trpcClient.adminLanguages.reorder.mutate({ codes });
+			// every row edit replays `sort`, and a stale one would undo the drag
+			setLangs((ls) =>
+				ls.map((l) => {
+					const at = codes.indexOf(l.code);
+					return at < 0 ? l : { ...l, sort: at };
+				}),
+			);
+		},
+	});
 
 	async function create() {
 		if (!add.code.trim() || !add.name.trim()) return;
@@ -189,89 +212,98 @@ function LanguagesAdmin() {
 						description="The site needs at least one. The first you add becomes the default, and everything untranslated falls back to it."
 					/>
 				) : (
-					<TableScroll label="Languages">
-						<Table>
-							<THead>
-								<TR>
-									<TH width={90}>Code</TH>
-									<TH>Name</TH>
-									<TH width={110}>Enabled</TH>
-									<TH width={150}>Default</TH>
-									<TH align="right" width={80}>
-										Actions
-									</TH>
-								</TR>
-							</THead>
-							<TBody>
-								{langs.map((l) => (
-									<TR key={l.code}>
-										<TD label="Code" className="font-mono">
-											{l.code}
-										</TD>
-										<TD label="Name">
-											<span className="text-admin-ink">{l.name}</span>{" "}
-											<span className="text-admin-ink-muted">
-												· {l.nativeName}
-											</span>
-											{routable(l.code) ? null : (
-												<span className="mt-1 block text-[13px] text-admin-warning-ink">
-													Not served to visitors. {needsDeveloper(l.code)}
-												</span>
-											)}
-										</TD>
-										<TD label="Enabled">
-											<label className="flex min-h-6 items-center gap-2 text-[13px] text-admin-ink-muted">
-												<input
-													type="checkbox"
-													aria-label={`Enable ${l.name}`}
-													disabled={busy === l.code}
-													checked={l.enabled}
-													onChange={(e) =>
-														save(l, { enabled: e.target.checked })
-													}
-													className="size-4 accent-admin-accent"
-												/>
-												{l.enabled ? "On the site" : "Off"}
-											</label>
-										</TD>
-										<TD label="Default">
-											{l.isDefault ? (
-												<Badge tone="live">Default</Badge>
-											) : (
-												<Button
-													variant="ghost"
-													size="sm"
-													onClick={() => save(l, { isDefault: true })}
-													disabled={busy === l.code || !routable(l.code)}
-													disabledReason={
-														routable(l.code)
-															? undefined
-															: needsDeveloper(l.code)
-													}
-													aria-label={`Make ${l.name} the default language`}
-												>
-													Make default
-												</Button>
-											)}
-										</TD>
-										<TD align="right">
-											<ActionMenu
-												label={`Actions for ${l.name}`}
-												items={[
-													{
-														label: "Delete",
-														danger: true,
-														disabled: l.isDefault || busy === l.code,
-														onClick: () => del(l.code),
-													},
-												]}
-											/>
-										</TD>
+					<>
+						<SortableStatus status={reorder.status} />
+						<TableScroll label="Languages">
+							<Table>
+								<THead>
+									<TR>
+										<ReorderHead />
+										<TH width={90}>Code</TH>
+										<TH>Name</TH>
+										<TH width={110}>Enabled</TH>
+										<TH width={150}>Default</TH>
+										<TH align="right" width={80}>
+											Actions
+										</TH>
 									</TR>
-								))}
-							</TBody>
-						</Table>
-					</TableScroll>
+								</THead>
+								<TBody>
+									{reorder.rows.map((l) => (
+										<TR
+											key={l.code}
+											{...reorder.itemProps(l)}
+											className={dragRow}
+										>
+											<ReorderCell grip={reorder.grip(l)} />
+											<TD label="Code" className="font-mono">
+												{l.code}
+											</TD>
+											<TD label="Name">
+												<span className="text-admin-ink">{l.name}</span>{" "}
+												<span className="text-admin-ink-muted">
+													· {l.nativeName}
+												</span>
+												{routable(l.code) ? null : (
+													<span className="mt-1 block text-[13px] text-admin-warning-ink">
+														Not served to visitors. {needsDeveloper(l.code)}
+													</span>
+												)}
+											</TD>
+											<TD label="Enabled">
+												<label className="flex min-h-6 items-center gap-2 text-[13px] text-admin-ink-muted">
+													<input
+														type="checkbox"
+														aria-label={`Enable ${l.name}`}
+														disabled={busy === l.code}
+														checked={l.enabled}
+														onChange={(e) =>
+															save(l, { enabled: e.target.checked })
+														}
+														className="size-4 accent-admin-accent"
+													/>
+													{l.enabled ? "On the site" : "Off"}
+												</label>
+											</TD>
+											<TD label="Default">
+												{l.isDefault ? (
+													<Badge tone="live">Default</Badge>
+												) : (
+													<Button
+														variant="ghost"
+														size="sm"
+														onClick={() => save(l, { isDefault: true })}
+														disabled={busy === l.code || !routable(l.code)}
+														disabledReason={
+															routable(l.code)
+																? undefined
+																: needsDeveloper(l.code)
+														}
+														aria-label={`Make ${l.name} the default language`}
+													>
+														Make default
+													</Button>
+												)}
+											</TD>
+											<TD align="right">
+												<ActionMenu
+													label={`Actions for ${l.name}`}
+													items={[
+														{
+															label: "Delete",
+															danger: true,
+															disabled: l.isDefault || busy === l.code,
+															onClick: () => del(l.code),
+														},
+													]}
+												/>
+											</TD>
+										</TR>
+									))}
+								</TBody>
+							</Table>
+						</TableScroll>
+					</>
 				)}
 			</div>
 		</div>

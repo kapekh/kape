@@ -4,13 +4,19 @@ import { useCallback, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import {
+	dragRow,
 	EmptyState,
 	ListSearch,
 	ListStatus,
 	matchesQuery,
+	ReorderCell,
+	ReorderHead,
+	ReorderOff,
 	removeWithRollback,
+	SortableStatus,
 	TableScroll,
 	useListQuery,
+	useListReorder,
 } from "#/components/admin/list-ui";
 import { viewOnSite } from "#/components/admin/view-on-site";
 import { Badge } from "#/components/ui/badge.tsx";
@@ -63,6 +69,8 @@ function PeopleList() {
 		),
 	);
 	const filtered = q !== "" || tier !== "";
+	// asc(tier, sort) off the server, so first appearance is the tier order
+	const tiersShown = [...new Set(shown.map((r) => r.tier))];
 
 	const newPerson = (
 		<Button asChild>
@@ -157,88 +165,140 @@ function PeopleList() {
 					action={clearFilters}
 				/>
 			) : (
-				<TableScroll label="People">
-					<Table>
-						<THead>
-							<TR>
-								<TH width={64}>
-									<span className="sr-only">Photo</span>
-								</TH>
-								<TH>Name</TH>
-								<TH>Position</TH>
-								<TH width={150}>Tier</TH>
-								<TH width={120}>Visibility</TH>
-								<TH align="right" width={72}>
-									Actions
-								</TH>
-							</TR>
-						</THead>
-						<TBody>
-							{shown.map((r) => (
-								<TR key={r.id} className="hover:bg-admin-accent-soft/50">
-									<TD>
-										{r.photoUrl ? (
-											<img
-												src={r.photoUrl}
-												alt=""
-												className="size-9 rounded-full object-cover"
-											/>
-										) : (
-											<span className="grid size-9 place-items-center rounded-full bg-admin-neutral-soft text-[13px] font-medium text-admin-ink-muted">
-												{(r.nameEn ?? "?").slice(0, 1)}
-											</span>
-										)}
-									</TD>
-									<TD label="Name">
-										<Link
-											to="/admin/people/$id"
-											params={{ id: String(r.id) }}
-											className="tap-target truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
-										>
-											{r.nameEn}
-										</Link>
-										{r.nameKm ? (
-											<span className="ml-2 font-khmer text-[13px] text-admin-ink-muted">
-												{r.nameKm}
-											</span>
-										) : null}
-									</TD>
-									<TD label="Position" className="text-admin-ink-muted">
-										{r.position || "—"}
-									</TD>
-									<TD label="Tier" className="text-admin-ink-muted">
-										{TIER_LABELS[r.tier] ?? r.tier}
-									</TD>
-									<TD label="Visibility">
-										{r.isPublic ? (
-											<Badge tone="live">Public</Badge>
-										) : (
-											<Badge tone="neutral">Internal</Badge>
-										)}
-									</TD>
-									<TD align="right" className="max-md:justify-end">
-										<ActionMenu
-											label={`Actions for ${r.nameEn}`}
-											items={[
-												...viewOnSite({
-													kind: "person",
-													slug: r.slug,
-													isPublic: r.isPublic,
-												}),
-												{
-													label: "Delete person",
-													danger: true,
-													onClick: () => del(r),
-												},
-											]}
-										/>
-									</TD>
+				<>
+					{q !== "" ? <ReorderOff what="people" /> : null}
+					<TableScroll label="People">
+						<Table>
+							<THead>
+								<TR>
+									<ReorderHead />
+									<TH width={64}>
+										<span className="sr-only">Photo</span>
+									</TH>
+									<TH>Name</TH>
+									<TH>Position</TH>
+									<TH width={150}>Tier</TH>
+									<TH width={120}>Visibility</TH>
+									<TH align="right" width={72}>
+										Actions
+									</TH>
 								</TR>
+							</THead>
+							{tiersShown.map((t) => (
+								<TierRows
+									key={t}
+									tier={t}
+									rows={shown.filter((r) => r.tier === t)}
+									disabled={q !== ""}
+									onDelete={del}
+								/>
 							))}
-						</TBody>
-					</Table>
-				</TableScroll>
+						</Table>
+					</TableScroll>
+				</>
 			)}
 		</div>
+	);
+}
+
+// one tbody per tier, so a drag sends that tier's ids only
+function TierRows({
+	tier,
+	rows,
+	disabled,
+	onDelete,
+}: {
+	tier: string;
+	rows: Row[];
+	disabled: boolean;
+	onDelete: (row: Row) => void;
+}) {
+	const reorder = useListReorder({
+		rows,
+		id: (r: Row) => r.id,
+		describe: (r: Row) => r.nameEn ?? `person ${r.id}`,
+		disabled,
+		save: (ids) => trpcClient.adminPeople.reorder.mutate({ ids }),
+	});
+	return (
+		<TBody>
+			<TR className="max-md:border-0 max-md:bg-transparent max-md:p-0">
+				<TH
+					scope="rowgroup"
+					role="rowheader"
+					colSpan={7}
+					className="bg-admin-neutral-soft/60 max-md:bg-transparent max-md:px-0"
+				>
+					{TIER_LABELS[tier] ?? tier}
+					<SortableStatus status={reorder.status} />
+				</TH>
+			</TR>
+			{reorder.rows.map((r) => (
+				<TR
+					key={r.id}
+					{...reorder.itemProps(r)}
+					className={`hover:bg-admin-accent-soft/50 ${dragRow}`}
+				>
+					<ReorderCell grip={reorder.grip(r)} />
+					<TD>
+						{r.photoUrl ? (
+							<img
+								src={r.photoUrl}
+								alt=""
+								className="size-9 rounded-full object-cover"
+							/>
+						) : (
+							<span className="grid size-9 place-items-center rounded-full bg-admin-neutral-soft text-[13px] font-medium text-admin-ink-muted">
+								{(r.nameEn ?? "?").slice(0, 1)}
+							</span>
+						)}
+					</TD>
+					<TD label="Name">
+						<Link
+							to="/admin/people/$id"
+							params={{ id: String(r.id) }}
+							className="tap-target truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+						>
+							{r.nameEn}
+						</Link>
+						{r.nameKm ? (
+							<span className="ml-2 font-khmer text-[13px] text-admin-ink-muted">
+								{r.nameKm}
+							</span>
+						) : null}
+					</TD>
+					<TD label="Position" className="text-admin-ink-muted">
+						{r.position || "—"}
+					</TD>
+					<TD label="Tier" className="text-admin-ink-muted">
+						{TIER_LABELS[r.tier] ?? r.tier}
+					</TD>
+					<TD label="Visibility">
+						{r.isPublic ? (
+							<Badge tone="live">Public</Badge>
+						) : (
+							<Badge tone="neutral">Internal</Badge>
+						)}
+					</TD>
+					<TD align="right" className="max-md:justify-end">
+						<ActionMenu
+							label={`Actions for ${r.nameEn}`}
+							items={[
+								...viewOnSite({
+									kind: "person",
+									slug: r.slug,
+									isPublic: r.isPublic,
+								}),
+								{
+									label: "Delete person",
+									danger: true,
+									onClick: () => onDelete(r),
+								},
+							]}
+						/>
+					</TD>
+				</TR>
+			))}
+		</TBody>
 	);
 }

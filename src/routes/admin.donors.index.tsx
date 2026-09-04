@@ -4,13 +4,19 @@ import { useCallback, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import {
+	dragRow,
 	EmptyState,
 	ListSearch,
 	ListStatus,
 	matchesQuery,
+	ReorderCell,
+	ReorderHead,
+	ReorderOff,
 	removeWithRollback,
+	SortableStatus,
 	TableScroll,
 	useListQuery,
+	useListReorder,
 } from "#/components/admin/list-ui";
 import { Button } from "#/components/ui/button.tsx";
 import { PageHeader } from "#/components/ui/page-header.tsx";
@@ -42,6 +48,13 @@ function DonorsList() {
 	}
 
 	const shown = rows.filter((r) => matchesQuery(q, r.name, r.url));
+	const reorder = useListReorder({
+		rows: shown,
+		id: (r: Row) => r.id,
+		describe: (r: Row) => r.name,
+		disabled: q !== "",
+		save: (ids) => trpcClient.adminDonors.reorder.mutate({ ids }),
+	});
 
 	const newDonor = (
 		<Button asChild>
@@ -97,74 +110,84 @@ function DonorsList() {
 					}
 				/>
 			) : (
-				<TableScroll label="Donors">
-					<Table>
-						<THead>
-							<TR>
-								<TH width={72}>
-									<span className="sr-only">Logo</span>
-								</TH>
-								<TH>Name</TH>
-								<TH>URL</TH>
-								<TH align="right" width={72}>
-									Actions
-								</TH>
-							</TR>
-						</THead>
-						<TBody>
-							{shown.map((r) => (
-								<TR key={r.id} className="hover:bg-admin-accent-soft/50">
-									<TD>
-										<div className="grid h-10 w-14 place-items-center overflow-hidden rounded-lg bg-admin-neutral-soft ring-1 ring-admin-border">
-											{r.logoUrl ? (
-												<img
-													src={r.logoUrl}
-													alt=""
-													className="h-full w-full object-contain"
-												/>
-											) : null}
-										</div>
-									</TD>
-									<TD label="Name">
-										<Link
-											to="/admin/donors/$id"
-											params={{ id: String(r.id) }}
-											className="tap-target block truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
-										>
-											{r.name}
-										</Link>
-									</TD>
-									<TD label="URL" className="text-admin-ink-muted">
-										{r.url ? (
-											<a
-												href={r.url}
-												target="_blank"
-												rel="noopener noreferrer"
-												className="truncate text-admin-accent-ink hover:underline"
-											>
-												{r.url}
-											</a>
-										) : (
-											"—"
-										)}
-									</TD>
-									<TD align="right" className="max-md:justify-end">
-										<ActionMenu
-											label={`Actions for ${r.name}`}
-											items={[
-												{
-													label: "Delete donor",
-													danger: true,
-													onClick: () => del(r),
-												},
-											]}
-										/>
-									</TD>
+				<>
+					{q !== "" ? <ReorderOff what="donors" /> : null}
+					<SortableStatus status={reorder.status} />
+					<TableScroll label="Donors">
+						<Table>
+							<THead>
+								<TR>
+									<ReorderHead />
+									<TH width={72}>
+										<span className="sr-only">Logo</span>
+									</TH>
+									<TH>Name</TH>
+									<TH>URL</TH>
+									<TH align="right" width={72}>
+										Actions
+									</TH>
 								</TR>
-							))}
-						</TBody>
-					</Table>
-				</TableScroll>
+							</THead>
+							<TBody>
+								{reorder.rows.map((r) => (
+									<TR
+										key={r.id}
+										{...reorder.itemProps(r)}
+										className={`hover:bg-admin-accent-soft/50 ${dragRow}`}
+									>
+										<ReorderCell grip={reorder.grip(r)} />
+										<TD>
+											<div className="grid h-10 w-14 place-items-center overflow-hidden rounded-lg bg-admin-neutral-soft ring-1 ring-admin-border">
+												{r.logoUrl ? (
+													<img
+														src={r.logoUrl}
+														alt=""
+														className="h-full w-full object-contain"
+													/>
+												) : null}
+											</div>
+										</TD>
+										<TD label="Name">
+											<Link
+												to="/admin/donors/$id"
+												params={{ id: String(r.id) }}
+												className="tap-target block truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+											>
+												{r.name}
+											</Link>
+										</TD>
+										<TD label="URL" className="text-admin-ink-muted">
+											{r.url ? (
+												<a
+													href={r.url}
+													target="_blank"
+													rel="noopener noreferrer"
+													className="truncate text-admin-accent-ink hover:underline"
+												>
+													{r.url}
+												</a>
+											) : (
+												"—"
+											)}
+										</TD>
+										<TD align="right" className="max-md:justify-end">
+											<ActionMenu
+												label={`Actions for ${r.name}`}
+												items={[
+													{
+														label: "Delete donor",
+														danger: true,
+														onClick: () => del(r),
+													},
+												]}
+											/>
+										</TD>
+									</TR>
+								))}
+							</TBody>
+						</Table>
+					</TableScroll>
+				</>
 			)}
 		</div>
 	);

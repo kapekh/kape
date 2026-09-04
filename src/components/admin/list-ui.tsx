@@ -4,12 +4,20 @@ import { useCallback, useEffect, useId, useState } from "react";
 import { Button } from "#/components/ui/button.tsx";
 import { inputClass } from "#/components/ui/input.tsx";
 import { SkeletonRows } from "#/components/ui/skeleton.tsx";
+import {
+	DragHandle,
+	SortableStatus,
+	useSortable,
+} from "#/components/ui/sortable.tsx";
+import { TD, TH } from "#/components/ui/table.tsx";
+import { applyOrder, type SortableId } from "#/lib/reorder";
 import { saveErrorMessage } from "#/lib/save-error";
 import { toast } from "@/components/Dialogs";
 
 /** Lives in `ui/` now so the ten lists are not the only surfaces that can have
  *  one. Re-exported here because those ten import it from this file. */
 export { EmptyState } from "#/components/ui/empty-state.tsx";
+export { SortableStatus };
 
 export type ListState = "pending" | "error" | "ready";
 
@@ -171,4 +179,105 @@ export async function removeWithRollback<T>(
 		toast(saveErrorMessage(e, "delete"), "error");
 		return false;
 	}
+}
+
+type Grip = ReturnType<
+	ReturnType<typeof useSortable<SortableId>>["handleProps"]
+>;
+
+/** Drag-to-reorder over a list `useListQuery` holds: the rows come back in the
+ *  order being dragged, and a refused save rolls it back and says why. */
+export function useListReorder<T, Id extends SortableId>({
+	rows,
+	id,
+	describe,
+	disabled = false,
+	save,
+}: {
+	rows: T[];
+	/** The key the reorder mutation takes. */
+	id: (row: T) => Id;
+	describe: (row: T) => string;
+	/** Off while a search narrows the list, or a drop would land somewhere else. */
+	disabled?: boolean;
+	save: (ids: Id[]) => Promise<unknown>;
+}) {
+	// rows keep arriving in the order they were read in
+	const [taken, setTaken] = useState<Id[] | null>(null);
+	const here = rows.map(id);
+	const byId = new Map(here.map((key, i) => [key, rows[i]]));
+	// same slot-keeping rule the server renumbers by
+	const ids = taken ? applyOrder(here, taken) : here;
+
+	const { order, itemProps, handleProps, status } = useSortable<Id>({
+		ids,
+		disabled,
+		describe: (key) => {
+			const row = byId.get(key);
+			return row ? describe(row) : String(key);
+		},
+		onReorder: async (next) => {
+			await save(next);
+			setTaken(next);
+		},
+		onError: (e) => toast(saveErrorMessage(e), "error"),
+	});
+
+	const placed = new Set(order);
+	const many = order.length > 1;
+	return {
+		// a row the order has not caught up with still renders
+		rows: [
+			...order
+				.map((key) => byId.get(key))
+				.filter((r): r is T => r !== undefined),
+			...rows.filter((row) => !placed.has(id(row))),
+		],
+		status,
+		itemProps: (row: T) => itemProps(id(row)),
+		/** Null when there is nothing to reorder, which renders no grip. */
+		grip: (row: T) => (many ? handleProps(id(row)) : null),
+	};
+}
+
+/** Header cell for the grip column, so the columns line up. */
+export function ReorderHead() {
+	return (
+		<TH width={44}>
+			<span className="sr-only">Reorder</span>
+		</TH>
+	);
+}
+
+/** Added to the class of the row that moves. */
+export const dragRow =
+	"relative data-[dragging]:bg-admin-accent-soft data-[dragging]:shadow-[var(--shadow-soft)]";
+
+// DragHandle defaults to the public site's tokens
+const gripTone =
+	"text-admin-ink-muted hover:bg-admin-accent-soft hover:text-admin-ink focus-visible:ring-admin-focus/50";
+
+/** The grip cell: `grip={reorder.grip(row)}`. */
+export function ReorderCell({ grip }: { grip: Grip | null }) {
+	return (
+		<TD className="px-2 max-md:justify-start max-md:px-0">
+			{grip ? <DragHandle {...grip} className={gripTone} /> : null}
+		</TD>
+	);
+}
+
+/** Why the grips are off: a drop into a filtered view says nothing about where
+ *  the row lands. */
+export function ReorderOff({
+	what,
+	clear = "the search",
+}: {
+	what: string;
+	clear?: string;
+}) {
+	return (
+		<p className="mb-3 text-[13px] text-admin-ink-muted">
+			Clear {clear} to drag {what} into a new order.
+		</p>
+	);
 }

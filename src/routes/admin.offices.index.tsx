@@ -4,13 +4,19 @@ import { useCallback, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import {
+	dragRow,
 	EmptyState,
 	ListSearch,
 	ListStatus,
 	matchesQuery,
+	ReorderCell,
+	ReorderHead,
+	ReorderOff,
 	removeWithRollback,
+	SortableStatus,
 	TableScroll,
 	useListQuery,
+	useListReorder,
 } from "#/components/admin/list-ui";
 import { Badge } from "#/components/ui/badge.tsx";
 import { Button } from "#/components/ui/button.tsx";
@@ -55,6 +61,13 @@ function OfficesList() {
 	const shown = rows.filter((r) =>
 		matchesQuery(q, r.name, provinceLabel(r), r.phone),
 	);
+	const reorder = useListReorder({
+		rows: shown,
+		id: (r: Row) => r.id,
+		describe: (r: Row) => r.name,
+		disabled: q !== "",
+		save: (ids) => trpcClient.adminOffices.reorder.mutate({ ids }),
+	});
 
 	const newOffice = (
 		<Button asChild>
@@ -110,75 +123,85 @@ function OfficesList() {
 					}
 				/>
 			) : (
-				<TableScroll label="Offices">
-					<Table>
-						<THead>
-							<TR>
-								<TH width={72}>
-									<span className="sr-only">Photo</span>
-								</TH>
-								<TH>Name</TH>
-								<TH>Province</TH>
-								<TH>Phone</TH>
-								<TH width={100}>HQ</TH>
-								<TH align="right" width={72}>
-									Actions
-								</TH>
-							</TR>
-						</THead>
-						<TBody>
-							{shown.map((r) => (
-								<TR key={r.id} className="hover:bg-admin-accent-soft/50">
-									<TD>
-										<div className="h-10 w-14 overflow-hidden rounded-lg bg-admin-neutral-soft ring-1 ring-admin-border">
-											{r.imageUrl ? (
-												<img
-													src={r.imageUrl}
-													alt=""
-													className="h-full w-full object-cover"
-												/>
-											) : null}
-										</div>
-									</TD>
-									<TD label="Name">
-										<Link
-											to="/admin/offices/$id"
-											params={{ id: String(r.id) }}
-											className="tap-target block truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
-										>
-											{r.name}
-										</Link>
-									</TD>
-									<TD label="Province" className="text-admin-ink-muted">
-										{provinceLabel(r) || "—"}
-									</TD>
-									<TD label="Phone" className="text-admin-ink-muted">
-										{r.phone || "—"}
-									</TD>
-									<TD label="HQ">
-										{r.isHq ? (
-											<Badge tone="accent" dot={false}>
-												HQ
-											</Badge>
-										) : null}
-									</TD>
-									<TD align="right" className="max-md:justify-end">
-										<ActionMenu
-											label={`Actions for ${r.name}`}
-											items={[
-												{
-													label: "Delete office",
-													danger: true,
-													onClick: () => del(r),
-												},
-											]}
-										/>
-									</TD>
+				<>
+					{q !== "" ? <ReorderOff what="offices" /> : null}
+					<SortableStatus status={reorder.status} />
+					<TableScroll label="Offices">
+						<Table>
+							<THead>
+								<TR>
+									<ReorderHead />
+									<TH width={72}>
+										<span className="sr-only">Photo</span>
+									</TH>
+									<TH>Name</TH>
+									<TH>Province</TH>
+									<TH>Phone</TH>
+									<TH width={100}>HQ</TH>
+									<TH align="right" width={72}>
+										Actions
+									</TH>
 								</TR>
-							))}
-						</TBody>
-					</Table>
-				</TableScroll>
+							</THead>
+							<TBody>
+								{reorder.rows.map((r) => (
+									<TR
+										key={r.id}
+										{...reorder.itemProps(r)}
+										className={`hover:bg-admin-accent-soft/50 ${dragRow}`}
+									>
+										<ReorderCell grip={reorder.grip(r)} />
+										<TD>
+											<div className="h-10 w-14 overflow-hidden rounded-lg bg-admin-neutral-soft ring-1 ring-admin-border">
+												{r.imageUrl ? (
+													<img
+														src={r.imageUrl}
+														alt=""
+														className="h-full w-full object-cover"
+													/>
+												) : null}
+											</div>
+										</TD>
+										<TD label="Name">
+											<Link
+												to="/admin/offices/$id"
+												params={{ id: String(r.id) }}
+												className="tap-target block truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+											>
+												{r.name}
+											</Link>
+										</TD>
+										<TD label="Province" className="text-admin-ink-muted">
+											{provinceLabel(r) || "—"}
+										</TD>
+										<TD label="Phone" className="text-admin-ink-muted">
+											{r.phone || "—"}
+										</TD>
+										<TD label="HQ">
+											{r.isHq ? (
+												<Badge tone="accent" dot={false}>
+													HQ
+												</Badge>
+											) : null}
+										</TD>
+										<TD align="right" className="max-md:justify-end">
+											<ActionMenu
+												label={`Actions for ${r.name}`}
+												items={[
+													{
+														label: "Delete office",
+														danger: true,
+														onClick: () => del(r),
+													},
+												]}
+											/>
+										</TD>
+									</TR>
+								))}
+							</TBody>
+						</Table>
+					</TableScroll>
+				</>
 			)}
 		</div>
 	);

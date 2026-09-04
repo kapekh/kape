@@ -4,13 +4,19 @@ import { useCallback, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import {
+	dragRow,
 	EmptyState,
 	ListSearch,
 	ListStatus,
 	matchesQuery,
+	ReorderCell,
+	ReorderHead,
+	ReorderOff,
 	removeWithRollback,
+	SortableStatus,
 	TableScroll,
 	useListQuery,
+	useListReorder,
 } from "#/components/admin/list-ui";
 import { Badge, type BadgeTone } from "#/components/ui/badge.tsx";
 import { Button } from "#/components/ui/button.tsx";
@@ -61,6 +67,10 @@ function CampaignsList() {
 	const ofStatus = status ? rows.filter((r) => r.status === status) : rows;
 	const shown = ofStatus.filter((r) => matchesQuery(q, r.title, r.status));
 	const filtered = q !== "" || status !== "";
+	// read as `featured desc, sort asc`: only one flag's group is in sort order
+	const groups = [true, false].filter((f) =>
+		shown.some((r) => !!r.featured === f),
+	);
 
 	const newCampaign = (
 		<Button asChild>
@@ -156,105 +166,161 @@ function CampaignsList() {
 					action={clearFilters}
 				/>
 			) : (
-				<TableScroll label="Campaigns">
-					<Table>
-						<THead>
-							<TR>
-								<TH width={72}>
-									<span className="sr-only">Cover</span>
-								</TH>
-								<TH>Title</TH>
-								<TH width={120}>Status</TH>
-								<TH align="right" width={180}>
-									Raised
-								</TH>
-								<TH align="right" width={120}>
-									Supporters
-								</TH>
-								<TH align="right" width={140}>
-									Actions
-								</TH>
-							</TR>
-						</THead>
-						<TBody>
-							{shown.map((r) => (
-								<TR key={r.id} className="hover:bg-admin-accent-soft/50">
-									<TD>
-										<div className="grid h-10 w-14 place-items-center overflow-hidden rounded-lg bg-admin-neutral-soft ring-1 ring-admin-border">
-											{r.coverUrl ? (
-												<img
-													src={r.coverUrl}
-													alt=""
-													className="h-full w-full object-cover"
-												/>
-											) : null}
-										</div>
-									</TD>
-									<TD label="Title">
-										<div className="flex min-w-0 items-center gap-2">
-											<Link
-												to="/admin/campaigns/$id"
-												params={{ id: String(r.id) }}
-												className="tap-target truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
-											>
-												{r.title}
-											</Link>
-											{r.featured ? (
-												<Badge tone="accent" dot={false}>
-													Featured
-												</Badge>
-											) : null}
-										</div>
-									</TD>
-									<TD label="Status">
-										<Badge tone={statusTone[r.status] ?? "neutral"}>
-											<span className="capitalize">{r.status}</span>
-										</Badge>
-									</TD>
-									<TD label="Raised" align="right" className="tabular-nums">
-										{fmtMoney(r.raised, r.currency, lang)}
-										{r.goalAmount ? (
-											<span className="text-admin-ink-muted">
-												{" "}
-												/ {fmtMoney(r.goalAmount, r.currency, lang)}
-											</span>
-										) : null}
-									</TD>
-									<TD
-										label="Supporters"
-										align="right"
-										className="tabular-nums text-admin-ink-muted"
-									>
-										{r.supporters}
-									</TD>
-									<TD align="right" className="max-md:justify-end">
-										<div className="flex items-center justify-end gap-1">
-											<Button asChild variant="ghost" size="sm">
-												<Link
-													to="/admin/campaigns/$id/donations"
-													params={{ id: String(r.id) }}
-												>
-													Donations
-												</Link>
-											</Button>
-											<ActionMenu
-												label={`Actions for ${r.title}`}
-												items={[
-													{
-														label: "Delete campaign",
-														danger: true,
-														onClick: () => del(r),
-													},
-												]}
-											/>
-										</div>
-									</TD>
+				<>
+					{filtered ? (
+						<ReorderOff what="campaigns" clear="the search and filters" />
+					) : null}
+					<TableScroll label="Campaigns">
+						<Table>
+							<THead>
+								<TR>
+									<ReorderHead />
+									<TH width={72}>
+										<span className="sr-only">Cover</span>
+									</TH>
+									<TH>Title</TH>
+									<TH width={120}>Status</TH>
+									<TH align="right" width={180}>
+										Raised
+									</TH>
+									<TH align="right" width={120}>
+										Supporters
+									</TH>
+									<TH align="right" width={140}>
+										Actions
+									</TH>
 								</TR>
+							</THead>
+							{groups.map((featured) => (
+								<FeaturedRows
+									key={String(featured)}
+									featured={featured}
+									rows={shown.filter((r) => !!r.featured === featured)}
+									disabled={filtered}
+									lang={lang}
+									onDelete={del}
+								/>
 							))}
-						</TBody>
-					</Table>
-				</TableScroll>
+						</Table>
+					</TableScroll>
+				</>
 			)}
 		</div>
+	);
+}
+
+function FeaturedRows({
+	featured,
+	rows,
+	disabled,
+	lang,
+	onDelete,
+}: {
+	featured: boolean;
+	rows: Row[];
+	disabled: boolean;
+	lang: string;
+	onDelete: (row: Row) => void;
+}) {
+	const reorder = useListReorder({
+		rows,
+		id: (r: Row) => r.id,
+		describe: (r: Row) => r.title,
+		disabled,
+		save: (ids) => trpcClient.adminCampaigns.reorder.mutate({ ids }),
+	});
+	return (
+		<TBody>
+			<TR className="max-md:border-0 max-md:bg-transparent max-md:p-0">
+				<TH
+					scope="rowgroup"
+					role="rowheader"
+					colSpan={7}
+					className="bg-admin-neutral-soft/60 max-md:bg-transparent max-md:px-0"
+				>
+					{featured ? "Featured" : "Not featured"}
+					<SortableStatus status={reorder.status} />
+				</TH>
+			</TR>
+			{reorder.rows.map((r) => (
+				<TR
+					key={r.id}
+					{...reorder.itemProps(r)}
+					className={`hover:bg-admin-accent-soft/50 ${dragRow}`}
+				>
+					<ReorderCell grip={reorder.grip(r)} />
+					<TD>
+						<div className="grid h-10 w-14 place-items-center overflow-hidden rounded-lg bg-admin-neutral-soft ring-1 ring-admin-border">
+							{r.coverUrl ? (
+								<img
+									src={r.coverUrl}
+									alt=""
+									className="h-full w-full object-cover"
+								/>
+							) : null}
+						</div>
+					</TD>
+					<TD label="Title">
+						<div className="flex min-w-0 items-center gap-2">
+							<Link
+								to="/admin/campaigns/$id"
+								params={{ id: String(r.id) }}
+								className="tap-target truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+							>
+								{r.title}
+							</Link>
+							{r.featured ? (
+								<Badge tone="accent" dot={false}>
+									Featured
+								</Badge>
+							) : null}
+						</div>
+					</TD>
+					<TD label="Status">
+						<Badge tone={statusTone[r.status] ?? "neutral"}>
+							<span className="capitalize">{r.status}</span>
+						</Badge>
+					</TD>
+					<TD label="Raised" align="right" className="tabular-nums">
+						{fmtMoney(r.raised, r.currency, lang)}
+						{r.goalAmount ? (
+							<span className="text-admin-ink-muted">
+								{" "}
+								/ {fmtMoney(r.goalAmount, r.currency, lang)}
+							</span>
+						) : null}
+					</TD>
+					<TD
+						label="Supporters"
+						align="right"
+						className="tabular-nums text-admin-ink-muted"
+					>
+						{r.supporters}
+					</TD>
+					<TD align="right" className="max-md:justify-end">
+						<div className="flex items-center justify-end gap-1">
+							<Button asChild variant="ghost" size="sm">
+								<Link
+									to="/admin/campaigns/$id/donations"
+									params={{ id: String(r.id) }}
+								>
+									Donations
+								</Link>
+							</Button>
+							<ActionMenu
+								label={`Actions for ${r.title}`}
+								items={[
+									{
+										label: "Delete campaign",
+										danger: true,
+										onClick: () => onDelete(r),
+									},
+								]}
+							/>
+						</div>
+					</TD>
+				</TR>
+			))}
+		</TBody>
 	);
 }

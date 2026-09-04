@@ -4,13 +4,19 @@ import { useCallback, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import {
+	dragRow,
 	EmptyState,
 	ListSearch,
 	ListStatus,
 	matchesQuery,
+	ReorderCell,
+	ReorderHead,
+	ReorderOff,
 	removeWithRollback,
+	SortableStatus,
 	TableScroll,
 	useListQuery,
+	useListReorder,
 } from "#/components/admin/list-ui";
 import { viewOnSite } from "#/components/admin/view-on-site";
 import { Badge } from "#/components/ui/badge.tsx";
@@ -51,6 +57,14 @@ function ProjectsList() {
 		matchesQuery(q, r.code, r.name, r.slug, r.status),
 	);
 	const filtered = q !== "" || status !== "";
+
+	const reorder = useListReorder({
+		rows: shown,
+		id: (r: Row) => r.id,
+		describe: (r: Row) => r.name,
+		disabled: filtered,
+		save: (ids) => trpcClient.adminProjects.reorder.mutate({ ids }),
+	});
 
 	const newProject = (
 		<Button asChild>
@@ -146,64 +160,76 @@ function ProjectsList() {
 					action={clearFilters}
 				/>
 			) : (
-				<TableScroll label="Projects">
-					<Table>
-						<THead>
-							<TR>
-								<TH width={120}>Code</TH>
-								<TH>Name</TH>
-								<TH width={120}>Status</TH>
-								<TH>Slug</TH>
-								<TH align="right" width={72}>
-									Actions
-								</TH>
-							</TR>
-						</THead>
-						<TBody>
-							{shown.map((r) => (
-								<TR key={r.id} className="hover:bg-admin-accent-soft/50">
-									<TD label="Code" className="font-mono text-admin-ink-muted">
-										{r.code}
-									</TD>
-									<TD label="Name">
-										<Link
-											to="/admin/projects/$id"
-											params={{ id: String(r.id) }}
-											className="tap-target block truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
-										>
-											{r.name}
-										</Link>
-									</TD>
-									<TD label="Status">
-										<Badge tone={r.status === "current" ? "live" : "neutral"}>
-											<span className="capitalize">{r.status}</span>
-										</Badge>
-									</TD>
-									<TD label="Slug" className="text-admin-ink-muted">
-										{r.slug}
-									</TD>
-									<TD align="right" className="max-md:justify-end">
-										<ActionMenu
-											label={`Actions for ${r.name}`}
-											items={[
-												...viewOnSite({
-													kind: "project",
-													slug: r.slug,
-													parentSlug: slugById.get(r.parentId ?? -1),
-												}),
-												{
-													label: "Delete",
-													danger: true,
-													onClick: () => del(r),
-												},
-											]}
-										/>
-									</TD>
+				<>
+					{filtered ? (
+						<ReorderOff what="projects" clear="the search and filters" />
+					) : null}
+					<SortableStatus status={reorder.status} />
+					<TableScroll label="Projects">
+						<Table>
+							<THead>
+								<TR>
+									<ReorderHead />
+									<TH width={120}>Code</TH>
+									<TH>Name</TH>
+									<TH width={120}>Status</TH>
+									<TH>Slug</TH>
+									<TH align="right" width={72}>
+										Actions
+									</TH>
 								</TR>
-							))}
-						</TBody>
-					</Table>
-				</TableScroll>
+							</THead>
+							<TBody>
+								{reorder.rows.map((r) => (
+									<TR
+										key={r.id}
+										{...reorder.itemProps(r)}
+										className={`hover:bg-admin-accent-soft/50 ${dragRow}`}
+									>
+										<ReorderCell grip={reorder.grip(r)} />
+										<TD label="Code" className="font-mono text-admin-ink-muted">
+											{r.code}
+										</TD>
+										<TD label="Name">
+											<Link
+												to="/admin/projects/$id"
+												params={{ id: String(r.id) }}
+												className="tap-target block truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+											>
+												{r.name}
+											</Link>
+										</TD>
+										<TD label="Status">
+											<Badge tone={r.status === "current" ? "live" : "neutral"}>
+												<span className="capitalize">{r.status}</span>
+											</Badge>
+										</TD>
+										<TD label="Slug" className="text-admin-ink-muted">
+											{r.slug}
+										</TD>
+										<TD align="right" className="max-md:justify-end">
+											<ActionMenu
+												label={`Actions for ${r.name}`}
+												items={[
+													...viewOnSite({
+														kind: "project",
+														slug: r.slug,
+														parentSlug: slugById.get(r.parentId ?? -1),
+													}),
+													{
+														label: "Delete",
+														danger: true,
+														onClick: () => del(r),
+													},
+												]}
+											/>
+										</TD>
+									</TR>
+								))}
+							</TBody>
+						</Table>
+					</TableScroll>
+				</>
 			)}
 		</div>
 	);

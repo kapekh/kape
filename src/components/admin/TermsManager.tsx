@@ -8,10 +8,15 @@ import {
 	fieldLabel,
 } from "#/components/admin/form-ui";
 import {
+	dragRow,
 	EmptyState,
 	ListStatus,
+	ReorderCell,
+	ReorderHead,
+	SortableStatus,
 	TableScroll,
 	useListQuery,
+	useListReorder,
 } from "#/components/admin/list-ui";
 import { Button } from "#/components/ui/button.tsx";
 import { PageHeader } from "#/components/ui/page-header.tsx";
@@ -45,6 +50,21 @@ export function TermsManager({
 	);
 	const { rows, setRows, state, error, reload } = useListQuery<Term>(load);
 	const [add, setAdd] = useState({ key: "", label: "" });
+	const reorder = useListReorder({
+		rows,
+		id: (r: Term) => r.id,
+		describe: (r: Term) => r.label || r.key,
+		save: async (ids) => {
+			await trpcClient.adminTerms.reorder.mutate({ taxonomy, ids });
+			// the row's own Save replays `sort`, and a stale one would undo the drag
+			setRows((rs) =>
+				rs.map((r) => {
+					const at = ids.indexOf(r.id);
+					return at < 0 ? r : { ...r, sort: at };
+				}),
+			);
+		},
+	});
 
 	function patch(id: number, field: "key" | "label", value: string) {
 		setRows((rs) =>
@@ -160,66 +180,75 @@ export function TermsManager({
 						description="Add the first item above. It becomes a choice everywhere this list is used."
 					/>
 				) : (
-					<TableScroll label={title}>
-						<Table>
-							<THead>
-								<TR>
-									<TH width="33%">Key</TH>
-									<TH>Label</TH>
-									<TH align="right" width={140}>
-										Actions
-									</TH>
-								</TR>
-							</THead>
-							<TBody>
-								{rows.map((r) => (
-									<TR key={r.id}>
-										<TD label="Key" className="px-1">
-											<input
-												className={`${cellInput} font-mono`}
-												aria-label={`Key for ${r.label || r.key}`}
-												value={r.key}
-												onChange={(e) => patch(r.id, "key", e.target.value)}
-											/>
-										</TD>
-										<TD label="Label" className="px-1">
-											<input
-												className={cellInput}
-												aria-label={`Label for ${r.key}`}
-												value={r.label}
-												onChange={(e) => patch(r.id, "label", e.target.value)}
-											/>
-										</TD>
-										<TD align="right" className="max-md:justify-end">
-											<span className="inline-flex items-center gap-2">
-												<Button
-													type="button"
-													variant="secondary"
-													size="sm"
-													onClick={() => save(r)}
-													disabled={busy === r.id}
-													aria-label={`Save ${r.label || r.key}`}
-												>
-													{busy === r.id ? "Saving…" : "Save"}
-												</Button>
-												<ActionMenu
-													label={`Actions for ${r.label || r.key}`}
-													items={[
-														{
-															label: "Delete",
-															danger: true,
-															disabled: busy === r.id,
-															onClick: () => del(r.id),
-														},
-													]}
-												/>
-											</span>
-										</TD>
+					<>
+						<SortableStatus status={reorder.status} />
+						<TableScroll label={title}>
+							<Table>
+								<THead>
+									<TR>
+										<ReorderHead />
+										<TH width="33%">Key</TH>
+										<TH>Label</TH>
+										<TH align="right" width={140}>
+											Actions
+										</TH>
 									</TR>
-								))}
-							</TBody>
-						</Table>
-					</TableScroll>
+								</THead>
+								<TBody>
+									{reorder.rows.map((r) => (
+										<TR
+											key={r.id}
+											{...reorder.itemProps(r)}
+											className={dragRow}
+										>
+											<ReorderCell grip={reorder.grip(r)} />
+											<TD label="Key" className="px-1">
+												<input
+													className={`${cellInput} font-mono`}
+													aria-label={`Key for ${r.label || r.key}`}
+													value={r.key}
+													onChange={(e) => patch(r.id, "key", e.target.value)}
+												/>
+											</TD>
+											<TD label="Label" className="px-1">
+												<input
+													className={cellInput}
+													aria-label={`Label for ${r.key}`}
+													value={r.label}
+													onChange={(e) => patch(r.id, "label", e.target.value)}
+												/>
+											</TD>
+											<TD align="right" className="max-md:justify-end">
+												<span className="inline-flex items-center gap-2">
+													<Button
+														type="button"
+														variant="secondary"
+														size="sm"
+														onClick={() => save(r)}
+														disabled={busy === r.id}
+														aria-label={`Save ${r.label || r.key}`}
+													>
+														{busy === r.id ? "Saving…" : "Save"}
+													</Button>
+													<ActionMenu
+														label={`Actions for ${r.label || r.key}`}
+														items={[
+															{
+																label: "Delete",
+																danger: true,
+																disabled: busy === r.id,
+																onClick: () => del(r.id),
+															},
+														]}
+													/>
+												</span>
+											</TD>
+										</TR>
+									))}
+								</TBody>
+							</Table>
+						</TableScroll>
+					</>
 				)}
 			</div>
 		</div>

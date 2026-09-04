@@ -52,10 +52,16 @@ describe("list-ui", () => {
 			"EmptyState: function/1",
 			"ListSearch: function/1",
 			"ListStatus: function/1",
+			"ReorderCell: function/1",
+			"ReorderHead: function/0",
+			"ReorderOff: function/1",
+			"SortableStatus: function/1",
 			"TableScroll: function/1",
+			"dragRow: string",
 			"matchesQuery: function/1",
 			"removeWithRollback: function/4",
 			"useListQuery: function/1",
+			"useListReorder: function/1",
 		]);
 	});
 

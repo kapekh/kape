@@ -4,13 +4,19 @@ import { useCallback, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import {
+	dragRow,
 	EmptyState,
 	ListSearch,
 	ListStatus,
 	matchesQuery,
+	ReorderCell,
+	ReorderHead,
+	ReorderOff,
 	removeWithRollback,
+	SortableStatus,
 	TableScroll,
 	useListQuery,
+	useListReorder,
 } from "#/components/admin/list-ui";
 import { useModules } from "#/components/admin/useModules";
 import { Button } from "#/components/ui/button.tsx";
@@ -93,6 +99,14 @@ function SchoolsList() {
 		),
 	);
 	const filtered = q !== "" || level !== "";
+
+	const reorder = useListReorder({
+		rows: shown,
+		id: (r: Row) => r.id,
+		describe: (r: Row) => r.name,
+		disabled: filtered,
+		save: (ids) => trpcClient.adminSchools.reorder.mutate({ ids }),
+	});
 
 	const newSchool = (
 		<Button asChild>
@@ -189,76 +203,88 @@ function SchoolsList() {
 					action={clearFilters}
 				/>
 			) : (
-				<TableScroll label="Schools">
-					<Table>
-						<THead>
-							<TR>
-								<TH width={72}>
-									<span className="sr-only">Cover</span>
-								</TH>
-								<TH>Name</TH>
-								<TH width={160}>Level</TH>
-								<TH>Province</TH>
-								<TH width={140}>Project</TH>
-								<TH align="right" width={72}>
-									Actions
-								</TH>
-							</TR>
-						</THead>
-						<TBody>
-							{shown.map((r) => (
-								<TR key={r.id} className="hover:bg-admin-accent-soft/50">
-									<TD>
-										<div className="h-10 w-14 overflow-hidden rounded-lg bg-admin-neutral-soft ring-1 ring-admin-border">
-											{r.coverMediaId && media[r.coverMediaId] ? (
-												<img
-													src={media[r.coverMediaId]}
-													alt=""
-													className="h-full w-full object-cover"
-												/>
-											) : null}
-										</div>
-									</TD>
-									<TD label="Name">
-										<Link
-											to="/admin/schools/$id"
-											params={{ id: String(r.id) }}
-											className="tap-target truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
-										>
-											{r.name}
-										</Link>
-										{r.code ? (
-											<span className="ml-2 text-[13px] text-admin-ink-muted">
-												{r.code}
-											</span>
-										) : null}
-									</TD>
-									<TD label="Level" className="text-admin-ink-muted">
-										{levelLabel(r) || "—"}
-									</TD>
-									<TD label="Province" className="text-admin-ink-muted">
-										{provinceLabel(r) || "—"}
-									</TD>
-									<TD label="Project" className="text-admin-ink-muted">
-										{projectLabel(r) || "—"}
-									</TD>
-									<TD align="right" className="max-md:justify-end">
-										<ActionMenu
-											label={`Actions for ${r.name}`}
-											items={[
-												{
-													label: "Delete school",
-													danger: true,
-													onClick: () => del(r),
-												},
-											]}
-										/>
-									</TD>
+				<>
+					{filtered ? (
+						<ReorderOff what="schools" clear="the search and filters" />
+					) : null}
+					<SortableStatus status={reorder.status} />
+					<TableScroll label="Schools">
+						<Table>
+							<THead>
+								<TR>
+									<ReorderHead />
+									<TH width={72}>
+										<span className="sr-only">Cover</span>
+									</TH>
+									<TH>Name</TH>
+									<TH width={160}>Level</TH>
+									<TH>Province</TH>
+									<TH width={140}>Project</TH>
+									<TH align="right" width={72}>
+										Actions
+									</TH>
 								</TR>
-							))}
-						</TBody>
-					</Table>
-				</TableScroll>
+							</THead>
+							<TBody>
+								{reorder.rows.map((r) => (
+									<TR
+										key={r.id}
+										{...reorder.itemProps(r)}
+										className={`hover:bg-admin-accent-soft/50 ${dragRow}`}
+									>
+										<ReorderCell grip={reorder.grip(r)} />
+										<TD>
+											<div className="h-10 w-14 overflow-hidden rounded-lg bg-admin-neutral-soft ring-1 ring-admin-border">
+												{r.coverMediaId && media[r.coverMediaId] ? (
+													<img
+														src={media[r.coverMediaId]}
+														alt=""
+														className="h-full w-full object-cover"
+													/>
+												) : null}
+											</div>
+										</TD>
+										<TD label="Name">
+											<Link
+												to="/admin/schools/$id"
+												params={{ id: String(r.id) }}
+												className="tap-target truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+											>
+												{r.name}
+											</Link>
+											{r.code ? (
+												<span className="ml-2 text-[13px] text-admin-ink-muted">
+													{r.code}
+												</span>
+											) : null}
+										</TD>
+										<TD label="Level" className="text-admin-ink-muted">
+											{levelLabel(r) || "—"}
+										</TD>
+										<TD label="Province" className="text-admin-ink-muted">
+											{provinceLabel(r) || "—"}
+										</TD>
+										<TD label="Project" className="text-admin-ink-muted">
+											{projectLabel(r) || "—"}
+										</TD>
+										<TD align="right" className="max-md:justify-end">
+											<ActionMenu
+												label={`Actions for ${r.name}`}
+												items={[
+													{
+														label: "Delete school",
+														danger: true,
+														onClick: () => del(r),
+													},
+												]}
+											/>
+										</TD>
+									</TR>
+								))}
+							</TBody>
+						</Table>
+					</TableScroll>
+				</>
 			)}
 		</div>
 	);

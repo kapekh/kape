@@ -4,13 +4,19 @@ import { useCallback, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import {
+	dragRow,
 	EmptyState,
 	ListSearch,
 	ListStatus,
 	matchesQuery,
+	ReorderCell,
+	ReorderHead,
+	ReorderOff,
 	removeWithRollback,
+	SortableStatus,
 	TableScroll,
 	useListQuery,
+	useListReorder,
 } from "#/components/admin/list-ui";
 import { Button } from "#/components/ui/button.tsx";
 import { PageHeader } from "#/components/ui/page-header.tsx";
@@ -62,6 +68,14 @@ function PartnersList() {
 		matchesQuery(q, r.name, catLabel(r), r.url),
 	);
 	const filtered = q !== "" || cat !== "";
+
+	const reorder = useListReorder({
+		rows: shown,
+		id: (r: Row) => r.id,
+		describe: (r: Row) => r.name,
+		disabled: filtered,
+		save: (ids) => trpcClient.adminPartners.reorder.mutate({ ids }),
+	});
 
 	const newPartner = (
 		<Button asChild>
@@ -158,78 +172,90 @@ function PartnersList() {
 					action={clearFilters}
 				/>
 			) : (
-				<TableScroll label="Partners">
-					<Table>
-						<THead>
-							<TR>
-								<TH width={72}>
-									<span className="sr-only">Logo</span>
-								</TH>
-								<TH>Name</TH>
-								<TH>Category</TH>
-								<TH>URL</TH>
-								<TH align="right" width={72}>
-									Actions
-								</TH>
-							</TR>
-						</THead>
-						<TBody>
-							{shown.map((r) => (
-								<TR key={r.id} className="hover:bg-admin-accent-soft/50">
-									<TD>
-										<div className="h-10 w-14 overflow-hidden rounded-lg bg-admin-neutral-soft ring-1 ring-admin-border">
-											{r.logoUrl ? (
-												<img
-													src={r.logoUrl}
-													alt=""
-													className="h-full w-full object-cover"
-												/>
-											) : null}
-										</div>
-									</TD>
-									<TD label="Name">
-										<Link
-											to="/admin/partners/$id"
-											params={{ id: String(r.id) }}
-											className="tap-target block truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
-										>
-											{r.name}
-										</Link>
-									</TD>
-									<TD label="Category" className="text-admin-ink-muted">
-										{catLabel(r) || "—"}
-									</TD>
-									<TD label="URL" className="text-admin-ink-muted">
-										{r.url ? (
-											<a
-												href={r.url}
-												target="_blank"
-												rel="noopener noreferrer"
-												className="tap-target truncate text-admin-accent-ink hover:underline"
-											>
-												{r.url}
-											</a>
-										) : (
-											"—"
-										)}
-									</TD>
-									<TD align="right" className="max-md:justify-end">
-										<ActionMenu
-											label={`Actions for ${r.name}`}
-											items={[
-												{
-													label: "Delete partner",
-													danger: true,
-													onClick: () => del(r),
-												},
-											]}
-										/>
-									</TD>
+				<>
+					{filtered ? (
+						<ReorderOff what="partners" clear="the search and filters" />
+					) : null}
+					<SortableStatus status={reorder.status} />
+					<TableScroll label="Partners">
+						<Table>
+							<THead>
+								<TR>
+									<ReorderHead />
+									<TH width={72}>
+										<span className="sr-only">Logo</span>
+									</TH>
+									<TH>Name</TH>
+									<TH>Category</TH>
+									<TH>URL</TH>
+									<TH align="right" width={72}>
+										Actions
+									</TH>
 								</TR>
-							))}
-						</TBody>
-					</Table>
-				</TableScroll>
+							</THead>
+							<TBody>
+								{reorder.rows.map((r) => (
+									<TR
+										key={r.id}
+										{...reorder.itemProps(r)}
+										className={`hover:bg-admin-accent-soft/50 ${dragRow}`}
+									>
+										<ReorderCell grip={reorder.grip(r)} />
+										<TD>
+											<div className="h-10 w-14 overflow-hidden rounded-lg bg-admin-neutral-soft ring-1 ring-admin-border">
+												{r.logoUrl ? (
+													<img
+														src={r.logoUrl}
+														alt=""
+														className="h-full w-full object-cover"
+													/>
+												) : null}
+											</div>
+										</TD>
+										<TD label="Name">
+											<Link
+												to="/admin/partners/$id"
+												params={{ id: String(r.id) }}
+												className="tap-target block truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
+											>
+												{r.name}
+											</Link>
+										</TD>
+										<TD label="Category" className="text-admin-ink-muted">
+											{catLabel(r) || "—"}
+										</TD>
+										<TD label="URL" className="text-admin-ink-muted">
+											{r.url ? (
+												<a
+													href={r.url}
+													target="_blank"
+													rel="noopener noreferrer"
+													className="tap-target truncate text-admin-accent-ink hover:underline"
+												>
+													{r.url}
+												</a>
+											) : (
+												"—"
+											)}
+										</TD>
+										<TD align="right" className="max-md:justify-end">
+											<ActionMenu
+												label={`Actions for ${r.name}`}
+												items={[
+													{
+														label: "Delete partner",
+														danger: true,
+														onClick: () => del(r),
+													},
+												]}
+											/>
+										</TD>
+									</TR>
+								))}
+							</TBody>
+						</Table>
+					</TableScroll>
+				</>
 			)}
 		</div>
 	);
