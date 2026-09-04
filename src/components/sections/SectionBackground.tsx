@@ -1,8 +1,8 @@
-import { useRouter } from "@tanstack/react-router";
 import { Check, Palette } from "lucide-react";
 import { useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { useRefreshAfterSave } from "#/lib/after-save";
 import { rememberVersion, useInlineEdit, versionFor } from "#/lib/inline-edit";
 import { saveErrorMessage } from "#/lib/save-error";
 import { choiceField, SECTION_TONES } from "#/lib/sections";
@@ -34,7 +34,7 @@ export function SectionBackground({
 	toneColor?: string;
 }) {
 	const { setStatus, bumpRevision } = useInlineEdit();
-	const router = useRouter({ warn: false });
+	const refresh = useRefreshAfterSave();
 	const [open, setOpen] = useState(false);
 	const [busy, setBusy] = useState(false);
 	const field = choiceField(type, "tone");
@@ -58,11 +58,9 @@ export function SectionBackground({
 				expectedUpdatedAt: versionFor(identity.entity, identity.entityId),
 			});
 			rememberVersion(identity.entity, identity.entityId, result.updatedAt);
-			// re-running the loader repaints the band without losing the scroll
-			router?.options.context.queryClient.removeQueries();
-			await router?.invalidate();
-			bumpRevision();
-			setStatus({ kind: "saved", label: said });
+			// re-running the loader repaints the band without losing the scroll, and
+			// reports for itself, so only a refused write lands below
+			if (await refresh(said)) bumpRevision();
 		} catch (err) {
 			setStatus({
 				kind: "error",

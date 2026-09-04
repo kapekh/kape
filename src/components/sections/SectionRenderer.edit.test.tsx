@@ -23,6 +23,8 @@ const state = vi.hoisted(() => ({
 	me: null as { permissions: string[]; isSuperAdmin: boolean } | null,
 	saved: [] as Record<string, unknown>[],
 	conflict: false,
+	/** The loaders reject after the write landed: a page that did not repaint. */
+	refuseRefresh: false,
 }));
 
 vi.mock("#/integrations/tanstack-query/root-provider", () => ({
@@ -62,6 +64,13 @@ vi.mock("../NavLink", () => ({
 vi.mock("@tanstack/react-router", async (actual) => ({
 	...(await actual<Record<string, unknown>>()),
 	useLoaderData: () => ({ nav: [] }),
+	useRouter: () => ({
+		options: { context: { queryClient: { removeQueries: () => {} } } },
+		invalidate: () =>
+			state.refuseRefresh
+				? Promise.reject(new Error("the loader failed"))
+				: Promise.resolve(),
+	}),
 }));
 vi.mock("../MapView", () => ({ MapView: () => <div /> }));
 vi.mock("../PublicOrgChart", () => ({ PublicOrgChart: () => <div /> }));
@@ -251,6 +260,7 @@ beforeEach(() => {
 	state.me = null;
 	state.saved = [];
 	state.conflict = false;
+	state.refuseRefresh = false;
 	localStorage.clear();
 	setHint(false);
 });
@@ -472,6 +482,47 @@ describe("editing a section field on the public page", () => {
 				target,
 			),
 		);
+	});
+
+	it("stands by a save that landed when only the refresh failed", async () => {
+		signIn(["pages"]);
+		const sections = probeSections();
+		const { container } = await editing(sections);
+		const node = clickTarget(
+			container,
+			address(sections, "cta", "props.ctaLabel"),
+		);
+		state.refuseRefresh = true;
+		typeAndSave(node, "Rewritten label");
+
+		expect(await screen.findByText(/saved for everyone/)).toBeTruthy();
+		expect(screen.getByText(/Reload the page/)).toBeTruthy();
+		// the write landed: no failure is reported, and the box does not reopen
+		// holding text the editor would then save twice
+		expect(
+			screen.queryByText(/Could not save|Someone else changed/),
+		).toBeNull();
+		expect(isOpen(node)).toBe(false);
+		expect(state.saved).toHaveLength(1);
+	});
+
+	it("stands by a background that landed when only the refresh failed", async () => {
+		signIn(["pages"]);
+		await editing(probeSections());
+		fireEvent.click(screen.getAllByRole("button", { expanded: false })[0]);
+		const swatch = screen
+			.getAllByLabelText(/ background$/)
+			.find((b) => b.getAttribute("aria-pressed") === "false");
+		if (!swatch) throw new Error("no other background to pick");
+		state.refuseRefresh = true;
+		fireEvent.click(swatch);
+
+		expect(await screen.findByText(/saved for everyone/)).toBeTruthy();
+		expect(screen.getByText(/Reload the page/)).toBeTruthy();
+		expect(
+			screen.queryByText(/Could not save|Someone else changed/),
+		).toBeNull();
+		expect(state.saved.length).toBeGreaterThan(0);
 	});
 
 	it("says so when someone else changed the page first, and keeps what was typed", async () => {

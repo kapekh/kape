@@ -1,7 +1,7 @@
-import { useRouter } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { useRefreshAfterSave } from "#/lib/after-save";
 import { sourceOf } from "#/lib/edit-source";
 import { useLang } from "#/lib/i18n";
 import {
@@ -63,12 +63,12 @@ export function InlineEditSurface() {
 	const { editing, resolve, setStatus, register, bumpRevision, may } =
 		useInlineEdit();
 	const { lang, languages, strings, stringsFallback, setString } = useLang();
-	const router = useRouter({ warn: false });
+	const refresh = useRefreshAfterSave();
 	const open = useRef<Open | null>(null);
 	const editable = useMemo(plaintextOnly, []);
 	// the listeners mount once; this keeps them calling the current save
-	const now = useRef({ resolve, setStatus, lang, setString, router });
-	now.current = { resolve, setStatus, lang, setString, router };
+	const now = useRef({ resolve, setStatus, lang, setString, refresh });
+	now.current = { resolve, setStatus, lang, setString, refresh };
 
 	const uiStringTarget = useCallback(
 		(node: Element): EditTarget | null => {
@@ -117,7 +117,7 @@ export function InlineEditSurface() {
 	const save = useCallback(async (state: Open, value: string) => {
 		const { target } = state;
 		const { label } = target;
-		const { setStatus, lang, setString, router } = now.current;
+		const { setStatus, lang, setString, refresh } = now.current;
 		setStatus({ kind: "saving", label });
 		state.node.setAttribute("data-cms-saving", "");
 		try {
@@ -134,27 +134,25 @@ export function InlineEditSurface() {
 					return;
 				}
 				setString(target.key, value.trim());
-			} else {
-				const result = await trpcClient.adminPages.updateField.mutate({
-					entity: target.entity,
-					entityId: target.entityId,
-					lang: target.lang,
-					target: target.target,
-					value,
-					expectedUpdatedAt: versionOf(target),
-				});
-				rememberVersion(target.entity, target.entityId, result.updatedAt);
-				// the text belongs to the route loader: re-running it re-renders this
-				// node from what was saved, where a reload would throw away the scroll
-				// position and every other edit's place on the page.
-				// dropped, not invalidated: the loader reads through ensureQueryData,
-				// which hands back whatever is cached however stale, and awaiting a
-				// refetch of every cached query is a hang waiting to happen
-				router?.options.context.queryClient.removeQueries();
-				await router?.invalidate();
+				state.node.removeAttribute("data-cms-saving");
+				setStatus({ kind: "saved", label });
+				return;
 			}
+			const result = await trpcClient.adminPages.updateField.mutate({
+				entity: target.entity,
+				entityId: target.entityId,
+				lang: target.lang,
+				target: target.target,
+				value,
+				expectedUpdatedAt: versionOf(target),
+			});
+			rememberVersion(target.entity, target.entityId, result.updatedAt);
 			state.node.removeAttribute("data-cms-saving");
-			setStatus({ kind: "saved", label });
+			// the text belongs to the route loader: re-running it re-renders this node
+			// from what was saved, where a reload would throw away the scroll position
+			// and every other edit's place on the page. it reports for itself, so a
+			// refresh that fails cannot reopen the box on a save that landed
+			await refresh(label);
 		} catch (err) {
 			state.node.removeAttribute("data-cms-saving");
 			// nothing typed is thrown away: the node reopens holding it, and the
