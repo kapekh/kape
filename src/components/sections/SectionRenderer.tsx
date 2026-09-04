@@ -1,4 +1,4 @@
-import { useLoaderData, useLocation } from "@tanstack/react-router";
+import { useLoaderData, useLocation, useRouter } from "@tanstack/react-router";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
@@ -8,6 +8,7 @@ import {
 	useInlineEdit,
 	useStudioLink,
 } from "#/lib/inline-edit";
+import { saveErrorMessage } from "#/lib/save-error";
 import {
 	type SectionField,
 	type SectionNode,
@@ -33,6 +34,7 @@ import { usePdfReader } from "../PdfReader";
 import { PersonPhotoEdit, useMayEditPeople } from "../PersonPhotoEdit";
 import { PublicOrgChart } from "../PublicOrgChart";
 import { RichBody } from "../RichBody";
+import { DragHandle, SortableStatus, useSortable } from "../ui/sortable";
 import { SectionBackground } from "./SectionBackground";
 
 type Common = {
@@ -74,10 +76,15 @@ export function cmsMark(
 	};
 }
 
+/** True while an admin who may edit this area has the switch on. */
+function useMayEdit(area: string): boolean {
+	const { editing, may } = useInlineEdit();
+	return editing && may(area);
+}
+
 /** True while an admin who may edit pages has the switch on. */
 function useEditingSections(): boolean {
-	const { editing, may } = useInlineEdit();
-	return editing && may("pages");
+	return useMayEdit("pages");
 }
 
 /** Marks a field of the section being rendered, e.g. `title`, `items[2].body`. */
@@ -194,6 +201,87 @@ function EditLayer({
 	const sel = '[data-cms-target^="section:"]';
 	return (
 		<style>{`${sel}{outline:1px dashed ${OUTLINE};outline-offset:2px;border-radius:2px;cursor:text}${sel}:hover{outline-color:var(--primary);background:color-mix(in oklab, var(--primary) 8%, transparent)}`}</style>
+	);
+}
+
+/* ------------------------------------------------------------------ */
+/* Drag to order                                                       */
+/* ------------------------------------------------------------------ */
+
+// no hover and no focus ring on a touch screen, so there the grip always shows
+const GRIP =
+	"absolute left-0 top-0 z-20 bg-background/85 ring-1 ring-border shadow-sm backdrop-blur md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 md:focus-visible:opacity-100";
+
+// off, it hands the rows back untouched: a visitor's markup and order never change
+function useRowOrder<Row extends { id: number }>(
+	rows: Row[],
+	{
+		on,
+		label,
+		name,
+		save,
+		axis = "grid",
+	}: {
+		on: boolean;
+		/** What the bar calls this save, e.g. "Team order". */
+		label: string;
+		/** What to call one row in the grip's label and in the announcement. */
+		name: (row: Row) => string;
+		save: (ids: number[]) => Promise<unknown>;
+		axis?: "list" | "grid";
+	},
+) {
+	const { setStatus } = useInlineEdit();
+	const router = useRouter({ warn: false });
+	const byId = new Map(rows.map((r) => [r.id, r]));
+	const sortable = useSortable<number>({
+		ids: rows.map((r) => r.id),
+		axis,
+		disabled: !on,
+		describe: (id) => {
+			const row = byId.get(id);
+			return row ? name(row) : String(id);
+		},
+		onReorder: async (ids) => {
+			setStatus({ kind: "saving", label });
+			// a subset: the server leaves everyone this listing left out in place
+			await save(ids);
+			router?.options.context.queryClient.removeQueries();
+			await router?.invalidate();
+			setStatus({ kind: "saved", label });
+		},
+		onError: (err) =>
+			setStatus({ kind: "error", label, message: saveErrorMessage(err) }),
+	});
+	const list = on
+		? sortable.order
+				.map((id) => byId.get(id))
+				.filter((row): row is Row => row !== undefined)
+		: rows;
+	return { ...sortable, on, list };
+}
+
+type RowOrder = ReturnType<typeof useSortable<number>>;
+
+// a grip inside the card would be a button inside an anchor: invalid, and a
+// click on it would navigate. off, the wrapper is not rendered at all.
+function Grippable({
+	order,
+	id,
+	className,
+	children,
+}: {
+	order: Pick<RowOrder, "itemProps" | "handleProps"> & { on: boolean };
+	id: number;
+	className: string;
+	children: React.ReactNode;
+}) {
+	if (!order.on) return children;
+	return (
+		<div {...order.itemProps(id)} className={className}>
+			{children}
+			<DragHandle {...order.handleProps(id)} className={GRIP} />
+		</div>
 	);
 }
 
@@ -2152,6 +2240,12 @@ function People(p: PeopleProps) {
 	const t = useT();
 	const mayEditPeople = useMayEditPeople();
 	const people: SourceRow["people"][] = Array.isArray(p.data) ? p.data : [];
+	const order = useRowOrder(people, {
+		on: mayEditPeople,
+		label: "Team order",
+		name: (person) => person.name || "Team member",
+		save: (ids) => trpcClient.adminPeople.reorder.mutate({ ids }),
+	});
 	const initials = (name: string) =>
 		String(name || "")
 			.split(/\s+/)
@@ -2180,8 +2274,12 @@ function People(p: PeopleProps) {
 					</Empty>
 				) : (
 					<div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-5">
-						{people.map((person) => (
-							<div key={person.id} className="group relative text-center">
+						{order.list.map((person) => (
+							<div
+								key={person.id}
+								{...(order.on ? order.itemProps(person.id) : {})}
+								className="group relative text-center"
+							>
 								<NavLink
 									href={L(`/team/${person.slug}`)}
 									className="block text-center"
@@ -2217,10 +2315,18 @@ function People(p: PeopleProps) {
 										hasPhoto={Boolean(person.photoUrl)}
 									/>
 								)}
+								{/* the camera button covers the photo, so the grip sits in the corner */}
+								{order.on && (
+									<DragHandle
+										{...order.handleProps(person.id)}
+										className={GRIP}
+									/>
+								)}
 							</div>
 						))}
 					</div>
 				)}
+				{order.on && <SortableStatus status={order.status} />}
 			</Container>
 		</Band>
 	);
@@ -2449,47 +2555,68 @@ function Partners(p: PartnersProps) {
 					// hairline-separated. Even, scannable, and no empty cards for small groups.
 					<div className="mt-10 divide-y divide-border border-y border-border">
 						{[...byCat.entries()].map(([cat, list]) => (
-							<div
-								key={cat}
-								className="grid gap-3 py-6 md:grid-cols-[minmax(0,190px)_1fr] md:gap-8 md:py-7"
-							>
-								<H className="t-eyebrow text-[var(--accent-ink)] md:pt-2.5">
-									{cat.replace(/-/g, " ")}
-								</H>
-								<div className="flex flex-wrap items-center gap-3">
-									{list.map((r) => (
-										<PartnerLink
-											key={r.id}
-											row={r}
-											linked
-											className="group inline-flex"
-										>
-											{r.logoUrl ? (
-												<span className="grid h-12 w-28 place-items-center rounded-lg bg-white p-2 ring-1 ring-border transition group-hover:ring-[var(--accent)]">
-													<img
-														src={r.logoUrl}
-														alt={r.name}
-														// max-h-8 not max-h-full: the row is auto-sized, so a
-														// percentage resolves against the image itself and caps nothing
-														className="max-h-8 max-w-full object-contain grayscale opacity-75 transition duration-300 group-hover:grayscale-0 group-hover:opacity-100"
-														onError={onImageError}
-														ref={imageFallbackRef}
-													/>
-												</span>
-											) : (
-												<span className="rounded-full border border-border bg-background/60 px-3.5 py-1.5 text-sm font-medium text-foreground/80 transition group-hover:border-[var(--accent)] group-hover:text-[var(--accent)]">
-													{r.name}
-												</span>
-											)}
-										</PartnerLink>
-									))}
-								</div>
-							</div>
+							<PartnerCategory key={cat} cat={cat} list={list} headingAs={H} />
 						))}
 					</div>
 				)}
 			</Container>
 		</Band>
+	);
+}
+
+// its own sortable, so a drag reorders one category and leaves the others alone
+function PartnerCategory({
+	cat,
+	list,
+	headingAs: H,
+}: {
+	cat: string;
+	list: PartnerRow[];
+	headingAs: "h2" | "h3";
+}) {
+	const order = useRowOrder(list, {
+		on: useMayEdit("partners"),
+		label: "Partner order",
+		name: (r) => r.name,
+		save: (ids) => trpcClient.adminPartners.reorder.mutate({ ids }),
+	});
+	return (
+		<div className="grid gap-3 py-6 md:grid-cols-[minmax(0,190px)_1fr] md:gap-8 md:py-7">
+			<H className="t-eyebrow text-[var(--accent-ink)] md:pt-2.5">
+				{cat.replace(/-/g, " ")}
+			</H>
+			<div className="flex flex-wrap items-center gap-3">
+				{order.list.map((r) => (
+					<Grippable
+						key={r.id}
+						order={order}
+						id={r.id}
+						className="group relative inline-flex"
+					>
+						<PartnerLink row={r} linked className="group inline-flex">
+							{r.logoUrl ? (
+								<span className="grid h-12 w-28 place-items-center rounded-lg bg-white p-2 ring-1 ring-border transition group-hover:ring-[var(--accent)]">
+									<img
+										src={r.logoUrl}
+										alt={r.name}
+										// max-h-8 not max-h-full: the row is auto-sized, so a
+										// percentage resolves against the image itself and caps nothing
+										className="max-h-8 max-w-full object-contain grayscale opacity-75 transition duration-300 group-hover:grayscale-0 group-hover:opacity-100"
+										onError={onImageError}
+										ref={imageFallbackRef}
+									/>
+								</span>
+							) : (
+								<span className="rounded-full border border-border bg-background/60 px-3.5 py-1.5 text-sm font-medium text-foreground/80 transition group-hover:border-[var(--accent)] group-hover:text-[var(--accent)]">
+									{r.name}
+								</span>
+							)}
+						</PartnerLink>
+					</Grippable>
+				))}
+			</div>
+			{order.on && <SortableStatus status={order.status} />}
+		</div>
 	);
 }
 
@@ -2508,6 +2635,13 @@ function ProjectList(p: ProjectListProps) {
 	const base = p.linkBase ?? "";
 	const cols =
 		p.layout === "grid-2" ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-3";
+	const order = useRowOrder(rows, {
+		// grid only: a row of the list layout has no room for a grip
+		on: useMayEdit("projects") && p.layout !== "list",
+		label: "Project order",
+		name: (r) => r.name || r.code,
+		save: (ids) => trpcClient.adminProjects.reorder.mutate({ ids }),
+	});
 	return (
 		<Band p={p} className={PAD}>
 			<Container>
@@ -2547,48 +2681,55 @@ function ProjectList(p: ProjectListProps) {
 					</ul>
 				) : (
 					<div className={`grid grid-cols-1 gap-5 ${cols}`}>
-						{rows.map((r) => (
-							<NavLink
+						{order.list.map((r) => (
+							<Grippable
 								key={r.id}
-								href={base ? L(`${base}/${r.slug}`) : "#"}
-								className={`${card} group flex flex-col p-6`}
+								order={order}
+								id={r.id}
+								className="group relative grid"
 							>
-								{r.image ? (
-									<img
-										src={r.image}
-										alt={r.name || ""}
-										className="mb-4 h-12 w-auto max-w-[10rem] object-contain"
-										onError={onImageError}
-										ref={imageFallbackRef}
-									/>
-								) : (
-									<div className="mb-4 inline-flex w-fit rounded-lg bg-[var(--accent)]/10 px-3 py-1.5 font-display text-sm font-bold text-[var(--accent)]">
-										{r.code}
-									</div>
-								)}
-								<h3
-									{...row("project", r.id, "name")}
-									className="t-card-title text-primary group-hover:text-[var(--accent)] transition"
+								<NavLink
+									href={base ? L(`${base}/${r.slug}`) : "#"}
+									className={`${card} group flex flex-col p-6`}
 								>
-									{r.name}
-								</h3>
-								{r.summary && (
-									<p
-										{...row("project", r.id, "summary")}
-										className="mt-2 t-body text-foreground/75 line-clamp-3"
+									{r.image ? (
+										<img
+											src={r.image}
+											alt={r.name || ""}
+											className="mb-4 h-12 w-auto max-w-[10rem] object-contain"
+											onError={onImageError}
+											ref={imageFallbackRef}
+										/>
+									) : (
+										<div className="mb-4 inline-flex w-fit rounded-lg bg-[var(--accent)]/10 px-3 py-1.5 font-display text-sm font-bold text-[var(--accent)]">
+											{r.code}
+										</div>
+									)}
+									<h3
+										{...row("project", r.id, "name")}
+										className="t-card-title text-primary group-hover:text-[var(--accent)] transition"
 									>
-										{r.summary}
-									</p>
-								)}
-								{r.status && (
-									<span className="mt-4 inline-flex w-fit rounded-full bg-muted px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-										{r.status}
-									</span>
-								)}
-							</NavLink>
+										{r.name}
+									</h3>
+									{r.summary && (
+										<p
+											{...row("project", r.id, "summary")}
+											className="mt-2 t-body text-foreground/75 line-clamp-3"
+										>
+											{r.summary}
+										</p>
+									)}
+									{r.status && (
+										<span className="mt-4 inline-flex w-fit rounded-full bg-muted px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+											{r.status}
+										</span>
+									)}
+								</NavLink>
+							</Grippable>
 						))}
 					</div>
 				)}
+				{order.on && <SortableStatus status={order.status} />}
 			</Container>
 		</Band>
 	);
