@@ -1,15 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-	ArrowDown,
-	ArrowUp,
-	ChevronRight,
-	Pencil,
-	Plus,
-	X,
-} from "lucide-react";
+import { ChevronRight, Pencil, Plus, X } from "lucide-react";
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
+	dragGrip,
+	dragItem,
 	FormSection,
 	fieldInput,
 	fieldLabel,
@@ -22,6 +18,11 @@ import { Button } from "#/components/ui/button";
 import { Card } from "#/components/ui/card";
 import { PageHeader } from "#/components/ui/page-header";
 import { SkeletonRows } from "#/components/ui/skeleton";
+import {
+	DragHandle,
+	SortableStatus,
+	useSortable,
+} from "#/components/ui/sortable.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { HEADER_DEFAULTS } from "#/lib/header-defaults";
 import { publicPathOf } from "#/lib/public-path";
@@ -157,6 +158,61 @@ function buildTree(items: NavRow[]): NavNode[] {
 	};
 	sortRec(roots);
 	return roots;
+}
+
+const labelOf = (n: NavNode) =>
+	n.labels.en ?? Object.values(n.labels)[0] ?? "(no label)";
+
+type Grip = ReturnType<ReturnType<typeof useSortable<number>>["handleProps"]>;
+type ItemProps = ReturnType<
+	ReturnType<typeof useSortable<number>>["itemProps"]
+>;
+
+/** One sibling group. A drag stays inside it, so the ids sent to the server all
+ *  share a parent and it renumbers that level alone. */
+function NavLevel({
+	nodes,
+	depth,
+	disabled,
+	onReorder,
+	render,
+}: {
+	nodes: NavNode[];
+	depth: number;
+	disabled: boolean;
+	onReorder: (ids: number[]) => Promise<void>;
+	render: (
+		node: NavNode,
+		depth: number,
+		itemProps: ItemProps,
+		grip: Grip | null,
+	) => ReactNode;
+}) {
+	const byId = new Map(nodes.map((n) => [n.id, n]));
+	const { order, itemProps, handleProps, status } = useSortable<number>({
+		ids: nodes.map((n) => n.id),
+		disabled,
+		describe: (id) => {
+			const node = byId.get(id);
+			return node ? labelOf(node) : `item ${id}`;
+		},
+		onReorder,
+		onError: (e) => toast(saveErrorMessage(e), "error"),
+	});
+	const placed = new Set(order);
+	const many = order.length > 1;
+	const shown = [
+		...order.map((id) => byId.get(id)).filter((n): n is NavNode => n != null),
+		...nodes.filter((n) => !placed.has(n.id)),
+	];
+	return (
+		<>
+			<SortableStatus status={status} />
+			{shown.map((n) =>
+				render(n, depth, itemProps(n.id), many ? handleProps(n.id) : null),
+			)}
+		</>
+	);
 }
 
 const inp =
@@ -435,21 +491,19 @@ function NavBuilder() {
 			setBusyId(null);
 		}
 	}
-	async function move(id: number, dir: "up" | "down") {
-		setBusyId(id);
-		try {
-			await trpcClient.adminNav.move.mutate({ id, dir });
-			await refresh();
-		} catch (e) {
-			toast(saveErrorMessage(e), "error");
-		} finally {
-			setBusyId(null);
-		}
+	// one write for the whole level: the server renumbers it in one go
+	async function reorder(ids: number[]) {
+		await trpcClient.adminNav.reorder.mutate({ ids });
+		await refresh();
 	}
 
-	function renderNode(node: NavNode, depth: number) {
-		const label =
-			node.labels.en ?? Object.values(node.labels)[0] ?? "(no label)";
+	function renderNode(
+		node: NavNode,
+		depth: number,
+		itemProps: ItemProps,
+		grip: Grip | null,
+	) {
+		const label = labelOf(node);
 		const hasKids = node.children.length > 0;
 		const open = !collapsed.has(node.id);
 		const busy = busyId === node.id;
@@ -458,9 +512,11 @@ function NavBuilder() {
 		return (
 			<div key={node.id}>
 				<div
-					className={`flex items-center gap-1 rounded-lg py-1 pr-1 transition-colors duration-150 ease-out hover:bg-admin-accent-soft/40 ${node.visible ? "" : "opacity-60"}`}
+					{...itemProps}
+					className={`flex items-center gap-1 rounded-lg py-1 pr-1 transition-colors duration-150 ease-out hover:bg-admin-accent-soft/40 ${dragItem} ${node.visible ? "" : "opacity-60"}`}
 					style={{ paddingLeft: depth * 24 + 4 }}
 				>
+					{grip ? <DragHandle {...grip} className={dragGrip} /> : null}
 					{hasKids ? (
 						<button
 							type="button"
@@ -516,24 +572,6 @@ function NavBuilder() {
 					</button>
 					{/* on screen at rest: a control nobody can see is a control nobody finds */}
 					<div className="ml-auto flex shrink-0 items-center gap-0.5">
-						<button
-							type="button"
-							aria-label={`Move ${label} up`}
-							disabled={busy}
-							className={act}
-							onClick={() => move(node.id, "up")}
-						>
-							<ArrowUp aria-hidden="true" className="size-4" />
-						</button>
-						<button
-							type="button"
-							aria-label={`Move ${label} down`}
-							disabled={busy}
-							className={act}
-							onClick={() => move(node.id, "down")}
-						>
-							<ArrowDown aria-hidden="true" className="size-4" />
-						</button>
 						<button
 							type="button"
 							aria-label={`Add a child item under ${label}`}
@@ -604,11 +642,17 @@ function NavBuilder() {
 						className="border-l border-admin-border"
 						style={{ marginLeft: depth * 24 + 20 }}
 					>
-						{node.children.map((c) => (
-							<div key={c.id} style={{ marginLeft: -(depth * 24 + 20) }}>
-								{renderNode(c, depth + 1)}
-							</div>
-						))}
+						<NavLevel
+							nodes={node.children}
+							depth={depth + 1}
+							disabled={busyId !== null}
+							onReorder={reorder}
+							render={(c, d, props, childGrip) => (
+								<div key={c.id} style={{ marginLeft: -(depth * 24 + 20) }}>
+									{renderNode(c, d, props, childGrip)}
+								</div>
+							)}
+						/>
 					</div>
 				)}
 			</div>
@@ -697,7 +741,13 @@ function NavBuilder() {
 							No menu items yet. Add a top-level item to start the menu.
 						</p>
 					) : (
-						tree.map((n) => renderNode(n, 0))
+						<NavLevel
+							nodes={tree}
+							depth={0}
+							disabled={busyId !== null}
+							onReorder={reorder}
+							render={renderNode}
+						/>
 					)}
 				</div>
 			</Card>

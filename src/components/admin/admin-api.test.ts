@@ -23,6 +23,8 @@ describe("form-ui", () => {
 			"Field: function/1",
 			"FormSection: function/1",
 			"cancelButtonClass: string",
+			"dragGrip: string",
+			"dragItem: string",
 			"fieldInput: string",
 			"fieldLabel: string",
 		]);

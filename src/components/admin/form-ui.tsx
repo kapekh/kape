@@ -8,6 +8,12 @@ import { inputClass } from "#/components/ui/input.tsx";
 // the primitives' own strings, so a hand-rolled input and an <Input> cannot drift apart
 export const fieldInput = inputClass;
 export const fieldLabel = "block text-[13px] font-medium text-admin-ink mb-2";
+// DragHandle defaults to the public site's tokens
+export const dragGrip =
+	"text-admin-ink-muted hover:bg-admin-accent-soft hover:text-admin-ink focus-visible:ring-admin-focus/40";
+/** Added to the class of the row or card that moves. */
+export const dragItem =
+	"data-[dragging]:bg-admin-accent-soft data-[dragging]:shadow-[var(--shadow-soft)]";
 export const cancelButtonClass = buttonVariants({
 	variant: "secondary",
 	size: "md",

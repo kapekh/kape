@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Image as ImageIcon, X } from "lucide-react";
+import { Image as ImageIcon, X } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 
 import { Button } from "#/components/ui/button.tsx";
@@ -11,11 +11,17 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "#/components/ui/select.tsx";
+import {
+	DragHandle,
+	SortableStatus,
+	useSortableArray,
+} from "#/components/ui/sortable.tsx";
 import { Textarea } from "#/components/ui/textarea.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { MIN_FULL_WIDTH } from "#/lib/media-size";
 import {
 	cancelButtonClass,
+	dragItem,
 	EditorGrid,
 	EditorHeader,
 	Field,
@@ -557,69 +563,59 @@ function GalleryPicker({
 	function remove(id: number) {
 		onChange(value.filter((x) => x !== id));
 	}
-	function move(i: number, dir: -1 | 1) {
-		const j = i + dir;
-		if (j < 0 || j >= value.length) return;
-		const next = value.slice();
-		[next[i], next[j]] = [next[j], next[i]];
-		onChange(next);
-	}
+	const sortable = useSortableArray({
+		items: value,
+		id: (id) => id,
+		describe: (id) => `image ${value.indexOf(id) + 1}`,
+		axis: "grid",
+		onReorder: onChange,
+	});
 
 	return (
 		<div className="space-y-4">
+			<SortableStatus status={sortable.status} />
 			{value.length > 0 && (
 				<ul className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-					{value.map((id, i) => (
-						<li
-							key={id}
-							className="group relative aspect-square overflow-hidden rounded-lg border border-admin-border bg-admin-panel-raised"
-						>
-							{urls[id] ? (
-								<img
-									src={urls[id]}
-									alt=""
-									className="h-full w-full object-cover"
-								/>
-							) : (
-								<span className="grid h-full w-full place-items-center text-admin-ink-subtle">
-									<ImageIcon className="size-6" aria-hidden="true" />
+					{sortable.items.map((id, i) => {
+						const grip = sortable.grip(id);
+						return (
+							<li
+								key={id}
+								{...sortable.itemProps(id)}
+								className={`group relative aspect-square overflow-hidden rounded-lg border border-admin-border bg-admin-panel-raised ${dragItem} data-[dragging]:ring-2 data-[dragging]:ring-admin-accent`}
+							>
+								{urls[id] ? (
+									<img
+										src={urls[id]}
+										alt=""
+										className="h-full w-full object-cover"
+									/>
+								) : (
+									<span className="grid h-full w-full place-items-center text-admin-ink-subtle">
+										<ImageIcon className="size-6" aria-hidden="true" />
+									</span>
+								)}
+								<span className="absolute left-1.5 top-1.5 rounded-full bg-admin-ink/75 px-2 py-0.5 text-xs font-medium text-admin-panel">
+									{i + 1}
 								</span>
-							)}
-							<span className="absolute left-1.5 top-1.5 rounded-full bg-admin-ink/75 px-2 py-0.5 text-xs font-medium text-admin-panel">
-								{i + 1}
-							</span>
-							<div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-admin-ink/70 px-1.5 py-1.5 opacity-0 transition-opacity duration-150 ease-out focus-within:opacity-100 group-hover:opacity-100">
-								<div className="flex gap-1">
+								<div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-admin-ink/70 px-1.5 py-1.5 opacity-0 transition-opacity duration-150 ease-out focus-within:opacity-100 group-hover:opacity-100">
+									{grip ? (
+										<DragHandle {...grip} className={thumbButton} />
+									) : (
+										<span />
+									)}
 									<button
 										type="button"
-										onClick={() => move(i, -1)}
-										disabled={i === 0}
-										className={thumbButton}
-										aria-label="Move left"
+										onClick={() => remove(id)}
+										className={`${thumbButton} text-admin-danger-ink`}
+										aria-label="Remove"
 									>
-										<ArrowLeft className="size-3.5" aria-hidden="true" />
-									</button>
-									<button
-										type="button"
-										onClick={() => move(i, 1)}
-										disabled={i === value.length - 1}
-										className={thumbButton}
-										aria-label="Move right"
-									>
-										<ArrowRight className="size-3.5" aria-hidden="true" />
+										<X className="size-3.5" aria-hidden="true" />
 									</button>
 								</div>
-								<button
-									type="button"
-									onClick={() => remove(id)}
-									className={`${thumbButton} text-admin-danger-ink`}
-									aria-label="Remove"
-								>
-									<X className="size-3.5" aria-hidden="true" />
-								</button>
-							</div>
-						</li>
-					))}
+							</li>
+						);
+					})}
 				</ul>
 			)}
 			<Button type="button" variant="secondary" onClick={() => setOpen(true)}>

@@ -88,11 +88,14 @@ describe("the footer editor's rows", () => {
 		expect(written("footer_links")).toBe("Research|/research");
 	});
 
-	it("keeps the row order the arrows put the socials in", async () => {
+	it("keeps the row order the grip put the socials in", async () => {
 		await mount();
 
 		const facebook = screen.getByDisplayValue("Facebook");
-		await click(/Move Facebook down|Facebook down/);
+		const grip = screen.getByRole("button", { name: /^Reorder Facebook,/ });
+		await act(async () => {
+			fireEvent.keyDown(grip, { key: "ArrowDown" });
+		});
 
 		// the row travelled with its fields, rather than the fields being retyped
 		// into whatever row now stands where it did

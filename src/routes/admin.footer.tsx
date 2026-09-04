@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowDown, ArrowUp, Plus, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { AdminHeader } from "#/components/admin/AdminHeader";
 import {
+	dragGrip,
+	dragItem,
 	FormSection,
 	fieldInput,
 	fieldLabel,
@@ -13,6 +15,11 @@ import { useDirtyGuard } from "#/components/admin/useDirty";
 import { Button } from "#/components/ui/button";
 import { PageHeader } from "#/components/ui/page-header";
 import { SkeletonRows } from "#/components/ui/skeleton";
+import {
+	DragHandle,
+	SortableStatus,
+	useSortableArray,
+} from "#/components/ui/sortable.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { FOOTER_DEFAULTS } from "#/lib/footer-defaults";
 import { saveErrorMessage } from "#/lib/save-error";
@@ -80,35 +87,50 @@ function LinkRows({
 }) {
 	const patch = (i: number, p: Partial<Link>) =>
 		setRows((ls) => ls.map((x, j) => (j === i ? { ...x, ...p } : x)));
+	const sortable = useSortableArray({
+		items: rows,
+		id: (l) => l.key,
+		describe: (l) => l.label.trim() || l.href.trim() || "unnamed link",
+		onReorder: setRows,
+	});
 	return (
 		<div className="mt-4 space-y-2">
-			{rows.map((l, i) => (
-				<div key={l.key} className="flex items-center gap-2">
-					<input
-						className={`${fieldInput} flex-1`}
-						placeholder="Label"
-						aria-label={`Link ${i + 1} label`}
-						value={l.label}
-						onChange={(e) => patch(i, { label: e.target.value })}
-					/>
-					<input
-						className={`${fieldInput} flex-1 font-mono text-xs`}
-						placeholder="/path or https://…"
-						aria-label={`Link ${i + 1} path`}
-						value={l.href}
-						onChange={(e) => patch(i, { href: e.target.value })}
-					/>
-					{/* names the row it removes: 19 buttons called "Remove" say nothing about which link goes */}
-					<button
-						type="button"
-						onClick={() => setRows((ls) => ls.filter((_, j) => j !== i))}
-						aria-label={`Remove ${l.label.trim() || `link ${i + 1}`}`}
-						className="grid size-8 shrink-0 place-items-center rounded-lg border border-admin-border text-admin-ink-muted transition-colors duration-150 ease-out hover:border-admin-danger/40 hover:text-admin-danger-ink focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
+			<SortableStatus status={sortable.status} />
+			{sortable.items.map((l, i) => {
+				const grip = sortable.grip(l);
+				return (
+					<div
+						key={l.key}
+						{...sortable.itemProps(l)}
+						className={`flex items-center gap-2 rounded-lg ${dragItem}`}
 					>
-						<X aria-hidden="true" className="size-4" />
-					</button>
-				</div>
-			))}
+						{grip ? <DragHandle {...grip} className={dragGrip} /> : null}
+						<input
+							className={`${fieldInput} flex-1`}
+							placeholder="Label"
+							aria-label={`Link ${i + 1} label`}
+							value={l.label}
+							onChange={(e) => patch(i, { label: e.target.value })}
+						/>
+						<input
+							className={`${fieldInput} flex-1 font-mono text-xs`}
+							placeholder="/path or https://…"
+							aria-label={`Link ${i + 1} path`}
+							value={l.href}
+							onChange={(e) => patch(i, { href: e.target.value })}
+						/>
+						{/* names the row it removes: 19 buttons called "Remove" say nothing about which link goes */}
+						<button
+							type="button"
+							onClick={() => setRows((ls) => ls.filter((_, j) => j !== i))}
+							aria-label={`Remove ${l.label.trim() || `link ${i + 1}`}`}
+							className="grid size-8 shrink-0 place-items-center rounded-lg border border-admin-border text-admin-ink-muted transition-colors duration-150 ease-out hover:border-admin-danger/40 hover:text-admin-danger-ink focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
+						>
+							<X aria-hidden="true" className="size-4" />
+						</button>
+					</div>
+				);
+			})}
 			<Button
 				variant="secondary"
 				size="sm"
@@ -188,14 +210,12 @@ function FooterAdmin() {
 	const set = (k: string, v: string) => setVals((o) => ({ ...o, [k]: v }));
 	const setSocial = (i: number, patch: Partial<Social>) =>
 		setSocials((ls) => ls.map((x, j) => (j === i ? { ...x, ...patch } : x)));
-	const moveSocial = (i: number, dir: -1 | 1) =>
-		setSocials((ls) => {
-			const j = i + dir;
-			if (j < 0 || j >= ls.length) return ls;
-			const next = ls.slice();
-			[next[i], next[j]] = [next[j], next[i]];
-			return next;
-		});
+	const sortableSocials = useSortableArray({
+		items: socials,
+		id: (sc) => sc.key,
+		describe: (sc) => socialName(sc, socials.indexOf(sc)),
+		onReorder: setSocials,
+	});
 
 	async function save(e: React.FormEvent) {
 		e.preventDefault();
@@ -384,72 +404,62 @@ function FooterAdmin() {
 				<fieldset>
 					<legend className={fieldLabel}>Social links</legend>
 					<div className="mt-1 space-y-3">
-						{socials.map((sc, i) => (
-							<div
-								key={sc.key}
-								className="rounded-xl border border-admin-border bg-admin-bg p-3"
-							>
-								<div className="flex items-start gap-3">
-									<div className="w-24 shrink-0">
-										<MediaPicker
-											mode="url"
-											kind="image"
-											accept="image/*"
-											aspect="square"
-											value={sc.logoUrl}
-											onChange={(v) => setSocial(i, { logoUrl: v })}
-											label={`${socialName(sc, i)} logo`}
-										/>
-									</div>
-									<div className="flex-1 space-y-2">
-										<input
-											className={fieldInput}
-											placeholder="Name (e.g. Facebook)"
-											aria-label={`Social link ${i + 1} name`}
-											value={sc.name}
-											onChange={(e) => setSocial(i, { name: e.target.value })}
-										/>
-										<input
-											className={`${fieldInput} font-mono text-xs`}
-											placeholder="https://…"
-											aria-label={`Social link ${i + 1} URL`}
-											value={sc.url}
-											onChange={(e) => setSocial(i, { url: e.target.value })}
-										/>
-									</div>
-									<div className="flex shrink-0 flex-col gap-1">
-										<button
-											type="button"
-											disabled={i === 0}
-											onClick={() => moveSocial(i, -1)}
-											aria-label={`Move ${socialName(sc, i)} up`}
-											className="grid size-8 place-items-center rounded-lg border border-admin-border text-admin-ink-muted transition-colors duration-150 ease-out hover:text-admin-ink disabled:opacity-30 focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
-										>
-											<ArrowUp aria-hidden="true" className="size-4" />
-										</button>
-										<button
-											type="button"
-											disabled={i === socials.length - 1}
-											onClick={() => moveSocial(i, 1)}
-											aria-label={`Move ${socialName(sc, i)} down`}
-											className="grid size-8 place-items-center rounded-lg border border-admin-border text-admin-ink-muted transition-colors duration-150 ease-out hover:text-admin-ink disabled:opacity-30 focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
-										>
-											<ArrowDown aria-hidden="true" className="size-4" />
-										</button>
-										<button
-											type="button"
-											onClick={() =>
-												setSocials((ls) => ls.filter((_, j) => j !== i))
-											}
-											aria-label={`Remove ${socialName(sc, i)}`}
-											className="grid size-8 place-items-center rounded-lg border border-admin-border text-admin-ink-muted transition-colors duration-150 ease-out hover:border-admin-danger/40 hover:text-admin-danger-ink focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
-										>
-											<X aria-hidden="true" className="size-4" />
-										</button>
+						<SortableStatus status={sortableSocials.status} />
+						{sortableSocials.items.map((sc, i) => {
+							const grip = sortableSocials.grip(sc);
+							return (
+								<div
+									key={sc.key}
+									{...sortableSocials.itemProps(sc)}
+									className={`rounded-xl border border-admin-border bg-admin-bg p-3 ${dragItem}`}
+								>
+									<div className="flex items-start gap-3">
+										{grip ? (
+											<DragHandle {...grip} className={dragGrip} />
+										) : null}
+										<div className="w-24 shrink-0">
+											<MediaPicker
+												mode="url"
+												kind="image"
+												accept="image/*"
+												aspect="square"
+												value={sc.logoUrl}
+												onChange={(v) => setSocial(i, { logoUrl: v })}
+												label={`${socialName(sc, i)} logo`}
+											/>
+										</div>
+										<div className="flex-1 space-y-2">
+											<input
+												className={fieldInput}
+												placeholder="Name (e.g. Facebook)"
+												aria-label={`Social link ${i + 1} name`}
+												value={sc.name}
+												onChange={(e) => setSocial(i, { name: e.target.value })}
+											/>
+											<input
+												className={`${fieldInput} font-mono text-xs`}
+												placeholder="https://…"
+												aria-label={`Social link ${i + 1} URL`}
+												value={sc.url}
+												onChange={(e) => setSocial(i, { url: e.target.value })}
+											/>
+										</div>
+										<div className="flex shrink-0 flex-col gap-1">
+											<button
+												type="button"
+												onClick={() =>
+													setSocials((ls) => ls.filter((_, j) => j !== i))
+												}
+												aria-label={`Remove ${socialName(sc, i)}`}
+												className="grid size-8 place-items-center rounded-lg border border-admin-border text-admin-ink-muted transition-colors duration-150 ease-out hover:border-admin-danger/40 hover:text-admin-danger-ink focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
+											>
+												<X aria-hidden="true" className="size-4" />
+											</button>
+										</div>
 									</div>
 								</div>
-							</div>
-						))}
+							);
+						})}
 						<Button
 							variant="secondary"
 							size="sm"

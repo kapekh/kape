@@ -65,16 +65,28 @@ describe("FormBuilder", () => {
 		await act(() => new Promise((r) => setTimeout(r, 400)));
 	});
 
-	it("moves a field's own row when the field moves", async () => {
+	it("moves a field's own row when the grip is arrow-keyed", async () => {
+		const onSubmit = vi.fn();
 		render(
-			<FormBuilder title="Edit form" initial={initial} onSubmit={() => {}} />,
+			<FormBuilder title="Edit form" initial={initial} onSubmit={onSubmit} />,
 		);
 
 		const remove = screen.getByRole("button", { name: "Remove Year" });
-		fireEvent.click(screen.getByRole("button", { name: "Move Year up" }));
+		const grip = screen.getByRole("button", { name: /^Reorder Year, 2 of 2/ });
+		grip.focus();
+		await act(async () => {
+			fireEvent.keyDown(grip, { key: "ArrowUp" });
+		});
 
 		// keyed by the row, not by the slot: the row travels, it is not rewritten
 		expect(screen.getByRole("button", { name: "Remove Year" })).toBe(remove);
+		expect(document.activeElement).toBe(grip);
+		expect(grip.getAttribute("aria-label")).toMatch(/^Reorder Year, 1 of 2/);
+
+		fireEvent.click(screen.getByRole("button", { name: /save form/i }));
+		expect(
+			onSubmit.mock.calls[0][0].fields.map((f: { key: string }) => f.key),
+		).toEqual(["year", "full_name"]);
 
 		await act(() => new Promise((r) => setTimeout(r, 400)));
 	});

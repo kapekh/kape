@@ -9,7 +9,12 @@ import {
 	useState,
 } from "react";
 
-import { moveItem, type SortableId, sameOrder } from "#/lib/reorder";
+import {
+	applyOrder,
+	moveItem,
+	type SortableId,
+	sameOrder,
+} from "#/lib/reorder";
 import { cn } from "#/lib/utils";
 
 // every admin mutation clears the whole render cache, so a held arrow key has to
@@ -29,6 +34,9 @@ type Options<Id extends SortableId> = {
 	describe: (id: Id) => string;
 	/** Off while a filter narrows the list, or the editor may not save. */
 	disabled?: boolean;
+	/** ms a burst of arrow keys is gathered for. 0 writes each press, which is
+	 *  what an array in form state wants: no round trip to wait on. */
+	burst?: number;
 	/** Reported when a save is refused; the announcement happens either way. */
 	onError?: (err: unknown) => void;
 };
@@ -45,6 +53,7 @@ export function useSortable<Id extends SortableId>({
 	axis = "list",
 	describe,
 	disabled = false,
+	burst = BURST,
 	onError,
 }: Options<Id>) {
 	const [order, setOrder] = useState<Id[]>(ids);
@@ -54,8 +63,8 @@ export function useSortable<Id extends SortableId>({
 	const [waiting, setWaiting] = useState(false);
 
 	// the listeners mount once; this keeps them reading the current props
-	const now = useRef({ axis, describe, disabled, onReorder, onError });
-	now.current = { axis, describe, disabled, onReorder, onError };
+	const now = useRef({ axis, burst, describe, disabled, onReorder, onError });
+	now.current = { axis, burst, describe, disabled, onReorder, onError };
 
 	const nodes = useRef(new Map<Id, HTMLElement>());
 	const live = useRef(order);
@@ -149,11 +158,17 @@ export function useSortable<Id extends SortableId>({
 			// a burst of presses is one write, rolling back to where the burst began
 			const back = queued.current?.back ?? list;
 			if (timer.current !== null) clearTimeout(timer.current);
+			if (now.current.burst <= 0) {
+				queued.current = null;
+				setWaiting(false);
+				void commit(next, back);
+				return;
+			}
 			queued.current = { next, back };
 			setWaiting(true);
-			timer.current = setTimeout(flush, BURST);
+			timer.current = setTimeout(flush, now.current.burst);
 		},
-		[announce, flush, show],
+		[announce, commit, flush, show],
 	);
 
 	const onPointerDown = useCallback(
@@ -292,6 +307,62 @@ export function useSortable<Id extends SortableId>({
 	);
 
 	return { order, dragging, itemProps, handleProps, status };
+}
+
+/**
+ * The same drag over an array the surrounding form holds: `onReorder` is handed
+ * the array in its new order and the form saves it as it saves everything else.
+ * Render `items` — during a drag they are in the order being dragged.
+ */
+export function useSortableArray<T, Id extends SortableId>({
+	items,
+	id,
+	describe,
+	onReorder,
+	axis,
+	disabled,
+}: {
+	items: T[];
+	/** Stable across an edit: an index would follow the slot, not the item. */
+	id: (item: T) => Id;
+	describe: (item: T) => string;
+	onReorder: (items: T[]) => void;
+	axis?: "list" | "grid";
+	disabled?: boolean;
+}) {
+	const ids = items.map(id);
+	const byId = new Map(ids.map((key, i) => [key, items[i]]));
+	const { order, itemProps, handleProps, status } = useSortable<Id>({
+		ids,
+		axis,
+		disabled,
+		burst: 0,
+		describe: (key) => {
+			const item = byId.get(key);
+			return item ? describe(item) : String(key);
+		},
+		onReorder: (next) =>
+			onReorder(
+				applyOrder(ids, next)
+					.map((key) => byId.get(key))
+					.filter((item): item is T => item !== undefined),
+			),
+	});
+	const placed = new Set(order);
+	const many = order.length > 1;
+	return {
+		items: [
+			...order
+				.map((key) => byId.get(key))
+				.filter((item): item is T => item !== undefined),
+			// an item added this render, before the order has caught up with it
+			...items.filter((item) => !placed.has(id(item))),
+		],
+		status,
+		itemProps: (item: T) => itemProps(id(item)),
+		/** Null when there is nothing to reorder, which renders no grip. */
+		grip: (item: T) => (many ? handleProps(id(item)) : null),
+	};
 }
 
 function useReducedMotion() {

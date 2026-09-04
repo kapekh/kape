@@ -10,9 +10,16 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "#/components/ui/select.tsx";
+import {
+	DragHandle,
+	SortableStatus,
+	useSortableArray,
+} from "#/components/ui/sortable.tsx";
 import { Textarea } from "#/components/ui/textarea.tsx";
 import {
 	cancelButtonClass,
+	dragGrip,
+	dragItem,
 	EditorGrid,
 	EditorHeader,
 	Field,
@@ -164,6 +171,12 @@ export function ProjectForm({
 			ls.map((l, j) => (j === i ? { ...l, [field]: value } : l)),
 		);
 	}
+	const sortableLocations = useSortableArray({
+		items: locations,
+		id: (l) => l.key,
+		describe: (l) => l.schoolName.trim() || "unnamed site",
+		onReorder: setLocations,
+	});
 	function setSnapshot(i: number, field: keyof Snapshot, value: string) {
 		setSnapshots((ss) =>
 			ss.map((s, j) => (j === i ? { ...s, [field]: value } : s)),
@@ -287,54 +300,64 @@ export function ProjectForm({
 							description="Sites shown for this project on the About-page map."
 						>
 							<div className="space-y-3">
-								{locations.map((l, i) => (
-									<div
-										key={l.key}
-										className="flex flex-wrap items-center gap-2"
-									>
-										<Input
-											className="max-w-[260px]"
-											aria-label={`Site ${i + 1} name`}
-											placeholder="School / site name"
-											value={l.schoolName}
-											onChange={(e) => setLoc(i, "schoolName", e.target.value)}
-										/>
-										<MapField
-											lat={l.lat}
-											lng={l.lng}
-											label={l.schoolName || "site location"}
-											onChange={(la, ln) => {
-												setLoc(i, "lat", la);
-												setLoc(i, "lng", ln);
-											}}
-										/>
-										<div className="w-24">
-											<MediaPicker
-												mode="id"
-												kind="image"
-												aspect="square"
-												label="Photo"
-												value={
-													l.photoMediaId != null ? String(l.photoMediaId) : ""
-												}
-												onChange={(v) =>
-													setLoc(i, "photoMediaId", v ? Number(v) : null)
+								<SortableStatus status={sortableLocations.status} />
+								{sortableLocations.items.map((l, i) => {
+									const grip = sortableLocations.grip(l);
+									return (
+										<div
+											key={l.key}
+											{...sortableLocations.itemProps(l)}
+											className={`flex flex-wrap items-center gap-2 rounded-lg ${dragItem}`}
+										>
+											{grip ? (
+												<DragHandle {...grip} className={dragGrip} />
+											) : null}
+											<Input
+												className="max-w-[260px]"
+												aria-label={`Site ${i + 1} name`}
+												placeholder="School / site name"
+												value={l.schoolName}
+												onChange={(e) =>
+													setLoc(i, "schoolName", e.target.value)
 												}
 											/>
+											<MapField
+												lat={l.lat}
+												lng={l.lng}
+												label={l.schoolName || "site location"}
+												onChange={(la, ln) => {
+													setLoc(i, "lat", la);
+													setLoc(i, "lng", ln);
+												}}
+											/>
+											<div className="w-24">
+												<MediaPicker
+													mode="id"
+													kind="image"
+													aspect="square"
+													label="Photo"
+													value={
+														l.photoMediaId != null ? String(l.photoMediaId) : ""
+													}
+													onChange={(v) =>
+														setLoc(i, "photoMediaId", v ? Number(v) : null)
+													}
+												/>
+											</div>
+											<Button
+												type="button"
+												variant="ghost"
+												size="sm"
+												className="text-admin-danger-ink"
+												onClick={() =>
+													setLocations((ls) => ls.filter((_, j) => j !== i))
+												}
+											>
+												Remove
+											</Button>
 										</div>
-										<Button
-											type="button"
-											variant="ghost"
-											size="sm"
-											className="text-admin-danger-ink"
-											onClick={() =>
-												setLocations((ls) => ls.filter((_, j) => j !== i))
-											}
-										>
-											Remove
-										</Button>
-									</div>
-								))}
+									);
+								})}
 								<Button
 									type="button"
 									variant="secondary"

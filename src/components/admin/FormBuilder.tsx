@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowDown, ArrowUp, ChevronRight, Plus, X } from "lucide-react";
+import { ChevronRight, Plus, X } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { Input } from "#/components/ui/input.tsx";
 import {
@@ -9,6 +9,11 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "#/components/ui/select.tsx";
+import {
+	DragHandle,
+	SortableStatus,
+	useSortableArray,
+} from "#/components/ui/sortable.tsx";
 import { Textarea } from "#/components/ui/textarea.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { toast } from "@/components/Dialogs";
@@ -20,6 +25,8 @@ import {
 } from "@/lib/forms";
 import {
 	cancelButtonClass,
+	dragGrip,
+	dragItem,
 	EditorGrid,
 	EditorHeader,
 	Field,
@@ -96,7 +103,7 @@ export function FormBuilder({
 	);
 	// which field's settings are open; a builder that shows every field's settings
 	// at once is a wall, and only one field is ever being edited
-	const [openField, setOpenField] = useState<number | null>(null);
+	const [openField, setOpenField] = useState<string | null>(null);
 	const { errors, invalid } = useFieldErrors();
 	const uid = useId();
 
@@ -124,30 +131,21 @@ export function FormBuilder({
 
 	const setField = (i: number, patch: Partial<FormField>) =>
 		setFields((fs) => fs.map((f, n) => (n === i ? { ...f, ...patch } : f)));
-	const move = (i: number, dir: -1 | 1) => {
-		const j = i + dir;
-		if (j < 0 || j >= fields.length) return;
-		setFields((fs) => {
-			const a = [...fs];
-			[a[i], a[j]] = [a[j], a[i]];
-			return a;
-		});
-		// the open panel belongs to the field, not to the position it used to hold
-		setOpenField((cur) => (cur === i ? j : cur === j ? i : cur));
-	};
-	const removeField = (i: number) => {
-		setFields((fs) => fs.filter((_, n) => n !== i));
-		setOpenField((cur) =>
-			cur === null || cur === i ? null : cur > i ? cur - 1 : cur,
-		);
+	const removeField = (rid: string) => {
+		setFields((fs) => fs.filter((f) => f.rid !== rid));
+		setOpenField((cur) => (cur === rid ? null : cur));
 	};
 	const addField = () => {
-		setFields((fs) => [
-			...fs,
-			{ rid: crypto.randomUUID(), key: "", label: "", type: "text" },
-		]);
-		setOpenField(fields.length);
+		const rid = crypto.randomUUID();
+		setFields((fs) => [...fs, { rid, key: "", label: "", type: "text" }]);
+		setOpenField(rid);
 	};
+	const sortable = useSortableArray({
+		items: fields,
+		id: (f) => f.rid,
+		describe: (f) => f.label.trim() || "untitled field",
+		onReorder: setFields,
+	});
 
 	function submit(e: React.FormEvent) {
 		e.preventDefault();
@@ -302,17 +300,19 @@ export function FormBuilder({
 
 						<FormSection
 							title="Fields"
-							description="The questions visitors answer. Open one to change it, reorder with the arrows."
+							description="The questions visitors answer. Open one to change it, drag a grip to reorder."
 						>
 							<div className="space-y-2">
+								<SortableStatus status={sortable.status} />
 								{fields.length === 0 && (
 									<p className="text-[13px] text-admin-ink-muted">
 										No fields yet. Add the first one below.
 									</p>
 								)}
-								{fields.map((f, i) => {
-									const open = openField === i;
-									const panelId = `${uid}-field-${i}`;
+								{sortable.items.map((f, i) => {
+									const open = openField === f.rid;
+									const panelId = `${uid}-field-${f.rid}`;
+									const grip = sortable.grip(f);
 									const typeLabel =
 										FIELD_TYPES.find((t) => t.value === f.type)?.label ??
 										f.type;
@@ -322,12 +322,13 @@ export function FormBuilder({
 									return (
 										<div
 											key={f.rid}
-											className={`overflow-hidden rounded-lg border ${f.type === "section" ? "border-admin-accent/40 bg-admin-accent-soft" : "border-admin-border bg-admin-panel"}`}
+											{...sortable.itemProps(f)}
+											className={`overflow-hidden rounded-lg border ${dragItem} ${f.type === "section" ? "border-admin-accent/40 bg-admin-accent-soft" : "border-admin-border bg-admin-panel"}`}
 										>
 											<div className="flex items-center gap-1 pr-2">
 												<button
 													type="button"
-													onClick={() => setOpenField(open ? null : i)}
+													onClick={() => setOpenField(open ? null : f.rid)}
 													aria-expanded={open}
 													aria-controls={panelId}
 													className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-left transition-colors duration-150 ease-out hover:bg-admin-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
@@ -351,29 +352,14 @@ export function FormBuilder({
 														{typeLabel}
 													</span>
 												</button>
-												<button
-													type="button"
-													aria-label={`Move ${named} up`}
-													className={ROW_BUTTON}
-													disabled={i === 0}
-													onClick={() => move(i, -1)}
-												>
-													<ArrowUp aria-hidden="true" className="size-4" />
-												</button>
-												<button
-													type="button"
-													aria-label={`Move ${named} down`}
-													className={ROW_BUTTON}
-													disabled={i === fields.length - 1}
-													onClick={() => move(i, 1)}
-												>
-													<ArrowDown aria-hidden="true" className="size-4" />
-												</button>
+												{grip ? (
+													<DragHandle {...grip} className={dragGrip} />
+												) : null}
 												<button
 													type="button"
 													aria-label={`Remove ${named}`}
 													className={`${ROW_BUTTON} hover:text-admin-danger-ink`}
-													onClick={() => removeField(i)}
+													onClick={() => removeField(f.rid)}
 												>
 													<X aria-hidden="true" className="size-4" />
 												</button>

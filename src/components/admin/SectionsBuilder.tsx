@@ -1,14 +1,12 @@
 import { useLoaderData } from "@tanstack/react-router";
-import {
-	ArrowDown,
-	ArrowUp,
-	ChevronRight,
-	Plus,
-	Trash2,
-	X,
-} from "lucide-react";
+import { ChevronRight, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useId, useMemo, useState } from "react";
 import { Button } from "#/components/ui/button";
+import {
+	DragHandle,
+	SortableStatus,
+	useSortableArray,
+} from "#/components/ui/sortable.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 
 import { DEFAULT_LANG } from "#/lib/i18n-config";
@@ -25,7 +23,7 @@ import {
 import type { SiteSettings } from "#/lib/site-identity";
 import { confirm } from "@/components/Dialogs";
 
-import { fieldInput, fieldLabel } from "./form-ui";
+import { dragGrip, dragItem, fieldInput, fieldLabel } from "./form-ui";
 import { MediaPicker } from "./MediaPicker";
 import type { LangOpt } from "./PostForm";
 import { RichTextEditor } from "./RichTextEditor";
@@ -70,6 +68,19 @@ function FormPicker({
 const uid = () =>
 	globalThis.crypto?.randomUUID?.() ??
 	`s_${Date.now().toString(36)}_${Math.floor(Math.random() * 1e6).toString(36)}`;
+
+/** Stable identity for rows that carry no id of their own and are replaced on
+ *  every keystroke, so a dragged row keeps the cell the cursor sits in. */
+function useRowKeys(count: number) {
+	const [keys, setKeys] = useState<string[]>(() =>
+		Array.from({ length: count }, () => uid()),
+	);
+	if (keys.length === count) return [keys, setKeys] as const;
+	const next = keys.slice(0, count);
+	while (next.length < count) next.push(uid());
+	setKeys(next);
+	return [next, setKeys] as const;
+}
 
 /** A compact control inside a repeater row or a section header. */
 const iconBtn =
@@ -151,15 +162,28 @@ function ItemsTable({
 	rows: Record<string, unknown>[];
 	onChange: (v: Record<string, unknown>[]) => void;
 }) {
+	const [keys, setKeys] = useRowKeys(rows.length);
 	const update = (i: number, key: string, v: unknown) =>
 		onChange(rows.map((r, n) => (n === i ? { ...r, [key]: v } : r)));
-	const move = (i: number, dir: -1 | 1) => {
-		const j = i + dir;
-		if (j < 0 || j >= rows.length) return;
-		const a = [...rows];
-		[a[i], a[j]] = [a[j], a[i]];
-		onChange(a);
+	const removeRow = (i: number) => {
+		onChange(rows.filter((_, n) => n !== i));
+		setKeys(keys.filter((_, n) => n !== i));
 	};
+	const nameOf = (row: Record<string, unknown>) => {
+		const first = fields
+			.map((f) => row[f.key])
+			.find((v): v is string => typeof v === "string" && v.trim() !== "");
+		return first?.trim() ?? "untitled row";
+	};
+	const sortable = useSortableArray({
+		items: rows.map((row, i) => ({ key: keys[i], row })),
+		id: (e) => e.key,
+		describe: (e) => nameOf(e.row),
+		onReorder: (next) => {
+			onChange(next.map((e) => e.row));
+			setKeys(next.map((e) => e.key));
+		},
+	});
 	const th =
 		"border border-admin-border bg-admin-bg px-2 py-2 text-left text-xs font-medium uppercase tracking-wide text-admin-ink-muted whitespace-nowrap";
 	return (
@@ -168,7 +192,7 @@ function ItemsTable({
 				<table className="w-full border-collapse text-sm [&_td]:border [&_td]:border-admin-border">
 					<thead>
 						<tr>
-							<th className={`${th} w-7 text-center`}>#</th>
+							<th className={`${th} w-16`}>#</th>
 							{fields.map((f) => (
 								<th key={f.key} className={th}>
 									{f.label}
@@ -188,57 +212,47 @@ function ItemsTable({
 								</td>
 							</tr>
 						)}
-						{rows.map((row, i) => (
-							// biome-ignore lint/suspicious/noArrayIndexKey: the row is the authored payload and carries no id, and every keystroke replaces the object, so position is the only identity there is
-							<tr key={i}>
-								<td className="w-7 bg-admin-bg px-1 text-center align-middle text-[13px] text-admin-ink-muted">
-									{i + 1}
-								</td>
-								{fields.map((f) => (
-									<td key={f.key} className="p-0 align-top">
-										<CellInput
-											field={f}
-											value={row[f.key]}
-											onChange={(v) => update(i, f.key, v)}
-										/>
+						{sortable.items.map((e, i) => {
+							const grip = sortable.grip(e);
+							return (
+								<tr key={e.key} {...sortable.itemProps(e)} className={dragItem}>
+									<td className="w-16 bg-admin-bg px-1 align-middle text-[13px] text-admin-ink-muted">
+										<div className="flex items-center gap-1">
+											{grip ? (
+												<DragHandle {...grip} className={dragGrip} />
+											) : (
+												<span className="size-7" />
+											)}
+											{i + 1}
+										</div>
 									</td>
-								))}
-								<td className="bg-admin-bg px-1 align-middle whitespace-nowrap">
-									<div className="flex gap-1">
-										<button
-											type="button"
-											className={iconBtn}
-											aria-label={`Move row ${i + 1} up`}
-											disabled={i === 0}
-											onClick={() => move(i, -1)}
-										>
-											<ArrowUp aria-hidden="true" className="size-4" />
-										</button>
-										<button
-											type="button"
-											className={iconBtn}
-											aria-label={`Move row ${i + 1} down`}
-											disabled={i === rows.length - 1}
-											onClick={() => move(i, 1)}
-										>
-											<ArrowDown aria-hidden="true" className="size-4" />
-										</button>
+									{fields.map((f) => (
+										<td key={f.key} className="p-0 align-top">
+											<CellInput
+												field={f}
+												value={e.row[f.key]}
+												onChange={(v) => update(i, f.key, v)}
+											/>
+										</td>
+									))}
+									<td className="bg-admin-bg px-1 align-middle whitespace-nowrap">
 										<button
 											type="button"
 											className={`${iconBtn} text-admin-danger-ink`}
 											aria-label={`Remove row ${i + 1}`}
-											onClick={() => onChange(rows.filter((_, n) => n !== i))}
+											onClick={() => removeRow(i)}
 										>
 											<X aria-hidden="true" className="size-4" />
 										</button>
-									</div>
-								</td>
-							</tr>
-						))}
+									</td>
+								</tr>
+							);
+						})}
 					</tbody>
 				</table>
 			</div>
 			<div className="border-t border-admin-border bg-admin-panel p-2">
+				<SortableStatus status={sortable.status} />
 				<button
 					type="button"
 					className={textBtn}
@@ -280,61 +294,54 @@ function CardsEditor({
 }) {
 	const fieldId = useId();
 	const cards = (Array.isArray(rows) ? rows : []) as Card[];
+	const [keys, setKeys] = useRowKeys(cards.length);
 	const patch = (i: number, p: Partial<Card>) =>
 		onChange(cards.map((c, n) => (n === i ? { ...c, ...p } : c)));
-	const move = (i: number, dir: -1 | 1) => {
-		const j = i + dir;
-		if (j < 0 || j >= cards.length) return;
-		const a = [...cards];
-		[a[i], a[j]] = [a[j], a[i]];
-		onChange(a);
+	const removeCard = (i: number) => {
+		onChange(cards.filter((_, n) => n !== i));
+		setKeys(keys.filter((_, n) => n !== i));
 	};
 	const setButtons = (i: number, btns: CardBtn[]) =>
 		patch(i, { buttons: btns, href: undefined });
+	const sortable = useSortableArray({
+		items: cards.map((card, i) => ({ key: keys[i], card })),
+		id: (e) => e.key,
+		describe: (e) => e.card.title?.trim() || "untitled card",
+		onReorder: (next) => {
+			onChange(next.map((e) => e.card));
+			setKeys(next.map((e) => e.key));
+		},
+	});
 
 	return (
 		<div className="space-y-3">
+			<SortableStatus status={sortable.status} />
 			{cards.length === 0 && (
 				<p className="rounded-xl border border-dashed border-admin-border px-3 py-4 text-center text-[13px] text-admin-ink-muted">
 					No cards yet.
 				</p>
 			)}
-			{cards.map((card, i) => {
+			{sortable.items.map((e, i) => {
+				const card = e.card;
 				const btns = cardButtons(card);
+				const grip = sortable.grip(e);
 				return (
 					<div
-						// biome-ignore lint/suspicious/noArrayIndexKey: the row is the authored payload and carries no id, and every keystroke replaces the object, so position is the only identity there is
-						key={i}
-						className="rounded-xl border border-admin-border bg-admin-panel p-3"
+						key={e.key}
+						{...sortable.itemProps(e)}
+						className={`rounded-xl border border-admin-border bg-admin-panel p-3 ${dragItem}`}
 					>
 						<div className="mb-3 flex items-center justify-between gap-2">
-							<span className="text-[13px] font-medium text-admin-ink-muted">
+							<span className="flex items-center gap-1 text-[13px] font-medium text-admin-ink-muted">
+								{grip ? <DragHandle {...grip} className={dragGrip} /> : null}
 								Card {i + 1}
 							</span>
 							<div className="flex gap-1">
 								<button
 									type="button"
-									className={iconBtn}
-									aria-label={`Move card ${i + 1} up`}
-									disabled={i === 0}
-									onClick={() => move(i, -1)}
-								>
-									<ArrowUp aria-hidden="true" className="size-4" />
-								</button>
-								<button
-									type="button"
-									className={iconBtn}
-									aria-label={`Move card ${i + 1} down`}
-									disabled={i === cards.length - 1}
-									onClick={() => move(i, 1)}
-								>
-									<ArrowDown aria-hidden="true" className="size-4" />
-								</button>
-								<button
-									type="button"
 									className={`${iconBtn} text-admin-danger-ink`}
 									aria-label={`Remove card ${i + 1}`}
-									onClick={() => onChange(cards.filter((_, n) => n !== i))}
+									onClick={() => removeCard(i)}
 								>
 									<X aria-hidden="true" className="size-4" />
 								</button>
@@ -917,34 +924,37 @@ export function SectionsBuilder({
 		setOpenId(node.id);
 		setAdding(false);
 	};
-	const move = (i: number, dir: -1 | 1) => {
-		const j = i + dir;
-		if (j < 0 || j >= sections.length) return;
-		const a = [...sections];
-		[a[i], a[j]] = [a[j], a[i]];
-		onChange(a);
-	};
 	const update = (id: string, n: SectionNode) =>
 		onChange(sections.map((s) => (s.id === id ? n : s)));
 	const remove = (id: string) => onChange(sections.filter((s) => s.id !== id));
+	const sortable = useSortableArray({
+		items: sections,
+		id: (s) => s.id,
+		describe: (s) => sectionDef(s.type)?.label ?? s.type,
+		onReorder: onChange,
+	});
 
 	return (
 		<div className="space-y-3">
+			<SortableStatus status={sortable.status} />
 			{sections.length === 0 && (
 				<p className="rounded-xl border border-dashed border-admin-border px-3 py-6 text-center text-[13px] text-admin-ink-muted">
 					No sections yet. Add one and it appears in the preview.
 				</p>
 			)}
 
-			{sections.map((s, i) => {
+			{sortable.items.map((s) => {
 				const def = sectionDef(s.type);
 				const open = openId === s.id;
+				const grip = sortable.grip(s);
 				return (
 					<div
 						key={s.id}
-						className={`overflow-hidden rounded-xl border bg-admin-panel transition-colors duration-150 ease-out ${open ? "border-admin-accent" : "border-admin-border"}`}
+						{...sortable.itemProps(s)}
+						className={`overflow-hidden rounded-xl border bg-admin-panel transition-colors duration-150 ease-out ${dragItem} ${open ? "border-admin-accent" : "border-admin-border"}`}
 					>
 						<div className="flex items-center gap-2 p-2">
+							{grip ? <DragHandle {...grip} className={dragGrip} /> : null}
 							<button
 								type="button"
 								onClick={() => setOpenId(open ? null : s.id)}
@@ -968,24 +978,6 @@ export function SectionsBuilder({
 								</span>
 							</button>
 							<div className="flex shrink-0 gap-1">
-								<button
-									type="button"
-									className={iconBtn}
-									aria-label={`Move ${def?.label ?? s.type} up`}
-									disabled={i === 0}
-									onClick={() => move(i, -1)}
-								>
-									<ArrowUp aria-hidden="true" className="size-4" />
-								</button>
-								<button
-									type="button"
-									className={iconBtn}
-									aria-label={`Move ${def?.label ?? s.type} down`}
-									disabled={i === sections.length - 1}
-									onClick={() => move(i, 1)}
-								>
-									<ArrowDown aria-hidden="true" className="size-4" />
-								</button>
 								<button
 									type="button"
 									className={`${iconBtn} text-admin-danger-ink`}
