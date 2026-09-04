@@ -203,3 +203,27 @@ describe("reordering the sections of a page", () => {
 		expect(res.orderUnchecked).toEqual(["b", "c", "a"]);
 	});
 });
+
+describe("reordering a page whose sections share an id", () => {
+	const res = run(`
+		const node = (id) => ({ id, type: "richtext", props: { title: id } });
+		const pageId = await admin.createPage(db, {
+			slug: "",
+			segment: "twin-sections",
+			parentId: null,
+			status: "published",
+			coverMediaId: null,
+			sections: [node("a"), node("a"), node("b")],
+			translations: [{ lang: "en", title: "Twins", excerpt: "", body: "" }],
+		});
+		out.refusal = await refusal(() => reorder.reorderSections(db, pageId, ["b", "a"]));
+		out.after = JSON.parse(
+			q("select sections from pages where id = ?", pageId)[0].sections,
+		).map((s) => s.id);
+	`);
+
+	it("refuses the move rather than reporting a success that dropped a node", () => {
+		expect(res.refusal).toMatch(/two sections with the same id/);
+		expect(res.after).toEqual(["a", "a", "b"]);
+	});
+});

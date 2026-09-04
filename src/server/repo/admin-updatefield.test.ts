@@ -667,4 +667,28 @@ describe("updateField across entities", () => {
 		expect(seen.rows).toEqual([]);
 		expect(seen.refused).toContain("needs a name in the default language");
 	});
+
+	it("refuses a name in a language people has no column for", () => {
+		const seen = run<{ refused: string; row: { name_en: string } }>(`
+			db.$client
+				.query("insert or ignore into languages (code, name, native_name, is_default, enabled, rtl, sort) values ('fr','French','Français',0,1,0,2)")
+				.run();
+			const personId = await people.createPerson(db, {
+				nameEn: "Mao Sy", nameKm: null, position: null, tier: "staff",
+				isPublic: true, slug: "mao-sy", photoMediaId: null, staffNo: null,
+				sex: null, phone: null, email: null, program: null, sort: 0,
+				bio: { en: "", km: "" },
+			});
+			const refused = await refusal(admin.updateField(db, {
+				entity: "person", entityId: personId, lang: "fr",
+				target: "field:name", value: "Mao Sy",
+			}));
+			const row = db.$client
+				.query("select name_en from people where id = ?")
+				.get(personId);
+			return { refused, row };
+		`);
+		expect(seen.refused).toContain('there is none for "fr"');
+		expect(seen.row).toMatchObject({ name_en: "Mao Sy" });
+	});
 });

@@ -1,7 +1,8 @@
-import { useLoaderData, useLocation, useRouter } from "@tanstack/react-router";
+import { useLoaderData, useLocation } from "@tanstack/react-router";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { useRefreshAfterSave } from "#/lib/after-save";
 import {
 	ENTITY_AREA,
 	type FieldEditTarget,
@@ -14,6 +15,7 @@ import {
 	useStudioLink,
 	versionFor,
 } from "#/lib/inline-edit";
+import { isRowField, ROW_FIELDS } from "#/lib/record-fields";
 import { saveErrorMessage } from "#/lib/save-error";
 import {
 	type SectionField,
@@ -110,14 +112,6 @@ function useMark() {
 /** A row a listing pulled in, carrying what an edit of its text needs. */
 type MarkedRow = { id: number; i18nFallback: string[]; updatedAt?: string };
 
-// the fields updateField takes on a listed record: PERSON_COLUMN_FIELDS and the
-// text of ENTITY_FIELDS, less the bodies, whose source is prosemirror json
-export const ROW_FIELDS: Record<string, readonly string[]> = {
-	post: ["title", "excerpt"],
-	project: ["name", "summary"],
-	person: ["name", "position"],
-};
-
 /** Marks text a listing pulled from another record, which owns the row that holds it. */
 function useRowMark() {
 	const id = useContext(Identity);
@@ -133,9 +127,7 @@ function useRowMark() {
 			`field:${field}`,
 		);
 		const editable =
-			editing &&
-			may(ENTITY_AREA[entity]) &&
-			!!ROW_FIELDS[entity]?.includes(field);
+			editing && may(ENTITY_AREA[entity]) && isRowField(entity, field, id.lang);
 		if (!editable) return mark;
 		const text = record[field];
 		return {
@@ -173,7 +165,7 @@ export function rowEditTarget(
 	const entityId = Number(id);
 	if (!Number.isInteger(entityId) || !editable.has(entity)) return null;
 	if (entity === page.entity && entityId === page.entityId) return null;
-	if (!ROW_FIELDS[entity]?.includes(field)) return null;
+	if (!isRowField(entity, field, page.lang)) return null;
 	// versionOf reads this back out when the surface saves
 	rememberVersion(entity, entityId, node.getAttribute("data-cms-version"));
 	return {
@@ -366,10 +358,6 @@ function RowLayer({ identity }: { identity: EditIdentity | null }) {
 	);
 }
 
-/* ------------------------------------------------------------------ */
-/* Drag to order                                                       */
-/* ------------------------------------------------------------------ */
-
 // no hover and no focus ring on a touch screen, so there the grip always shows
 const GRIP =
 	"absolute left-0 top-0 z-20 bg-background/85 ring-1 ring-border shadow-sm backdrop-blur md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 md:focus-visible:opacity-100";
@@ -394,7 +382,7 @@ function useRowOrder<Row extends { id: number }>(
 	},
 ) {
 	const { setStatus } = useInlineEdit();
-	const router = useRouter({ warn: false });
+	const refresh = useRefreshAfterSave();
 	// one row is nothing to reorder, so it gets no grip rather than a dead one
 	const on = many && rows.length > 1;
 	const byId = new Map(rows.map((r) => [r.id, r]));
@@ -410,9 +398,9 @@ function useRowOrder<Row extends { id: number }>(
 			setStatus({ kind: "saving", label });
 			// a subset: the server leaves everyone this listing left out in place
 			await save(ids);
-			router?.options.context.queryClient.removeQueries();
-			await router?.invalidate();
-			setStatus({ kind: "saved", label });
+			// past here the write has landed, and the refresh reports for itself: only
+			// a refused write may reject, which is what rolls the grid back
+			await refresh(label);
 		},
 		onError: (err) =>
 			setStatus({ kind: "error", label, message: saveErrorMessage(err) }),
@@ -3263,11 +3251,15 @@ export function SectionRenderer({
 	entity,
 	entityId,
 	lang,
+	updatedAt,
 }: {
 	sections: SectionNode[];
 	entity?: string;
 	entityId?: number;
 	lang?: string;
+	/** The version the route loaded this record at, which a section move is checked
+	 *  against. Left out where the host does not carry one. */
+	updatedAt?: string | null;
 }) {
 	// Hero renders its own h1. Without one, promote the first titled section so
 	// collection landings like /team and /news are not h2-first.
@@ -3281,6 +3273,12 @@ export function SectionRenderer({
 	// rather than patched. See `revision` in lib/inline-edit.
 	const { revision } = useInlineEdit();
 	const editingSections = useEditingSections();
+	// undefined means this host carries no version, which must not erase the one
+	// the route already handed the bar
+	useEffect(() => {
+		if (entity && entityId != null && updatedAt !== undefined)
+			rememberVersion(entity, entityId, updatedAt);
+	}, [entity, entityId, updatedAt]);
 	return (
 		<Identity.Provider value={identity} key={revision}>
 			<EditLayer sections={sections} identity={identity} />

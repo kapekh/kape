@@ -1,8 +1,8 @@
-import { useRouter } from "@tanstack/react-router";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { useRefreshAfterSave } from "#/lib/after-save";
 import { rememberVersion, useInlineEdit, versionFor } from "#/lib/inline-edit";
 import { moveItem } from "#/lib/reorder";
 import { saveErrorMessage } from "#/lib/save-error";
@@ -10,11 +10,7 @@ import { sectionDef } from "#/lib/sections";
 
 import type { EditIdentity } from "./SectionRenderer";
 
-/**
- * Move this section up or down the page. Buttons rather than a drag: a section
- * is a full-viewport band, so dragging one past three others would mean dragging
- * through three screens.
- */
+// buttons, not a drag: a section is a full-viewport band
 export function SectionMove({
 	identity,
 	ids,
@@ -28,7 +24,7 @@ export function SectionMove({
 	type: string;
 }) {
 	const { setStatus, bumpRevision } = useInlineEdit();
-	const router = useRouter({ warn: false });
+	const refresh = useRefreshAfterSave();
 	const [busy, setBusy] = useState(false);
 	if (identity.entity !== "page" || ids.length < 2) return null;
 	const name = sectionDef(type)?.label ?? type;
@@ -44,10 +40,8 @@ export function SectionMove({
 				expectedUpdatedAt: versionFor(identity.entity, identity.entityId),
 			});
 			rememberVersion(identity.entity, identity.entityId, result.updatedAt);
-			router?.options.context.queryClient.removeQueries();
-			await router?.invalidate();
-			bumpRevision();
-			setStatus({ kind: "saved", label });
+			// the refresh reports for itself, so only a refused move lands below
+			if (await refresh(label)) bumpRevision();
 		} catch (err) {
 			setStatus({ kind: "error", label, message: saveErrorMessage(err) });
 		} finally {

@@ -17,6 +17,11 @@ import type { SQLiteColumn, SQLiteTable } from "drizzle-orm/sqlite-core";
 
 import { DEFAULT_LANG } from "#/lib/i18n-config";
 import {
+	PERSON_COLUMN_FIELDS,
+	PERSON_NAME_COLUMNS,
+	TRANSLATED_FIELDS,
+} from "#/lib/record-fields";
+import {
 	checkImageValue,
 	choiceField,
 	imageField,
@@ -269,7 +274,7 @@ function groupTranslations(
 }
 
 const TENANT = 1;
-const POST_FIELDS = ["title", "excerpt", "body"] as const;
+const POST_FIELDS = TRANSLATED_FIELDS.post;
 
 export type PostTranslation = {
 	lang: string;
@@ -505,7 +510,7 @@ export function listContentTypes(db: DB) {
 
 /* ---------------- Pages ---------------- */
 
-const PAGE_FIELDS = ["title", "excerpt", "body"] as const;
+const PAGE_FIELDS = TRANSLATED_FIELDS.page;
 export type PageInput = {
 	slug: string; // ignored on write — derived from parentId + segment
 	segment: string; // editable last path part
@@ -901,23 +906,6 @@ const ENTITY_TABLES = {
 	project: projects,
 } as const;
 
-export const ENTITY_FIELDS: Record<string, readonly string[]> = {
-	page: PAGE_FIELDS,
-	post: POST_FIELDS,
-	person: ["bio"],
-	project: ["name", "summary", "body"],
-};
-
-/**
- * A person's name is a column per language and the position one column for all
- * of them, so neither is a `translations` row and both are written here instead.
- */
-const PERSON_NAME_COLUMN: Record<string, "nameEn" | "nameKm"> = {
-	en: "nameEn",
-	km: "nameKm",
-};
-export const PERSON_COLUMN_FIELDS = ["name", "position"] as const;
-
 // projects carries no updated_at, so a compare-and-swap is impossible there
 const VERSIONED_TABLES = {
 	page: pages,
@@ -1154,7 +1142,7 @@ async function writeTranslationField(
 	field: string,
 	value: string,
 ): Promise<UpdateFieldResult> {
-	const offered = ENTITY_FIELDS[input.entity];
+	const offered = TRANSLATED_FIELDS[input.entity] ?? [];
 	if (!offered.includes(field))
 		throw new Error(
 			`"${field}" is not a translated field of a ${input.entity}. It has ${offered.join(", ")}.`,
@@ -1227,10 +1215,10 @@ async function writePersonColumn(
 			.where(eq(people.id, input.entityId));
 		return { wrote: "translation", cleared: !value, updatedAt };
 	}
-	const column = PERSON_NAME_COLUMN[input.lang];
+	const column = PERSON_NAME_COLUMNS[input.lang];
 	if (!column)
 		throw new Error(
-			`A person's name is stored per language in its own column, and there is none for "${input.lang}". Edit it in ${Object.keys(PERSON_NAME_COLUMN).join(" or ")}.`,
+			`A person's name is stored per language in its own column, and there is none for "${input.lang}". Edit it in ${Object.keys(PERSON_NAME_COLUMNS).join(" or ")}.`,
 		);
 	if (!value && column === "nameEn")
 		throw new Error(
@@ -1311,7 +1299,7 @@ export async function updateField(
 	if (
 		target.kind === "field" &&
 		input.entity === "person" &&
-		(PERSON_COLUMN_FIELDS as readonly string[]).includes(target.field)
+		PERSON_COLUMN_FIELDS.includes(target.field)
 	)
 		return writePersonColumn(db, input, target.field, value);
 	return target.kind === "field"

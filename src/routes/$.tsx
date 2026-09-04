@@ -380,6 +380,7 @@ function ResolvedRoute() {
 							entity="page"
 							entityId={page.id}
 							lang={lang}
+							updatedAt={page.updatedAt}
 						/>
 					</main>
 				);
@@ -401,6 +402,7 @@ function ResolvedRoute() {
 						entity="page"
 						entityId={page.id}
 						lang={lang}
+						updatedAt={page.updatedAt}
 					/>
 				</SubPage>
 			);

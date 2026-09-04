@@ -12,8 +12,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ADMIN_HINT_COOKIE } from "#/lib/admin-hint";
 import { LanguageProvider } from "#/lib/i18n";
 import { InlineEditProvider } from "#/lib/inline-edit";
+import { ROW_FIELDS } from "#/lib/record-fields";
 import type { SectionNode } from "#/lib/sections";
-import { ENTITY_FIELDS, PERSON_COLUMN_FIELDS } from "#/server/repo/admin";
 
 const state = vi.hoisted(() => ({
 	me: null as { permissions: string[]; isSuperAdmin: boolean } | null,
@@ -47,7 +47,7 @@ vi.mock("../NavLink", () => ({
 }));
 
 import { InlineEditBar } from "../InlineEditBar";
-import { ROW_FIELDS, rowEditTarget, SectionRenderer } from "./SectionRenderer";
+import { rowEditTarget, SectionRenderer } from "./SectionRenderer";
 
 const PAGE_ID = 60;
 const PERSON_AT = "2026-08-01T09:00:00Z";
@@ -169,17 +169,6 @@ beforeEach(() => {
 });
 
 describe("what a row marker resolves to", () => {
-	it("offers only fields the server writes on a listed record", () => {
-		for (const [entity, fields] of Object.entries(ROW_FIELDS)) {
-			const offered =
-				entity === "person"
-					? [...PERSON_COLUMN_FIELDS, ...(ENTITY_FIELDS[entity] ?? [])]
-					: [...(ENTITY_FIELDS[entity] ?? [])];
-			expect(offered).not.toEqual([]);
-			for (const field of fields) expect(offered).toContain(field);
-		}
-	});
-
 	it("refuses a field outside the allowlist", () => {
 		expect(
 			rowEditTarget(
@@ -223,6 +212,27 @@ describe("what a row marker resolves to", () => {
 				new Set(["post"]),
 			),
 		).toBeNull();
+	});
+
+	it("refuses a name in a language a person has no column for", () => {
+		const name = {
+			"data-cms-entity": "person",
+			"data-cms-entity-id": "4",
+			"data-cms-target": "field:name",
+			"data-cms-source": "Heang Koy",
+		};
+		expect(rowEditTarget(nodeFor(name), PAGE, EVERYTHING)).toBeTruthy();
+		expect(
+			rowEditTarget(nodeFor(name), { ...PAGE, lang: "fr" }, EVERYTHING),
+		).toBeNull();
+		// the position is one column for every language, so French keeps its box
+		expect(
+			rowEditTarget(
+				nodeFor({ ...name, "data-cms-target": "field:position" }),
+				{ ...PAGE, lang: "fr" },
+				EVERYTHING,
+			),
+		).toBeTruthy();
 	});
 
 	it("says a shared column is shared, and a one-line field is one line", () => {
@@ -291,6 +301,21 @@ describe("editing a listed record where it is read", () => {
 				expectedUpdatedAt: POST_AT,
 			}),
 		);
+	});
+
+	it("outlines no name in a language with no column, so no box opens empty", async () => {
+		signIn(["people"]);
+		const { container } = await editing(sections(), "fr");
+		const name = marked(container, "person", person.id, "name");
+		if (!name) throw new Error("the person's name is not marked");
+		expect(name.getAttribute("data-cms-source")).toBeNull();
+		expect(name.getAttribute("tabindex")).toBeNull();
+		// the position is shared across languages, so it is still typed into
+		expect(
+			marked(container, "person", person.id, "position")?.getAttribute(
+				"data-cms-source",
+			),
+		).toBe(person.position);
 	});
 
 	it("offers a person nothing to an editor who only holds posts", async () => {

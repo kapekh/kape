@@ -116,7 +116,8 @@ export type EditStatus =
 	| { kind: "idle" }
 	| { kind: "editing"; label: string; multiline: boolean; hint?: string }
 	| { kind: "saving"; label: string }
-	| { kind: "saved"; label: string }
+	// note: it saved, but the page could not repaint itself
+	| { kind: "saved"; label: string; note?: string }
 	| { kind: "error"; label: string; message: string };
 
 type Ctx = {

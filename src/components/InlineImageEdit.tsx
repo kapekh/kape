@@ -1,7 +1,7 @@
-import { useRouter } from "@tanstack/react-router";
 import { Camera } from "lucide-react";
 import { lazy, type ReactNode, Suspense, useState } from "react";
 
+import { useRefreshAfterSave } from "#/lib/after-save";
 import { useInlineEdit } from "#/lib/inline-edit";
 import { saveErrorMessage } from "#/lib/save-error";
 import { IMAGE_ACCEPT } from "#/lib/upload-types";
@@ -18,11 +18,8 @@ const MediaLibraryDialog = lazy(() =>
 const BADGE =
 	"grid size-8 place-items-center rounded-full bg-primary text-primary-foreground shadow-md ring-2 ring-card";
 
-/**
- * The camera button over an image, and the media library behind it. `save`
- * writes the pick wherever that image is stored; the reload and what the bar
- * says happen here, the same way for every image on the page.
- */
+// `save` writes the pick wherever that image is stored; the refresh and what the
+// bar says are the same for every image on the page
 export function InlineImageEdit({
 	label,
 	hasImage,
@@ -41,7 +38,7 @@ export function InlineImageEdit({
 	save: (media: MediaItem) => Promise<void>;
 }) {
 	const { may, setStatus } = useInlineEdit();
-	const router = useRouter({ warn: false });
+	const refresh = useRefreshAfterSave();
 	const [open, setOpen] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const action = `${hasImage ? "Replace" : "Add"} ${label}`;
@@ -52,9 +49,8 @@ export function InlineImageEdit({
 		setStatus({ kind: "saving", label });
 		try {
 			await save(media);
-			router?.options.context.queryClient.removeQueries();
-			await router?.invalidate();
-			setStatus({ kind: "saved", label });
+			// the refresh reports for itself, so only a refused write lands below
+			await refresh(label);
 		} catch (err) {
 			setStatus({ kind: "error", label, message: saveErrorMessage(err) });
 		} finally {

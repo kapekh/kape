@@ -17,7 +17,11 @@ import type { SectionNode } from "#/lib/sections";
 const state = vi.hoisted(() => ({
 	me: null as { permissions: string[]; isSuperAdmin: boolean } | null,
 	reordered: [] as number[][],
+	moved: [] as Record<string, unknown>[],
 	refuse: false,
+	/** The loaders reject, which is a page that did not repaint, not a lost write. */
+	refuseRefresh: false,
+	version: "",
 }));
 
 vi.mock("#/integrations/tanstack-query/root-provider", () => ({
@@ -32,7 +36,27 @@ vi.mock("#/integrations/tanstack-query/root-provider", () => ({
 				},
 			},
 		},
+		adminPages: {
+			reorderSections: {
+				mutate: (input: Record<string, unknown>) => {
+					state.moved.push(input);
+					state.version = `2026-09-04T0${state.moved.length}:00:00Z`;
+					return Promise.resolve({ updatedAt: state.version });
+				},
+			},
+		},
 	},
+}));
+
+vi.mock("@tanstack/react-router", async (orig) => ({
+	...(await orig<typeof import("@tanstack/react-router")>()),
+	useRouter: () => ({
+		options: { context: { queryClient: { removeQueries: () => {} } } },
+		invalidate: () =>
+			state.refuseRefresh
+				? Promise.reject(new Error("the loader failed"))
+				: Promise.resolve(),
+	}),
 }));
 
 vi.mock("../NavLink", () => ({
@@ -47,6 +71,7 @@ import { InlineEditBar } from "../InlineEditBar";
 import { SectionRenderer } from "./SectionRenderer";
 
 const PAGE_ID = 51;
+const PAGE_AT = "2026-08-05T10:00:00Z";
 
 const TEAM = [
 	{ id: 7, slug: "ann", name: "Ann Chan", position: "Lead" },
@@ -71,6 +96,11 @@ const teamSection = (): SectionNode[] => [
 	},
 ];
 
+const twoSections = (): SectionNode[] => [
+	...teamSection(),
+	{ id: "words", type: "richtext", props: { title: "About", body: "Words" } },
+];
+
 function Probe({ sections }: { sections: SectionNode[] }) {
 	return (
 		<LanguageProvider
@@ -85,6 +115,7 @@ function Probe({ sections }: { sections: SectionNode[] }) {
 					entity="page"
 					entityId={PAGE_ID}
 					lang="en"
+					updatedAt={PAGE_AT}
 				/>
 				<InlineEditBar />
 			</InlineEditProvider>
@@ -124,7 +155,10 @@ afterEach(cleanup);
 beforeEach(() => {
 	state.me = null;
 	state.reordered = [];
+	state.moved = [];
 	state.refuse = false;
+	state.refuseRefresh = false;
+	state.version = "";
 	localStorage.clear();
 	setHint(false);
 });
@@ -174,5 +208,49 @@ describe("ordering the team grid from the page", () => {
 				timeout: 2000,
 			}),
 		).toBeTruthy();
+	});
+
+	it("still says saved when only the refresh fails, and offers a reload", async () => {
+		signIn(["people"]);
+		state.refuseRefresh = true;
+		const { container } = await editing(teamSection());
+
+		fireEvent.keyDown(grip("Cy Meng"), { key: "Home" });
+		expect(namesShown(container)).toEqual(["9", "7", "8"]);
+
+		await waitFor(() => expect(state.reordered).toEqual([[9, 7, 8]]), {
+			timeout: 2000,
+		});
+		expect(await screen.findByText(/saved for everyone/)).toBeTruthy();
+		expect(screen.getByText(/Reload the page/)).toBeTruthy();
+		// the write landed: nothing announces a failure, and nothing is written twice
+		expect(screen.queryByText(/was not saved/)).toBeNull();
+		expect(state.reordered).toHaveLength(1);
+		// the grid follows the loader, which is still serving the order it loaded —
+		// which is what the reload line is for
+		expect(namesShown(container)).toEqual(["7", "8", "9"]);
+	});
+});
+
+describe("moving a section from the page", () => {
+	const moveDown = () =>
+		screen.getAllByRole("button", { name: /^Move the .* section down$/ })[0];
+
+	it("sends the version the page was loaded at, then the one it wrote", async () => {
+		signIn(["pages"]);
+		await editing(twoSections());
+
+		fireEvent.click(moveDown());
+		await waitFor(() => expect(state.moved).toHaveLength(1));
+		expect(state.moved[0]).toEqual({
+			id: PAGE_ID,
+			ids: ["words", "team"],
+			expectedUpdatedAt: PAGE_AT,
+		});
+
+		const wrote = state.version;
+		fireEvent.click(moveDown());
+		await waitFor(() => expect(state.moved).toHaveLength(2));
+		expect(state.moved[1]).toMatchObject({ expectedUpdatedAt: wrote });
 	});
 });

@@ -222,8 +222,12 @@ export async function reorderSections(
 	const current = (page.sections ?? []) as SectionNode[];
 	if (current.length < 2) return { updatedAt: page.updatedAt };
 	const byId = new Map(current.map((s) => [s.id, s]));
-	// two nodes sharing an id would collapse into one on the way back out
-	if (byId.size !== current.length) return { updatedAt: page.updatedAt };
+	// reporting success here would drop a node: two nodes sharing an id collapse
+	// into one on the way back out
+	if (byId.size !== current.length)
+		throw new Error(
+			`Page ${pageId} has two sections with the same id, so its order cannot be changed until one is renamed in the page builder.`,
+		);
 	const sections = applyOrder(
 		current.map((s) => s.id),
 		ids,

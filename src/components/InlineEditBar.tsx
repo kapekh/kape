@@ -56,10 +56,15 @@ export function InlineEditBar() {
 						<p className="text-muted-foreground">Saving {status.label}…</p>
 					)}
 					{status.kind === "saved" && (
-						<p className="flex items-center gap-1.5 font-medium text-foreground">
-							<Check className="size-3.5 text-[var(--primary)]" aria-hidden />
-							{status.label} saved for everyone.
-						</p>
+						<>
+							<p className="flex items-center gap-1.5 font-medium text-foreground">
+								<Check className="size-3.5 text-[var(--primary)]" aria-hidden />
+								{status.label} saved for everyone.
+							</p>
+							{status.note && (
+								<p className="mt-1 text-muted-foreground">{status.note}</p>
+							)}
+						</>
 					)}
 					{status.kind === "error" && (
 						<p className="text-destructive" role="alert">
