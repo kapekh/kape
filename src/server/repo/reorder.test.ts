@@ -81,7 +81,7 @@ describe("reordering a subset of a list", () => {
 
 describe("reordering a list the seeds left with duplicate sort values", () => {
 	const res = run(`
-		// what the kape seed leaves behind: every project on the same sort
+		// a seed leaves every project on the same sort
 		for (const i of [1, 2, 3, 4])
 			exec("insert into projects (id, tenant_id, code, slug, sort) values (?, 1, 'P' || ?, 'p' || ?, 1)", i, i, i);
 		out.before = q("select count(distinct sort) as c from projects")[0].c;

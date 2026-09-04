@@ -109,10 +109,12 @@ export function useSortable<Id extends SortableId>({
 	useEffect(() => () => flush(), [flush]);
 
 	useEffect(() => {
+		// a move landed after this render, so its effect knows a stale order
+		if (live.current !== order) return;
 		// an owner that has not caught up yet would revert an optimistic order
 		if (dragging !== null || writing > 0 || waiting) return;
 		if (!sameOrder(ids, live.current)) show(ids);
-	}, [dragging, ids, show, waiting, writing]);
+	}, [dragging, ids, order, show, waiting, writing]);
 
 	const onKeyDown = useCallback(
 		(id: Id, e: ReactKeyboardEvent<HTMLElement>) => {
