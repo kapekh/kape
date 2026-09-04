@@ -173,7 +173,13 @@ a dragged row keeps its identity and focus stays on the handle.
 - **Listing covers** (a post's, a project's, an album's): the image belongs to the other record,
   so each needs a `setCover` path of its own rather than the page's `updateField`.
 
-Two residual risks, both stated rather than fixed:
+Three residual risks, stated rather than fixed:
+
+- Every listed row now carries its `updatedAt` in the SSR payload, so a **per-row modification
+  timestamp is public** for each listed post, job, video, album, publication and person. It is what
+  arms the compare-and-swap on a row edit, and `sitemap.xml` already publishes `lastmod` for pages
+  and posts, so this was judged an acceptable trade rather than fetched lazily per edit. Revisit if
+  a customer treats those timestamps as sensitive.
 
 - A **project** row edited from a listing has no compare-and-swap — `projects` carries no
   `updatedAt` column, so two editors can still overwrite each other there. `page`, `post` and
