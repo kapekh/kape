@@ -11,6 +11,7 @@ export const nav: Record<string, { en: string; km?: string }> = {
 	"nav.menu": { en: "Menu", km: "ម៉ឺនុយ" },
 	"nav.openMenu": { en: "Open menu" },
 	"nav.overview": { en: "Overview" },
+	"nav.seeAll": { en: "See all {label}", km: "មើលទាំងអស់ {label}" },
 
 	"announcement.goto": { en: "Announcement {n}" },
 	"announcement.position": { en: "{n} of {total}" },

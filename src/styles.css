@@ -500,6 +500,15 @@
     from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
   }
+  @keyframes mega-out {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-6px); }
+  }
+  /* Menu-to-menu: the panel stays, only its contents change hands. */
+  @keyframes mega-swap {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
 
   /* Rich-text body styling (articles, richtext sections, project descriptions). */
   .prose-body {
