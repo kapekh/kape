@@ -691,7 +691,8 @@ export function Header({
 												setFocusIntoPanel(true);
 											}}
 											aria-expanded={active}
-											aria-controls={panelId}
+											// only while it exists: a reference to a missing id is not a reference
+											aria-controls={active ? panelId : undefined}
 											// "true", not "page": an ancestor of the page is not the page
 											aria-current={here ? "page" : marked ? "true" : undefined}
 											className={`tap-target flex items-center gap-1 transition ${active || marked ? "text-primary" : "hover:text-primary"}`}
