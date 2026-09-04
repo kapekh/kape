@@ -176,27 +176,6 @@ export async function reorderNavItems(db: DB, ids: number[]): Promise<void> {
 	);
 }
 
-/** Reorder page siblings (`pages.sortOrder`), with the level read off the first id. */
-export async function reorderPages(db: DB, ids: number[]): Promise<void> {
-	const head = ids[0];
-	if (head === undefined) return;
-	const parent = await parentOf(db, pages, head);
-	if (parent === undefined) return;
-	await renumber(
-		db,
-		{
-			table: pages,
-			key: pages.id,
-			sortProp: "sortOrder",
-			where: and(
-				eq(pages.tenantId, TENANT),
-				siblingsOf(pages.parentId, parent),
-			),
-		},
-		ids,
-	);
-}
-
 export type ReorderSectionsResult = {
 	/** The new version to send with the next save. */
 	updatedAt: string | null;

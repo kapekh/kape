@@ -78,7 +78,6 @@ import {
 	listAllLanguages,
 	listContentTypes,
 	MediaInUseError,
-	moveNavItem,
 	movePage,
 	readership,
 	StaleWriteError,
@@ -173,7 +172,6 @@ import {
 	reorderLanguages,
 	reorderNavItems,
 	reorderOffices,
-	reorderPages,
 	reorderPartners,
 	reorderPeople,
 	reorderProjects,
@@ -897,9 +895,6 @@ const adminPagesRouter = {
 		.mutation(({ ctx, input }) =>
 			movePage(ctx.db, input.id, input.parentId, input.index),
 		),
-	reorder: adminProcedure
-		.input(reorderInput)
-		.mutation(({ ctx, input }) => reorderPages(ctx.db, input.ids)),
 	reorderSections: adminProcedure
 		.input(
 			z.object({
@@ -1404,9 +1399,6 @@ const adminNavRouter = {
 	delete: adminProcedure
 		.input(z.object({ id: z.number() }))
 		.mutation(({ ctx, input }) => deleteNavItem(ctx.db, input.id)),
-	move: adminProcedure
-		.input(z.object({ id: z.number(), dir: z.enum(["up", "down"]) }))
-		.mutation(({ ctx, input }) => moveNavItem(ctx.db, input.id, input.dir)),
 	reorder: adminProcedure
 		.input(reorderInput)
 		.mutation(({ ctx, input }) => reorderNavItems(ctx.db, input.ids)),

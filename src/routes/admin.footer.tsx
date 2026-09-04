@@ -213,7 +213,7 @@ function FooterAdmin() {
 	const sortableSocials = useSortableArray({
 		items: socials,
 		id: (sc) => sc.key,
-		describe: (sc) => socialName(sc, socials.indexOf(sc)),
+		describe: (sc) => sc.name.trim() || sc.url.trim() || "social link",
 		onReorder: setSocials,
 	});
 

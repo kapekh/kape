@@ -2963,33 +2963,3 @@ export async function deleteLanguage(db: DB, code: string): Promise<void> {
 		tx.delete(languages).where(eq(languages.code, code)).run();
 	});
 }
-
-/* ---------------- (nav move, below) ---------------- */
-
-/** Swap an item's sort with its previous/next sibling. */
-export async function moveNavItem(
-	db: DB,
-	id: number,
-	dir: "up" | "down",
-): Promise<void> {
-	const all = await db
-		.select()
-		.from(navItems)
-		.where(eq(navItems.tenantId, TENANT));
-	const item = all.find((i) => i.id === id);
-	if (!item) return;
-	const siblings = all
-		.filter((i) => i.parentId === item.parentId)
-		.sort((a, b) => a.sort - b.sort);
-	const idx = siblings.findIndex((i) => i.id === id);
-	const swapWith = dir === "up" ? siblings[idx - 1] : siblings[idx + 1];
-	if (!swapWith) return;
-	await db
-		.update(navItems)
-		.set({ sort: swapWith.sort })
-		.where(eq(navItems.id, item.id));
-	await db
-		.update(navItems)
-		.set({ sort: item.sort })
-		.where(eq(navItems.id, swapWith.id));
-}

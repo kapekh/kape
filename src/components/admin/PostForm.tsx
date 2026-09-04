@@ -566,7 +566,9 @@ function GalleryPicker({
 	const sortable = useSortableArray({
 		items: value,
 		id: (id) => id,
-		describe: (id) => `image ${value.indexOf(id) + 1}`,
+		// the grip's label already carries the position; a number here would rename
+		// the image every time it moves
+		describe: () => "image",
 		axis: "grid",
 		onReorder: onChange,
 	});
