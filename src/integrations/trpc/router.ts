@@ -168,6 +168,20 @@ import {
 	listProjectOptions,
 } from "#/server/repo/projects";
 import {
+	reorderCampaigns,
+	reorderDonors,
+	reorderLanguages,
+	reorderNavItems,
+	reorderOffices,
+	reorderPages,
+	reorderPartners,
+	reorderPeople,
+	reorderProjects,
+	reorderSchools,
+	reorderSections,
+	reorderTerms,
+} from "#/server/repo/reorder";
+import {
 	adminListRoles,
 	createRole,
 	deleteRole,
@@ -234,6 +248,9 @@ const postInput = z.object({
 });
 
 const langInput = z.object({ lang: z.string().default("en") });
+
+// a drag sends the ids it can see, in their new order; the repo renumbers the rest
+const reorderInput = z.object({ ids: z.array(z.number().int()).max(500) });
 
 const authRouter = {
 	me: publicProcedure.query(({ ctx }) =>
@@ -410,6 +427,12 @@ const adminTermsRouter = {
 			const row = (await adminListTerms(ctx.db)).find((t) => t.id === input.id);
 			await assertTaxonomiesAllowed(ctx.db, row?.taxonomy);
 			return deleteTerm(ctx.db, input.id);
+		}),
+	reorder: adminProcedure
+		.input(reorderInput.extend({ taxonomy: z.string() }))
+		.mutation(async ({ ctx, input }) => {
+			await assertTaxonomiesAllowed(ctx.db, input.taxonomy);
+			return reorderTerms(ctx.db, input.taxonomy, input.ids);
 		}),
 } satisfies TRPCRouterRecord;
 
@@ -874,6 +897,32 @@ const adminPagesRouter = {
 		.mutation(({ ctx, input }) =>
 			movePage(ctx.db, input.id, input.parentId, input.index),
 		),
+	reorder: adminProcedure
+		.input(reorderInput)
+		.mutation(({ ctx, input }) => reorderPages(ctx.db, input.ids)),
+	reorderSections: adminProcedure
+		.input(
+			z.object({
+				id: z.number(),
+				ids: z.array(z.string()).max(200),
+				expectedUpdatedAt: z.string().nullish(),
+			}),
+		)
+		.mutation(async ({ ctx, input }) => {
+			try {
+				return await reorderSections(
+					ctx.db,
+					input.id,
+					input.ids,
+					input.expectedUpdatedAt,
+				);
+			} catch (err) {
+				// the editor turns the bare code into the sentence and the reload offer
+				if (err instanceof StaleWriteError)
+					throw new TRPCError({ code: "CONFLICT" });
+				throw err;
+			}
+		}),
 } satisfies TRPCRouterRecord;
 
 const languageInput = z.object({
@@ -969,6 +1018,9 @@ const adminPeopleRouter = {
 	delete: adminProcedure
 		.input(z.object({ id: z.number() }))
 		.mutation(({ ctx, input }) => deletePerson(ctx.db, input.id)),
+	reorder: adminProcedure
+		.input(reorderInput)
+		.mutation(({ ctx, input }) => reorderPeople(ctx.db, input.ids)),
 } satisfies TRPCRouterRecord;
 
 const partnerInput = z.object({
@@ -1052,6 +1104,9 @@ const adminPartnersRouter = {
 	delete: adminProcedure
 		.input(z.object({ id: z.number() }))
 		.mutation(({ ctx, input }) => deletePartner(ctx.db, input.id)),
+	reorder: adminProcedure
+		.input(reorderInput)
+		.mutation(({ ctx, input }) => reorderPartners(ctx.db, input.ids)),
 } satisfies TRPCRouterRecord;
 
 const adminOfficesRouter = {
@@ -1068,6 +1123,9 @@ const adminOfficesRouter = {
 	delete: adminProcedure
 		.input(z.object({ id: z.number() }))
 		.mutation(({ ctx, input }) => deleteOffice(ctx.db, input.id)),
+	reorder: adminProcedure
+		.input(reorderInput)
+		.mutation(({ ctx, input }) => reorderOffices(ctx.db, input.ids)),
 } satisfies TRPCRouterRecord;
 
 const adminStatsRouter = {
@@ -1130,6 +1188,9 @@ const adminSchoolsRouter = {
 	delete: adminProcedure
 		.input(z.object({ id: z.number() }))
 		.mutation(({ ctx, input }) => deleteSchool(ctx.db, input.id)),
+	reorder: adminProcedure
+		.input(reorderInput)
+		.mutation(({ ctx, input }) => reorderSchools(ctx.db, input.ids)),
 } satisfies TRPCRouterRecord;
 
 const adminHeroRouter = {
@@ -1192,6 +1253,9 @@ const adminCampaignsRouter = {
 	delete: adminProcedure
 		.input(z.object({ id: z.number() }))
 		.mutation(({ ctx, input }) => deleteCampaign(ctx.db, input.id)),
+	reorder: adminProcedure
+		.input(reorderInput)
+		.mutation(({ ctx, input }) => reorderCampaigns(ctx.db, input.ids)),
 } satisfies TRPCRouterRecord;
 
 const adminMessagesRouter = {
@@ -1224,6 +1288,9 @@ const adminDonorsRouter = {
 	delete: adminProcedure
 		.input(z.object({ id: z.number() }))
 		.mutation(({ ctx, input }) => deleteDonor(ctx.db, input.id)),
+	reorder: adminProcedure
+		.input(reorderInput)
+		.mutation(({ ctx, input }) => reorderDonors(ctx.db, input.ids)),
 } satisfies TRPCRouterRecord;
 
 const projectInput = z.object({
@@ -1269,6 +1336,9 @@ const adminProjectsRouter = {
 	delete: adminProcedure
 		.input(z.object({ id: z.number() }))
 		.mutation(({ ctx, input }) => deleteProject(ctx.db, input.id)),
+	reorder: adminProcedure
+		.input(reorderInput)
+		.mutation(({ ctx, input }) => reorderProjects(ctx.db, input.ids)),
 } satisfies TRPCRouterRecord;
 
 const adminMediaRouter = {
@@ -1318,6 +1388,9 @@ const adminLanguagesRouter = {
 	delete: adminProcedure
 		.input(z.object({ code: z.string() }))
 		.mutation(({ ctx, input }) => deleteLanguage(ctx.db, input.code)),
+	reorder: adminProcedure
+		.input(z.object({ codes: z.array(z.string()).max(50) }))
+		.mutation(({ ctx, input }) => reorderLanguages(ctx.db, input.codes)),
 } satisfies TRPCRouterRecord;
 
 const adminNavRouter = {
@@ -1334,6 +1407,9 @@ const adminNavRouter = {
 	move: adminProcedure
 		.input(z.object({ id: z.number(), dir: z.enum(["up", "down"]) }))
 		.mutation(({ ctx, input }) => moveNavItem(ctx.db, input.id, input.dir)),
+	reorder: adminProcedure
+		.input(reorderInput)
+		.mutation(({ ctx, input }) => reorderNavItems(ctx.db, input.ids)),
 } satisfies TRPCRouterRecord;
 
 export const trpcRouter = createTRPCRouter({
