@@ -1,8 +1,6 @@
-/** What a sortable list keys its items by. */
 export type SortableId = string | number;
 
-/** The list with one entry lifted out of `from` and dropped at `to`. Returns the
- *  same array when nothing moves, so a caller can skip a render. */
+// the same array when nothing moves, so a caller can skip a render
 export function moveItem<T>(list: T[], from: number, to: number): T[] {
 	if (from < 0 || from >= list.length) return list;
 	const at = Math.min(Math.max(to, 0), list.length - 1);
@@ -12,7 +10,6 @@ export function moveItem<T>(list: T[], from: number, to: number): T[] {
 	return next;
 }
 
-/** True when two id lists hold the same ids in the same order. */
 export function sameOrder<Id extends SortableId>(
 	a: readonly Id[],
 	b: readonly Id[],
@@ -20,9 +17,8 @@ export function sameOrder<Id extends SortableId>(
 	return a.length === b.length && a.every((id, i) => id === b[i]);
 }
 
-/** The full order after a *subset* was reordered: the slots the subset occupied
- *  take its new order and every other id keeps its place. Ids not in `all` are
- *  ignored, so a stale page cannot corrupt an order. */
+// a subset reorders the slots it already occupied; ids outside `all` are ignored,
+// so a stale page cannot corrupt an order
 export function applyOrder<Id extends SortableId>(
 	all: readonly Id[],
 	ids: readonly Id[],

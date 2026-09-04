@@ -22,6 +22,43 @@ import { cn } from "#/lib/utils";
 const BURST = 400;
 const EDGE = 64;
 const EDGE_STEP = 14;
+const TRAVEL = 4;
+
+type Box = Pick<DOMRect, "top" | "bottom" | "left" | "right">;
+
+// the midpoint, not rect overlap: with unequal heights a swap can leave the
+// pointer inside the neighbour's new rect, which overlap swaps straight back
+function nextSlot({
+	from,
+	count,
+	boxAt,
+	x,
+	y,
+	axis,
+}: {
+	from: number;
+	count: number;
+	boxAt: (slot: number) => Box | null | undefined;
+	x: number;
+	y: number;
+	axis: "list" | "grid";
+}): number {
+	const passed = (slot: number) => {
+		const box = boxAt(slot);
+		if (!box) return false;
+		// a wrapping grid needs both axes: a neighbour beside it is passed across
+		const beside = axis === "grid" && y >= box.top && y <= box.bottom;
+		const point = beside ? x : y;
+		const middle = beside
+			? (box.left + box.right) / 2
+			: (box.top + box.bottom) / 2;
+		return slot > from ? point > middle : point < middle;
+	};
+	// the furthest one passed, so a fast drag lands in one move and says so once
+	for (let slot = count - 1; slot > from; slot--) if (passed(slot)) return slot;
+	for (let slot = 0; slot < from; slot++) if (passed(slot)) return slot;
+	return from;
+}
 
 type Options<Id extends SortableId> = {
 	/** The order as the owner has it. */
@@ -41,12 +78,8 @@ type Options<Id extends SortableId> = {
 	onError?: (err: unknown) => void;
 };
 
-/**
- * Drag-to-reorder for a column or a wrapping grid, with the same moves on the
- * arrow keys. It runs on Pointer Events rather than HTML5 drag-and-drop: one
- * path for mouse, touch and pen, and iOS Safari has no HTML5 dragging at all.
- * Render `order`, spread `itemProps` on what moves and `handleProps` on the grip.
- */
+// pointer events, not html5 dnd: one path for mouse, touch and pen, and ios
+// safari has no html5 dragging
 export function useSortable<Id extends SortableId>({
 	ids,
 	onReorder,
@@ -70,6 +103,8 @@ export function useSortable<Id extends SortableId>({
 	const live = useRef(order);
 	const held = useRef<Id | null>(null);
 	const at = useRef({ x: 0, y: 0 });
+	const press = useRef({ x: 0, y: 0 });
+	const moved = useRef(false);
 	const frame = useRef<number | null>(null);
 	const grip = useRef<{ el: Element; pointerId: number } | null>(null);
 	const started = useRef<Id[] | null>(null);
@@ -178,7 +213,9 @@ export function useSortable<Id extends SortableId>({
 			// the capture nobody would then release
 			if (held.current !== null) return;
 			if (e.button !== 0 || !e.isPrimary) return;
+			// preventDefault stops the text selection, and would stop the focus with it
 			e.preventDefault();
+			e.currentTarget.focus();
 			// the drag supersedes a keyboard burst nobody has written yet, and takes over
 			// the order that burst began at so a refusal still rolls all the way back
 			const pending = queued.current;
@@ -190,6 +227,8 @@ export function useSortable<Id extends SortableId>({
 			setWaiting(false);
 			started.current = pending?.back ?? live.current;
 			at.current = { x: e.clientX, y: e.clientY };
+			press.current = { x: e.clientX, y: e.clientY };
+			moved.current = false;
 			const el = e.currentTarget;
 			el.setPointerCapture?.(e.pointerId);
 			grip.current = { el, pointerId: e.pointerId };
@@ -204,30 +243,34 @@ export function useSortable<Id extends SortableId>({
 
 		const move = (e: PointerEvent) => {
 			at.current = { x: e.clientX, y: e.clientY };
+			if (
+				Math.abs(e.clientX - press.current.x) > TRAVEL ||
+				Math.abs(e.clientY - press.current.y) > TRAVEL
+			)
+				moved.current = true;
 		};
 
 		const step = () => {
 			frame.current = requestAnimationFrame(step);
 			const { x, y } = at.current;
-			// a long list has to be draggable past its own fold
-			if (y < EDGE) window.scrollBy(0, -EDGE_STEP);
-			else if (y > window.innerHeight - EDGE) window.scrollBy(0, EDGE_STEP);
+			// a long list has to be draggable past its own fold, but a still finger
+			// must not scroll the page out from under the press
+			if (moved.current) {
+				if (y < EDGE) window.scrollBy(0, -EDGE_STEP);
+				else if (y > window.innerHeight - EDGE) window.scrollBy(0, EDGE_STEP);
+			}
 			const list = live.current;
 			const i = list.indexOf(dragging);
 			if (i < 0) return;
-			// the dragged item is left out of the search, so once it holds the rect
-			// under the pointer nothing matches and the list settles
-			const over = list.findIndex((id, slot) => {
-				if (slot === i) return false;
-				const box = nodes.current.get(id)?.getBoundingClientRect();
-				if (!box) return false;
-				const across = y >= box.top && y <= box.bottom;
-				return now.current.axis === "grid"
-					? across && x >= box.left && x <= box.right
-					: across;
+			const to = nextSlot({
+				from: i,
+				count: list.length,
+				boxAt: (slot) => nodes.current.get(list[slot])?.getBoundingClientRect(),
+				x,
+				y,
+				axis: now.current.axis,
 			});
-			if (over < 0) return;
-			const next = moveItem(list, i, over);
+			const next = moveItem(list, i, to);
 			if (next === list) return;
 			show(next);
 			announce(dragging, next);
@@ -365,19 +408,6 @@ export function useSortableArray<T, Id extends SortableId>({
 	};
 }
 
-function useReducedMotion() {
-	const [reduced, setReduced] = useState(false);
-	useEffect(() => {
-		const query = window.matchMedia?.("(prefers-reduced-motion: reduce)");
-		if (!query) return;
-		setReduced(query.matches);
-		const onChange = () => setReduced(query.matches);
-		query.addEventListener("change", onChange);
-		return () => query.removeEventListener("change", onChange);
-	}, []);
-	return reduced;
-}
-
 /** The grip: spread `handleProps(id)` onto it. Only the grip drags, so a card
  *  inside a link still navigates. */
 export function DragHandle({
@@ -385,15 +415,13 @@ export function DragHandle({
 	title = "Drag to reorder, or use the arrow keys",
 	...props
 }: ComponentProps<"button">) {
-	const reduced = useReducedMotion();
 	return (
 		<button
 			type="button"
 			title={title}
 			{...props}
 			className={cn(
-				"inline-flex size-7 shrink-0 cursor-grab items-center justify-center rounded-md text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 data-[dragging]:cursor-grabbing",
-				!reduced && "transition-colors duration-150 ease-out",
+				"inline-flex size-7 shrink-0 cursor-grab items-center justify-center rounded-md text-muted-foreground outline-none transition-colors duration-150 ease-out hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 data-[dragging]:cursor-grabbing",
 				className,
 			)}
 		>

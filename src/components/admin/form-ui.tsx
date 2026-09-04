@@ -10,10 +10,10 @@ export const fieldInput = inputClass;
 export const fieldLabel = "block text-[13px] font-medium text-admin-ink mb-2";
 // DragHandle defaults to the public site's tokens
 export const dragGrip =
-	"text-admin-ink-muted hover:bg-admin-accent-soft hover:text-admin-ink focus-visible:ring-admin-focus/40";
-/** Added to the class of the row or card that moves. */
+	"text-admin-ink-muted hover:bg-admin-accent-soft hover:text-admin-ink focus-visible:ring-admin-focus/50";
+// relative so the lifted row's shadow is not painted over by the next one
 export const dragItem =
-	"data-[dragging]:bg-admin-accent-soft data-[dragging]:shadow-[var(--shadow-soft)]";
+	"relative data-[dragging]:bg-admin-accent-soft data-[dragging]:shadow-[var(--shadow-soft)]";
 export const cancelButtonClass = buttonVariants({
 	variant: "secondary",
 	size: "md",

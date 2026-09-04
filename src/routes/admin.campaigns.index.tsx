@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import {
-	dragRow,
+	dragItem,
 	EmptyState,
 	ListSearch,
 	ListStatus,
@@ -246,7 +246,7 @@ function FeaturedRows({
 				<TR
 					key={r.id}
 					{...reorder.itemProps(r)}
-					className={`hover:bg-admin-accent-soft/50 ${dragRow}`}
+					className={`hover:bg-admin-accent-soft/50 ${dragItem}`}
 				>
 					<ReorderCell grip={reorder.grip(r)} />
 					<TD>

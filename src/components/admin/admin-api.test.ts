@@ -59,7 +59,7 @@ describe("list-ui", () => {
 			"ReorderOff: function/1",
 			"SortableStatus: function/1",
 			"TableScroll: function/1",
-			"dragRow: string",
+			"dragItem: string",
 			"matchesQuery: function/1",
 			"removeWithRollback: function/4",
 			"useListQuery: function/1",

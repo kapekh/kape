@@ -8,7 +8,7 @@ import {
 	fieldLabel,
 } from "#/components/admin/form-ui";
 import {
-	dragRow,
+	dragItem,
 	EmptyState,
 	ListStatus,
 	ReorderCell,
@@ -199,7 +199,7 @@ export function TermsManager({
 										<TR
 											key={r.id}
 											{...reorder.itemProps(r)}
-											className={dragRow}
+											className={dragItem}
 										>
 											<ReorderCell grip={reorder.grip(r)} />
 											<TD label="Key" className="px-1">

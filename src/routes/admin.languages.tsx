@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import { FormSection, fieldLabel } from "#/components/admin/form-ui";
 import {
-	dragRow,
+	dragItem,
 	ReorderCell,
 	ReorderHead,
 	SortableStatus,
@@ -233,7 +233,7 @@ function LanguagesAdmin() {
 										<TR
 											key={l.code}
 											{...reorder.itemProps(l)}
-											className={dragRow}
+											className={dragItem}
 										>
 											<ReorderCell grip={reorder.grip(l)} />
 											<TD label="Code" className="font-mono">

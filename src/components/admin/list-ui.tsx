@@ -10,13 +10,15 @@ import {
 	useSortable,
 } from "#/components/ui/sortable.tsx";
 import { TD, TH } from "#/components/ui/table.tsx";
-import { applyOrder, type SortableId } from "#/lib/reorder";
+import { applyOrder, type SortableId, sameOrder } from "#/lib/reorder";
 import { saveErrorMessage } from "#/lib/save-error";
 import { toast } from "@/components/Dialogs";
+import { dragGrip } from "./form-ui";
 
 /** Lives in `ui/` now so the ten lists are not the only surfaces that can have
  *  one. Re-exported here because those ten import it from this file. */
 export { EmptyState } from "#/components/ui/empty-state.tsx";
+export { dragItem } from "./form-ui";
 export { SortableStatus };
 
 export type ListState = "pending" | "error" | "ready";
@@ -181,6 +183,17 @@ export async function removeWithRollback<T>(
 	}
 }
 
+// a drag is worn until the owner reads the rows back in another order; losing or
+// gaining a row is not another order
+function sameRead<Id extends SortableId>(read: Id[], here: Id[]): boolean {
+	const kept = new Set(here);
+	const known = new Set(read);
+	return sameOrder(
+		read.filter((key) => kept.has(key)),
+		here.filter((key) => known.has(key)),
+	);
+}
+
 type Grip = ReturnType<
 	ReturnType<typeof useSortable<SortableId>>["handleProps"]
 >;
@@ -203,11 +216,12 @@ export function useListReorder<T, Id extends SortableId>({
 	save: (ids: Id[]) => Promise<unknown>;
 }) {
 	// rows keep arriving in the order they were read in
-	const [taken, setTaken] = useState<Id[] | null>(null);
+	const [taken, setTaken] = useState<{ read: Id[]; order: Id[] } | null>(null);
 	const here = rows.map(id);
 	const byId = new Map(here.map((key, i) => [key, rows[i]]));
-	// same slot-keeping rule the server renumbers by
-	const ids = taken ? applyOrder(here, taken) : here;
+	// same slot-keeping rule the server renumbers by, until a fresh read wins
+	const ids =
+		taken && sameRead(taken.read, here) ? applyOrder(here, taken.order) : here;
 
 	const { order, itemProps, handleProps, status } = useSortable<Id>({
 		ids,
@@ -218,7 +232,7 @@ export function useListReorder<T, Id extends SortableId>({
 		},
 		onReorder: async (next) => {
 			await save(next);
-			setTaken(next);
+			setTaken({ read: here, order: next });
 		},
 		onError: (e) => toast(saveErrorMessage(e), "error"),
 	});
@@ -240,7 +254,6 @@ export function useListReorder<T, Id extends SortableId>({
 	};
 }
 
-/** Header cell for the grip column, so the columns line up. */
 export function ReorderHead() {
 	return (
 		<TH width={44}>
@@ -249,19 +262,10 @@ export function ReorderHead() {
 	);
 }
 
-/** Added to the class of the row that moves. */
-export const dragRow =
-	"relative data-[dragging]:bg-admin-accent-soft data-[dragging]:shadow-[var(--shadow-soft)]";
-
-// DragHandle defaults to the public site's tokens
-const gripTone =
-	"text-admin-ink-muted hover:bg-admin-accent-soft hover:text-admin-ink focus-visible:ring-admin-focus/50";
-
-/** The grip cell: `grip={reorder.grip(row)}`. */
 export function ReorderCell({ grip }: { grip: Grip | null }) {
 	return (
 		<TD className="px-2 max-md:justify-start max-md:px-0">
-			{grip ? <DragHandle {...grip} className={gripTone} /> : null}
+			{grip ? <DragHandle {...grip} className={dragGrip} /> : null}
 		</TD>
 	);
 }

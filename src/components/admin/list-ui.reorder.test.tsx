@@ -64,7 +64,9 @@ vi.mock("@tanstack/react-router", async (actual) => ({
 	),
 }));
 
+import { DragHandle } from "#/components/ui/sortable.tsx";
 import { Route } from "#/routes/admin.people.index";
+import { useListReorder } from "./list-ui";
 
 // route files are code-split, so the component is a lazy wrapper
 const PeopleList = Route.options.component as (() => ReactNode) & {
@@ -126,5 +128,78 @@ describe("dragging the People list", () => {
 		await waitFor(() =>
 			expect(order()).toEqual(["Ana", "Ben", "Chan", "Dara", "Eng"]),
 		);
+	});
+});
+
+type Row = { id: number; name: string };
+
+// the rows the owner holds, handed in whichever order it last read them
+function Rows({
+	rows,
+	save,
+}: {
+	rows: Row[];
+	save: (ids: number[]) => Promise<unknown>;
+}) {
+	const reorder = useListReorder({
+		rows,
+		id: (r) => r.id,
+		describe: (r) => r.name,
+		save,
+	});
+	return (
+		<ul>
+			{reorder.rows.map((r) => {
+				const grip = reorder.grip(r);
+				return (
+					<li key={r.id} {...reorder.itemProps(r)}>
+						<span>{r.name}</span>
+						{grip ? <DragHandle {...grip} /> : null}
+					</li>
+				);
+			})}
+		</ul>
+	);
+}
+
+const READ = [
+	{ id: 1, name: "Ana" },
+	{ id: 2, name: "Ben" },
+	{ id: 3, name: "Chan" },
+];
+
+const listed = () =>
+	screen
+		.getAllByRole("listitem")
+		.map((li) => li.querySelector("span")?.textContent);
+
+describe("a list the owner keeps reading", () => {
+	it("wears the drag until a fresh read comes back in another order", async () => {
+		const save = vi.fn(() => Promise.resolve());
+		const view = render(<Rows rows={READ} save={save} />);
+
+		fireEvent.keyDown(gripFor("Ana"), { key: "ArrowDown" });
+		expect(listed()).toEqual(["Ben", "Ana", "Chan"]);
+		await waitFor(() => expect(save).toHaveBeenCalledWith([2, 1, 3]));
+
+		// the same read again: the drag is still what the editor sees
+		view.rerender(<Rows rows={[...READ]} save={save} />);
+		expect(listed()).toEqual(["Ben", "Ana", "Chan"]);
+
+		// another tab moved Chan to the top, so the read wins
+		const fresh = [READ[2], READ[0], READ[1]];
+		view.rerender(<Rows rows={fresh} save={save} />);
+		await waitFor(() => expect(listed()).toEqual(["Chan", "Ana", "Ben"]));
+	});
+
+	it("keeps the drag when a row is deleted from under it", async () => {
+		const save = vi.fn(() => Promise.resolve());
+		const view = render(<Rows rows={READ} save={save} />);
+
+		fireEvent.keyDown(gripFor("Ana"), { key: "ArrowDown" });
+		await waitFor(() => expect(save).toHaveBeenCalledWith([2, 1, 3]));
+
+		view.rerender(<Rows rows={[READ[0], READ[1]]} save={save} />);
+		expect(listed()).toEqual(["Ben", "Ana"]);
 	});
 });
