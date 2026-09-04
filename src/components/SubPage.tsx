@@ -8,8 +8,12 @@ import { useLang, useT } from "@/lib/i18n";
 import { localizedHref } from "@/lib/i18n-config";
 import {
 	type EditableEntity,
+	ENTITY_AREA,
 	type FieldEditTarget,
+	fieldLabel,
+	isMultiline,
 	rememberVersion,
+	sharedNote,
 	useInlineEdit,
 	useStudioLink,
 } from "@/lib/inline-edit";
@@ -83,13 +87,6 @@ export const personRecord = (
 	updatedAt: null,
 });
 
-const AREA: Record<string, string> = {
-	page: "pages",
-	post: "posts",
-	project: "projects",
-	person: "people",
-};
-
 /**
  * True while an admin who may edit this record's entity has the switch on. A
  * route whose kind carries no editable source, an album's, is never editable.
@@ -99,28 +96,12 @@ function useEditingRecord(record: PageRecord | null): boolean {
 	return (
 		record !== null &&
 		editing &&
-		may(AREA[record.entity]) &&
+		may(ENTITY_AREA[record.entity]) &&
 		Object.keys(record.fields).length > 0
 	);
 }
 
-// what the studio's own form calls each field
-const LABELS: Record<string, Record<string, string>> = {
-	page: { title: "Title", excerpt: "Brief", body: "Body" },
-	post: { title: "Title", excerpt: "Excerpt", body: "Body" },
-	project: { name: "Name", summary: "Summary", body: "Body" },
-	person: { name: "Name", position: "Position" },
-};
-
-// one column for every language, so an editor is told before they retype it
-const SHARED_ACROSS_LANGUAGES: Record<string, readonly string[]> = {
-	person: ["position"],
-};
-
 const FIELD_TARGET = /^field:([A-Za-z][A-Za-z0-9_]*)$/;
-
-// Enter saves these; the rest keep it for newlines and save on the modifier
-const ONE_LINE = new Set(["title", "name", "position"]);
 
 /**
  * What the bar needs to edit one of this record's own fields, read off the
@@ -143,11 +124,9 @@ export function recordFieldTarget(
 		target,
 		shown,
 		fellBack: record.fallback.includes(field),
-		multiline: !ONE_LINE.has(field) || shown.includes("\n"),
-		label: LABELS[record.entity]?.[field] ?? field,
-		note: SHARED_ACROSS_LANGUAGES[record.entity]?.includes(field)
-			? "One value for every language: what you type here is what every reader sees."
-			: undefined,
+		multiline: isMultiline(field, shown),
+		label: fieldLabel(record.entity, field),
+		note: sharedNote(record.entity, field),
 	};
 }
 

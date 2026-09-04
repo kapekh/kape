@@ -14,7 +14,6 @@ import {
 import {
 	resolveOne,
 	resolveOneWithFallback,
-	resolveTranslations,
 	resolveWithFallback,
 } from "./i18n";
 import { resolveSections } from "./sections";
@@ -191,6 +190,9 @@ export type PostListItem = {
 	title: string;
 	excerpt: string;
 	image: string | null; // cover image URL (null → renderer supplies a fallback)
+	i18nFallback: string[];
+	/** What this row was loaded at, so an inline edit is checked against it. */
+	updatedAt: string;
 };
 
 async function coverUrls(
@@ -232,7 +234,7 @@ export async function listPosts(
 		.orderBy(desc(posts.publishedAt))
 		.limit(limit);
 
-	const fields = await resolveTranslations(
+	const { values: fields, fallback } = await resolveWithFallback(
 		db,
 		"post",
 		rows.map((r) => r.id),
@@ -248,6 +250,8 @@ export async function listPosts(
 		title: fields.get(r.id)?.title ?? "",
 		excerpt: fields.get(r.id)?.excerpt ?? "",
 		image: r.coverMediaId != null ? (covers.get(r.coverMediaId) ?? null) : null,
+		i18nFallback: fallback.get(r.id) ?? [],
+		updatedAt: r.updatedAt,
 	}));
 }
 
@@ -286,7 +290,7 @@ export async function listPublications(
 		: rows;
 	// a section asks for the rows it will render; every other caller wants them all
 	const picked = limit ? filtered.slice(0, limit) : filtered;
-	const f = await resolveTranslations(
+	const { values: f, fallback } = await resolveWithFallback(
 		db,
 		"post",
 		picked.map((r) => r.id),
@@ -305,6 +309,8 @@ export async function listPublications(
 				excerpt: f.get(r.id)?.excerpt ?? "",
 				image:
 					r.coverMediaId != null ? (covers.get(r.coverMediaId) ?? null) : null,
+				i18nFallback: fallback.get(r.id) ?? [],
+				updatedAt: r.updatedAt,
 				year: String(m.year ?? ""),
 				fileUrl: m.fileUrl ? String(m.fileUrl) : null,
 				readCount: Number(m.readCount ?? 0),
@@ -341,6 +347,8 @@ export type JobItem = {
 	location: string;
 	employmentType: string;
 	deadline: string;
+	i18nFallback: string[];
+	updatedAt: string;
 };
 
 /** Active job vacancies (type=job): published and not past their deadline. */
@@ -360,7 +368,7 @@ export async function listJobs(db: DB, lang: string): Promise<JobItem[]> {
 		const dl = (r.meta as Record<string, unknown> | null)?.deadline;
 		return !dl || String(dl) >= today; // hide past-deadline jobs
 	});
-	const f = await resolveTranslations(
+	const { values: f, fallback } = await resolveWithFallback(
 		db,
 		"post",
 		active.map((r) => r.id),
@@ -375,6 +383,8 @@ export async function listJobs(db: DB, lang: string): Promise<JobItem[]> {
 			location: String(m.location ?? ""),
 			employmentType: String(m.employmentType ?? ""),
 			deadline: String(m.deadline ?? ""),
+			i18nFallback: fallback.get(r.id) ?? [],
+			updatedAt: r.updatedAt,
 		};
 	});
 }
@@ -386,6 +396,8 @@ export type VideoItem = {
 	excerpt: string;
 	youtubeUrl: string;
 	image: string | null; // cover image URL (null → renderer supplies a fallback)
+	i18nFallback: string[];
+	updatedAt: string;
 };
 
 /** Published videos (type=video) with their YouTube URL from meta. */
@@ -402,7 +414,7 @@ export async function listVideos(db: DB, lang: string): Promise<VideoItem[]> {
 		)
 		// sqlite puts NULL last under DESC, so undated videos sink
 		.orderBy(desc(posts.publishedAt), desc(posts.id));
-	const f = await resolveTranslations(
+	const { values: f, fallback } = await resolveWithFallback(
 		db,
 		"post",
 		rows.map((r) => r.id),
@@ -419,6 +431,8 @@ export async function listVideos(db: DB, lang: string): Promise<VideoItem[]> {
 			youtubeUrl: String(m.youtube_url ?? ""),
 			image:
 				r.coverMediaId != null ? (covers.get(r.coverMediaId) ?? null) : null,
+			i18nFallback: fallback.get(r.id) ?? [],
+			updatedAt: r.updatedAt,
 		};
 	});
 }
@@ -429,6 +443,8 @@ export type AlbumItem = {
 	title: string;
 	cover: string | null;
 	count: number;
+	i18nFallback: string[];
+	updatedAt: string;
 };
 
 /** Photo albums (type=album) with a cover and photo count. */
@@ -444,7 +460,7 @@ export async function listAlbums(db: DB, lang: string): Promise<AlbumItem[]> {
 			),
 		)
 		.orderBy(desc(posts.id));
-	const f = await resolveTranslations(
+	const { values: f, fallback } = await resolveWithFallback(
 		db,
 		"post",
 		albums.map((a) => a.id),
@@ -464,6 +480,8 @@ export async function listAlbums(db: DB, lang: string): Promise<AlbumItem[]> {
 			title: f.get(a.id)?.title ?? "",
 			cover: pm[0]?.url ?? null,
 			count: pm.length,
+			i18nFallback: fallback.get(a.id) ?? [],
+			updatedAt: a.updatedAt,
 		});
 	}
 	return out;

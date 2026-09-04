@@ -17,6 +17,10 @@ const translatedName = (r: NameColumns, lang: string) =>
 const pickName = (r: NameColumns, lang: string) =>
 	translatedName(r, lang) || r.nameEn;
 
+// name is a column pair, not a translations row, so no resolver sees its fallback
+const nameFallback = (r: NameColumns, lang: string): string[] =>
+	lang !== DEFAULT_LANG && !translatedName(r, lang) ? ["name"] : [];
+
 /* --------------------------------- public --------------------------------- */
 
 export type PersonItem = {
@@ -26,6 +30,9 @@ export type PersonItem = {
 	position: string;
 	section: string;
 	photoUrl: string | null;
+	i18nFallback: string[];
+	/** What this row was loaded at, so an inline edit is checked against it. */
+	updatedAt: string;
 };
 
 /** Public team / leadership (isPublic), optionally filtered to a tier. */
@@ -43,6 +50,8 @@ export async function listPeople(db: DB, lang: string): Promise<PersonItem[]> {
 		position: r.position ?? "",
 		section: r.tier,
 		photoUrl: r.photoUrl,
+		i18nFallback: nameFallback(r, lang),
+		updatedAt: r.updatedAt,
 	}));
 }
 
@@ -128,8 +137,7 @@ export async function getPersonBySlug(
 		p.id,
 		lang,
 	);
-	// name is a column pair, not a translations row, so its fallback is invisible to the resolver
-	if (lang !== DEFAULT_LANG && !translatedName(p, lang)) fallback.push("name");
+	fallback.push(...nameFallback(p, lang));
 	let photoUrl: string | null = null;
 	if (p.photoMediaId) {
 		const [m] = await db

@@ -9,7 +9,11 @@ import {
 	projectLocations,
 	projects,
 } from "../schema";
-import { resolveOneWithFallback, resolveTranslations } from "./i18n";
+import {
+	resolveOneWithFallback,
+	resolveTranslations,
+	resolveWithFallback,
+} from "./i18n";
 import { attachMediaUrl } from "./media-util";
 
 const TENANT = 1;
@@ -99,6 +103,7 @@ export type ProjectCard = {
 	image: string | null;
 	startDate: string | null;
 	endDate: string | null;
+	i18nFallback: string[];
 };
 
 /** Public project cards for the `projectList` section, optionally filtered by status. */
@@ -118,7 +123,7 @@ export async function listProjectCards(
 		)
 		.orderBy(asc(projects.sort));
 	const capped = limit ? rows.slice(0, limit) : rows;
-	const names = await resolveTranslations(
+	const { values: names, fallback } = await resolveWithFallback(
 		db,
 		"project",
 		capped.map((r) => r.id),
@@ -135,6 +140,7 @@ export async function listProjectCards(
 		image: r.logoUrl,
 		startDate: r.startDate,
 		endDate: r.endDate,
+		i18nFallback: fallback.get(r.id) ?? [],
 	}));
 }
 

@@ -60,7 +60,13 @@ const teamSection = (): SectionNode[] => [
 		type: "people",
 		props: {
 			title: "Our team",
-			data: TEAM.map((p) => ({ ...p, section: "team", photoUrl: null })),
+			data: TEAM.map((p) => ({
+				...p,
+				section: "team",
+				photoUrl: null,
+				i18nFallback: [],
+				updatedAt: "2026-08-01T09:00:00Z",
+			})),
 		},
 	},
 ];

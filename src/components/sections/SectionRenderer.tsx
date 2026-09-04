@@ -3,8 +3,13 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import {
+	ENTITY_AREA,
 	type FieldEditTarget,
+	fieldLabel,
 	isEditableEntity,
+	isMultiline,
+	rememberVersion,
+	sharedNote,
 	useInlineEdit,
 	useStudioLink,
 } from "#/lib/inline-edit";
@@ -99,11 +104,87 @@ function useMark() {
 			: {};
 }
 
+/** A row a listing pulled in, carrying what an edit of its text needs. */
+type MarkedRow = { id: number; i18nFallback: string[]; updatedAt?: string };
+
+// the fields updateField takes on a listed record: PERSON_COLUMN_FIELDS and the
+// text of ENTITY_FIELDS, less the bodies, whose source is prosemirror json
+export const ROW_FIELDS: Record<string, readonly string[]> = {
+	post: ["title", "excerpt"],
+	project: ["name", "summary"],
+	person: ["name", "position"],
+};
+
 /** Marks text a listing pulled from another record, which owns the row that holds it. */
 function useRowMark() {
 	const id = useContext(Identity);
-	return (entity: string, entityId: number, field: string): CmsMarker =>
-		id ? cmsMark({ entity, entityId, lang: id.lang }, `field:${field}`) : {};
+	const { editing, may } = useInlineEdit();
+	return <R extends MarkedRow>(
+		entity: string,
+		record: R,
+		field: keyof R & string,
+	): CmsMarker => {
+		if (!id) return {};
+		const mark = cmsMark(
+			{ entity, entityId: record.id, lang: id.lang },
+			`field:${field}`,
+		);
+		const editable =
+			editing &&
+			may(ENTITY_AREA[entity]) &&
+			!!ROW_FIELDS[entity]?.includes(field);
+		if (!editable) return mark;
+		const text = record[field];
+		return {
+			...mark,
+			"data-cms-source": typeof text === "string" ? text : "",
+			// projects carry no updated_at, so a project row saves last-write-wins
+			...(record.updatedAt ? { "data-cms-version": record.updatedAt } : {}),
+			...(record.i18nFallback.includes(field)
+				? { "data-cms-fell-back": "" }
+				: {}),
+			tabIndex: 0,
+		};
+	};
+}
+
+const ROW_TARGET = /^field:([A-Za-z][A-Za-z0-9_]*)$/;
+
+/**
+ * What the bar needs to edit text a listing pulled from another record, read off
+ * the marked node itself. Null for the page's own record, whose fields SubPage's
+ * layer claims, and for anything outside what `updateField` will take.
+ */
+export function rowEditTarget(
+	node: Element,
+	page: EditIdentity,
+	editable: ReadonlySet<string>,
+): FieldEditTarget | null {
+	const entity = node.getAttribute("data-cms-entity") ?? "";
+	const id = node.getAttribute("data-cms-entity-id");
+	const field = ROW_TARGET.exec(
+		node.getAttribute("data-cms-target") ?? "",
+	)?.[1];
+	const shown = node.getAttribute("data-cms-source");
+	if (!field || !id || shown === null || !isEditableEntity(entity)) return null;
+	const entityId = Number(id);
+	if (!Number.isInteger(entityId) || !editable.has(entity)) return null;
+	if (entity === page.entity && entityId === page.entityId) return null;
+	if (!ROW_FIELDS[entity]?.includes(field)) return null;
+	// versionOf reads this back out when the surface saves
+	rememberVersion(entity, entityId, node.getAttribute("data-cms-version"));
+	return {
+		kind: "field",
+		entity,
+		entityId,
+		lang: page.lang,
+		target: `field:${field}`,
+		shown,
+		fellBack: node.hasAttribute("data-cms-fell-back"),
+		multiline: isMultiline(field, shown),
+		label: fieldLabel(entity, field),
+		note: sharedNote(entity, field),
+	};
 }
 
 const SECTION_TARGET =
@@ -201,6 +282,29 @@ function EditLayer({
 	const sel = '[data-cms-target^="section:"]';
 	return (
 		<style>{`${sel}{outline:1px dashed ${OUTLINE};outline-offset:2px;border-radius:2px;cursor:text}${sel}:hover{outline-color:var(--primary);background:color-mix(in oklab, var(--primary) 8%, transparent)}`}</style>
+	);
+}
+
+// only a marker the mark itself declared editable carries its source text
+const ROW_MARKED = '[data-cms-source][data-cms-target^="field:"]';
+
+/** What the rows this page listed address, for as long as this renderer is mounted. */
+function RowLayer({ identity }: { identity: EditIdentity | null }) {
+	const { editing, may, register } = useInlineEdit();
+	const allowed = Object.keys(ROW_FIELDS)
+		.filter((entity) => may(ENTITY_AREA[entity]))
+		.join(",");
+	const on = editing && identity !== null && allowed !== "";
+
+	useEffect(() => {
+		if (!on || !identity) return;
+		const editable = new Set(allowed.split(","));
+		return register((node) => rowEditTarget(node, identity, editable));
+	}, [on, identity, allowed, register]);
+
+	if (!on) return null;
+	return (
+		<style>{`${ROW_MARKED}{outline:1px dashed ${OUTLINE};outline-offset:2px;border-radius:2px;cursor:text}${ROW_MARKED}:hover{outline-color:var(--primary);background:color-mix(in oklab, var(--primary) 8%, transparent)}`}</style>
 	);
 }
 
@@ -1594,7 +1698,7 @@ function FormSection(p: FormProps) {
 
 // one posts source, two row shapes: a row carries whichever fields its own source filled
 type PostRow = Partial<PostListItem & JobItem> &
-	Pick<PostListItem, "id" | "slug" | "title">;
+	Pick<PostListItem, "id" | "slug" | "title" | "i18nFallback" | "updatedAt">;
 type PostListProps = Common & {
 	moreHref?: string;
 	linkBase?: string;
@@ -1634,14 +1738,14 @@ function PostCard({
 			</div>
 			<div className="p-6">
 				<H
-					{...row("post", post.id, "title")}
+					{...row("post", post, "title")}
 					className="t-card-title text-primary group-hover:text-[var(--accent)] transition"
 				>
 					{post.title}
 				</H>
 				{post.excerpt && (
 					<p
-						{...row("post", post.id, "excerpt")}
+						{...row("post", post, "excerpt")}
 						className="mt-2 t-meta text-foreground/70 line-clamp-3"
 					>
 						{post.excerpt}
@@ -1772,7 +1876,7 @@ function PostList(p: PostListProps) {
 									className="group flex items-center justify-between gap-4 px-5 py-4 hover:bg-[var(--accent)]/5 transition"
 								>
 									<span
-										{...row("post", post.id, "title")}
+										{...row("post", post, "title")}
 										className="font-medium text-foreground/85 group-hover:text-[var(--accent)] transition"
 									>
 										{post.title}
@@ -1805,7 +1909,7 @@ function PostList(p: PostListProps) {
 								{posts.map((post) => (
 									<tr key={post.id} className="hover:bg-muted/30 transition">
 										<td
-											{...row("post", post.id, "title")}
+											{...row("post", post, "title")}
 											className="px-4 py-3 font-medium text-foreground"
 										>
 											{post.title}
@@ -1856,14 +1960,14 @@ function PostList(p: PostListProps) {
 										</span>
 									)}
 									<H
-										{...row("post", posts[0].id, "title")}
+										{...row("post", posts[0], "title")}
 										className="mt-4 max-w-xl t-section"
 									>
 										{posts[0].title}
 									</H>
 									{posts[0].excerpt && (
 										<p
-											{...row("post", posts[0].id, "excerpt")}
+											{...row("post", posts[0], "excerpt")}
 											className="mt-3 max-w-lg t-meta opacity-90 line-clamp-2"
 										>
 											{posts[0].excerpt}
@@ -1898,7 +2002,7 @@ function PostList(p: PostListProps) {
 											</div>
 										)}
 										<HSub
-											{...row("post", post.id, "title")}
+											{...row("post", post, "title")}
 											className="mt-1.5 t-card-title text-primary group-hover:text-[var(--accent)] transition line-clamp-3"
 										>
 											{post.title}
@@ -2020,7 +2124,7 @@ function VideoGrid(p: VideoGridProps) {
 										</div>
 									</div>
 									<H
-										{...row("post", v.id, "title")}
+										{...row("post", v, "title")}
 										className="mt-4 t-card-title text-primary group-hover:text-[var(--accent)] transition"
 									>
 										{v.title}
@@ -2066,7 +2170,7 @@ function AlbumGrid(p: AlbumGridProps) {
 									/>
 								</div>
 								<div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-primary/90 via-primary/20 to-transparent p-5 text-primary-foreground">
-									<div {...row("post", a.id, "title")} className="t-card-title">
+									<div {...row("post", a, "title")} className="t-card-title">
 										{a.title}
 									</div>
 									<div className="mt-0.5 t-meta opacity-85">
@@ -2189,7 +2293,7 @@ function PublicationList(p: PublicationListProps) {
 											className="after:absolute after:inset-0 after:rounded-2xl"
 										>
 											<div
-												{...row("post", it.id, "title")}
+												{...row("post", it, "title")}
 												className={`font-medium text-foreground group-hover:text-[var(--accent)] transition ${stacked ? "line-clamp-3 text-balance" : ""}`}
 											>
 												{it.title}
@@ -2238,6 +2342,7 @@ type PeopleProps = Common & { data?: SourceRow["people"][] };
 function People(p: PeopleProps) {
 	const L = useL();
 	const t = useT();
+	const row = useRowMark();
 	const mayEditPeople = useMayEditPeople();
 	const people: SourceRow["people"][] = Array.isArray(p.data) ? p.data : [];
 	const order = useRowOrder(people, {
@@ -2299,11 +2404,17 @@ function People(p: PeopleProps) {
 											</div>
 										)}
 									</div>
-									<div className="mt-3 text-sm font-semibold text-primary group-hover:text-[var(--accent)] transition">
+									<div
+										{...row("person", person, "name")}
+										className="mt-3 text-sm font-semibold text-primary group-hover:text-[var(--accent)] transition"
+									>
 										{person.name}
 									</div>
 									{person.position && (
-										<div className="text-xs text-muted-foreground">
+										<div
+											{...row("person", person, "position")}
+											className="text-xs text-muted-foreground"
+										>
 											{person.position}
 										</div>
 									)}
@@ -2667,7 +2778,7 @@ function ProjectList(p: ProjectListProps) {
 									className="group flex items-center justify-between gap-4 px-5 py-4 hover:bg-[var(--accent)]/5 transition"
 								>
 									<span
-										{...row("project", r.id, "name")}
+										{...row("project", r, "name")}
 										className="font-medium text-foreground/85 group-hover:text-[var(--accent)] transition"
 									>
 										{r.name}
@@ -2706,14 +2817,14 @@ function ProjectList(p: ProjectListProps) {
 										</div>
 									)}
 									<h3
-										{...row("project", r.id, "name")}
+										{...row("project", r, "name")}
 										className="t-card-title text-primary group-hover:text-[var(--accent)] transition"
 									>
 										{r.name}
 									</h3>
 									{r.summary && (
 										<p
-											{...row("project", r.id, "summary")}
+											{...row("project", r, "summary")}
 											className="mt-2 t-body text-foreground/75 line-clamp-3"
 										>
 											{r.summary}
@@ -3031,6 +3142,7 @@ export function SectionRenderer({
 	return (
 		<Identity.Provider value={identity} key={revision}>
 			<EditLayer sections={sections} identity={identity} />
+			<RowLayer identity={identity} />
 			{sections.map((s, i) => {
 				const Template = templateFor(s.type);
 				const body = Template ? (

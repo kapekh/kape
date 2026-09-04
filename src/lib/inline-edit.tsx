@@ -63,6 +63,44 @@ export type FieldEditTarget = {
 /** What the bar is editing. */
 export type EditTarget = UiStringTarget | FieldEditTarget;
 
+/** The permission area that governs a record's entity. */
+export const ENTITY_AREA: Record<string, string> = {
+	page: "pages",
+	post: "posts",
+	project: "projects",
+	person: "people",
+};
+
+// what the studio's own form calls each field
+const LABELS: Record<string, Record<string, string>> = {
+	page: { title: "Title", excerpt: "Brief", body: "Body" },
+	post: { title: "Title", excerpt: "Excerpt", body: "Body" },
+	project: { name: "Name", summary: "Summary", body: "Body" },
+	person: { name: "Name", position: "Position" },
+};
+
+// Enter saves these; the rest keep it for newlines and save on the modifier
+const ONE_LINE = new Set(["title", "name", "position"]);
+
+// one column for every language, so an editor is told before they retype it
+const SHARED_ACROSS_LANGUAGES: Record<string, readonly string[]> = {
+	person: ["position"],
+};
+
+export const fieldLabel = (entity: string, field: string): string =>
+	LABELS[entity]?.[field] ?? field;
+
+export const isMultiline = (field: string, shown: string): boolean =>
+	!ONE_LINE.has(field) || shown.includes("\n");
+
+export const sharedNote = (
+	entity: string,
+	field: string,
+): string | undefined =>
+	SHARED_ACROSS_LANGUAGES[entity]?.includes(field)
+		? "One value for every language: what you type here is what every reader sees."
+		: undefined;
+
 /** Identifies the box, so selecting another field remounts it with its own value. */
 export const targetKey = (t: EditTarget): string =>
 	t.kind === "uiString"

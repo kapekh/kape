@@ -899,7 +899,7 @@ const ENTITY_TABLES = {
 	project: projects,
 } as const;
 
-const ENTITY_FIELDS: Record<string, readonly string[]> = {
+export const ENTITY_FIELDS: Record<string, readonly string[]> = {
 	page: PAGE_FIELDS,
 	post: POST_FIELDS,
 	person: ["bio"],
@@ -914,7 +914,7 @@ const PERSON_NAME_COLUMN: Record<string, "nameEn" | "nameKm"> = {
 	en: "nameEn",
 	km: "nameKm",
 };
-const PERSON_COLUMN_FIELDS = ["name", "position"] as const;
+export const PERSON_COLUMN_FIELDS = ["name", "position"] as const;
 
 // projects carries no updated_at, so a compare-and-swap is impossible there
 const VERSIONED_TABLES = {
