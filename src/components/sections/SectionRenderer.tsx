@@ -1735,12 +1735,18 @@ function Split(p: SplitProps) {
 						<img
 							src={photo}
 							alt={person?.name || p.title || ""}
-							className="h-[420px] w-full object-cover md:h-[480px]"
+							className={
+								person
+									? "aspect-[4/5] w-full object-cover object-top"
+									: "h-[420px] w-full object-cover md:h-[480px]"
+							}
 							onError={onImageError}
 							ref={imageFallbackRef}
 						/>
 					) : (
-						<div className="grid h-[420px] w-full place-items-center bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] font-display text-6xl font-bold text-primary-foreground md:h-[480px]">
+						<div
+							className={`grid w-full place-items-center bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] font-display text-6xl font-bold text-primary-foreground ${person ? "aspect-[4/5]" : "h-[420px] md:h-[480px]"}`}
+						>
 							{initials(person?.name ?? "")}
 						</div>
 					)}
@@ -1778,9 +1784,7 @@ function Split(p: SplitProps) {
 					</div>
 				)}
 				{person ? (
-					<div
-						className={p.statValue ? "mt-12 text-center" : "mt-5 text-center"}
-					>
+					<div className={p.statValue ? "mt-12" : "mt-4"}>
 						<div
 							{...row("person", person, "name")}
 							className="font-display text-lg font-semibold text-primary"
@@ -1823,20 +1827,37 @@ function Split(p: SplitProps) {
 			<RichBody className="prose-body mt-6" html={p.bodyHtml ?? ""} />
 		</div>
 	);
+	// a person is a portrait beside a long read: it stays at the top while the text scrolls, and the text keeps most of the width
+	const portrait = person ? (
+		<div className="lg:sticky lg:top-28 lg:self-start">{media}</div>
+	) : (
+		media
+	);
+	const grid = person
+		? `grid items-start gap-10 lg:gap-14 ${mediaLeft ? "lg:grid-cols-[17rem_minmax(0,1fr)]" : "lg:grid-cols-[minmax(0,1fr)_17rem]"}`
+		: "grid items-center gap-16 lg:grid-cols-2";
 	return (
 		<Band p={p} className={PAD}>
-			<Container className="grid items-center gap-16 lg:grid-cols-2">
-				{mediaLeft ? (
-					<>
-						{media}
-						{text}
-					</>
-				) : (
-					<>
-						{text}
-						{media}
-					</>
-				)}
+			<Container>
+				<div
+					className={
+						person
+							? `${grid} rounded-3xl bg-card p-6 shadow-[var(--shadow-soft)] ring-1 ring-border md:p-10 lg:p-14`
+							: grid
+					}
+				>
+					{mediaLeft ? (
+						<>
+							{portrait}
+							{text}
+						</>
+					) : (
+						<>
+							{text}
+							{portrait}
+						</>
+					)}
+				</div>
 			</Container>
 		</Band>
 	);

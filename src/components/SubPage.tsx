@@ -222,7 +222,7 @@ export function SubPage({
 	return (
 		// keyed: an edit leaves DOM nodes React no longer holds, so the tree is
 		// rebuilt rather than patched. See `revision` in lib/inline-edit.
-		<main key={revision} className="text-foreground overflow-x-hidden">
+		<main key={revision} className="text-foreground overflow-x-clip">
 			{record && <FieldLayer record={record} />}
 			{/* Hero */}
 			<section className="relative pt-28 pb-24 px-6 overflow-hidden">

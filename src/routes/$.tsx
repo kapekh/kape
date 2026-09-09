@@ -373,7 +373,7 @@ function ResolvedRoute() {
 			);
 			if (sectionsOwnTitle)
 				return (
-					<main className="min-h-screen overflow-x-hidden text-foreground">
+					<main className="min-h-screen overflow-x-clip text-foreground">
 						{page.slug === "home" && <AnnouncementPopup />}
 						<SectionRenderer
 							sections={page.sections}
