@@ -377,18 +377,23 @@ const adminRolesRouter = {
 		.mutation(({ ctx, input }) => deleteRole(ctx.db, input.id)),
 } satisfies TRPCRouterRecord;
 
+// lang is optional, not defaulted: without one the repo reads whichever language is flagged default
+const termLangInput = z.object({ lang: z.string().optional() });
+
 const termsRouter = {
-	all: publicProcedure.query(({ ctx }) => listAllTerms(ctx.db)),
+	all: publicProcedure
+		.input(termLangInput.optional())
+		.query(({ ctx, input }) => listAllTerms(ctx.db, input?.lang)),
 	list: publicProcedure
-		.input(z.object({ taxonomy: z.string() }))
-		.query(({ ctx, input }) => listTerms(ctx.db, input.taxonomy)),
+		.input(termLangInput.extend({ taxonomy: z.string() }))
+		.query(({ ctx, input }) => listTerms(ctx.db, input.taxonomy, input.lang)),
 } satisfies TRPCRouterRecord;
 
 const termInput = z.object({
 	taxonomy: z.string().min(1),
 	key: z.string().min(1),
-	label: z.string().min(1),
 	sort: z.number(),
+	labels: z.record(z.string(), z.string()),
 });
 
 // a taxonomy that only categorises a module's records goes with the module, or a role writes categories on a register that is switched off

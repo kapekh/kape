@@ -28,6 +28,7 @@ import { confirm, toast } from "@/components/Dialogs";
 type Term = Awaited<
 	ReturnType<typeof trpcClient.adminTerms.list.query>
 >[number];
+type Lang = Awaited<ReturnType<typeof trpcClient.i18n.languages.query>>[number];
 const cellInput =
 	"w-full rounded-lg bg-transparent px-3 py-2 text-sm text-admin-ink transition-colors duration-150 ease-out placeholder:text-admin-ink-subtle hover:bg-admin-neutral-soft focus:bg-admin-panel focus:outline-none focus:ring-2 focus:ring-admin-focus/40";
 
@@ -41,19 +42,26 @@ export function TermsManager({
 	title: string;
 	description?: string;
 }) {
-	const load = useCallback(
-		async () =>
-			(await trpcClient.adminTerms.list.query()).filter(
-				(t) => t.taxonomy === taxonomy,
-			),
-		[taxonomy],
-	);
+	const [langs, setLangs] = useState<Lang[]>([]);
+	const load = useCallback(async () => {
+		const [all, languages] = await Promise.all([
+			trpcClient.adminTerms.list.query(),
+			trpcClient.i18n.languages.query(),
+		]);
+		setLangs(languages);
+		return all.filter((t) => t.taxonomy === taxonomy);
+	}, [taxonomy]);
 	const { rows, setRows, state, error, reload } = useListQuery<Term>(load);
-	const [add, setAdd] = useState({ key: "", label: "" });
+	const [add, setAdd] = useState<{
+		key: string;
+		labels: Record<string, string>;
+	}>({ key: "", labels: {} });
+	const defaultLang = (langs.find((l) => l.isDefault) ?? langs[0])?.code ?? "";
+	const named = (r: Term) => r.labels[defaultLang] || r.key;
 	const reorder = useListReorder({
 		rows,
 		id: (r: Term) => r.id,
-		describe: (r: Term) => r.label || r.key,
+		describe: named,
 		save: async (ids) => {
 			await trpcClient.adminTerms.reorder.mutate({ taxonomy, ids });
 			// the row's own Save replays `sort`, and a stale one would undo the drag
@@ -66,9 +74,14 @@ export function TermsManager({
 		},
 	});
 
-	function patch(id: number, field: "key" | "label", value: string) {
+	function patchKey(id: number, value: string) {
+		setRows((rs) => rs.map((r) => (r.id === id ? { ...r, key: value } : r)));
+	}
+	function patchLabel(id: number, lang: string, value: string) {
 		setRows((rs) =>
-			rs.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
+			rs.map((r) =>
+				r.id === id ? { ...r, labels: { ...r.labels, [lang]: value } } : r,
+			),
 		);
 	}
 	// Keyed by row id so only the row being written disables; "add" is its own key
@@ -82,10 +95,10 @@ export function TermsManager({
 				id: r.id,
 				taxonomy,
 				key: r.key,
-				label: r.label,
+				labels: r.labels,
 				sort: r.sort,
 			});
-			toast(`Saved ${r.label || r.key}.`, "success");
+			toast(`Saved ${named(r)}.`, "success");
 		} catch (e) {
 			toast(saveErrorMessage(e), "error");
 		} finally {
@@ -93,18 +106,23 @@ export function TermsManager({
 		}
 	}
 	async function create() {
-		if (!add.key.trim() || !add.label.trim()) return;
+		const labels = Object.fromEntries(
+			Object.entries(add.labels)
+				.map(([lang, v]) => [lang, v.trim()] as const)
+				.filter(([, v]) => v !== ""),
+		);
+		if (!add.key.trim() || !labels[defaultLang]) return;
 		setBusy("add");
 		try {
 			await trpcClient.adminTerms.create.mutate({
 				taxonomy,
 				key: add.key.trim(),
-				label: add.label.trim(),
+				labels,
 				sort: rows.length,
 			});
-			setAdd({ key: "", label: "" });
+			setAdd({ key: "", labels: {} });
 			await reload();
-			toast(`Added ${add.label.trim()}.`, "success");
+			toast(`Added ${labels[defaultLang]}.`, "success");
 		} catch (e) {
 			toast(saveErrorMessage(e), "error");
 		} finally {
@@ -139,7 +157,7 @@ export function TermsManager({
 				<div data-tour="terms-add">
 					<FormSection
 						title="Add item"
-						description="The key is what gets stored. The label is what people read."
+						description="The key is what gets stored. The label is what people read, in each language."
 					>
 						<div className="flex flex-wrap items-end gap-3">
 							<label className="block">
@@ -152,18 +170,25 @@ export function TermsManager({
 									onKeyDown={(e) => e.key === "Enter" && create()}
 								/>
 							</label>
-							<div className="min-w-[200px] flex-1">
-								<label className="block">
-									<span className={fieldLabel}>Label</span>
-									<input
-										className={fieldInput}
-										placeholder="Annual Report"
-										value={add.label}
-										onChange={(e) => setAdd({ ...add, label: e.target.value })}
-										onKeyDown={(e) => e.key === "Enter" && create()}
-									/>
-								</label>
-							</div>
+							{langs.map((l) => (
+								<div key={l.code} className="min-w-[200px] flex-1">
+									<label className="block">
+										<span className={fieldLabel}>Label ({l.name})</span>
+										<input
+											className={`${fieldInput} ${l.code === "km" ? "font-khmer" : ""}`}
+											placeholder="Annual Report"
+											value={add.labels[l.code] ?? ""}
+											onChange={(e) =>
+												setAdd((p) => ({
+													...p,
+													labels: { ...p.labels, [l.code]: e.target.value },
+												}))
+											}
+											onKeyDown={(e) => e.key === "Enter" && create()}
+										/>
+									</label>
+								</div>
+							))}
 							<Button type="button" onClick={create} disabled={busy === "add"}>
 								{busy === "add" ? "Adding…" : "Add"}
 							</Button>
@@ -188,7 +213,9 @@ export function TermsManager({
 									<TR>
 										<ReorderHead />
 										<TH width="33%">Key</TH>
-										<TH>Label</TH>
+										{langs.map((l) => (
+											<TH key={l.code}>Label ({l.name})</TH>
+										))}
 										<TH align="right" width={140}>
 											Actions
 										</TH>
@@ -205,19 +232,27 @@ export function TermsManager({
 											<TD label="Key" className="px-1">
 												<input
 													className={`${cellInput} font-mono`}
-													aria-label={`Key for ${r.label || r.key}`}
+													aria-label={`Key for ${named(r)}`}
 													value={r.key}
-													onChange={(e) => patch(r.id, "key", e.target.value)}
+													onChange={(e) => patchKey(r.id, e.target.value)}
 												/>
 											</TD>
-											<TD label="Label" className="px-1">
-												<input
-													className={cellInput}
-													aria-label={`Label for ${r.key}`}
-													value={r.label}
-													onChange={(e) => patch(r.id, "label", e.target.value)}
-												/>
-											</TD>
+											{langs.map((l) => (
+												<TD
+													key={l.code}
+													label={`Label (${l.name})`}
+													className="px-1"
+												>
+													<input
+														className={`${cellInput} ${l.code === "km" ? "font-khmer" : ""}`}
+														aria-label={`Label for ${r.key} in ${l.name}`}
+														value={r.labels[l.code] ?? ""}
+														onChange={(e) =>
+															patchLabel(r.id, l.code, e.target.value)
+														}
+													/>
+												</TD>
+											))}
 											<TD align="right" className="max-md:justify-end">
 												<span className="inline-flex items-center gap-2">
 													<Button
@@ -226,12 +261,12 @@ export function TermsManager({
 														size="sm"
 														onClick={() => save(r)}
 														disabled={busy === r.id}
-														aria-label={`Save ${r.label || r.key}`}
+														aria-label={`Save ${named(r)}`}
 													>
 														{busy === r.id ? "Saving…" : "Save"}
 													</Button>
 													<ActionMenu
-														label={`Actions for ${r.label || r.key}`}
+														label={`Actions for ${named(r)}`}
 														items={[
 															{
 																label: "Delete",

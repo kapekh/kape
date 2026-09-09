@@ -68,7 +68,14 @@ import {
 	visitorDaily,
 } from "../schema";
 import { deleteUpload } from "../storage";
-import { resolveTranslations } from "./i18n";
+import {
+	deleteEntityText,
+	getDefaultLang,
+	resolveOne,
+	resolveTranslations,
+	textByLang,
+	writeEntityText,
+} from "./i18n";
 import { attachMediaUrl } from "./media-util";
 
 /** Dashboard overview counts + visitor totals. */
@@ -2784,23 +2791,45 @@ export async function deleteProject(db: DB, id: number): Promise<void> {
 export type TermInput = {
 	taxonomy: string;
 	key: string;
-	label: string;
 	sort: number;
+	labels: Record<string, string>;
 };
 
-export function adminListTerms(db: DB) {
-	return db
-		.select()
+const termText = (labels: Record<string, string>) =>
+	Object.entries(labels).map(([lang, label]) => ({ lang, label }));
+
+/** Every term with every language of its label; the list edits them side by side. */
+export async function adminListTerms(db: DB) {
+	const rows = await db
+		.select({
+			id: terms.id,
+			taxonomy: terms.taxonomy,
+			key: terms.key,
+			sort: terms.sort,
+		})
 		.from(terms)
 		.where(eq(terms.tenantId, TENANT))
 		.orderBy(asc(terms.taxonomy), asc(terms.sort));
+	const text = await textByLang(
+		db,
+		"term",
+		rows.map((r) => r.id),
+	);
+	return rows.map((r) => {
+		const labels: Record<string, string> = {};
+		for (const [lang, fields] of Object.entries(text.get(r.id) ?? {}))
+			if (fields.label) labels[lang] = fields.label;
+		return { ...r, labels };
+	});
 }
 
 export async function createTerm(db: DB, input: TermInput): Promise<number> {
+	const { labels, ...cols } = input;
 	const [row] = await db
 		.insert(terms)
-		.values({ tenantId: TENANT, ...input })
+		.values({ tenantId: TENANT, ...cols })
 		.returning({ id: terms.id });
+	await writeEntityText(db, "term", row.id, ["label"], termText(labels));
 	return row.id;
 }
 
@@ -2809,10 +2838,12 @@ export async function updateTerm(
 	id: number,
 	input: TermInput,
 ): Promise<void> {
+	const { labels, ...cols } = input;
 	await db
 		.update(terms)
-		.set(input)
+		.set(cols)
 		.where(and(eq(terms.tenantId, TENANT), eq(terms.id, id)));
+	await writeEntityText(db, "term", id, ["label"], termText(labels));
 }
 
 // a term key is stored as text, so nothing in the schema stops the row going and leaving a dangling key
@@ -2896,11 +2927,16 @@ export async function deleteTerm(db: DB, id: number): Promise<void> {
 		const n = await holder.count(db, term.key);
 		if (n > 0) held.push(plural(n, holder.noun));
 	}
-	if (held.length)
+	if (held.length) {
+		const label =
+			(await resolveOne(db, "term", id, await getDefaultLang(db))).label ||
+			term.key;
 		throw new Error(
-			`"${term.label}" is still used by ${held.join(" and ")}. Move them to another term first, then delete this one.`,
+			`"${label}" is still used by ${held.join(" and ")}. Move them to another term first, then delete this one.`,
 		);
+	}
 
+	await deleteEntityText(db, "term", id);
 	await db
 		.delete(terms)
 		.where(and(eq(terms.tenantId, TENANT), eq(terms.id, id)));

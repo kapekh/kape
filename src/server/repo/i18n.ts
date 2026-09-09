@@ -13,6 +13,97 @@ export type TranslationMap = Map<number, Record<string, string>>;
 /** Map of entityId -> fields showing the default language because `lang` had no row. */
 export type FallbackMap = Map<number, string[]>;
 
+/** One entity's editable text, per language: `{ lang, field: value }`. */
+export type EntityText<F extends string> = { lang: string } & Partial<
+	Record<F, string>
+>;
+
+/** Map of entityId -> lang -> { field: value }, every stored language. */
+export type TextByLang = Map<number, Record<string, Record<string, string>>>;
+
+/**
+ * Every stored language of the given entities' text.
+ * The admin screens edit all languages at once, so they cannot use the resolver.
+ */
+export async function textByLang(
+	db: DB,
+	entityType: string,
+	ids: number[],
+): Promise<TextByLang> {
+	const byId: TextByLang = new Map();
+	for (const id of ids) byId.set(id, {});
+	if (ids.length === 0) return byId;
+	const rows = await db
+		.select({
+			entityId: translations.entityId,
+			field: translations.field,
+			lang: translations.lang,
+			value: translations.value,
+		})
+		.from(translations)
+		.where(
+			and(
+				eq(translations.entityType, entityType),
+				inArray(translations.entityId, ids),
+			),
+		);
+	for (const r of rows) {
+		const byLang = byId.get(r.entityId);
+		if (!byLang) continue;
+		byLang[r.lang] ??= {};
+		byLang[r.lang][r.field] = r.value;
+	}
+	return byId;
+}
+
+/** Replace one entity's rows for `fields`. A blank value stores no row. */
+export async function writeEntityText<F extends string>(
+	db: DB,
+	entityType: string,
+	id: number,
+	fields: readonly F[],
+	byLang: readonly EntityText<F>[],
+): Promise<void> {
+	await db
+		.delete(translations)
+		.where(
+			and(
+				eq(translations.entityType, entityType),
+				eq(translations.entityId, id),
+				inArray(translations.field, [...fields]),
+			),
+		);
+	const rows = byLang.flatMap((tr) =>
+		fields
+			.filter((field) => (tr[field] ?? "") !== "")
+			.map((field) => ({
+				tenantId: TENANT,
+				entityType,
+				entityId: id,
+				field,
+				lang: tr.lang,
+				value: tr[field] as string,
+			})),
+	);
+	if (rows.length) await db.insert(translations).values(rows);
+}
+
+/** Drop every translation row of one entity, for a delete. */
+export async function deleteEntityText(
+	db: DB,
+	entityType: string,
+	id: number,
+): Promise<void> {
+	await db
+		.delete(translations)
+		.where(
+			and(
+				eq(translations.entityType, entityType),
+				eq(translations.entityId, id),
+			),
+		);
+}
+
 /** Enabled languages, ordered for the switcher. */
 export function listLanguages(db: DB) {
 	return db

@@ -134,6 +134,13 @@
       "when": 1788931507031,
       "tag": "0018_real_big_bertha",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1788933947277,
+      "tag": "0019_large_the_watchers",
+      "breakpoints": true
     }
   ]
 }

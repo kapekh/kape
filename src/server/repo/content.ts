@@ -12,30 +12,52 @@ import {
 	terms,
 } from "../schema";
 import {
+	getDefaultLang,
 	resolveOne,
 	resolveOneWithFallback,
+	resolveTranslations,
 	resolveWithFallback,
 } from "./i18n";
 import { resolveSections } from "./sections";
 
 const TENANT = 1;
 
+/** A term with no label in any language still has to be pickable, so the key stands in. */
+async function labelTerms<R extends { id: number; key: string }>(
+	db: DB,
+	rows: R[],
+	lang: string | undefined,
+): Promise<(Omit<R, "id"> & { label: string })[]> {
+	const labels = await resolveTranslations(
+		db,
+		"term",
+		rows.map((r) => r.id),
+		lang ?? (await getDefaultLang(db)),
+	);
+	return rows.map(({ id, ...rest }) => ({
+		...rest,
+		label: labels.get(id)?.label || rest.key,
+	}));
+}
+
 /** All managed reference terms (for admin form relation selects). */
-export function listAllTerms(db: DB) {
-	return db
-		.select({ taxonomy: terms.taxonomy, key: terms.key, label: terms.label })
+export async function listAllTerms(db: DB, lang?: string) {
+	const rows = await db
+		.select({ id: terms.id, taxonomy: terms.taxonomy, key: terms.key })
 		.from(terms)
 		.where(eq(terms.tenantId, TENANT))
 		.orderBy(asc(terms.taxonomy), asc(terms.sort));
+	return labelTerms(db, rows, lang);
 }
 
 /** Terms for one taxonomy. */
-export function listTerms(db: DB, taxonomy: string) {
-	return db
-		.select({ key: terms.key, label: terms.label })
+export async function listTerms(db: DB, taxonomy: string, lang?: string) {
+	const rows = await db
+		.select({ id: terms.id, key: terms.key })
 		.from(terms)
 		.where(and(eq(terms.tenantId, TENANT), eq(terms.taxonomy, taxonomy)))
 		.orderBy(asc(terms.sort));
+	return labelTerms(db, rows, lang);
 }
 
 export type ChildLink = {

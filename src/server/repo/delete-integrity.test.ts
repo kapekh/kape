@@ -230,10 +230,10 @@ describe("deleting a user", () => {
 describe("deleting a taxonomy term something still points at", () => {
 	const r = run(`
 		const termId = await admin.createTerm(db, {
-			taxonomy: "location", key: "kampong-cham", label: "Kampong Cham", sort: 0,
+			taxonomy: "location", key: "kampong-cham", labels: { en: "Kampong Cham" }, sort: 0,
 		});
 		const spareId = await admin.createTerm(db, {
-			taxonomy: "location", key: "kandal", label: "Kandal", sort: 1,
+			taxonomy: "location", key: "kandal", labels: { en: "Kandal" }, sort: 1,
 		});
 		const officeId = await admin.createOffice(db, {
 			name: "Head Office", province: "kampong-cham", address: "", phone: "",

@@ -365,15 +365,15 @@ export async function seedTerms() {
 		],
 	};
 	for (const [taxonomy, items] of Object.entries(termSeed)) {
-		await db.insert(terms).values(
-			items.map(([key, lbl], i) => ({
-				tenantId: TENANT,
-				taxonomy,
-				key,
-				label: lbl,
-				sort: i,
-			})),
-		);
+		const rows = await db
+			.insert(terms)
+			.values(
+				items.map(([key], i) => ({ tenantId: TENANT, taxonomy, key, sort: i })),
+			)
+			.returning({ id: terms.id });
+		// the term list ships English only; a Khmer label is the editor's to write
+		for (const [i, row] of rows.entries())
+			await addTranslations("term", row.id, { label: { en: items[i][1] } });
 	}
 }
 

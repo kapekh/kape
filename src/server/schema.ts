@@ -533,7 +533,7 @@ export const terms = sqliteTable(
 			.references(() => tenants.id),
 		taxonomy: text("taxonomy").notNull(), // 'program' | 'location' | 'publication_category' | 'doc_category'
 		key: text("key").notNull(), // value stored in meta
-		label: text("label").notNull(),
+		// label is a `translations` row (entity_type 'term', field 'label')
 		sort: integer("sort").notNull().default(0),
 	},
 	(t) => [
