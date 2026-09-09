@@ -197,6 +197,13 @@
       "when": 1788963985260,
       "tag": "0027_drop_legacy_staff_table",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "6",
+      "when": 1788966381557,
+      "tag": "0028_khmer_positions_and_director_portrait",
+      "breakpoints": true
     }
   ]
 }
