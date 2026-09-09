@@ -19,6 +19,7 @@ import {
 import { Textarea } from "#/components/ui/textarea.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { MIN_FULL_WIDTH } from "#/lib/media-size";
+import { toSegment } from "#/lib/slug";
 import {
 	cancelButtonClass,
 	dragItem,
@@ -28,7 +29,12 @@ import {
 	FormSection,
 	fieldLabel,
 } from "./form-ui";
-import { type LangOpt as BaseLangOpt, LangTabs, useLangText } from "./LangTabs";
+import {
+	type LangOpt as BaseLangOpt,
+	defaultLanguage,
+	LangTabs,
+	useLangText,
+} from "./LangTabs";
 import {
 	isImageMedia,
 	type MediaItem,
@@ -181,6 +187,8 @@ export function PostForm({
 		setText: setField,
 		toTranslations,
 	} = useLangText(languages, POST_FIELDS, initial?.translations);
+	const defaultLang = defaultLanguage(languages)?.code;
+	const defaultTitle = defaultLang ? (trans[defaultLang]?.title ?? "") : "";
 	const [termsByTax, setTermsByTax] = useState<
 		Record<string, { key: string; label: string }[]>
 	>({});
@@ -219,7 +227,7 @@ export function PostForm({
 		}
 		onSubmit({
 			contentType,
-			slug,
+			slug: slug || toSegment(defaultTitle),
 			status,
 			author,
 			publishedAt,
@@ -381,8 +389,7 @@ export function PostForm({
 								</Field>
 								<Field
 									label="Slug"
-									required
-									hint="The last part of the post's web address."
+									hint={`The last part of the post's web address. Empty follows the title: ${slug || toSegment(defaultTitle) || "…"}`}
 									error={errors.slug}
 								>
 									{(p) => (

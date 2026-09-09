@@ -5,6 +5,7 @@ import type { SQLiteTable } from "drizzle-orm/sqlite-core";
 import { HEADER_DEFAULTS } from "#/lib/header-defaults";
 import { LANGS } from "#/lib/i18n-config";
 import { MODULES_SETTING, moduleDef } from "#/lib/modules";
+import { toSegment } from "#/lib/slug";
 import { defaultUiStrings } from "#/lib/ui-strings.default";
 import { hashPassword } from "./auth";
 import { db } from "./db";
@@ -68,11 +69,7 @@ export function readConfig(
 	};
 }
 
-const slugify = (s: string) =>
-	s
-		.toLowerCase()
-		.replace(/[^a-z0-9]+/g, "-")
-		.replace(/^-|-$/g, "") || "site";
+const siteSlug = (s: string) => toSegment(s) || "site";
 
 const setting = (key: string) =>
 	db
@@ -239,7 +236,7 @@ async function writeInstall(config: InstallConfig, passwordHash: string) {
 
 	await db
 		.insert(tenants)
-		.values({ id: TENANT, slug: slugify(siteName), name: siteName });
+		.values({ id: TENANT, slug: siteSlug(siteName), name: siteName });
 
 	const native =
 		new Intl.DisplayNames([lang], { type: "language" }).of(lang) ?? lang;

@@ -13,6 +13,7 @@ import {
 } from "#/components/ui/select.tsx";
 import { Textarea } from "#/components/ui/textarea.tsx";
 import { MIN_FULL_WIDTH } from "#/lib/media-size";
+import { toSegment } from "#/lib/slug";
 import {
 	cancelButtonClass,
 	EditorGrid,
@@ -148,17 +149,10 @@ export function CampaignForm({
 	const defaultLang = defaultLanguage(languages)?.code;
 	const defaultTitle = defaultLang ? (trans[defaultLang]?.title ?? "") : "";
 
-	const slugify = (s: string) =>
-		s
-			.toLowerCase()
-			.trim()
-			.replace(/[^a-z0-9]+/g, "-")
-			.replace(/^-+|-+$/g, "");
-
 	function submit(e: React.FormEvent) {
 		e.preventDefault();
 		onSubmit({
-			slug: slug || slugify(defaultTitle),
+			slug: slug || toSegment(defaultTitle),
 			status,
 			currency,
 			goalAmount: goal.trim() ? goal.trim() : null,
@@ -260,14 +254,14 @@ export function CampaignForm({
 								</LangTabs>
 								<Field
 									label="Slug"
-									hint={`URL: /donate/${slug || slugify(defaultTitle) || "…"}`}
+									hint={`URL: /donate/${slug || toSegment(defaultTitle) || "…"}`}
 								>
 									{(p) => (
 										<Input
 											{...p}
 											className="font-mono"
 											value={slug}
-											onChange={(e) => setSlug(slugify(e.target.value))}
+											onChange={(e) => setSlug(toSegment(e.target.value))}
 											placeholder="every-child-learns"
 										/>
 									)}
