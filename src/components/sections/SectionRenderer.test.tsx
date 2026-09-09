@@ -163,3 +163,56 @@ describe("a paginated post list", () => {
 		expect(container.querySelector("nav[aria-label='Pagination']")).toBeNull();
 	});
 });
+
+describe("a rich text section with a portrait", () => {
+	const speech = (person: Record<string, unknown> | null): SectionNode[] =>
+		[
+			{
+				id: "s1",
+				type: "richtext",
+				layout: "default",
+				props: {
+					bodyHtml: "<p>Warm greetings.</p>",
+					person,
+				},
+			},
+		] as SectionNode[];
+
+	const vanna = {
+		id: 2,
+		slug: "sao-vanna",
+		name: "Mr. Sao Vanna",
+		position: "Executive Director",
+		photoUrl: "/uploads/ed.jpg",
+		i18nFallback: [] as string[],
+	};
+
+	it("captions the portrait with the name and job title beside the prose", () => {
+		const { container } = render(<SectionRenderer sections={speech(vanna)} />);
+
+		const figure = container.querySelector("figure");
+		if (!figure) throw new Error("no portrait rendered");
+		expect(figure.querySelector("img")?.getAttribute("src")).toBe(
+			"/uploads/ed.jpg",
+		);
+		expect(figure.textContent).toContain("Mr. Sao Vanna");
+		expect(figure.textContent).toContain("Executive Director");
+	});
+
+	// the float only works if the headings in the prose stop clearing it
+	it("marks the wrapper so the prose headings do not clear the float", () => {
+		const { container } = render(<SectionRenderer sections={speech(vanna)} />);
+
+		const wrap = container.querySelector(".has-portrait");
+		expect(wrap?.querySelector("figure")).toBeTruthy();
+		expect(wrap?.querySelector(".prose-body")).toBeTruthy();
+	});
+
+	it("stays a plain column when no one is picked", () => {
+		const { container } = render(<SectionRenderer sections={speech(null)} />);
+
+		expect(container.querySelector("figure")).toBeNull();
+		expect(container.querySelector(".has-portrait")).toBeNull();
+		expect(container.querySelector(".prose-body")).toBeTruthy();
+	});
+});

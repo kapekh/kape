@@ -1026,14 +1026,66 @@ function Hero(p: HeroProps) {
 /* ------------------------------------------------------------------ */
 
 /** Rich text is authored as a document and pre-rendered to `bodyHtml` server-side. */
-type RichTextProps = Common & { bodyHtml?: string };
+type RichTextProps = Common & {
+	bodyHtml?: string;
+	/** Resolved from `personId`: the portrait, and its caption in this language. */
+	person?: SourceRow["people"] | null;
+};
 
 function RichText(p: RichTextProps) {
+	const row = useRowMark();
+	const mayEditPeople = useMayEditPeople();
+	const person = p.person ?? null;
 	return (
 		<Band p={p} className={PAD}>
 			<Container className={p.layout === "narrow" ? "max-w-3xl" : "max-w-4xl"}>
 				<Heading eyebrow={p.eyebrow} title={p.title} />
-				<RichBody className="prose-body" html={p.bodyHtml ?? ""} />
+				<div className={person ? "has-portrait" : undefined}>
+					{person && (
+						<figure className="mb-6 md:float-right md:ml-10 md:w-64">
+							<div className="group relative overflow-hidden rounded-2xl ring-1 ring-border shadow-[var(--shadow-soft)]">
+								{person.photoUrl ? (
+									<img
+										src={person.photoUrl}
+										alt={person.name}
+										className="aspect-[3/4] w-full object-cover"
+										onError={onImageError}
+										ref={imageFallbackRef}
+									/>
+								) : (
+									<div className="grid aspect-[3/4] w-full place-items-center bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] font-display text-5xl font-bold text-primary-foreground">
+										{initials(person.name)}
+									</div>
+								)}
+								{mayEditPeople && (
+									<PersonPhotoEdit
+										personId={person.id}
+										name={person.name}
+										hasPhoto={Boolean(person.photoUrl)}
+										shape="portrait"
+									/>
+								)}
+							</div>
+							<figcaption className="mt-3">
+								<span
+									{...row("person", person, "name")}
+									className="block font-display font-semibold text-primary"
+								>
+									{person.name}
+								</span>
+								{person.position && (
+									<span
+										{...row("person", person, "position")}
+										className="mt-1 block text-sm text-muted-foreground"
+									>
+										{person.position}
+									</span>
+								)}
+							</figcaption>
+						</figure>
+					)}
+					<RichBody className="prose-body" html={p.bodyHtml ?? ""} />
+				</div>
 			</Container>
 		</Band>
 	);

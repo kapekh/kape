@@ -195,6 +195,12 @@ export const SECTION_DEFS: SectionDef[] = [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
 			{ key: "body", label: "Body", kind: "richtext" },
+			{
+				key: "personId",
+				label: "Portrait",
+				kind: "person",
+				help: "Their photo sits at the top right of the text, with their name and job title under it in each language. Only people shown on the public team can be picked.",
+			},
 			...TONE_FIELDS,
 		],
 	},

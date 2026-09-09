@@ -561,6 +561,11 @@
   /* the float must not escape its own section into the next one */
   .prose-body::after { content: ""; display: block; clear: both; }
   .prose-body h2, .prose-body h3, .prose-body h4 { clear: both; }
+  /* a portrait is meant to sit alongside several headings, unlike an inline image */
+  .has-portrait .prose-body h2,
+  .has-portrait .prose-body h3,
+  .has-portrait .prose-body h4 { clear: none; }
+  .has-portrait::after { content: ""; display: block; clear: both; }
   @media (max-width: 40rem) {
     .prose-body img[data-align] { float: none; max-width: 100%; margin-inline: 0; }
   }
