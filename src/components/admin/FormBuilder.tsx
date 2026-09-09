@@ -32,6 +32,7 @@ import {
 	Field,
 	FormSection,
 } from "./form-ui";
+import { LangTabs } from "./LangTabs";
 import { RichTextEditor } from "./RichTextEditor";
 import { useDirtyGuard } from "./useDirty";
 import { useFieldErrors } from "./useFieldErrors";
@@ -39,22 +40,30 @@ import { useFieldErrors } from "./useFieldErrors";
 type SlugStatus = "idle" | "checking" | "available" | "taken";
 type FormStatus = "active" | "draft";
 
+type FormText = {
+	title: string;
+	intro: string;
+	submitLabel: string;
+	successMessage: string;
+};
+
+export type LangOpt = { code: string; name: string };
+
 export type FormBuilderValue = {
 	slug: string;
 	status: FormStatus;
-	title: string;
-	titleKm: string | null;
-	intro: string | null;
-	introKm: string | null;
 	fields: FormField[];
 	deadline: string | null;
-	submitLabel: string | null;
-	successMessage: string | null;
 	notifyEmail: string | null;
+	translations: ({ lang: string } & FormText)[];
 };
 
 type Initial =
-	| (Omit<FormBuilderValue, "status"> & { status: string; id?: number })
+	| (Omit<FormBuilderValue, "status" | "translations"> & {
+			status: string;
+			id?: number;
+			translations?: Record<string, Partial<FormText>>;
+	  })
 	| null;
 
 type EditorField = FormField & { rid: string };
@@ -74,11 +83,13 @@ const ROW_BUTTON =
 
 export function FormBuilder({
 	initial,
+	languages,
 	onSubmit,
 	saving,
 	title,
 }: {
 	initial: Initial;
+	languages: LangOpt[];
 	onSubmit: (v: FormBuilderValue) => void;
 	saving?: boolean;
 	title: string;
@@ -87,13 +98,19 @@ export function FormBuilder({
 	const [status, setStatus] = useState<FormStatus>(
 		initial?.status === "draft" ? "draft" : "active",
 	);
-	const [formTitle, setFormTitle] = useState(initial?.title ?? "");
-	const [titleKm, setTitleKm] = useState(initial?.titleKm ?? "");
-	const [intro, setIntro] = useState(initial?.intro ?? "");
-	const [submitLabel, setSubmitLabel] = useState(initial?.submitLabel ?? "");
-	const [successMessage, setSuccessMessage] = useState(
-		initial?.successMessage ?? "",
-	);
+	const [trans, setTrans] = useState<Record<string, FormText>>(() => {
+		const t: Record<string, FormText> = {};
+		for (const l of languages) {
+			const e = initial?.translations?.[l.code] ?? {};
+			t[l.code] = {
+				title: e.title ?? "",
+				intro: e.intro ?? "",
+				submitLabel: e.submitLabel ?? "",
+				successMessage: e.successMessage ?? "",
+			};
+		}
+		return t;
+	});
 	const [notifyEmail, setNotifyEmail] = useState(initial?.notifyEmail ?? "");
 	const [deadline, setDeadline] = useState(initial?.deadline ?? "");
 	// `rid` is the row's identity while it is edited: a field's own key is empty
@@ -107,8 +124,17 @@ export function FormBuilder({
 	const { errors, invalid } = useFieldErrors();
 	const uid = useId();
 
+	const defaultLang = languages[0]?.code;
+	const defaultTitle = defaultLang ? (trans[defaultLang]?.title ?? "") : "";
+
+	const setText = (lang: string, field: keyof FormText, value: string) =>
+		setTrans((prev) => ({
+			...prev,
+			[lang]: { ...prev[lang], [field]: value },
+		}));
+
 	// Live slug-availability check (the effective slug is what will be saved).
-	const effectiveSlug = slugify(slug) || slugify(formTitle);
+	const effectiveSlug = slugify(slug) || slugify(defaultTitle);
 	const [slugStatus, setSlugStatus] = useState<SlugStatus>("idle");
 	useEffect(() => {
 		if (!effectiveSlug) {
@@ -191,15 +217,10 @@ export function FormBuilder({
 		onSubmit({
 			slug: effectiveSlug,
 			status,
-			title: formTitle,
-			titleKm: titleKm || null,
-			intro: intro || null,
-			introKm: null,
 			fields: cleaned,
 			deadline: deadline || null,
-			submitLabel: submitLabel || null,
-			successMessage: successMessage || null,
 			notifyEmail: notifyEmail || null,
+			translations: languages.map((l) => ({ lang: l.code, ...trans[l.code] })),
 		});
 	}
 
@@ -207,11 +228,7 @@ export function FormBuilder({
 		JSON.stringify({
 			slug,
 			status,
-			formTitle,
-			titleKm,
-			intro,
-			submitLabel,
-			successMessage,
+			trans,
 			notifyEmail,
 			deadline,
 			fields,
@@ -234,32 +251,51 @@ export function FormBuilder({
 				main={
 					<div className="space-y-5">
 						<FormSection
-							split
 							title="Form"
-							description="Shown to visitors above the fields."
+							description="Shown to visitors above the fields, each in its own language. Switch languages with the tabs — your text is kept as you switch."
 						>
 							<div className="space-y-6">
-								<Field label="Title" required error={errors.title}>
-									{(p) => (
-										<Input
-											{...p}
-											{...invalid("title")}
-											value={formTitle}
-											onChange={(e) => setFormTitle(e.target.value)}
-											placeholder="Alumni registration"
-										/>
+								<LangTabs languages={languages}>
+									{(l) => (
+										<div className="space-y-6">
+											<Field
+												label="Title"
+												required={l.code === defaultLang}
+												error={errors.title}
+											>
+												{(p) => (
+													<Input
+														{...p}
+														{...invalid("title")}
+														className={
+															l.code === "km" ? "font-khmer" : undefined
+														}
+														value={trans[l.code]?.title ?? ""}
+														onChange={(e) =>
+															setText(l.code, "title", e.target.value)
+														}
+														placeholder="Alumni registration"
+													/>
+												)}
+											</Field>
+											<Field label="Intro">
+												{(p) => (
+													<Textarea
+														{...p}
+														rows={2}
+														className={
+															l.code === "km" ? "font-khmer" : undefined
+														}
+														value={trans[l.code]?.intro ?? ""}
+														onChange={(e) =>
+															setText(l.code, "intro", e.target.value)
+														}
+													/>
+												)}
+											</Field>
+										</div>
 									)}
-								</Field>
-								<Field label="Title (Khmer)">
-									{(p) => (
-										<Input
-											{...p}
-											className="font-khmer"
-											value={titleKm}
-											onChange={(e) => setTitleKm(e.target.value)}
-										/>
-									)}
-								</Field>
+								</LangTabs>
 								<Field
 									label="Form name"
 									error={
@@ -282,16 +318,6 @@ export function FormBuilder({
 											value={slug}
 											onChange={(e) => setSlug(slugAsTyped(e.target.value))}
 											placeholder="alumni"
-										/>
-									)}
-								</Field>
-								<Field label="Intro">
-									{(p) => (
-										<Textarea
-											{...p}
-											rows={2}
-											value={intro}
-											onChange={(e) => setIntro(e.target.value)}
 										/>
 									)}
 								</Field>
@@ -586,29 +612,48 @@ export function FormBuilder({
 								</Field>
 							</div>
 						</FormSection>
-						<FormSection title="After submit">
+						<FormSection
+							title="After submit"
+							description="The button and the thank-you, each in its own language."
+						>
 							<div className="space-y-6">
-								<Field label="Submit button label">
-									{(p) => (
-										<Input
-											{...p}
-											value={submitLabel}
-											onChange={(e) => setSubmitLabel(e.target.value)}
-											placeholder="Submit"
-										/>
+								<LangTabs languages={languages}>
+									{(l) => (
+										<div className="space-y-6">
+											<Field label="Submit button label">
+												{(p) => (
+													<Input
+														{...p}
+														className={
+															l.code === "km" ? "font-khmer" : undefined
+														}
+														value={trans[l.code]?.submitLabel ?? ""}
+														onChange={(e) =>
+															setText(l.code, "submitLabel", e.target.value)
+														}
+														placeholder="Submit"
+													/>
+												)}
+											</Field>
+											<Field label="Success message">
+												{(p) => (
+													<Textarea
+														{...p}
+														rows={3}
+														className={
+															l.code === "km" ? "font-khmer" : undefined
+														}
+														value={trans[l.code]?.successMessage ?? ""}
+														onChange={(e) =>
+															setText(l.code, "successMessage", e.target.value)
+														}
+														placeholder="Thank you, your response has been recorded."
+													/>
+												)}
+											</Field>
+										</div>
 									)}
-								</Field>
-								<Field label="Success message">
-									{(p) => (
-										<Textarea
-											{...p}
-											rows={3}
-											value={successMessage}
-											onChange={(e) => setSuccessMessage(e.target.value)}
-											placeholder="Thank you, your response has been recorded."
-										/>
-									)}
-								</Field>
+								</LangTabs>
 								<Field label="Notify email (optional)">
 									{(p) => (
 										<Input

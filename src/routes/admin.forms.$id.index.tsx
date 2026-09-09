@@ -4,6 +4,7 @@ import { EditorSkeleton } from "#/components/admin/EditorSkeleton";
 import {
 	FormBuilder,
 	type FormBuilderValue,
+	type LangOpt,
 } from "#/components/admin/FormBuilder";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { saveErrorMessage } from "#/lib/save-error";
@@ -19,10 +20,17 @@ function EditForm() {
 	const { id } = Route.useParams();
 	const navigate = useNavigate();
 	const [initial, setInitial] = useState<Initial | null>(null);
+	const [langs, setLangs] = useState<LangOpt[]>([]);
 	const [saving, setSaving] = useState(false);
 
 	useEffect(() => {
-		trpcClient.adminForms.get.query({ id: Number(id) }).then(setInitial);
+		Promise.all([
+			trpcClient.adminForms.get.query({ id: Number(id) }),
+			trpcClient.i18n.languages.query(),
+		]).then(([f, languages]) => {
+			setInitial(f);
+			setLangs(languages);
+		});
 	}, [id]);
 
 	async function onSubmit(v: FormBuilderValue) {
@@ -42,6 +50,7 @@ function EditForm() {
 	return (
 		<FormBuilder
 			initial={initial}
+			languages={langs}
 			onSubmit={onSubmit}
 			saving={saving}
 			title="Edit form"

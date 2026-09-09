@@ -33,6 +33,7 @@ function run<T>(body: string): T {
 			 import * as admin from "${root}/src/server/repo/admin.ts";
 			 import * as campaigns from "${root}/src/server/repo/campaigns.ts";
 			 import * as content from "${root}/src/server/repo/content.ts";
+			 import * as forms from "${root}/src/server/repo/forms.ts";
 			 import * as org from "${root}/src/server/repo/org.ts";
 			 import * as site from "${root}/src/server/repo/site.ts";
 			 db.$client
@@ -209,5 +210,45 @@ describe("a campaign's title and blurb", () => {
 
 	it("names the row in the default language for the admin list", () => {
 		expect(r.listed).toBe("Where every child learns");
+	});
+});
+
+describe("a form's title, submit label and success message", () => {
+	type Shape = {
+		title: string;
+		submitLabel: string;
+		successMessage: string;
+	};
+	const r = run<{ en: Shape; km: Shape; listed: string }>(`
+		const id = await forms.createForm(db, {
+			slug: "alumni", status: "active", fields: [], deadline: null, notifyEmail: null,
+			translations: [
+				{ lang: "en", title: "Alumni registration", intro: "Tell us where you are now.",
+				  submitLabel: "Send it", successMessage: "Thank you, we have your answer." },
+				{ lang: "km", title: "ការចុះឈ្មោះសិស្សចាស់", intro: "ប្រាប់យើងថាឥឡូវអ្នកនៅឯណា។",
+				  submitLabel: "ផ្ញើ", successMessage: "អរគុណ យើងបានទទួលចម្លើយរបស់អ្នក។" },
+			],
+		});
+		const pick = (f) => ({ title: f.title, submitLabel: f.submitLabel, successMessage: f.successMessage });
+		out.en = pick(await forms.getPublicFormBySlug(db, "alumni", "en"));
+		out.km = pick(await forms.getPublicFormBySlug(db, "alumni", "km"));
+		out.listed = (await forms.adminListForms(db)).find((f) => f.id === id).title;
+	`);
+
+	it("reads back on the public form in the language asked for", () => {
+		expect(r.en).toEqual({
+			title: "Alumni registration",
+			submitLabel: "Send it",
+			successMessage: "Thank you, we have your answer.",
+		});
+		expect(r.km).toEqual({
+			title: "ការចុះឈ្មោះសិស្សចាស់",
+			submitLabel: "ផ្ញើ",
+			successMessage: "អរគុណ យើងបានទទួលចម្លើយរបស់អ្នក។",
+		});
+	});
+
+	it("names the row in the default language for the admin list", () => {
+		expect(r.listed).toBe("Alumni registration");
 	});
 });

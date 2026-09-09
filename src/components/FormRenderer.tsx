@@ -50,13 +50,13 @@ export function FormRenderer({ slug }: { slug: string }) {
 	useEffect(() => {
 		let alive = true;
 		trpcClient.forms.bySlug
-			.query({ slug })
+			.query({ slug, lang })
 			.then((f) => alive && setForm(f))
 			.catch(() => alive && setForm(null));
 		return () => {
 			alive = false;
 		};
-	}, [slug]);
+	}, [slug, lang]);
 
 	if (form === undefined)
 		return (
@@ -165,11 +165,6 @@ export function FormRenderer({ slug }: { slug: string }) {
 			inFlight.current = false;
 		}
 	};
-
-	// The form's own title + intro (built in /admin/forms) — so an embed shows the
-	// real form content, not section-level copy the editor would have to duplicate.
-	const headTitle = lang === "km" && form.titleKm ? form.titleKm : form.title;
-	const headIntro = lang === "km" && form.introKm ? form.introKm : form.intro;
 
 	const km = lang === "km" ? "font-khmer" : "";
 	const sections = groupIntoSections(form.fields);
@@ -348,20 +343,22 @@ export function FormRenderer({ slug }: { slug: string }) {
 
 	return (
 		<form onSubmit={submit} className="space-y-4">
-			{(headTitle || headIntro) && (
+			{/* the form's own title + intro (built in /admin/forms) — so an embed shows
+			    the real form, not section-level copy the editor would have to duplicate */}
+			{(form.title || form.intro) && (
 				<header className="mb-2">
-					{headTitle && (
+					{form.title && (
 						<h2
-							className={`font-display text-2xl font-semibold text-primary ${lang === "km" ? "font-khmer" : ""}`}
+							className={`font-display text-2xl font-semibold text-primary ${km}`}
 						>
-							{headTitle}
+							{form.title}
 						</h2>
 					)}
-					{headIntro && (
+					{form.intro && (
 						<p
-							className={`mt-1.5 text-sm leading-relaxed text-foreground/70 ${lang === "km" ? "font-khmer" : ""}`}
+							className={`mt-1.5 text-sm leading-relaxed text-foreground/70 ${km}`}
 						>
-							{headIntro}
+							{form.intro}
 						</p>
 					)}
 				</header>

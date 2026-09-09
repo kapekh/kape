@@ -375,17 +375,12 @@ export const forms = sqliteTable(
 			.references(() => tenants.id),
 		slug: text("slug").notNull(),
 		status: text("status").notNull().default("active"), // active | draft
-		title: text("title").notNull(),
-		titleKm: text("title_km"),
-		intro: text("intro"),
-		introKm: text("intro_km"),
+		// title, intro, submitLabel and successMessage are `translations` rows (entity_type 'form')
 		fields: text("fields", { mode: "json" })
 			.$type<FormField[]>()
 			.notNull()
 			.default([]),
 		deadline: text("deadline"), // ISO date (YYYY-MM-DD); after this the form stops accepting responses
-		submitLabel: text("submit_label"),
-		successMessage: text("success_message"),
 		notifyEmail: text("notify_email"), // optional: email a copy on each submission
 		...timestamps,
 	},

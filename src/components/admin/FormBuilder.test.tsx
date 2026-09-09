@@ -26,19 +26,16 @@ import { FormBuilder } from "./FormBuilder";
 const initial = {
 	slug: "alumni",
 	status: "active",
-	title: "Alumni",
-	titleKm: null,
-	intro: null,
-	introKm: null,
 	fields: [
 		{ key: "full_name", label: "Full name", type: "text" as const },
 		{ key: "year", label: "Year", type: "text" as const },
 	],
 	deadline: null,
-	submitLabel: null,
-	successMessage: null,
 	notifyEmail: null,
+	translations: { en: { title: "Alumni" } },
 };
+
+const languages = [{ code: "en", name: "English" }];
 
 afterEach(cleanup);
 
@@ -48,7 +45,12 @@ describe("FormBuilder", () => {
 	it("keeps the editor's row identity out of the saved form", async () => {
 		const onSubmit = vi.fn();
 		render(
-			<FormBuilder title="Edit form" initial={initial} onSubmit={onSubmit} />,
+			<FormBuilder
+				title="Edit form"
+				initial={initial}
+				languages={languages}
+				onSubmit={onSubmit}
+			/>,
 		);
 
 		// Save stays disabled until the form is dirty
@@ -68,7 +70,12 @@ describe("FormBuilder", () => {
 	it("moves a field's own row when the grip is arrow-keyed", async () => {
 		const onSubmit = vi.fn();
 		render(
-			<FormBuilder title="Edit form" initial={initial} onSubmit={onSubmit} />,
+			<FormBuilder
+				title="Edit form"
+				initial={initial}
+				languages={languages}
+				onSubmit={onSubmit}
+			/>,
 		);
 
 		const remove = screen.getByRole("button", { name: "Remove Year" });

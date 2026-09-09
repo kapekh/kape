@@ -8,26 +8,41 @@ import {
 	forms,
 	newsletterSubscribers,
 } from "../schema";
+import {
+	deleteEntityText,
+	type EntityText,
+	getDefaultLang,
+	resolveOne,
+	textByLang,
+	writeEntityText,
+} from "./i18n";
 
 const TENANT = 1;
 
 /* ---- Form builder ---- */
 
+/** Form text that lives in `translations`, not in a column of `forms`. */
+export const FORM_TEXT_FIELDS = [
+	"title",
+	"intro",
+	"submitLabel",
+	"successMessage",
+] as const;
+export type FormText = EntityText<(typeof FORM_TEXT_FIELDS)[number]>;
+
 export type FormInput = {
 	slug: string;
 	status: "active" | "draft";
-	title: string;
-	titleKm: string | null;
-	intro: string | null;
-	introKm: string | null;
 	fields: FormField[];
 	deadline: string | null;
-	submitLabel: string | null;
-	successMessage: string | null;
 	notifyEmail: string | null;
+	translations: FormText[];
 };
 
-/** Public: an active form by slug (for the renderer). */
+/**
+ * The stored row of an active form, with no text: the submission endpoint needs
+ * its fields and deadline, and has no language to read a title in.
+ */
 export async function getFormBySlug(db: DB, slug: string) {
 	const [row] = await db
 		.select()
@@ -41,6 +56,20 @@ export async function getFormBySlug(db: DB, slug: string) {
 		)
 		.limit(1);
 	return row ?? null;
+}
+
+/** Public: an active form by slug, its text resolved for `lang` (for the renderer). */
+export async function getPublicFormBySlug(db: DB, slug: string, lang: string) {
+	const row = await getFormBySlug(db, slug);
+	if (!row) return null;
+	const text = await resolveOne(db, "form", row.id, lang);
+	return {
+		...row,
+		title: text.title ?? "",
+		intro: text.intro ?? null,
+		submitLabel: text.submitLabel ?? null,
+		successMessage: text.successMessage ?? null,
+	};
 }
 
 export async function createFormSubmission(
@@ -65,7 +94,17 @@ export async function adminListForms(db: DB) {
 		.where(eq(formSubmissions.tenantId, TENANT))
 		.groupBy(formSubmissions.formId);
 	const byForm = new Map(counts.map((c) => [c.formId, Number(c.n)]));
-	return rows.map((r) => ({ ...r, submissionCount: byForm.get(r.id) ?? 0 }));
+	const defaultLang = await getDefaultLang(db);
+	const text = await textByLang(
+		db,
+		"form",
+		rows.map((r) => r.id),
+	);
+	return rows.map((r) => ({
+		...r,
+		title: text.get(r.id)?.[defaultLang]?.title ?? "",
+		submissionCount: byForm.get(r.id) ?? 0,
+	}));
 }
 
 /** Is this slug free (ignoring the form being edited)? */
@@ -89,14 +128,23 @@ export async function getFormForEdit(db: DB, id: number) {
 		.from(forms)
 		.where(and(eq(forms.tenantId, TENANT), eq(forms.id, id)))
 		.limit(1);
-	return row ?? null;
+	if (!row) return null;
+	const byLang = (await textByLang(db, "form", [id])).get(id) ?? {};
+	const defaultLang = await getDefaultLang(db);
+	return {
+		...row,
+		title: byLang[defaultLang]?.title ?? "",
+		translations: byLang,
+	};
 }
 
 export async function createForm(db: DB, input: FormInput): Promise<number> {
+	const { translations: text, ...cols } = input;
 	const [r] = await db
 		.insert(forms)
-		.values({ tenantId: TENANT, ...input })
+		.values({ tenantId: TENANT, ...cols })
 		.returning({ id: forms.id });
+	await writeEntityText(db, "form", r.id, FORM_TEXT_FIELDS, text);
 	return r.id;
 }
 
@@ -105,10 +153,12 @@ export async function updateForm(
 	id: number,
 	input: FormInput,
 ): Promise<void> {
+	const { translations: text, ...cols } = input;
 	await db
 		.update(forms)
-		.set({ ...input, updatedAt: new Date().toISOString() })
+		.set({ ...cols, updatedAt: new Date().toISOString() })
 		.where(and(eq(forms.tenantId, TENANT), eq(forms.id, id)));
+	await writeEntityText(db, "form", id, FORM_TEXT_FIELDS, text);
 }
 
 export async function deleteForm(db: DB, id: number): Promise<void> {
@@ -117,6 +167,7 @@ export async function deleteForm(db: DB, id: number): Promise<void> {
 		.where(
 			and(eq(formSubmissions.tenantId, TENANT), eq(formSubmissions.formId, id)),
 		);
+	await deleteEntityText(db, "form", id);
 	await db
 		.delete(forms)
 		.where(and(eq(forms.tenantId, TENANT), eq(forms.id, id)));

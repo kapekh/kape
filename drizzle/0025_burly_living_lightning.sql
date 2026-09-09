@@ -1,0 +1,12 @@
+INSERT INTO translations (tenant_id, entity_type, entity_id, field, lang, value) SELECT tenant_id, 'form', id, 'title', 'km', title_km FROM forms WHERE title_km IS NOT NULL AND trim(title_km) != '' AND EXISTS (SELECT 1 FROM languages WHERE code = 'km') ON CONFLICT DO NOTHING;--> statement-breakpoint
+INSERT INTO translations (tenant_id, entity_type, entity_id, field, lang, value) SELECT tenant_id, 'form', id, 'intro', 'km', intro_km FROM forms WHERE intro_km IS NOT NULL AND trim(intro_km) != '' AND EXISTS (SELECT 1 FROM languages WHERE code = 'km') ON CONFLICT DO NOTHING;--> statement-breakpoint
+INSERT INTO translations (tenant_id, entity_type, entity_id, field, lang, value) SELECT tenant_id, 'form', id, 'title', (SELECT COALESCE((SELECT code FROM languages WHERE is_default = 1 LIMIT 1), 'en')), title FROM forms WHERE title IS NOT NULL AND trim(title) != '' ON CONFLICT DO NOTHING;--> statement-breakpoint
+INSERT INTO translations (tenant_id, entity_type, entity_id, field, lang, value) SELECT tenant_id, 'form', id, 'intro', (SELECT COALESCE((SELECT code FROM languages WHERE is_default = 1 LIMIT 1), 'en')), intro FROM forms WHERE intro IS NOT NULL AND trim(intro) != '' ON CONFLICT DO NOTHING;--> statement-breakpoint
+INSERT INTO translations (tenant_id, entity_type, entity_id, field, lang, value) SELECT tenant_id, 'form', id, 'submitLabel', (SELECT COALESCE((SELECT code FROM languages WHERE is_default = 1 LIMIT 1), 'en')), submit_label FROM forms WHERE submit_label IS NOT NULL AND trim(submit_label) != '' ON CONFLICT DO NOTHING;--> statement-breakpoint
+INSERT INTO translations (tenant_id, entity_type, entity_id, field, lang, value) SELECT tenant_id, 'form', id, 'successMessage', (SELECT COALESCE((SELECT code FROM languages WHERE is_default = 1 LIMIT 1), 'en')), success_message FROM forms WHERE success_message IS NOT NULL AND trim(success_message) != '' ON CONFLICT DO NOTHING;--> statement-breakpoint
+ALTER TABLE `forms` DROP COLUMN `title`;--> statement-breakpoint
+ALTER TABLE `forms` DROP COLUMN `title_km`;--> statement-breakpoint
+ALTER TABLE `forms` DROP COLUMN `intro`;--> statement-breakpoint
+ALTER TABLE `forms` DROP COLUMN `intro_km`;--> statement-breakpoint
+ALTER TABLE `forms` DROP COLUMN `submit_label`;--> statement-breakpoint
+ALTER TABLE `forms` DROP COLUMN `success_message`;

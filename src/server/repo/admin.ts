@@ -1800,7 +1800,7 @@ type MediaTextRef = {
 	/** searched for the url */
 	column: SQLiteColumn;
 	rowId: SQLiteColumn;
-	label: SQLiteColumn;
+	label: SQLiteColumn | SQL<string | null>;
 	tenant: SQLiteColumn;
 	href: (rowId: number) => string;
 };
@@ -1820,7 +1820,7 @@ const MEDIA_TEXT_REFS: MediaTextRef[] = [
 		table: forms,
 		column: forms.fields,
 		rowId: forms.id,
-		label: forms.title,
+		label: defaultLangText("form", forms.id, "title"),
 		tenant: forms.tenantId,
 		href: (r) => `/admin/forms/${r}`,
 	},
@@ -1877,6 +1877,14 @@ const TRANSLATED_ENTITIES: Record<
 		label: campaigns.slug,
 		tenant: campaigns.tenantId,
 		href: (r) => `/admin/campaigns/${r}`,
+	},
+	form: {
+		kind: "Form text",
+		table: forms,
+		id: forms.id,
+		label: forms.slug,
+		tenant: forms.tenantId,
+		href: (r) => `/admin/forms/${r}`,
 	},
 };
 

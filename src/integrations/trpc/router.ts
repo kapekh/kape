@@ -136,8 +136,9 @@ import {
 	deleteContactSubmission,
 	deleteForm,
 	deleteFormSubmission,
-	getFormBySlug,
+	type FormInput,
 	getFormForEdit,
+	getPublicFormBySlug,
 	isFormSlugAvailable,
 	updateForm,
 } from "#/server/repo/forms";
@@ -500,9 +501,9 @@ const navRouter = {
 
 const formsRouter = {
 	bySlug: publicProcedure
-		.input(z.object({ slug: z.string() }))
+		.input(langInput.extend({ slug: z.string() }))
 		.query(async ({ ctx, input }) => {
-			const form = await getFormBySlug(ctx.db, input.slug);
+			const form = await getPublicFormBySlug(ctx.db, input.slug, input.lang);
 			if (!form) return null;
 			// Pre-render author `content` blocks to HTML so the client just displays them.
 			const fields = form.fields.map((f) =>
@@ -525,37 +526,25 @@ const formFieldSchema = z.object({
 const formInput = z.object({
 	slug: z.string().min(1),
 	status: z.enum(["active", "draft"]),
-	title: z.string().min(1),
-	titleKm: z
-		.string()
-		.nullish()
-		.transform((v) => v ?? null),
-	intro: z
-		.string()
-		.nullish()
-		.transform((v) => v ?? null),
-	introKm: z
-		.string()
-		.nullish()
-		.transform((v) => v ?? null),
 	fields: z.array(formFieldSchema),
 	deadline: z
 		.string()
 		.nullish()
 		.transform((v) => (v?.trim() ? v.trim() : null)),
-	submitLabel: z
-		.string()
-		.nullish()
-		.transform((v) => v ?? null),
-	successMessage: z
-		.string()
-		.nullish()
-		.transform((v) => v ?? null),
 	notifyEmail: z
 		.string()
 		.nullish()
 		.transform((v) => v ?? null),
-});
+	translations: z.array(
+		z.object({
+			lang: z.string(),
+			title: z.string(),
+			intro: z.string(),
+			submitLabel: z.string(),
+			successMessage: z.string(),
+		}),
+	),
+}) satisfies z.ZodType<FormInput>;
 const adminFormsRouter = {
 	list: adminProcedure.query(({ ctx }) => adminListForms(ctx.db)),
 	get: adminProcedure
