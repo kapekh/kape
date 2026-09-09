@@ -18,6 +18,7 @@ import { Button } from "#/components/ui/button.tsx";
 import { PageHeader } from "#/components/ui/page-header.tsx";
 import { Table, TBody, TD, TH, THead, TR } from "#/components/ui/table.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { isFormClosed } from "#/lib/forms";
 import { confirm } from "@/components/Dialogs";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -220,6 +221,11 @@ function PostsList() {
 										<Badge tone={STATUS_TONES[r.status] ?? "neutral"}>
 											{STATUS_LABELS[r.status] ?? r.status}
 										</Badge>
+										{r.status === "published" && isFormClosed(r.deadline) && (
+											<Badge tone="warning" className="ml-2">
+												Hidden since {r.deadline}
+											</Badge>
+										)}
 									</TD>
 									<TD label="Slug" className="text-admin-ink-muted">
 										{r.slug}

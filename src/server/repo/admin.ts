@@ -340,12 +340,14 @@ export async function adminListPosts(db: DB) {
 
 	return rows.map((r) => {
 		const t = titleByPost.get(r.id) ?? {};
+		const meta = (r.meta ?? {}) as Record<string, unknown>;
 		return {
 			id: r.id,
 			slug: r.slug,
 			contentType: r.contentType,
 			status: r.status,
 			publishedAt: r.publishedAt,
+			deadline: typeof meta.deadline === "string" ? meta.deadline : "",
 			title: t.en ?? Object.values(t)[0] ?? "(untitled)",
 		};
 	});
