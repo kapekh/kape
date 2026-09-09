@@ -1,4 +1,4 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, getTableName, inArray, sql } from "drizzle-orm";
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
 
 import { LANGS } from "#/lib/i18n-config";
@@ -122,10 +122,14 @@ export const defaultLangText = (
 	entityType: string,
 	id: SQLiteColumn,
 	field: string,
-) =>
-	sql<
+) => {
+	// spelled out, not `${id}`: a bare column name inside the subquery binds to
+	// translations.id, and the correlation silently yields null
+	const outer = sql`${sql.identifier(getTableName(id.table))}.${sql.identifier(id.name)}`;
+	return sql<
 		string | null
-	>`(select value from translations where entity_type = ${entityType} and entity_id = ${id} and field = ${field} and lang = coalesce((select code from languages where is_default = 1 limit 1), 'en'))`;
+	>`(select value from translations where entity_type = ${entityType} and entity_id = ${outer} and field = ${field} and lang = coalesce((select code from languages where is_default = 1 limit 1), 'en'))`;
+};
 
 /** The fallback language code (defaults to 'en' if none flagged). */
 export async function getDefaultLang(db: DB): Promise<string> {

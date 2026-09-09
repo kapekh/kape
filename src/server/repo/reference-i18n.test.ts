@@ -33,6 +33,7 @@ function run<T>(body: string): T {
 			 import * as admin from "${root}/src/server/repo/admin.ts";
 			 import * as campaigns from "${root}/src/server/repo/campaigns.ts";
 			 import * as content from "${root}/src/server/repo/content.ts";
+			 import * as donations from "${root}/src/server/repo/donations.ts";
 			 import * as forms from "${root}/src/server/repo/forms.ts";
 			 import * as org from "${root}/src/server/repo/org.ts";
 			 import * as site from "${root}/src/server/repo/site.ts";
@@ -250,5 +251,44 @@ describe("a form's title, submit label and success message", () => {
 
 	it("names the row in the default language for the admin list", () => {
 		expect(r.listed).toBe("Alumni registration");
+	});
+});
+
+describe("a label wanted where no language was asked for", () => {
+	const r = run<{ donationLabel: string; mediaLabel: string }>(`
+		const cid = await campaigns.createCampaign(db, {
+			slug: "label-proof", status: "active", currency: "USD", goalAmount: null,
+			coverMediaId: null, presets: [], allowCustom: true, impactTiers: [],
+			showSupporters: true, featured: false, sort: 0,
+			translations: [
+				{ lang: "en", title: "Label proof campaign", blurb: "" },
+				{ lang: "km", title: "យុទ្ធនាការសាកល្បង", blurb: "" },
+			],
+		});
+		await donations.createDonation(db, { campaignId: cid, orderId: "label-proof-1", amount: "25", currency: "USD" });
+		out.donationLabel = (await donations.adminListDonations(db))
+			.find((d) => d.orderId === "label-proof-1").campaignTitle;
+
+		const url = "/uploads/label-proof.jpg";
+		const [m] = await db.$client
+			.query("insert into media (tenant_id, url, r2_key, content_type) values (1, ?, 'label-proof.jpg', 'image/jpeg') returning id")
+			.all(url);
+		await forms.createForm(db, {
+			slug: "label-proof-form", status: "active", deadline: null, notifyEmail: null,
+			fields: [{ key: "c0", label: "Content", type: "content", content: '<img src="' + url + '">' }],
+			translations: [
+				{ lang: "en", title: "Label proof form", intro: "", submitLabel: "", successMessage: "" },
+				{ lang: "km", title: "ទម្រង់សាកល្បង", intro: "", submitLabel: "", successMessage: "" },
+			],
+		});
+		out.mediaLabel = (await admin.adminMediaUsage(db, m.id))
+			.find((u) => u.kind === "Form content").label;
+	`);
+
+	// the correlated subquery has to name the outer table: a bare column binds to
+	// translations.id inside it and every label silently comes back null
+	it("names the row from the default language, not from nothing", () => {
+		expect(r.donationLabel).toBe("Label proof campaign");
+		expect(r.mediaLabel).toBe("Label proof form");
 	});
 });
