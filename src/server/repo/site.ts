@@ -1,5 +1,6 @@
 import { and, asc, eq, sql } from "drizzle-orm";
 import { COLLECTIONS, collectionHref } from "#/lib/collections";
+import { isFormClosed as isDeadlinePast } from "#/lib/forms";
 
 import type { DB } from "../db";
 import {
@@ -80,6 +81,13 @@ export async function listHeroSlides(db: DB, lang: string) {
 	}));
 }
 
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+// only the date the picker itself writes may hide a published notice; anything
+// else reads as no deadline and stays up, where its author can see it and fix it
+const expired = (deadline: string) =>
+	ISO_DATE.test(deadline) && isDeadlinePast(deadline);
+
 export async function listActiveAnnouncements(db: DB, lang: string) {
 	const rows = await db
 		.select({
@@ -96,20 +104,20 @@ export async function listActiveAnnouncements(db: DB, lang: string) {
 				eq(posts.status, "published"),
 			),
 		);
-	const today = new Date().toISOString().slice(0, 10);
 	const items = rows.map((r) => {
 		const m = (r.meta ?? {}) as Record<string, unknown>;
 		return {
 			id: r.id,
 			slug: r.slug,
-			deadline: String(m.deadline ?? ""),
+			deadline: typeof m.deadline === "string" ? m.deadline : "",
 			publishedAt: r.publishedAt ?? "",
 		};
 	});
-	const dated = items
-		.filter((r) => r.deadline && r.deadline >= today)
+	const open = items.filter((r) => !expired(r.deadline));
+	const dated = open
+		.filter((r) => r.deadline)
 		.sort((a, b) => a.deadline.localeCompare(b.deadline));
-	const evergreen = items
+	const evergreen = open
 		.filter((r) => !r.deadline)
 		.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
 	const active = [...dated, ...evergreen];

@@ -65,15 +65,26 @@ vi.mock("@/lib/i18n", () => ({
 	}),
 }));
 
+const inline = vi.hoisted(() => ({ editing: false }));
+vi.mock("@/lib/inline-edit", () => ({
+	useInlineEdit: () => ({ editing: inline.editing }),
+}));
+
 const { AnnouncementPopup } = await import("./AnnouncementPopup");
 
 const KEY = "announcements-dismissed";
 const dismissed = () => JSON.parse(localStorage.getItem(KEY) ?? "[]");
 
 async function mount() {
+	let view!: ReturnType<typeof render>;
 	await act(async () => {
-		render(<AnnouncementPopup />);
+		view = render(<AnnouncementPopup />);
 	});
+	return async () => {
+		await act(async () => {
+			view.rerender(<AnnouncementPopup />);
+		});
+	};
 }
 
 // jsdom ships no dialog behaviour at all: https://github.com/jsdom/jsdom/issues/3294
@@ -89,6 +100,7 @@ describe("announcement dismissal", () => {
 	beforeEach(() => {
 		localStorage.clear();
 		document.body.innerHTML = "";
+		inline.editing = false;
 	});
 
 	it("dismisses only the notice the visitor actually saw", async () => {
@@ -122,6 +134,21 @@ describe("announcement dismissal", () => {
 		expect(link?.getAttribute("href")).toBe(
 			"/en/careers/public-bidding-invitation-2026",
 		);
+	});
+
+	it("keeps the notices when edit mode hides the dialog", async () => {
+		const rerender = await mount();
+		const dialog = () => document.querySelector("dialog");
+		expect(dialog()?.open).toBe(true);
+
+		inline.editing = true;
+		await rerender();
+		expect(dialog()?.open).toBe(false);
+		expect(dismissed()).toEqual([]);
+
+		inline.editing = false;
+		await rerender();
+		expect(dialog()?.open).toBe(true);
 	});
 
 	it("shows nothing once every notice is dismissed", async () => {

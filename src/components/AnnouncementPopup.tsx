@@ -29,6 +29,7 @@ export function AnnouncementPopup() {
 	const [index, setIndex] = useState(0);
 	const [open, setOpen] = useState(false);
 	const seen = useRef(new Set<number>());
+	const closedByApp = useRef(false);
 
 	useEffect(() => {
 		trpcClient.site.announcement
@@ -40,7 +41,9 @@ export function AnnouncementPopup() {
 				setIndex(0);
 				setOpen(fresh.length > 0);
 			})
-			.catch(() => {});
+			.catch((err) => {
+				console.error("[announcement] could not be loaded", err);
+			});
 	}, [lang]);
 
 	useEffect(() => {
@@ -48,7 +51,10 @@ export function AnnouncementPopup() {
 		if (!d) return;
 		// a modal over the page is nothing but an obstruction to an admin editing it
 		if (open && !editing && !d.open) d.showModal();
-		else if ((!open || editing) && d.open) d.close();
+		else if ((!open || editing) && d.open) {
+			closedByApp.current = true;
+			d.close();
+		}
 	}, [open, editing]);
 
 	useEffect(() => {
@@ -64,6 +70,15 @@ export function AnnouncementPopup() {
 		setOpen(false);
 	}
 
+	// the app hiding the dialog is not the visitor dismissing it
+	function onClose() {
+		if (closedByApp.current) {
+			closedByApp.current = false;
+			return;
+		}
+		dismiss();
+	}
+
 	function step(delta: number) {
 		setIndex((i) => (i + delta + items.length) % items.length);
 	}
@@ -76,7 +91,7 @@ export function AnnouncementPopup() {
 		<dialog
 			ref={ref}
 			aria-labelledby="announcement-title"
-			onClose={dismiss}
+			onClose={onClose}
 			onClick={(e) => {
 				if (e.target === ref.current) dismiss();
 			}}
