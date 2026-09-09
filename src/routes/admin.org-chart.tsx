@@ -2,10 +2,15 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Network, Plus } from "lucide-react";
 import { useCallback, useEffect, useId, useState } from "react";
 
-import { fieldLabel } from "#/components/admin/form-ui";
-import { defaultLanguage, LangTabs } from "#/components/admin/LangTabs";
+import { Field, fieldLabel } from "#/components/admin/form-ui";
+import {
+	defaultLanguage,
+	LangTabs,
+	useLangText,
+} from "#/components/admin/LangTabs";
 import { OrgCanvas, type OrgRow } from "#/components/admin/OrgCanvas";
 import { SearchableSelect } from "#/components/admin/SearchableSelect";
+import { useFieldErrors } from "#/components/admin/useFieldErrors";
 import { Button } from "#/components/ui/button";
 import { EmptyState } from "#/components/ui/empty-state";
 import { Input } from "#/components/ui/input";
@@ -24,7 +29,8 @@ type PersonOpt = { value: string; label: string };
 type LangOpt = Awaited<
 	ReturnType<typeof trpcClient.i18n.languages.query>
 >[number];
-type NodeText = { name: string; title: string };
+const NODE_FIELDS = ["name", "title"] as const;
+type NodeText = Record<(typeof NODE_FIELDS)[number], string>;
 
 /** A node's id + all descendant ids (so a node can't be reparented under itself). */
 function withDescendants(rows: OrgRow[], id: number): Set<number> {
@@ -67,17 +73,13 @@ function NodeForm({
 	saving?: boolean;
 }) {
 	const uid = useId();
-	const defaultLangOpt = defaultLanguage(languages);
-	const defaultLang = defaultLangOpt?.code ?? "";
-	const [nameError, setNameError] = useState<string | null>(null);
-	const [text, setText] = useState<Record<string, NodeText>>(() => {
-		const t: Record<string, NodeText> = {};
-		for (const l of languages) {
-			const e = initial?.translations[l.code] ?? {};
-			t[l.code] = { name: e.name ?? "", title: e.title ?? "" };
-		}
-		return t;
-	});
+	const defaultLang = defaultLanguage(languages)?.code ?? "";
+	const { errors, invalid } = useFieldErrors();
+	const { text, setText: setField } = useLangText(
+		languages,
+		NODE_FIELDS,
+		initial?.translations,
+	);
 	const [personId, setPersonId] = useState(
 		initial?.personId != null ? String(initial.personId) : "",
 	);
@@ -99,22 +101,8 @@ function NodeForm({
 			label: r.name + (r.title ? ` — ${r.title}` : ""),
 		}));
 
-	const setField = (lang: string, field: keyof NodeText, value: string) => {
-		if (field === "name" && lang === defaultLang && value.trim())
-			setNameError(null);
-		setText((prev) => ({ ...prev, [lang]: { ...prev[lang], [field]: value } }));
-	};
-
 	function submit(e: React.FormEvent) {
 		e.preventDefault();
-		// `required` inside an unselected tab panel makes the form unsubmittable
-		if (!text[defaultLang]?.name.trim()) {
-			setNameError(
-				`This box needs a name in ${defaultLangOpt?.name ?? "the default language"}; the chart labels it with that.`,
-			);
-			return;
-		}
-		setNameError(null);
 		onSave({
 			parentId: parentId ? Number(parentId) : null,
 			personId: personId ? Number(personId) : null,
@@ -128,33 +116,28 @@ function NodeForm({
 
 	return (
 		<form onSubmit={submit} className="space-y-3">
-			{nameError && (
-				<p
-					role="alert"
-					className="text-[13px] font-medium text-admin-danger-ink"
-				>
-					{nameError}
-				</p>
-			)}
 			<LangTabs languages={languages}>
 				{(l) => (
 					<div className="grid gap-3 sm:grid-cols-2">
-						<div>
-							<label className={fieldLabel} htmlFor={`${uid}-name-${l.code}`}>
-								{l.code === defaultLang ? "Name (required)" : "Name"}
-							</label>
-							<Input
-								id={`${uid}-name-${l.code}`}
-								className={l.code === "km" ? "font-khmer" : undefined}
-								value={text[l.code]?.name ?? ""}
-								onChange={(e) => setField(l.code, "name", e.target.value)}
-								placeholder="e.g. Executive Director"
-								aria-required={l.code === defaultLang}
-								// only mounts inside the Add/Edit modal, opened by an explicit click:
-								// focus belongs in the modal, not on the trigger behind it
-								autoFocus={l.code === defaultLang}
-							/>
-						</div>
+						<Field
+							label="Name"
+							required={l.code === defaultLang}
+							error={errors.name}
+						>
+							{(p) => (
+								<Input
+									{...p}
+									{...invalid("name")}
+									className={l.code === "km" ? "font-khmer" : undefined}
+									value={text[l.code]?.name ?? ""}
+									onChange={(e) => setField(l.code, "name", e.target.value)}
+									placeholder="e.g. Executive Director"
+									// only mounts inside the Add/Edit modal, opened by an explicit click:
+									// focus belongs in the modal, not on the trigger behind it
+									autoFocus={l.code === defaultLang}
+								/>
+							)}
+						</Field>
 						<div>
 							<label className={fieldLabel} htmlFor={`${uid}-title-${l.code}`}>
 								Title / role

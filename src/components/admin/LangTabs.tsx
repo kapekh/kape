@@ -1,10 +1,44 @@
 import { useEffect, useId, useRef, useState } from "react";
 
+export type LangOpt = { code: string; name: string; isDefault: boolean };
+
 // `sort` orders the tabs; `is_default` says which language a record must have. both are set separately in /admin/languages, so the first tab is not the default one
 export function defaultLanguage<
 	L extends { code: string; isDefault?: boolean },
 >(languages: L[]): L | undefined {
 	return languages.find((l) => l.isDefault) ?? languages[0];
+}
+
+/**
+ * One editor's translated fields, per language: seeded blank where a language has
+ * no row yet, so a value the editor leaves empty travels as "" and clears its row.
+ */
+export function useLangText<F extends string>(
+	languages: readonly { code: string }[],
+	fields: readonly F[],
+	initial?: Record<string, Partial<Record<F, string>>>,
+) {
+	const [text, setText] = useState<Record<string, Record<F, string>>>(() => {
+		const seeded: Record<string, Record<F, string>> = {};
+		for (const l of languages) {
+			const row: Partial<Record<F, string>> = initial?.[l.code] ?? {};
+			seeded[l.code] = Object.fromEntries(
+				fields.map((f) => [f, row[f] ?? ""]),
+			) as Record<F, string>;
+		}
+		return seeded;
+	});
+
+	return {
+		text,
+		setText: (lang: string, field: F, value: string) =>
+			setText((prev) => ({
+				...prev,
+				[lang]: { ...prev[lang], [field]: value },
+			})),
+		toTranslations: () =>
+			languages.map((l) => ({ lang: l.code, ...text[l.code] })),
+	};
 }
 
 // values live in the parent form and every panel stays mounted, so a tab change loses nothing; role="tab" is why the arrow keys and roving tabindex are here

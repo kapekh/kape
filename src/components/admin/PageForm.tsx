@@ -20,7 +20,7 @@ import { PAGE_TITLE_MAX, segmentProblem } from "#/lib/slug";
 
 import { AdminHeader } from "./AdminHeader";
 import { fieldLabel } from "./form-ui";
-import { LangTabs } from "./LangTabs";
+import { LangTabs, useLangText } from "./LangTabs";
 import { MediaPicker } from "./MediaPicker";
 import { PagePreview } from "./PagePreview";
 import { PageSwitcher } from "./PageSwitcher";
@@ -28,6 +28,8 @@ import type { LangOpt } from "./PostForm";
 import { SearchableSelect } from "./SearchableSelect";
 import { SectionsBuilder } from "./SectionsBuilder";
 import { useDirtyGuard } from "./useDirty";
+
+const PAGE_FIELDS = ["title", "excerpt", "body"] as const;
 
 export type PageStatus = "draft" | "published";
 export type PageFormValue = {
@@ -211,32 +213,11 @@ export function PageForm({
 	const [sections, setSections] = useState<SectionNode[]>(
 		initial?.sections ?? [],
 	);
-	const [trans, setTrans] = useState<
-		Record<string, { title: string; excerpt: string; body: string }>
-	>(() => {
-		const t: Record<string, { title: string; excerpt: string; body: string }> =
-			{};
-		for (const l of languages) {
-			const e = initial?.translations[l.code] ?? {};
-			t[l.code] = {
-				title: e.title ?? "",
-				excerpt: e.excerpt ?? "",
-				body: e.body ?? "",
-			};
-		}
-		return t;
-	});
-
-	function setField(
-		lang: string,
-		field: "title" | "excerpt" | "body",
-		value: string,
-	) {
-		setTrans((prev) => ({
-			...prev,
-			[lang]: { ...prev[lang], [field]: value },
-		}));
-	}
+	const {
+		text: trans,
+		setText: setField,
+		toTranslations,
+	} = useLangText(languages, PAGE_FIELDS, initial?.translations);
 	const [fieldError, setFieldError] = useState<FieldError | null>(null);
 	const segmentRef = useRef<HTMLInputElement>(null);
 	const titleRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -276,7 +257,7 @@ export function PageForm({
 			status,
 			coverMediaId,
 			sections,
-			translations: languages.map((l) => ({ lang: l.code, ...trans[l.code] })),
+			translations: toTranslations(),
 		});
 	}
 

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-
+import { defaultLanguage } from "#/components/admin/LangTabs";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { useT } from "#/lib/i18n";
 
@@ -32,7 +32,7 @@ function Directory() {
 		});
 	}, []);
 
-	const defaultLang = languages.find((l) => l.isDefault) ?? languages[0];
+	const defaultLang = defaultLanguage(languages);
 	const nameOf = (r: Staff) => (defaultLang && r.names[defaultLang.code]) || "";
 
 	return (

@@ -18,14 +18,20 @@ import {
 	FormSection,
 	fieldLabel,
 } from "./form-ui";
-import { defaultLanguage, LangTabs } from "./LangTabs";
+import {
+	defaultLanguage,
+	type LangOpt,
+	LangTabs,
+	useLangText,
+} from "./LangTabs";
 import { MapPicker } from "./MapPicker";
 import { MediaPicker } from "./MediaPicker";
 import { SearchableSelect } from "./SearchableSelect";
 import { useDirtyGuard } from "./useDirty";
 import { useFieldErrors } from "./useFieldErrors";
 
-type SchoolText = { name: string; address: string };
+const SCHOOL_FIELDS = ["name", "address"] as const;
+type SchoolText = Record<(typeof SCHOOL_FIELDS)[number], string>;
 
 export type SchoolFormValue = {
 	code: string;
@@ -50,7 +56,7 @@ type Initial = {
 	translations?: Record<string, Partial<SchoolText>>;
 } | null;
 export type TermOpt = { key: string; label: string };
-export type LangOpt = { code: string; name: string; isDefault: boolean };
+export type { LangOpt } from "./LangTabs";
 export type ProjectOpt = { id: number; code: string; name: string };
 
 const LEVELS = [
@@ -81,14 +87,11 @@ export function SchoolForm({
 	savedAt?: string | null;
 }) {
 	const uid = useId();
-	const [trans, setTrans] = useState<Record<string, SchoolText>>(() => {
-		const t: Record<string, SchoolText> = {};
-		for (const l of languages) {
-			const e = initial?.translations?.[l.code] ?? {};
-			t[l.code] = { name: e.name ?? "", address: e.address ?? "" };
-		}
-		return t;
-	});
+	const {
+		text: trans,
+		setText,
+		toTranslations,
+	} = useLangText(languages, SCHOOL_FIELDS, initial?.translations);
 	const [code, setCode] = useState(initial?.code ?? "");
 	const [level, setLevel] = useState(initial?.level ?? "primary");
 	const [province, setProvince] = useState(initial?.province ?? "");
@@ -102,12 +105,6 @@ export function SchoolForm({
 	const [lng, setLng] = useState(initial?.lng ?? "");
 	const { errors, invalid } = useFieldErrors();
 
-	const setText = (lang: string, field: keyof SchoolText, value: string) =>
-		setTrans((prev) => ({
-			...prev,
-			[lang]: { ...prev[lang], [field]: value },
-		}));
-
 	function submit(e: React.FormEvent) {
 		e.preventDefault();
 		onSubmit({
@@ -119,7 +116,7 @@ export function SchoolForm({
 			lat,
 			lng,
 			sort: initial?.sort ?? 0,
-			translations: languages.map((l) => ({ lang: l.code, ...trans[l.code] })),
+			translations: toTranslations(),
 		});
 	}
 

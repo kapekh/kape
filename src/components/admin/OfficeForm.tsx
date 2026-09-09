@@ -11,14 +11,20 @@ import {
 	FormSection,
 	fieldLabel,
 } from "./form-ui";
-import { defaultLanguage, LangTabs } from "./LangTabs";
+import {
+	defaultLanguage,
+	type LangOpt,
+	LangTabs,
+	useLangText,
+} from "./LangTabs";
 import { MapPicker } from "./MapPicker";
 import { MediaPicker } from "./MediaPicker";
 import { SearchableSelect } from "./SearchableSelect";
 import { useDirtyGuard } from "./useDirty";
 import { useFieldErrors } from "./useFieldErrors";
 
-type OfficeText = { name: string; address: string };
+const OFFICE_FIELDS = ["name", "address"] as const;
+type OfficeText = Record<(typeof OFFICE_FIELDS)[number], string>;
 
 export type OfficeFormValue = {
 	province: string;
@@ -43,7 +49,7 @@ type Initial = {
 	translations?: Record<string, Partial<OfficeText>>;
 } | null;
 export type TermOpt = { key: string; label: string };
-export type LangOpt = { code: string; name: string; isDefault: boolean };
+export type { LangOpt } from "./LangTabs";
 
 export function OfficeForm({
 	initial,
@@ -63,14 +69,11 @@ export function OfficeForm({
 	savedAt?: string | null;
 }) {
 	const uid = useId();
-	const [trans, setTrans] = useState<Record<string, OfficeText>>(() => {
-		const t: Record<string, OfficeText> = {};
-		for (const l of languages) {
-			const e = initial?.translations?.[l.code] ?? {};
-			t[l.code] = { name: e.name ?? "", address: e.address ?? "" };
-		}
-		return t;
-	});
+	const {
+		text: trans,
+		setText,
+		toTranslations,
+	} = useLangText(languages, OFFICE_FIELDS, initial?.translations);
 	const [province, setProvince] = useState(initial?.province ?? "");
 	const [phone, setPhone] = useState(initial?.phone ?? "");
 	const [email, setEmail] = useState(initial?.email ?? "");
@@ -81,12 +84,6 @@ export function OfficeForm({
 		initial?.imageMediaId != null ? String(initial.imageMediaId) : "",
 	);
 	const { errors, invalid } = useFieldErrors();
-
-	const setText = (lang: string, field: keyof OfficeText, value: string) =>
-		setTrans((prev) => ({
-			...prev,
-			[lang]: { ...prev[lang], [field]: value },
-		}));
 
 	function submit(e: React.FormEvent) {
 		e.preventDefault();
@@ -99,7 +96,7 @@ export function OfficeForm({
 			isHq,
 			imageMediaId: imageMediaId ? Number(imageMediaId) : null,
 			sort: initial?.sort ?? 0,
-			translations: languages.map((l) => ({ lang: l.code, ...trans[l.code] })),
+			translations: toTranslations(),
 		});
 	}
 

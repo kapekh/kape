@@ -4,11 +4,12 @@ import {
 	cleanup,
 	fireEvent,
 	render,
+	renderHook,
 	screen,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { defaultLanguage, LangTabs } from "./LangTabs";
+import { defaultLanguage, LangTabs, useLangText } from "./LangTabs";
 
 // no setupFiles in vitest.config.ts, so auto-cleanup is not registered
 afterEach(cleanup);
@@ -38,6 +39,39 @@ describe("defaultLanguage", () => {
 	it("falls back to the first when nothing is flagged", () => {
 		expect(defaultLanguage(LANGS)?.code).toBe("en");
 		expect(defaultLanguage([])).toBeUndefined();
+	});
+});
+
+describe("useLangText", () => {
+	const FIELDS = ["name", "position"] as const;
+	const seed = (
+		initial?: Record<string, { name?: string; position?: string }>,
+	) => renderHook(() => useLangText(LANGS, FIELDS, initial));
+
+	it("starts a language with no stored row blank, not absent", () => {
+		const { result } = seed({ en: { name: "Chenda" } });
+		expect(result.current.text).toEqual({
+			en: { name: "Chenda", position: "" },
+			km: { name: "", position: "" },
+			fr: { name: "", position: "" },
+		});
+	});
+
+	it("sends every language, and a cleared field as an empty string", () => {
+		const { result } = seed({ km: { name: "សុខ", position: "នាយក" } });
+		act(() => result.current.setText("km", "position", ""));
+		expect(result.current.toTranslations()).toEqual([
+			{ lang: "en", name: "", position: "" },
+			{ lang: "km", name: "សុខ", position: "" },
+			{ lang: "fr", name: "", position: "" },
+		]);
+	});
+
+	it("edits one language's field without touching the others", () => {
+		const { result } = seed();
+		act(() => result.current.setText("fr", "name", "Chenda"));
+		expect(result.current.text.fr).toEqual({ name: "Chenda", position: "" });
+		expect(result.current.text.en).toEqual({ name: "", position: "" });
 	});
 });
 

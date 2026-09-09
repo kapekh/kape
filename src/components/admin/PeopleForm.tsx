@@ -19,14 +19,15 @@ import {
 	FormSection,
 	fieldLabel,
 } from "./form-ui";
-import { defaultLanguage, LangTabs } from "./LangTabs";
+import { defaultLanguage, LangTabs, useLangText } from "./LangTabs";
 import { MediaPicker } from "./MediaPicker";
 import type { LangOpt } from "./PostForm";
 import { RichTextEditor } from "./RichTextEditor";
 import { useDirtyGuard } from "./useDirty";
 import { useFieldErrors } from "./useFieldErrors";
 
-type PersonText = { name: string; position: string; bio: string };
+const PERSON_FIELDS = ["name", "position", "bio"] as const;
+type PersonText = Record<(typeof PERSON_FIELDS)[number], string>;
 
 export type PersonFormValue = {
 	tier: string;
@@ -91,42 +92,16 @@ export function PeopleForm({
 	const [phone, setPhone] = useState(initial?.phone ?? "");
 	const [email, setEmail] = useState(initial?.email ?? "");
 	const [program, setProgram] = useState(initial?.program ?? "");
-	const [trans, setTrans] = useState<Record<string, PersonText>>(() => {
-		const t: Record<string, PersonText> = {};
-		for (const l of languages) {
-			const e = initial?.translations?.[l.code] ?? {};
-			t[l.code] = {
-				name: e.name ?? "",
-				position: e.position ?? "",
-				bio: e.bio ?? "",
-			};
-		}
-		return t;
-	});
-	const [nameError, setNameError] = useState<string | null>(null);
+	const {
+		text: trans,
+		setText,
+		toTranslations,
+	} = useLangText(languages, PERSON_FIELDS, initial?.translations);
 	const { errors, invalid } = useFieldErrors();
 	const defaultLang = defaultLanguage(languages);
 
-	const setText = (lang: string, field: keyof PersonText, value: string) => {
-		if (field === "name" && lang === defaultLang?.code && value.trim())
-			setNameError(null);
-		setTrans((prev) => ({
-			...prev,
-			[lang]: { ...prev[lang], [field]: value },
-		}));
-	};
-
 	function submit(e: React.FormEvent) {
 		e.preventDefault();
-		// `required` on an input inside an unselected tab panel makes the form
-		// unsubmittable, so the default-language name is guarded here instead
-		if (defaultLang && !trans[defaultLang.code]?.name.trim()) {
-			setNameError(
-				`A person needs a name in ${defaultLang.name}; every list and link uses it.`,
-			);
-			return;
-		}
-		setNameError(null);
 		onSubmit({
 			tier,
 			isPublic,
@@ -138,7 +113,7 @@ export function PeopleForm({
 			email: email || null,
 			program: program || null,
 			sort: initial?.sort ?? 0,
-			translations: languages.map((l) => ({ lang: l.code, ...trans[l.code] })),
+			translations: toTranslations(),
 		});
 	}
 
@@ -178,25 +153,18 @@ export function PeopleForm({
 							title="Name, position and bio"
 							description="What this person is called, their job title and their profile biography, each in its own language. Switch languages with the tabs — your text is kept as you switch."
 						>
-							{nameError && (
-								<p
-									role="alert"
-									className="mb-6 text-[13px] font-medium text-admin-danger-ink"
-								>
-									{nameError}
-								</p>
-							)}
 							<LangTabs languages={languages}>
 								{(l) => (
 									<div className="space-y-6">
-										<Field label="Name" required={l.code === defaultLang?.code}>
-											{({ required, ...p }) => (
+										<Field
+											label="Name"
+											required={l.code === defaultLang?.code}
+											error={errors.name}
+										>
+											{(p) => (
 												<Input
 													{...p}
-													aria-required={required}
-													aria-invalid={
-														required && nameError ? true : undefined
-													}
+													{...invalid("name")}
 													className={l.code === "km" ? "font-khmer" : undefined}
 													value={trans[l.code]?.name ?? ""}
 													onChange={(e) =>

@@ -26,7 +26,7 @@ import {
 	FormSection,
 	fieldLabel,
 } from "./form-ui";
-import { LangTabs } from "./LangTabs";
+import { LangTabs, useLangText } from "./LangTabs";
 import { MapField } from "./MapField";
 import { MediaPicker } from "./MediaPicker";
 import type { LangOpt } from "./PostForm";
@@ -34,6 +34,8 @@ import { RichTextEditor } from "./RichTextEditor";
 import { useDirtyGuard } from "./useDirty";
 import { useFieldErrors } from "./useFieldErrors";
 import { useModules } from "./useModules";
+
+const PROJECT_FIELDS = ["name", "summary", "body"] as const;
 
 export type DonorOpt = { id: number; name: string };
 export type ParentOpt = { id: number; name: string };
@@ -131,32 +133,11 @@ export function ProjectForm({
 	const [snapshots, setSnapshots] = useState<(Snapshot & { key: string })[]>(
 		() => (initial?.snapshots ?? []).map((s, i) => ({ ...s, key: `s${i}` })),
 	);
-	const [trans, setTrans] = useState<
-		Record<string, { name: string; summary: string; body: string }>
-	>(() => {
-		const t: Record<string, { name: string; summary: string; body: string }> =
-			{};
-		for (const l of languages) {
-			const e = initial?.translations[l.code] ?? {};
-			t[l.code] = {
-				name: e.name ?? "",
-				summary: e.summary ?? "",
-				body: e.body ?? "",
-			};
-		}
-		return t;
-	});
-
-	function setField(
-		lang: string,
-		field: "name" | "summary" | "body",
-		value: string,
-	) {
-		setTrans((prev) => ({
-			...prev,
-			[lang]: { ...prev[lang], [field]: value },
-		}));
-	}
+	const {
+		text: trans,
+		setText: setField,
+		toTranslations,
+	} = useLangText(languages, PROJECT_FIELDS, initial?.translations);
 	function toggleDonor(id: number) {
 		setDonorIds((ids) =>
 			ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id],
@@ -199,7 +180,7 @@ export function ProjectForm({
 			snapshots: snapshots
 				.filter((s) => s.value.trim() && s.label.trim())
 				.map((s) => ({ value: s.value, label: s.label })),
-			translations: languages.map((l) => ({ lang: l.code, ...trans[l.code] })),
+			translations: toTranslations(),
 			donorIds,
 			locations: locations
 				.filter((l) => l.lat && l.lng)

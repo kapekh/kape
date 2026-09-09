@@ -32,7 +32,12 @@ import {
 	Field,
 	FormSection,
 } from "./form-ui";
-import { defaultLanguage, LangTabs } from "./LangTabs";
+import {
+	defaultLanguage,
+	type LangOpt,
+	LangTabs,
+	useLangText,
+} from "./LangTabs";
 import { RichTextEditor } from "./RichTextEditor";
 import { useDirtyGuard } from "./useDirty";
 import { useFieldErrors } from "./useFieldErrors";
@@ -40,14 +45,15 @@ import { useFieldErrors } from "./useFieldErrors";
 type SlugStatus = "idle" | "checking" | "available" | "taken";
 type FormStatus = "active" | "draft";
 
-type FormText = {
-	title: string;
-	intro: string;
-	submitLabel: string;
-	successMessage: string;
-};
+const FORM_FIELDS = [
+	"title",
+	"intro",
+	"submitLabel",
+	"successMessage",
+] as const;
+type FormText = Record<(typeof FORM_FIELDS)[number], string>;
 
-export type LangOpt = { code: string; name: string; isDefault: boolean };
+export type { LangOpt } from "./LangTabs";
 
 export type FormBuilderValue = {
 	slug: string;
@@ -98,19 +104,11 @@ export function FormBuilder({
 	const [status, setStatus] = useState<FormStatus>(
 		initial?.status === "draft" ? "draft" : "active",
 	);
-	const [trans, setTrans] = useState<Record<string, FormText>>(() => {
-		const t: Record<string, FormText> = {};
-		for (const l of languages) {
-			const e = initial?.translations?.[l.code] ?? {};
-			t[l.code] = {
-				title: e.title ?? "",
-				intro: e.intro ?? "",
-				submitLabel: e.submitLabel ?? "",
-				successMessage: e.successMessage ?? "",
-			};
-		}
-		return t;
-	});
+	const {
+		text: trans,
+		setText,
+		toTranslations,
+	} = useLangText(languages, FORM_FIELDS, initial?.translations);
 	const [notifyEmail, setNotifyEmail] = useState(initial?.notifyEmail ?? "");
 	const [deadline, setDeadline] = useState(initial?.deadline ?? "");
 	// `rid` is the row's identity while it is edited: a field's own key is empty
@@ -126,12 +124,6 @@ export function FormBuilder({
 
 	const defaultLang = defaultLanguage(languages)?.code;
 	const defaultTitle = defaultLang ? (trans[defaultLang]?.title ?? "") : "";
-
-	const setText = (lang: string, field: keyof FormText, value: string) =>
-		setTrans((prev) => ({
-			...prev,
-			[lang]: { ...prev[lang], [field]: value },
-		}));
 
 	// Live slug-availability check (the effective slug is what will be saved).
 	const effectiveSlug = slugify(slug) || slugify(defaultTitle);
@@ -220,7 +212,7 @@ export function FormBuilder({
 			fields: cleaned,
 			deadline: deadline || null,
 			notifyEmail: notifyEmail || null,
-			translations: languages.map((l) => ({ lang: l.code, ...trans[l.code] })),
+			translations: toTranslations(),
 		});
 	}
 

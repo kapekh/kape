@@ -28,7 +28,7 @@ import {
 	FormSection,
 	fieldLabel,
 } from "./form-ui";
-import { LangTabs } from "./LangTabs";
+import { type LangOpt as BaseLangOpt, LangTabs, useLangText } from "./LangTabs";
 import {
 	isImageMedia,
 	type MediaItem,
@@ -40,12 +40,7 @@ import { SearchableSelect } from "./SearchableSelect";
 import { useDirtyGuard } from "./useDirty";
 import { useFieldErrors } from "./useFieldErrors";
 
-export type LangOpt = {
-	code: string;
-	name: string;
-	nativeName: string;
-	isDefault: boolean;
-};
+export type LangOpt = BaseLangOpt & { nativeName: string };
 export type TypeOpt = { key: string; name: string };
 export type PostStatus = "draft" | "published" | "archived";
 export type PostFormValue = {
@@ -78,6 +73,8 @@ type Initial = {
 } | null;
 
 const label = fieldLabel;
+
+const POST_FIELDS = ["title", "excerpt", "body"] as const;
 
 type MetaField = {
 	key: string;
@@ -179,21 +176,11 @@ export function PostForm({
 		for (const [k, v] of Object.entries(m)) o[k] = v == null ? "" : String(v);
 		return o;
 	});
-	const [trans, setTrans] = useState<
-		Record<string, { title: string; excerpt: string; body: string }>
-	>(() => {
-		const t: Record<string, { title: string; excerpt: string; body: string }> =
-			{};
-		for (const l of languages) {
-			const e = initial?.translations[l.code] ?? {};
-			t[l.code] = {
-				title: e.title ?? "",
-				excerpt: e.excerpt ?? "",
-				body: e.body ?? "",
-			};
-		}
-		return t;
-	});
+	const {
+		text: trans,
+		setText: setField,
+		toTranslations,
+	} = useLangText(languages, POST_FIELDS, initial?.translations);
 	const [termsByTax, setTermsByTax] = useState<
 		Record<string, { key: string; label: string }[]>
 	>({});
@@ -222,17 +209,6 @@ export function PostForm({
 			.catch(() => {});
 	}, []);
 
-	function setField(
-		lang: string,
-		field: "title" | "excerpt" | "body",
-		value: string,
-	) {
-		setTrans((prev) => ({
-			...prev,
-			[lang]: { ...prev[lang], [field]: value },
-		}));
-	}
-
 	function submit(e: React.FormEvent) {
 		e.preventDefault();
 		const meta: Record<string, unknown> = { ...(initial?.meta ?? {}) };
@@ -250,7 +226,7 @@ export function PostForm({
 			coverMediaId: coverMediaId ? Number(coverMediaId) : null,
 			media: gallery,
 			meta: Object.keys(meta).length ? meta : null,
-			translations: languages.map((l) => ({ lang: l.code, ...trans[l.code] })),
+			translations: toTranslations(),
 		});
 	}
 

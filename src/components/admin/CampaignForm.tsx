@@ -20,14 +20,20 @@ import {
 	Field,
 	FormSection,
 } from "./form-ui";
-import { defaultLanguage, LangTabs } from "./LangTabs";
+import {
+	defaultLanguage,
+	type LangOpt,
+	LangTabs,
+	useLangText,
+} from "./LangTabs";
 import { MediaPicker } from "./MediaPicker";
 import { useDirtyGuard } from "./useDirty";
 import { useFieldErrors } from "./useFieldErrors";
 
-type CampaignText = { title: string; blurb: string };
+const CAMPAIGN_FIELDS = ["title", "blurb"] as const;
+type CampaignText = Record<(typeof CAMPAIGN_FIELDS)[number], string>;
 
-export type LangOpt = { code: string; name: string; isDefault: boolean };
+export type { LangOpt } from "./LangTabs";
 
 export type CampaignFormValue = {
 	slug: string;
@@ -105,14 +111,11 @@ export function CampaignForm({
 	const [status, setStatus] = useState<CampaignFormValue["status"]>(
 		(initial?.status as CampaignFormValue["status"]) ?? "active",
 	);
-	const [trans, setTrans] = useState<Record<string, CampaignText>>(() => {
-		const t: Record<string, CampaignText> = {};
-		for (const l of languages) {
-			const e = initial?.translations?.[l.code] ?? {};
-			t[l.code] = { title: e.title ?? "", blurb: e.blurb ?? "" };
-		}
-		return t;
-	});
+	const {
+		text: trans,
+		setText,
+		toTranslations,
+	} = useLangText(languages, CAMPAIGN_FIELDS, initial?.translations);
 	const [currency, setCurrency] = useState<CampaignFormValue["currency"]>(
 		(initial?.currency as CampaignFormValue["currency"]) ?? "USD",
 	);
@@ -152,12 +155,6 @@ export function CampaignForm({
 			.replace(/[^a-z0-9]+/g, "-")
 			.replace(/^-+|-+$/g, "");
 
-	const setText = (lang: string, field: keyof CampaignText, value: string) =>
-		setTrans((prev) => ({
-			...prev,
-			[lang]: { ...prev[lang], [field]: value },
-		}));
-
 	function submit(e: React.FormEvent) {
 		e.preventDefault();
 		onSubmit({
@@ -178,7 +175,7 @@ export function CampaignForm({
 			showSupporters,
 			featured,
 			sort: initial?.sort ?? 0,
-			translations: languages.map((l) => ({ lang: l.code, ...trans[l.code] })),
+			translations: toTranslations(),
 		});
 	}
 
