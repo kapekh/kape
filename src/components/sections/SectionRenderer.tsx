@@ -3247,7 +3247,7 @@ function OrgChart(p: OrgChartProps) {
 /* Registry + renderer                                                 */
 /* ------------------------------------------------------------------ */
 
-export const sectionRegistry = {
+const sectionRegistry = {
 	hero: Hero,
 	richtext: RichText,
 	cards: Cards,

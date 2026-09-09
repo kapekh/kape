@@ -4,7 +4,7 @@ import type { ResolvedPerson } from "#/server/repo/people";
 import type { ResolvedProject } from "#/server/repo/projects";
 import { NavLink } from "@/components/NavLink";
 import { type CmsMarker, cmsMark } from "@/components/sections/SectionRenderer";
-import { useLang, useT } from "@/lib/i18n";
+import { useLang } from "@/lib/i18n";
 import { localizedHref } from "@/lib/i18n-config";
 import {
 	type EditableEntity,
@@ -102,7 +102,7 @@ const FIELD_TARGET = /^field:([A-Za-z][A-Za-z0-9_]*)$/;
  * payload the page already has. Null for a field this route does not carry the
  * source of, and for a marker belonging to a record a listing pulled in.
  */
-export function recordFieldTarget(
+function recordFieldTarget(
 	record: PageRecord,
 	lang: string,
 	target: string,
@@ -381,41 +381,4 @@ export function Grid({
 				? "md:grid-cols-2 lg:grid-cols-4"
 				: "md:grid-cols-2 lg:grid-cols-3";
 	return <div className={`mt-6 grid grid-cols-1 ${c} gap-4`}>{children}</div>;
-}
-
-export function MediaPlaceholder({
-	kind,
-	title,
-	meta,
-}: {
-	kind: "pdf" | "video" | "image";
-	title: string;
-	meta?: string;
-}) {
-	const t = useT();
-	const icon = kind === "pdf" ? "📄" : kind === "video" ? "▶" : "🖼";
-	const label =
-		kind === "pdf"
-			? "PDF"
-			: kind === "video"
-				? t("media.video", "Video")
-				: t("media.image", "Image");
-	return (
-		<div className="group flex items-start gap-4 rounded-2xl border border-border bg-background/40 p-4 hover:border-[var(--accent)]/50 hover:bg-[var(--accent)]/5 transition">
-			<div className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-[var(--secondary)]/15 text-xl text-[var(--secondary)]">
-				{icon}
-			</div>
-			<div className="min-w-0">
-				<div className="text-[10px] uppercase tracking-[0.18em] text-[var(--accent-ink)] font-semibold">
-					{label}
-				</div>
-				<div className="mt-0.5 font-medium text-foreground group-hover:text-[var(--accent)] transition">
-					{title}
-				</div>
-				{meta && (
-					<div className="text-xs text-muted-foreground mt-1">{meta}</div>
-				)}
-			</div>
-		</div>
-	);
 }

@@ -223,24 +223,6 @@ export const renderCache = sqliteTable("render_cache", {
 	createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 
-/** Staff directory (genuinely tabular; bilingual via explicit columns per spec). */
-export const staff = sqliteTable("staff", {
-	id: integer("id").primaryKey({ autoIncrement: true }),
-	tenantId: integer("tenant_id")
-		.notNull()
-		.default(1)
-		.references(() => tenants.id),
-	staffNo: text("staff_no"),
-	nameKm: text("name_km"),
-	nameEn: text("name_en"),
-	sex: text("sex"),
-	phone: text("phone"),
-	email: text("email"),
-	program: text("program"),
-	photoMediaId: integer("photo_media_id").references(() => media.id),
-	sort: integer("sort").notNull().default(0),
-});
-
 // isPublic controls whether someone appears on the public site
 export const people = sqliteTable(
 	"people",

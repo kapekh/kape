@@ -16,7 +16,7 @@ const MODE_KEY = "cms_inline_edit";
 
 type Editor = { permissions: string[]; isSuperAdmin: boolean };
 
-export type UiStringTarget = {
+type UiStringTarget = {
 	kind: "uiString";
 	key: string;
 	/** What the page is showing, which for a key with no row at all is the only copy of it. */
@@ -85,12 +85,6 @@ export const fieldLabel = (entity: string, field: string): string =>
 
 export const isMultiline = (field: string, shown: string): boolean =>
 	!ONE_LINE.has(field) || shown.includes("\n");
-
-/** Identifies the box, so selecting another field remounts it with its own value. */
-export const targetKey = (t: EditTarget): string =>
-	t.kind === "uiString"
-		? `uiString:${t.key}`
-		: `${t.entity}:${t.entityId}:${t.lang}:${t.target}`;
 
 /** Turns a marked node into what the surface needs to edit it, or null when the
  *  node belongs to another record, another renderer, or a field nobody may save. */

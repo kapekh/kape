@@ -15,8 +15,8 @@ import { attachMediaUrl } from "./media-util";
 const TENANT = 1;
 
 /** Campaign text that lives in `translations`, not in a column of `campaigns`. */
-export const CAMPAIGN_TEXT_FIELDS = ["title", "blurb"] as const;
-export type CampaignText = EntityText<(typeof CAMPAIGN_TEXT_FIELDS)[number]>;
+const CAMPAIGN_TEXT_FIELDS = ["title", "blurb"] as const;
+type CampaignText = EntityText<(typeof CAMPAIGN_TEXT_FIELDS)[number]>;
 
 export type CampaignInput = {
 	slug: string;
@@ -133,7 +133,7 @@ export async function getCampaignBySlug(db: DB, slug: string, lang: string) {
 }
 
 /** Recent paid, non-anonymous donors for the supporters wall. */
-export async function listSupporters(db: DB, campaignId: number, limit = 12) {
+async function listSupporters(db: DB, campaignId: number, limit = 12) {
 	const rows = await db
 		.select({
 			displayName: donations.displayName,

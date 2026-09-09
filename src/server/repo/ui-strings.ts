@@ -7,7 +7,7 @@ import { getDefaultLang, listLanguages } from "./i18n";
 
 const TENANT = 1;
 
-export type UiStringRow = {
+type UiStringRow = {
 	key: string;
 	/** Shipped default per active language; what an empty field falls back to. */
 	defaults: Record<string, string>;

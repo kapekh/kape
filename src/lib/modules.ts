@@ -174,9 +174,6 @@ export const serializeModules = (ids: Iterable<ModuleId>) =>
 		.map((m) => m.id)
 		.join(",");
 
-export const isModuleEnabled = (s: SiteSettings, id: ModuleId) =>
-	enabledModules(s).has(id);
-
 export const moduleForRouter = (routerKey: string) =>
 	MODULES.find((m) => m.routers.includes(routerKey));
 

@@ -2,7 +2,7 @@
 export type SiteSettings = Record<string, string | undefined>;
 
 /** Shown when nothing is configured. Neutral, never blank. */
-export const UNNAMED_SITE = "Your organisation";
+const UNNAMED_SITE = "Your organisation";
 
 const val = (s: SiteSettings, key: string) => s[key]?.trim() ?? "";
 

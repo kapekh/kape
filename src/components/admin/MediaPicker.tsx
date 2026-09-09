@@ -6,8 +6,6 @@ import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { formatSize, type Sized } from "#/lib/media-size";
 import { type MediaItem, MediaLibraryDialog } from "./MediaLibraryDialog";
 
-export type MediaLite = MediaItem;
-
 type Chosen = Sized & { for: string; url: string; type?: string | null };
 
 const IMG_EXT = /\.(png|jpe?g|webp|gif|svg|avif)(\?|$)/i;

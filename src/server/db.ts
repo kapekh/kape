@@ -28,5 +28,3 @@ try {
 } finally {
 	sqlite.exec("PRAGMA foreign_keys = ON;");
 }
-
-export { schema };

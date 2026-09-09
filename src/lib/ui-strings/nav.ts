@@ -22,9 +22,6 @@ export const nav: Record<string, { en: string; km?: string }> = {
 
 	"lightbox.position": { en: "{n} of {total}" },
 
-	"media.image": { en: "Image" },
-	"media.video": { en: "Video" },
-
 	"richtext.bulletList": { en: "• List" },
 	"richtext.link": { en: "Link" },
 	"richtext.link.apply": { en: "Apply" },

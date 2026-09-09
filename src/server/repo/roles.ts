@@ -19,7 +19,7 @@ const slugifyKey = (s: string) =>
 		.replace(/[^a-z0-9]+/g, "_")
 		.replace(/^_+|_+$/g, "");
 
-export async function getRoleByKey(db: DB, key: string) {
+async function getRoleByKey(db: DB, key: string) {
 	const [r] = await db
 		.select()
 		.from(roles)

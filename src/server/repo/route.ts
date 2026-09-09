@@ -63,7 +63,7 @@ async function projectRecordSlug(db: DB, rest: string): Promise<string | null> {
 	return row?.slug ?? null;
 }
 
-export async function resolveRoute(
+async function resolveRoute(
 	db: DB,
 	rawPath: string,
 	lang: string,

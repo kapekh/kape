@@ -11,7 +11,7 @@ import { useModalPanel } from "#/lib/use-modal-panel";
 import { cn } from "#/lib/utils";
 
 /** Structurally the shell's own `NavItem`, which that file keeps to itself. */
-export type PaletteNavItem = {
+type PaletteNavItem = {
 	to: string;
 	label: string;
 	icon: string;

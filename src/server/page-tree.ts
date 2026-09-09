@@ -10,7 +10,7 @@ const TENANT = 1;
 const humanize = (s: string) =>
 	s.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
-export async function setTitle(db: DB, id: number, title: string, lang = "en") {
+async function setTitle(db: DB, id: number, title: string, lang = "en") {
 	await db
 		.delete(translations)
 		.where(

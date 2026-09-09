@@ -23,7 +23,7 @@ function canEmbedPdf(): boolean {
 }
 
 // stays mounted while closed: unmounting skips the native focus restore
-export function PdfReader({
+function PdfReader({
 	doc,
 	onClose,
 }: {

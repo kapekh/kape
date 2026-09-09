@@ -11,7 +11,7 @@ import { getDefaultLang, resolveTranslations } from "./i18n";
 const TENANT = 1;
 
 /** Results are capped, not paged — the whole site is a few hundred records. */
-export const SEARCH_LIMIT = 30;
+const SEARCH_LIMIT = 30;
 
 const SNIPPET_LENGTH = 180;
 const SNIPPET_LEAD = 60;
@@ -42,9 +42,9 @@ const FIELD_WEIGHT: Record<string, number> = {
 	body: 1,
 };
 
-export type SearchKind = "page" | "post" | "project";
+type SearchKind = "page" | "post" | "project";
 
-export type SearchResult = {
+type SearchResult = {
 	kind: SearchKind;
 	id: number;
 	/** Unprefixed content path; the route adds the language prefix. */

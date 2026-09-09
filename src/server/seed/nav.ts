@@ -11,7 +11,7 @@ type SeedNav = {
 };
 
 // single source of truth, also consumed by the nav backfill
-export const NAV_META: Record<string, { brief?: string; img: string }> = {
+const NAV_META: Record<string, { brief?: string; img: string }> = {
 	// Top-level sections (used by the mega-menu feature panel)
 	"Who We Are": {
 		brief: "Our story, our people and the values behind our work.",
@@ -246,7 +246,7 @@ const MEDIA_ITEMS: Record<string, { en: string; km: string }> = {
 };
 
 /** Section grouping for the Media & Publications menu (also used by the regroup script). */
-export const MEDIA_GROUPS: { en: string; km: string; refs: string[] }[] = [
+const MEDIA_GROUPS: { en: string; km: string; refs: string[] }[] = [
 	{
 		en: "Reports & Updates",
 		km: "របាយការណ៍ និងព័ត៌មាន",

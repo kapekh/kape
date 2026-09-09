@@ -1,6 +1,6 @@
 // one top-level prefix per content type; the page tree wins over a legacy redirect
 
-export type CollectionKind = "post" | "album" | "project" | "people";
+type CollectionKind = "post" | "album" | "project" | "people";
 
 export type CollectionDef = {
 	prefix: string; // top-level URL segment, e.g. "news"
@@ -82,7 +82,7 @@ export const resolvesUnder = (col: CollectionDef, contentType: string) =>
 		: Boolean(col.alsoResolves?.includes(contentType));
 
 // longest first, so the most specific old prefix wins
-export const LEGACY_REDIRECTS: { from: string; to: string }[] = [
+const LEGACY_REDIRECTS: { from: string; to: string }[] = [
 	{ from: "who-we-are/news", to: "news" },
 	{ from: "what-we-do/impact-stories", to: "stories" },
 	{ from: "who-we-are/leadership", to: "team" },

@@ -1,4 +1,4 @@
-export type TourStep = {
+type TourStep = {
 	/**
 	 * CSS selector for the thing being pointed at, or several in the order they
 	 * should be tried. Omitted, or none of them on screen, the card sits centred.

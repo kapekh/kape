@@ -22,13 +22,13 @@ const TENANT = 1;
 /* ---- Form builder ---- */
 
 /** Form text that lives in `translations`, not in a column of `forms`. */
-export const FORM_TEXT_FIELDS = [
+const FORM_TEXT_FIELDS = [
 	"title",
 	"intro",
 	"submitLabel",
 	"successMessage",
 ] as const;
-export type FormText = EntityText<(typeof FORM_TEXT_FIELDS)[number]>;
+type FormText = EntityText<(typeof FORM_TEXT_FIELDS)[number]>;
 
 export type FormInput = {
 	slug: string;

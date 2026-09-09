@@ -19,7 +19,7 @@ import { attachMediaUrl } from "./media-util";
 const TENANT = 1;
 
 /** Person text that lives in `translations`, not in a column of `people`. */
-export const PERSON_TEXT_FIELDS = ["name", "position", "bio"] as const;
+const PERSON_TEXT_FIELDS = ["name", "position", "bio"] as const;
 
 // a bio is prosemirror json, which no inline box can edit, so its fallback is not offered
 const INLINE_TEXT_FIELDS = new Set<string>(["name", "position"]);
@@ -238,7 +238,7 @@ export async function staffDirectory(db: DB) {
 
 /* --------------------------------- admin ---------------------------------- */
 
-export type PersonTranslation = EntityText<(typeof PERSON_TEXT_FIELDS)[number]>;
+type PersonTranslation = EntityText<(typeof PERSON_TEXT_FIELDS)[number]>;
 
 export type PersonInput = {
 	tier: string;

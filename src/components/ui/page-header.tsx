@@ -4,7 +4,7 @@ import type * as React from "react";
 
 import { cn } from "#/lib/utils.ts";
 
-export type Crumb = { label: string; to?: LinkProps["to"] };
+type Crumb = { label: string; to?: LinkProps["to"] };
 
 function PageHeader({
 	title,

@@ -27,10 +27,8 @@ export type SectionNode = {
 	query?: SectionQuery; // dynamic data source (resolved server-side)
 };
 
-export type PageSections = SectionNode[];
-
 /** Field kinds the admin section-form renders. */
-export type FieldKind =
+type FieldKind =
 	| "text"
 	| "textarea"
 	| "richtext"
@@ -52,7 +50,7 @@ export type SectionField = {
 	itemFields?: SectionField[]; // for kind=items (repeater)
 };
 
-export type SectionLayout = { value: string; label: string };
+type SectionLayout = { value: string; label: string };
 
 export type SectionDef = {
 	type: string;
@@ -80,9 +78,6 @@ export const SECTION_TONES: { value: string; label: string }[] = [
 	{ value: "accent", label: "Accent" },
 	{ value: "dark", label: "Dark" },
 ];
-
-export const isSectionTone = (v: string): boolean =>
-	SECTION_TONES.some((t) => t.value === v);
 
 const TONE: SectionField = {
 	key: "tone",

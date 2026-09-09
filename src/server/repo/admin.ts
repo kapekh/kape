@@ -56,7 +56,6 @@ import {
 	schools,
 	siteSettings,
 	slugRedirects,
-	staff,
 	stats,
 	terms,
 	translations,
@@ -92,7 +91,6 @@ export async function adminOverview(db: DB) {
 		donorCount,
 		officeCount,
 		mediaCount,
-		staffCount,
 		langCount,
 	] = await Promise.all([
 		n(db.select({ c: count() }).from(posts).where(w)),
@@ -125,7 +123,6 @@ export async function adminOverview(db: DB) {
 				.where(eq(offices.tenantId, TENANT)),
 		),
 		n(db.select({ c: count() }).from(media).where(eq(media.tenantId, TENANT))),
-		n(db.select({ c: count() }).from(staff).where(eq(staff.tenantId, TENANT))),
 		n(db.select({ c: count() }).from(languages)),
 	]);
 	const today = new Date().toISOString().slice(0, 10);
@@ -154,7 +151,6 @@ export async function adminOverview(db: DB) {
 		donors: donorCount,
 		offices: officeCount,
 		media: mediaCount,
-		staff: staffCount,
 		languages: langCount,
 		visitsToday: byDate.get(today) ?? 0,
 		visitsYesterday: byDate.get(yesterday) ?? 0,
@@ -284,7 +280,7 @@ function groupTranslations(
 const TENANT = 1;
 const POST_FIELDS = TRANSLATED_FIELDS.post;
 
-export type PostTranslation = {
+type PostTranslation = {
 	lang: string;
 	title: string;
 	excerpt: string;
@@ -1740,14 +1736,6 @@ export const MEDIA_REFS: MediaRef[] = [
 		href: (r) => `/admin/schools/${r}`,
 	},
 	{
-		kind: "Staff photo",
-		table: staff,
-		column: staff.photoMediaId,
-		rowId: staff.id,
-		label: staff.nameEn,
-		tenant: staff.tenantId,
-	},
-	{
 		kind: "Homepage hero",
 		table: heroSlides,
 		column: heroSlides.mediaId,
@@ -2068,60 +2056,6 @@ export async function deleteMedia(db: DB, id: number): Promise<void> {
 
 /* ---------------- Staff directory ---------------- */
 
-export type StaffInput = {
-	staffNo: string;
-	nameKm: string;
-	nameEn: string;
-	sex: string;
-	phone: string;
-	email: string;
-	program: string;
-	sort: number;
-	photoMediaId?: number | null;
-};
-
-export async function adminListStaff(db: DB) {
-	const rows = await db
-		.select()
-		.from(staff)
-		.where(eq(staff.tenantId, TENANT))
-		.orderBy(asc(staff.sort));
-	return attachMediaUrl(db, rows, "photoMediaId", "photoUrl");
-}
-export async function getStaff(db: DB, id: number) {
-	const [r] = await db
-		.select()
-		.from(staff)
-		.where(and(eq(staff.tenantId, TENANT), eq(staff.id, id)))
-		.limit(1);
-	return r ?? null;
-}
-
-export async function createStaff(db: DB, input: StaffInput): Promise<number> {
-	const [row] = await db
-		.insert(staff)
-		.values({ tenantId: TENANT, ...input })
-		.returning({ id: staff.id });
-	return row.id;
-}
-
-export async function updateStaff(
-	db: DB,
-	id: number,
-	input: StaffInput,
-): Promise<void> {
-	await db
-		.update(staff)
-		.set(input)
-		.where(and(eq(staff.tenantId, TENANT), eq(staff.id, id)));
-}
-
-export async function deleteStaff(db: DB, id: number): Promise<void> {
-	await db
-		.delete(staff)
-		.where(and(eq(staff.tenantId, TENANT), eq(staff.id, id)));
-}
-
 /* ---------------- Site settings ---------------- */
 
 // installer bookkeeping, not site configuration: the settings grid puts a Delete button on every row
@@ -2213,8 +2147,8 @@ export async function deletePartner(db: DB, id: number): Promise<void> {
 /* ---------------- Offices ---------------- */
 
 /** Office text that lives in `translations`, not in a column of `offices`. */
-export const OFFICE_TEXT_FIELDS = ["name", "address"] as const;
-export type OfficeText = EntityText<(typeof OFFICE_TEXT_FIELDS)[number]>;
+const OFFICE_TEXT_FIELDS = ["name", "address"] as const;
+type OfficeText = EntityText<(typeof OFFICE_TEXT_FIELDS)[number]>;
 
 export type OfficeInput = {
 	province: string;
@@ -2473,8 +2407,8 @@ export async function deleteHero(db: DB, id: number): Promise<void> {
 /* ---------------- Schools ---------------- */
 
 /** School text that lives in `translations`, not in a column of `schools`. */
-export const SCHOOL_TEXT_FIELDS = ["name", "address"] as const;
-export type SchoolText = EntityText<(typeof SCHOOL_TEXT_FIELDS)[number]>;
+const SCHOOL_TEXT_FIELDS = ["name", "address"] as const;
+type SchoolText = EntityText<(typeof SCHOOL_TEXT_FIELDS)[number]>;
 
 export type SchoolInput = {
 	code: string;
@@ -2602,7 +2536,7 @@ export async function deleteDonor(db: DB, id: number): Promise<void> {
 /* ---------------- Projects (+ donors + locations) ---------------- */
 
 const PROJECT_FIELDS = ["name", "summary", "body"] as const;
-export type ProjectLocationInput = {
+type ProjectLocationInput = {
 	schoolName: string;
 	lat: string;
 	lng: string;

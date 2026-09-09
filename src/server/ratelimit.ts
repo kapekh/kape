@@ -8,7 +8,6 @@ export {
 	countEvent,
 	peekCount,
 	rateLimit,
-	resetLimiter,
 } from "./ratelimit-core";
 
 function peerAddress(): string {

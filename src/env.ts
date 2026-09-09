@@ -60,5 +60,3 @@ if (env.AUTH_SECRET === INSECURE_DEFAULT_SECRET) {
 			"Set a fixed AUTH_SECRET in .env so logins persist securely across restarts.",
 	);
 }
-
-export type Env = typeof env;

@@ -60,7 +60,7 @@ export async function listTerms(db: DB, taxonomy: string, lang?: string) {
 	return labelTerms(db, rows, lang);
 }
 
-export type ChildLink = {
+type ChildLink = {
 	slug: string;
 	title: string;
 	excerpt: string;
@@ -509,7 +509,7 @@ export async function listAlbums(db: DB, lang: string): Promise<AlbumItem[]> {
 	return out;
 }
 
-export type AlbumPhoto = {
+type AlbumPhoto = {
 	id: number;
 	url: string;
 	caption: string;

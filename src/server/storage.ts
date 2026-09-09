@@ -28,18 +28,8 @@ function createR2(): S3Client | null {
 
 export const r2 = createR2();
 
-/** Returns the R2 client or throws if storage isn't configured. */
-export function requireStorage(): S3Client {
-	if (!r2) {
-		throw new Error(
-			"R2 storage is not configured. Set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY and R2_BUCKET.",
-		);
-	}
-	return r2;
-}
-
 /** Public URL for an object key, when a public base URL is configured. */
-export function publicUrl(key: string): string | null {
+function publicUrl(key: string): string | null {
 	if (!env.R2_PUBLIC_URL) return null;
 	return `${env.R2_PUBLIC_URL.replace(/\/$/, "")}/${key}`;
 }

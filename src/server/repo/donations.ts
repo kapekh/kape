@@ -134,25 +134,6 @@ export async function adminListDonationsForCampaign(
 		.orderBy(desc(donations.createdAt));
 }
 
-/** Whether a campaign has any confirmed (paid) donations — blocks deletion. */
-export async function campaignHasPaidDonations(
-	db: DB,
-	campaignId: number,
-): Promise<boolean> {
-	const [row] = await db
-		.select({ id: donations.id })
-		.from(donations)
-		.where(
-			and(
-				eq(donations.tenantId, TENANT),
-				eq(donations.campaignId, campaignId),
-				eq(donations.status, "paid"),
-			),
-		)
-		.limit(1);
-	return !!row;
-}
-
 /** Manual reconciliation: mark a donation paid by id (e.g. a missed webhook). */
 export async function adminMarkDonationPaid(db: DB, id: number): Promise<void> {
 	await db

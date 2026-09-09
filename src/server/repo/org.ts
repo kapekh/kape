@@ -14,8 +14,8 @@ import {
 const TENANT = 1;
 
 /** Org-chart text that lives in `translations`, not in a column of `org_nodes`. */
-export const ORG_TEXT_FIELDS = ["name", "title"] as const;
-export type OrgText = EntityText<(typeof ORG_TEXT_FIELDS)[number]>;
+const ORG_TEXT_FIELDS = ["name", "title"] as const;
+type OrgText = EntityText<(typeof ORG_TEXT_FIELDS)[number]>;
 
 /* --------------------------------- public --------------------------------- */
 

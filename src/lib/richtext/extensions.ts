@@ -30,7 +30,7 @@ const ResponsiveTable = Table.extend({
 	},
 });
 
-export const IMAGE_ALIGNS = ["left", "right"] as const;
+const IMAGE_ALIGNS = ["left", "right"] as const;
 export type ImageAlign = (typeof IMAGE_ALIGNS)[number];
 
 // data attribute, not a utility class: the stored HTML is styled by .prose-body, which the reader and the editor share

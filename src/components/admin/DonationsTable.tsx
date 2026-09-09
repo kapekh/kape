@@ -27,7 +27,7 @@ export const fmtMoney = (n: number, currency: string) =>
 		maximumFractionDigits: currency === "KHR" ? 0 : 2,
 	}).format(n);
 
-export function fmtDate(s: string) {
+function fmtDate(s: string) {
 	const d = new Date(s.includes("T") ? s : `${s.replace(" ", "T")}Z`);
 	return Number.isNaN(d.getTime()) ? s : d.toLocaleString();
 }

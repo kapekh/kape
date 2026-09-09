@@ -67,12 +67,6 @@ export async function invalidateTags(db: DB, tags: string[]): Promise<void> {
 	}
 }
 
-/** Drop a single path's entry across all languages (any-lang prefix). */
-export async function invalidatePath(db: DB, path: string): Promise<void> {
-	const p = path.replace(/^\/+|\/+$/g, "");
-	await db.delete(renderCache).where(like(renderCache.key, `%::${p}`));
-}
-
 export async function clearCache(db: DB): Promise<void> {
 	await db.delete(renderCache);
 }

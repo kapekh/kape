@@ -5,7 +5,7 @@ import { useT } from "@/lib/i18n";
 export type LightboxPhoto = { id: number; url: string; caption?: string };
 
 // stays mounted while closed: unmounting skips the native focus restore
-export function Lightbox({
+function Lightbox({
 	photos,
 	index,
 	onIndex,

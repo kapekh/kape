@@ -13,8 +13,6 @@ export function barayConfig(): BarayConfig | null {
 	return { apiKey, sk, iv };
 }
 
-export const isBarayConfigured = () => barayConfig() !== null;
-
 function encryptPayload(payload: unknown, sk: string, iv: string): string {
 	const key = Buffer.from(sk, "base64");
 	const ivBuffer = Buffer.from(iv, "base64");

@@ -23,7 +23,7 @@ import {
 import { TENANT } from "../seed/helpers";
 
 // Record<ModuleId, …> rather than a lookup, so adding a module is a type error here until its tables are named
-export const MODULE_TABLES: Record<ModuleId, SQLiteTable[]> = {
+const MODULE_TABLES: Record<ModuleId, SQLiteTable[]> = {
 	projects: [projects, projectLocations],
 	schools: [schools],
 	fundraising: [campaigns, donations, donors],
@@ -40,20 +40,20 @@ const anyRows = async (db: DB, tables: SQLiteTable[]) => {
 	return false;
 };
 
-export async function modulesInUse(db: DB): Promise<ModuleId[]> {
+async function modulesInUse(db: DB): Promise<ModuleId[]> {
 	const ids: ModuleId[] = [];
 	for (const [id, tables] of Object.entries(MODULE_TABLES))
 		if (await anyRows(db, tables)) ids.push(id as ModuleId);
 	return ids;
 }
 
-export async function readModulesSetting(db: DB): Promise<string | undefined> {
+async function readModulesSetting(db: DB): Promise<string | undefined> {
 	const rows = await db.select().from(siteSettings);
 	return rows.find((r) => r.tenantId === TENANT && r.key === MODULES_SETTING)
 		?.value;
 }
 
-export async function writeModulesSetting(db: DB, value: string) {
+async function writeModulesSetting(db: DB, value: string) {
 	await db
 		.insert(siteSettings)
 		.values({ tenantId: TENANT, key: MODULES_SETTING, value })

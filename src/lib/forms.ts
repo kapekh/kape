@@ -62,13 +62,8 @@ export function isContentField(f: { type: FormFieldType }): boolean {
 	return f.type === "content" || f.type === "section";
 }
 
-/** Field types whose answer is a list, stored joined rather than as one value. */
-export function isMultiField(f: { type: FormFieldType }): boolean {
-	return f.type === "checkboxes";
-}
-
 /** How a checkbox group's picks are joined into the single stored/exported cell. */
-export const MULTI_SEPARATOR = ", ";
+const MULTI_SEPARATOR = ", ";
 
 /** Coerce a submitted checkbox-group value (one, many, or none) to a clean list. */
 export function toStringList(raw: unknown): string[] {

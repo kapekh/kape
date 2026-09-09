@@ -3,8 +3,6 @@ import { inArray } from "drizzle-orm";
 import type { DB } from "../db";
 import { media } from "../schema";
 
-const TENANT = 1;
-
 export async function attachMediaUrl<
 	T extends Record<string, unknown>,
 	U extends string,
@@ -35,5 +33,3 @@ export async function attachMediaUrl<
 		return { ...r, [urlField]: url } as T & { [P in U]: string | null };
 	});
 }
-
-export { TENANT };
