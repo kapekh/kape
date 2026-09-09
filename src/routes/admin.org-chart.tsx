@@ -207,7 +207,7 @@ function OrgChartAdmin() {
 			trpcClient.i18n.languages.query(),
 		]);
 		setRows(n as OrgRow[]);
-		setPeople(ppl.map((p) => ({ value: String(p.id), label: p.nameEn })));
+		setPeople(ppl.map((p) => ({ value: String(p.id), label: p.name })));
 		setLangs(languages);
 		setLoading(false);
 	}, []);

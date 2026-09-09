@@ -16,11 +16,7 @@ import {
 import type { SQLiteColumn, SQLiteTable } from "drizzle-orm/sqlite-core";
 
 import { DEFAULT_LANG } from "#/lib/i18n-config";
-import {
-	PERSON_COLUMN_FIELDS,
-	PERSON_NAME_COLUMNS,
-	TRANSLATED_FIELDS,
-} from "#/lib/record-fields";
+import { TRANSLATED_FIELDS } from "#/lib/record-fields";
 import {
 	checkImageValue,
 	choiceField,
@@ -69,6 +65,7 @@ import {
 } from "../schema";
 import { deleteUpload } from "../storage";
 import {
+	defaultLangText,
 	deleteEntityText,
 	type EntityText,
 	getDefaultLang,
@@ -1163,6 +1160,15 @@ async function writeTranslationField(
 		throw new Error(
 			`A page title is at most ${PAGE_TITLE_MAX} characters; this one is ${value.length}.`,
 		);
+	if (
+		input.entity === "person" &&
+		field === "name" &&
+		!value &&
+		input.lang === (await getDefaultLang(db))
+	)
+		throw new Error(
+			"A person needs a name in the default language; every list and link uses it.",
+		);
 	const updatedAt = await stampVersion(
 		db,
 		input.entity,
@@ -1200,33 +1206,6 @@ async function writeTranslationField(
 			set: { value },
 		});
 	return { wrote: "translation", cleared: false, updatedAt };
-}
-
-async function writePersonColumn(
-	db: DB,
-	input: UpdateFieldInput,
-	value: string,
-): Promise<UpdateFieldResult> {
-	const updatedAt = await stampVersion(
-		db,
-		input.entity,
-		input.entityId,
-		input.expectedUpdatedAt,
-	);
-	const column = PERSON_NAME_COLUMNS[input.lang];
-	if (!column)
-		throw new Error(
-			`A person's name is stored per language in its own column, and there is none for "${input.lang}". Edit it in ${Object.keys(PERSON_NAME_COLUMNS).join(" or ")}.`,
-		);
-	if (!value && column === "nameEn")
-		throw new Error(
-			"A person needs a name in the default language; every list and link uses it.",
-		);
-	await db
-		.update(people)
-		.set({ [column]: value || null })
-		.where(eq(people.id, input.entityId));
-	return { wrote: "translation", cleared: !value, updatedAt };
 }
 
 async function writeSectionField(
@@ -1294,12 +1273,6 @@ export async function updateField(
 		.limit(1);
 	if (!row) throw new Error(`There is no ${input.entity} ${input.entityId}.`);
 	const value = input.value.trim();
-	if (
-		target.kind === "field" &&
-		input.entity === "person" &&
-		PERSON_COLUMN_FIELDS.includes(target.field)
-	)
-		return writePersonColumn(db, input, value);
 	return target.kind === "field"
 		? writeTranslationField(db, input, target.field, value)
 		: writeSectionField(db, input, target, value);
@@ -1694,7 +1667,7 @@ export const MEDIA_REFS: MediaRef[] = [
 		table: people,
 		column: people.photoMediaId,
 		rowId: people.id,
-		label: people.nameEn,
+		labelEntity: "person",
 		tenant: people.tenantId,
 		href: (r) => `/admin/people/${r}`,
 	},
@@ -1855,7 +1828,7 @@ const TRANSLATED_ENTITIES: Record<
 		kind: string;
 		table: SQLiteTable;
 		id: SQLiteColumn;
-		label: SQLiteColumn;
+		label: SQLiteColumn | SQL<string | null>;
 		tenant: SQLiteColumn;
 		href: (rowId: number) => string;
 	}
@@ -1888,7 +1861,7 @@ const TRANSLATED_ENTITIES: Record<
 		kind: "Person text",
 		table: people,
 		id: people.id,
-		label: people.nameEn,
+		label: defaultLangText("person", people.id, "name"),
 		tenant: people.tenantId,
 		href: (r) => `/admin/people/${r}`,
 	},

@@ -15,8 +15,7 @@ export const internal: Record<string, { en: string; km?: string }> = {
 
 	"internal.directory.col.email": { en: "Email" },
 	"internal.directory.col.id": { en: "ID" },
-	"internal.directory.col.nameEn": { en: "Name (EN)" },
-	"internal.directory.col.nameKm": { en: "Name (KH)" },
+	"internal.directory.col.name": { en: "Name" },
 	"internal.directory.col.phone": { en: "Phone" },
 	"internal.directory.col.program": { en: "Program" },
 	"internal.directory.col.sex": { en: "Sex" },

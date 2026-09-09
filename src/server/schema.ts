@@ -241,7 +241,7 @@ export const staff = sqliteTable("staff", {
 	sort: integer("sort").notNull().default(0),
 });
 
-// isPublic controls whether someone appears on the public site; bio is bilingual rich text in translations
+// isPublic controls whether someone appears on the public site
 export const people = sqliteTable(
 	"people",
 	{
@@ -250,9 +250,7 @@ export const people = sqliteTable(
 			.notNull()
 			.default(1)
 			.references(() => tenants.id),
-		nameEn: text("name_en").notNull(),
-		nameKm: text("name_km"),
-		// position is a `translations` row (entity_type 'person', field 'position')
+		// name, position and bio are `translations` rows (entity_type 'person')
 		tier: text("tier").notNull().default("staff"), // board | smt | pm | team | staff
 		isPublic: integer("is_public", { mode: "boolean" })
 			.notNull()

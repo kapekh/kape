@@ -26,11 +26,9 @@ import { RichTextEditor } from "./RichTextEditor";
 import { useDirtyGuard } from "./useDirty";
 import { useFieldErrors } from "./useFieldErrors";
 
-type PersonText = { position: string; bio: string };
+type PersonText = { name: string; position: string; bio: string };
 
 export type PersonFormValue = {
-	nameEn: string;
-	nameKm: string | null;
 	tier: string;
 	isPublic: boolean;
 	slug: string | null;
@@ -45,8 +43,6 @@ export type PersonFormValue = {
 };
 
 type Initial = {
-	nameEn: string;
-	nameKm: string | null;
 	tier: string;
 	isPublic: boolean;
 	slug: string | null;
@@ -84,8 +80,6 @@ export function PeopleForm({
 	savedAt?: string | null;
 }) {
 	const uid = useId();
-	const [nameEn, setNameEn] = useState(initial?.nameEn ?? "");
-	const [nameKm, setNameKm] = useState(initial?.nameKm ?? "");
 	const [tier, setTier] = useState(initial?.tier ?? "team");
 	const [isPublic, setIsPublic] = useState(initial?.isPublic ?? true);
 	const [slug, setSlug] = useState(initial?.slug ?? "");
@@ -101,23 +95,39 @@ export function PeopleForm({
 		const t: Record<string, PersonText> = {};
 		for (const l of languages) {
 			const e = initial?.translations?.[l.code] ?? {};
-			t[l.code] = { position: e.position ?? "", bio: e.bio ?? "" };
+			t[l.code] = {
+				name: e.name ?? "",
+				position: e.position ?? "",
+				bio: e.bio ?? "",
+			};
 		}
 		return t;
 	});
+	const [nameError, setNameError] = useState<string | null>(null);
 	const { errors, invalid } = useFieldErrors();
+	const defaultLang = languages[0];
 
-	const setText = (lang: string, field: keyof PersonText, value: string) =>
+	const setText = (lang: string, field: keyof PersonText, value: string) => {
+		if (field === "name" && lang === defaultLang?.code && value.trim())
+			setNameError(null);
 		setTrans((prev) => ({
 			...prev,
 			[lang]: { ...prev[lang], [field]: value },
 		}));
+	};
 
 	function submit(e: React.FormEvent) {
 		e.preventDefault();
+		// `required` on an input inside an unselected tab panel makes the form
+		// unsubmittable, so the default-language name is guarded here instead
+		if (defaultLang && !trans[defaultLang.code]?.name.trim()) {
+			setNameError(
+				`A person needs a name in ${defaultLang.name}; every list and link uses it.`,
+			);
+			return;
+		}
+		setNameError(null);
 		onSubmit({
-			nameEn,
-			nameKm: nameKm || null,
 			tier,
 			isPublic,
 			slug: slug || null,
@@ -134,8 +144,6 @@ export function PeopleForm({
 
 	const dirty = useDirtyGuard(
 		JSON.stringify({
-			nameEn,
-			nameKm,
 			tier,
 			isPublic,
 			slug,
@@ -167,43 +175,39 @@ export function PeopleForm({
 				main={
 					<>
 						<FormSection
-							split
-							title="Identity"
-							description="Name, shown on the public team page and the internal directory."
+							title="Name, position and bio"
+							description="What this person is called, their job title and their profile biography, each in its own language. Switch languages with the tabs — your text is kept as you switch."
 						>
-							<div className="space-y-6">
-								<Field label="Name (English)" required error={errors.nameEn}>
-									{(p) => (
-										<Input
-											{...p}
-											{...invalid("nameEn")}
-											value={nameEn}
-											onChange={(e) => setNameEn(e.target.value)}
-											placeholder="Chenda Sok"
-										/>
-									)}
-								</Field>
-								<Field label="Name (Khmer)">
-									{(p) => (
-										<Input
-											{...p}
-											className="font-khmer"
-											value={nameKm}
-											onChange={(e) => setNameKm(e.target.value)}
-											placeholder="សុខ ច័ន្ទដា"
-										/>
-									)}
-								</Field>
-							</div>
-						</FormSection>
-
-						<FormSection
-							title="Position and bio"
-							description="Job title and profile biography, each in its own language. Switch languages with the tabs — your text is kept as you switch."
-						>
+							{nameError && (
+								<p
+									role="alert"
+									className="mb-6 text-[13px] font-medium text-admin-danger-ink"
+								>
+									{nameError}
+								</p>
+							)}
 							<LangTabs languages={languages}>
 								{(l) => (
 									<div className="space-y-6">
+										<Field label="Name" required={l.code === defaultLang?.code}>
+											{({ required, ...p }) => (
+												<Input
+													{...p}
+													aria-required={required}
+													aria-invalid={
+														required && nameError ? true : undefined
+													}
+													className={l.code === "km" ? "font-khmer" : undefined}
+													value={trans[l.code]?.name ?? ""}
+													onChange={(e) =>
+														setText(l.code, "name", e.target.value)
+													}
+													placeholder={
+														l.code === "km" ? "សុខ ច័ន្ទដា" : "Chenda Sok"
+													}
+												/>
+											)}
+										</Field>
 										<Field label="Position / role">
 											{(p) => (
 												<Input

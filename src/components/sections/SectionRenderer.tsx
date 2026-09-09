@@ -127,7 +127,7 @@ function useRowMark() {
 			`field:${field}`,
 		);
 		const editable =
-			editing && may(ENTITY_AREA[entity]) && isRowField(entity, field, id.lang);
+			editing && may(ENTITY_AREA[entity]) && isRowField(entity, field);
 		if (!editable) return mark;
 		const text = record[field];
 		return {
@@ -165,7 +165,7 @@ export function rowEditTarget(
 	const entityId = Number(id);
 	if (!Number.isInteger(entityId) || !editable.has(entity)) return null;
 	if (entity === page.entity && entityId === page.entityId) return null;
-	if (!isRowField(entity, field, page.lang)) return null;
+	if (!isRowField(entity, field)) return null;
 	// versionOf reads this back out when the surface saves
 	rememberVersion(entity, entityId, node.getAttribute("data-cms-version"));
 	return {

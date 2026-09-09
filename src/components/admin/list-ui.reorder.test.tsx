@@ -15,11 +15,32 @@ const state = vi.hoisted(() => ({
 }));
 
 const PEOPLE = vi.hoisted(() => [
-	{ id: 1, tier: "board", nameEn: "Ana", sort: 0, positions: {} },
-	{ id: 2, tier: "board", nameEn: "Ben", sort: 1, positions: {} },
-	{ id: 3, tier: "board", nameEn: "Chan", sort: 2, positions: {} },
-	{ id: 4, tier: "smt", nameEn: "Dara", sort: 0, positions: {} },
-	{ id: 5, tier: "smt", nameEn: "Eng", sort: 1, positions: {} },
+	{
+		id: 1,
+		tier: "board",
+		name: "Ana",
+		sort: 0,
+		altNames: [],
+		translations: {},
+	},
+	{
+		id: 2,
+		tier: "board",
+		name: "Ben",
+		sort: 1,
+		altNames: [],
+		translations: {},
+	},
+	{
+		id: 3,
+		tier: "board",
+		name: "Chan",
+		sort: 2,
+		altNames: [],
+		translations: {},
+	},
+	{ id: 4, tier: "smt", name: "Dara", sort: 0, altNames: [], translations: {} },
+	{ id: 5, tier: "smt", name: "Eng", sort: 1, altNames: [], translations: {} },
 ]);
 
 vi.mock("#/integrations/tanstack-query/root-provider", () => ({

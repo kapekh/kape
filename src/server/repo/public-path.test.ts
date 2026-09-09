@@ -42,8 +42,8 @@ const paths: Record<string, string | null> = JSON.parse(
 			 exec("insert into posts (tenant_id, content_type, slug, status) values (1,'news','not-yet','draft')");
 			 exec("insert into posts (tenant_id, content_type, slug, status) values (1,'document','staff-handbook','published')");
 			 exec("insert into projects (tenant_id, code, slug) values (1,'NGS','new-generation-schools')");
-			 exec("insert into people (tenant_id, name_en, is_public, slug) values (1,'Sok Dara',1,'sok-dara')");
-			 exec("insert into people (tenant_id, name_en, is_public, slug) values (1,'Internal Only',0,'internal-only')");
+			 exec("insert into people (tenant_id, is_public, slug) values (1,1,'sok-dara')");
+			 exec("insert into people (tenant_id, is_public, slug) values (1,0,'internal-only')");
 
 			 const parentId = id("select id from projects where slug='new-generation-schools'");
 			 exec("insert into projects (tenant_id, code, slug, parent_id) values (1,'NGS-L','libraries'," + parentId + ")");

@@ -88,7 +88,7 @@ function PersonPicker({
 						.map((r) => ({
 							id: r.id,
 							slug: r.slug,
-							name: r.nameEn,
+							name: r.name,
 							position: r.position,
 						})),
 				),

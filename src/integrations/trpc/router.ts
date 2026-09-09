@@ -953,11 +953,6 @@ const staffRouter = {
 } satisfies TRPCRouterRecord;
 
 const personInput = z.object({
-	nameEn: z.string().min(1),
-	nameKm: z
-		.string()
-		.nullish()
-		.transform((v) => v ?? null),
 	tier: z.string(),
 	isPublic: z.boolean(),
 	slug: z
@@ -992,6 +987,7 @@ const personInput = z.object({
 	translations: z.array(
 		z.object({
 			lang: z.string(),
+			name: z.string(),
 			position: z.string(),
 			bio: z.string(),
 		}),

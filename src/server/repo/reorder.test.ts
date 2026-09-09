@@ -51,7 +51,7 @@ function run(body: string): Record<string, unknown> {
 const fivePeople = `
 	exec("delete from people");
 	for (const i of [1, 2, 3, 4, 5])
-		exec("insert into people (id, tenant_id, name_en, tier, sort) values (?, 1, 'P' || ?, 'staff', ?)", i, i, i - 1);
+		exec("insert into people (id, tenant_id, tier, sort) values (?, 1, 'staff', ?)", i, i - 1);
 	const people = () => q("select id, sort from people order by id");
 `;
 

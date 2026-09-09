@@ -140,45 +140,51 @@ export async function seedDocuments() {
 
 /** Internal staff roster (unified `people` table; tier="staff", not public). */
 export async function seedStaffRoster() {
-	await db.insert(people).values([
+	const roster: {
+		name: { en: string; km: string };
+		staffNo: string;
+		sex: string;
+		phone: string;
+		email: string;
+		program: string;
+	}[] = [
 		{
-			tenantId: TENANT,
-			nameEn: "Heang Koy",
-			nameKm: "ហេង គយ",
-			tier: "staff",
-			isPublic: false,
+			name: { en: "Heang Koy", km: "ហេង គយ" },
 			staffNo: "K001",
 			sex: "M",
 			phone: "012 000 001",
 			email: "heang.koy@kapekh.org",
 			program: "Board",
-			sort: 1000,
 		},
 		{
-			tenantId: TENANT,
-			nameEn: "Sum Bopha",
-			nameKm: "ស៊ុម បុប្ផា",
-			tier: "staff",
-			isPublic: false,
+			name: { en: "Sum Bopha", km: "ស៊ុម បុប្ផា" },
 			staffNo: "K002",
 			sex: "F",
 			phone: "012 000 002",
 			email: "sum.bopha@kapekh.org",
 			program: "NGS",
-			sort: 1001,
 		},
 		{
-			tenantId: TENANT,
-			nameEn: "Chhim Phallak",
-			nameKm: "ឈឹម ផល្លក",
-			tier: "staff",
-			isPublic: false,
+			name: { en: "Chhim Phallak", km: "ឈឹម ផល្លក" },
 			staffNo: "K003",
 			sex: "F",
 			phone: "012 000 003",
 			email: "chhim.phallak@kapekh.org",
 			program: "Library",
-			sort: 1002,
 		},
-	]);
+	];
+	for (let i = 0; i < roster.length; i++) {
+		const { name, ...member } = roster[i];
+		const [row] = await db
+			.insert(people)
+			.values({
+				tenantId: TENANT,
+				tier: "staff",
+				isPublic: false,
+				sort: 1000 + i,
+				...member,
+			})
+			.returning({ id: people.id });
+		await addTranslations("person", row.id, { name });
+	}
 }

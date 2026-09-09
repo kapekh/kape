@@ -59,12 +59,11 @@ function PeopleList() {
 
 	const tiers = [...new Set(rows.map((r) => r.tier))].sort();
 	const ofTier = tier ? rows.filter((r) => r.tier === tier) : rows;
+	// every language's name and position, so searching in Khmer finds the row the list names in English
 	const shown = ofTier.filter((r) =>
 		matchesQuery(
 			q,
-			r.nameEn,
-			r.nameKm,
-			...Object.values(r.positions),
+			...Object.values(r.translations).flatMap((t) => [t.name, t.position]),
 			TIER_LABELS[r.tier] ?? r.tier,
 		),
 	);
@@ -216,7 +215,7 @@ function TierRows({
 	const reorder = useListReorder({
 		rows,
 		id: (r: Row) => r.id,
-		describe: (r: Row) => r.nameEn ?? `person ${r.id}`,
+		describe: (r: Row) => r.name || `person ${r.id}`,
 		disabled,
 		save: (ids) => trpcClient.adminPeople.reorder.mutate({ ids }),
 	});
@@ -249,7 +248,7 @@ function TierRows({
 							/>
 						) : (
 							<span className="grid size-9 place-items-center rounded-full bg-admin-neutral-soft text-[13px] font-medium text-admin-ink-muted">
-								{(r.nameEn ?? "?").slice(0, 1)}
+								{(r.name || "?").slice(0, 1)}
 							</span>
 						)}
 					</TD>
@@ -259,13 +258,16 @@ function TierRows({
 							params={{ id: String(r.id) }}
 							className="tap-target truncate font-medium text-admin-ink max-md:whitespace-normal transition-colors duration-150 ease-out hover:text-admin-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
 						>
-							{r.nameEn}
+							{r.name}
 						</Link>
-						{r.nameKm ? (
-							<span className="ml-2 font-khmer text-[13px] text-admin-ink-muted">
-								{r.nameKm}
+						{r.altNames.map((n) => (
+							<span
+								key={n.lang}
+								className={`ml-2 text-[13px] text-admin-ink-muted ${n.lang === "km" ? "font-khmer" : ""}`}
+							>
+								{n.value}
 							</span>
-						) : null}
+						))}
 					</TD>
 					<TD label="Position" className="text-admin-ink-muted">
 						{r.position || "—"}
@@ -282,7 +284,7 @@ function TierRows({
 					</TD>
 					<TD align="right" className="max-md:justify-end">
 						<ActionMenu
-							label={`Actions for ${r.nameEn}`}
+							label={`Actions for ${r.name}`}
 							items={[
 								...viewOnSite({
 									kind: "person",

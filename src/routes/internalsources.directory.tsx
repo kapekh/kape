@@ -11,18 +11,29 @@ export const Route = createFileRoute("/internalsources/directory")({
 type Staff = Awaited<
 	ReturnType<typeof trpcClient.staff.directory.query>
 >[number];
+type Language = Awaited<
+	ReturnType<typeof trpcClient.i18n.languages.query>
+>[number];
 
 function Directory() {
 	const t = useT();
 	const [rows, setRows] = useState<Staff[]>([]);
+	const [languages, setLanguages] = useState<Language[]>([]);
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
-		trpcClient.staff.directory.query().then((r) => {
+		Promise.all([
+			trpcClient.staff.directory.query(),
+			trpcClient.i18n.languages.query(),
+		]).then(([r, langs]) => {
 			setRows(r);
+			setLanguages(langs);
 			setLoading(false);
 		});
 	}, []);
+
+	const defaultLang = languages.find((l) => l.isDefault) ?? languages[0];
+	const nameOf = (r: Staff) => (defaultLang && r.names[defaultLang.code]) || "";
 
 	return (
 		<div>
@@ -42,12 +53,11 @@ function Directory() {
 								<th className="px-3 py-2.5">
 									{t("internal.directory.col.id", "ID")}
 								</th>
-								<th className="px-3 py-2.5">
-									{t("internal.directory.col.nameKm", "Name (KH)")}
-								</th>
-								<th className="px-3 py-2.5">
-									{t("internal.directory.col.nameEn", "Name (EN)")}
-								</th>
+								{languages.map((l) => (
+									<th key={l.code} className="px-3 py-2.5">
+										{t("internal.directory.col.name", "Name")} ({l.name})
+									</th>
+								))}
 								<th className="px-3 py-2.5">
 									{t("internal.directory.col.sex", "Sex")}
 								</th>
@@ -69,18 +79,24 @@ function Directory() {
 										{r.photoUrl ? (
 											<img
 												src={r.photoUrl}
-												alt={r.nameEn ?? ""}
+												alt={nameOf(r)}
 												className="h-9 w-9 rounded-full object-cover"
 											/>
 										) : (
 											<span className="grid h-9 w-9 place-items-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
-												{(r.nameEn ?? "?").slice(0, 1)}
+												{(nameOf(r) || "?").slice(0, 1)}
 											</span>
 										)}
 									</td>
 									<td className="px-3 py-2.5 font-mono">{r.staffNo}</td>
-									<td className="px-3 py-2.5 font-khmer">{r.nameKm}</td>
-									<td className="px-3 py-2.5">{r.nameEn}</td>
+									{languages.map((l) => (
+										<td
+											key={l.code}
+											className={`px-3 py-2.5 ${l.code === "km" ? "font-khmer" : ""}`}
+										>
+											{r.names[l.code] ?? ""}
+										</td>
+									))}
 									<td className="px-3 py-2.5">{r.sex}</td>
 									<td className="px-3 py-2.5 text-foreground/70">{r.phone}</td>
 									<td className="px-3 py-2.5 text-foreground/70">{r.email}</td>

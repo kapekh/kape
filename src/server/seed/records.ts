@@ -909,8 +909,6 @@ export async function seedLeadership() {
 			.insert(people)
 			.values({
 				tenantId: TENANT,
-				nameEn: pn.name.en,
-				nameKm: pn.name.km,
 				tier: pn.tier,
 				email: pn.email ?? null,
 				isPublic: true,
@@ -919,6 +917,7 @@ export async function seedLeadership() {
 			})
 			.returning({ id: people.id });
 		await addTranslations("person", row.id, {
+			name: pn.name,
 			position: { en: pn.position, km: POSITION_KM[pn.position] },
 			bio: { en: docParas(pn.bio.en), km: docParas(pn.bio.km) },
 		});

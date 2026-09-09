@@ -1,4 +1,5 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
+import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
 
 import { LANGS } from "#/lib/i18n-config";
 import { defaultUiStrings } from "#/lib/ui-strings.default";
@@ -112,6 +113,19 @@ export function listLanguages(db: DB) {
 		.where(eq(languages.enabled, true))
 		.orderBy(languages.sort);
 }
+
+/**
+ * One entity's default-language value, as SQL a surrounding query can select or
+ * order by — for a label wanted where no language has been asked for.
+ */
+export const defaultLangText = (
+	entityType: string,
+	id: SQLiteColumn,
+	field: string,
+) =>
+	sql<
+		string | null
+	>`(select value from translations where entity_type = ${entityType} and entity_id = ${id} and field = ${field} and lang = coalesce((select code from languages where is_default = 1 limit 1), 'en'))`;
 
 /** The fallback language code (defaults to 'en' if none flagged). */
 export async function getDefaultLang(db: DB): Promise<string> {

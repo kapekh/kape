@@ -38,10 +38,11 @@ const out = execFileSync(
 		   enabled: true, isDefault: false, rtl: false, sort: 1,
 		 });
 		 const [p] = await db.insert(people).values({
-		   tenantId: 1, nameEn: "Mr. Sambath", nameKm: "លោក សម្បត្តិ",
-		   slug: "person-sambath", tier: "smt", isPublic: true, sort: 0,
+		   tenantId: 1, slug: "person-sambath", tier: "smt", isPublic: true, sort: 0,
 		 }).returning({ id: people.id });
 		 await db.insert(translations).values([
+		   { tenantId: 1, entityType: "person", entityId: p.id, field: "name", lang: "en", value: "Mr. Sambath" },
+		   { tenantId: 1, entityType: "person", entityId: p.id, field: "name", lang: "km", value: "លោក សម្បត្តិ" },
 		   { tenantId: 1, entityType: "person", entityId: p.id, field: "position", lang: "en", value: "Executive Director" },
 		   { tenantId: 1, entityType: "person", entityId: p.id, field: "position", lang: "km", value: "នាយកប្រតិបត្តិ" },
 		 ]);

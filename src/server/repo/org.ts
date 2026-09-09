@@ -52,13 +52,17 @@ export async function getOrgTree(db: DB, lang: string): Promise<OrgNode[]> {
 			.select({
 				id: people.id,
 				slug: people.slug,
-				nameEn: people.nameEn,
-				nameKm: people.nameKm,
 				isPublic: people.isPublic,
 				photoMediaId: people.photoMediaId,
 			})
 			.from(people)
 			.where(inArray(people.id, personIds));
+		const personNames = await resolveTranslations(
+			db,
+			"person",
+			pRows.map((p) => p.id),
+			lang,
+		);
 		const coverIds = [
 			...new Set(
 				pRows.map((p) => p.photoMediaId).filter((x): x is number => x != null),
@@ -73,7 +77,7 @@ export async function getOrgTree(db: DB, lang: string): Promise<OrgNode[]> {
 				covers.set(m.id, m.url);
 		for (const p of pRows)
 			persons.set(p.id, {
-				name: lang === "km" && p.nameKm ? p.nameKm : p.nameEn,
+				name: personNames.get(p.id)?.name ?? "",
 				slug: p.isPublic ? p.slug : null,
 				photoUrl:
 					p.photoMediaId != null ? (covers.get(p.photoMediaId) ?? null) : null,

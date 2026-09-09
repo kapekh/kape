@@ -626,17 +626,17 @@ describe("updateField across entities", () => {
 		});
 	});
 
-	it("writes a person's name to the column for that language, and a position per language", () => {
+	it("writes a person's name and position per language", () => {
 		const seen = run<{
-			cols: { name_en: string; name_km: string | null };
+			names: { lang: string; value: string }[];
 			positions: { lang: string; value: string }[];
 			refused: string;
 		}>(`
 			const personId = await people.createPerson(db, {
-				nameEn: "Sok Dara", nameKm: null, tier: "staff",
+				tier: "staff",
 				isPublic: true, slug: "sok-dara", photoMediaId: null, staffNo: null,
 				sex: null, phone: null, email: null, program: null, sort: 0,
-				translations: [{ lang: "en", position: "Teacher", bio: "" }],
+				translations: [{ lang: "en", name: "Sok Dara", position: "Teacher", bio: "" }],
 			});
 			await admin.updateField(db, {
 				entity: "person", entityId: personId, lang: "km",
@@ -650,22 +650,20 @@ describe("updateField across entities", () => {
 				entity: "person", entityId: personId, lang: "km",
 				target: "field:position", value: "នាយកសាលា",
 			});
-			const cols = db.$client
-				.query("select name_en, name_km from people where id = ?")
-				.get(personId);
-			const positions = db.$client
-				.query("select lang, value from translations where entity_type = 'person' and field = 'position' and entity_id = ? order by lang")
-				.all(personId);
+			const byField = (field) => db.$client
+				.query("select lang, value from translations where entity_type = 'person' and field = ? and entity_id = ? order by lang")
+				.all(field, personId);
 			const refused = await refusal(admin.updateField(db, {
 				entity: "person", entityId: personId, lang: "en",
 				target: "field:name", value: "   ",
 			}));
-			return { cols, positions, refused };
+			return { names: byField("name"), positions: byField("position"), refused };
 		`);
-		expect(seen.cols).toMatchObject({
-			name_en: "Sok Dara",
-			name_km: "សុខ ដារ៉ា",
-		});
+		// a Khmer name no longer needs a column of its own
+		expect(seen.names).toEqual([
+			{ lang: "en", value: "Sok Dara" },
+			{ lang: "km", value: "សុខ ដារ៉ា" },
+		]);
 		// a Khmer position no longer overwrites what an English reader sees
 		expect(seen.positions).toEqual([
 			{ lang: "en", value: "Head teacher" },
@@ -674,27 +672,29 @@ describe("updateField across entities", () => {
 		expect(seen.refused).toContain("needs a name in the default language");
 	});
 
-	it("refuses a name in a language people has no column for", () => {
-		const seen = run<{ refused: string; row: { name_en: string } }>(`
+	it("names a person in a language that is neither English nor Khmer", () => {
+		const seen = run<{ names: { lang: string; value: string }[] }>(`
 			db.$client
 				.query("insert or ignore into languages (code, name, native_name, is_default, enabled, rtl, sort) values ('fr','French','Français',0,1,0,2)")
 				.run();
 			const personId = await people.createPerson(db, {
-				nameEn: "Mao Sy", nameKm: null, tier: "staff",
+				tier: "staff",
 				isPublic: true, slug: "mao-sy", photoMediaId: null, staffNo: null,
 				sex: null, phone: null, email: null, program: null, sort: 0,
-				translations: [],
+				translations: [{ lang: "en", name: "Mao Sy", position: "", bio: "" }],
 			});
-			const refused = await refusal(admin.updateField(db, {
+			await admin.updateField(db, {
 				entity: "person", entityId: personId, lang: "fr",
-				target: "field:name", value: "Mao Sy",
-			}));
-			const row = db.$client
-				.query("select name_en from people where id = ?")
-				.get(personId);
-			return { refused, row };
+				target: "field:name", value: "Mao Sy (FR)",
+			});
+			const names = db.$client
+				.query("select lang, value from translations where entity_type = 'person' and field = 'name' and entity_id = ? order by lang")
+				.all(personId);
+			return { names };
 		`);
-		expect(seen.refused).toContain('there is none for "fr"');
-		expect(seen.row).toMatchObject({ name_en: "Mao Sy" });
+		expect(seen.names).toEqual([
+			{ lang: "en", value: "Mao Sy" },
+			{ lang: "fr", value: "Mao Sy (FR)" },
+		]);
 	});
 });
