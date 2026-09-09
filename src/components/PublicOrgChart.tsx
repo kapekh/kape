@@ -112,6 +112,7 @@ function OrgPublicNode({ data }: NodeProps<Node<NodeData>>) {
 		<div className="w-[210px] text-center">
 			{node.photoUrl ? (
 				<img
+					loading="lazy"
 					src={node.photoUrl}
 					alt={node.name}
 					className="mx-auto h-24 w-24 rounded-full object-cover shadow-[var(--shadow-lift)] ring-4 ring-card transition group-hover:scale-105"

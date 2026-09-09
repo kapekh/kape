@@ -754,6 +754,7 @@ function Slideshow({ slides }: { slides: HeroSlide[] }) {
 					>
 						{s.image && (
 							<img
+								loading={idx === i ? "eager" : "lazy"}
 								src={s.image}
 								alt={s.caption || ""}
 								className="h-full w-full object-cover"
@@ -1046,6 +1047,7 @@ function RichText(p: RichTextProps) {
 							<div className="group relative overflow-hidden rounded-2xl ring-1 ring-border shadow-[var(--shadow-soft)]">
 								{person.photoUrl ? (
 									<img
+										loading="lazy"
 										src={person.photoUrl}
 										alt={person.name}
 										className="aspect-[3/4] w-full object-cover"
@@ -1175,6 +1177,7 @@ function Cards(p: CardsProps) {
 									className="relative flex min-h-[260px] flex-col justify-end overflow-hidden rounded-3xl border border-border p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-[var(--shadow-soft)]"
 								>
 									<img
+										loading="lazy"
 										src={it.image}
 										alt={it.title || ""}
 										className="absolute inset-0 h-full w-full object-cover"
@@ -1227,6 +1230,7 @@ function Cards(p: CardsProps) {
 								{it.image ? (
 									<>
 										<img
+											loading="lazy"
 											src={it.image}
 											alt={it.title || ""}
 											className="aspect-video w-full object-cover"
@@ -1292,6 +1296,7 @@ function LogoTile({ item, index }: { item: CardItem; index: number }) {
 				{item.image ? (
 					// title renders beside it and names the tile; alt would read twice
 					<img
+						loading="lazy"
 						src={item.image}
 						alt=""
 						className="max-h-14 max-w-full object-contain"
@@ -1372,6 +1377,7 @@ function StatItem({
 		<div className={anchored("group")}>
 			{icon && (
 				<img
+					loading="lazy"
 					src={icon}
 					alt=""
 					className="mb-4 h-10 w-10 object-contain opacity-90"
@@ -1453,6 +1459,7 @@ function Stats(p: StatsProps) {
 								<div>
 									{it.icon && (
 										<img
+											loading="lazy"
 											src={it.icon}
 											alt=""
 											className="mb-3 h-10 w-10 object-contain"
@@ -1950,6 +1957,7 @@ function PostCard({
 		<>
 			<div className="relative h-56 overflow-hidden">
 				<img
+					loading="lazy"
 					src={imgFor(post)}
 					alt={post.title || ""}
 					className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
@@ -2172,6 +2180,7 @@ function PostList(p: PostListProps) {
 								{/* the placeholder's icon is centred, so at this height it lands behind the headline */}
 								{!isPlaceholder(imgFor(posts[0])) && (
 									<img
+										loading="lazy"
 										src={imgFor(posts[0])}
 										alt={posts[0].title || ""}
 										className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
@@ -2215,6 +2224,7 @@ function PostList(p: PostListProps) {
 								>
 									<div className="relative h-32 w-40 shrink-0 overflow-hidden rounded-2xl ring-1 ring-border">
 										<img
+											loading="lazy"
 											src={imgFor(post)}
 											alt={post.title || ""}
 											className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
@@ -2337,6 +2347,7 @@ function VideoGrid(p: VideoGridProps) {
 								>
 									<div className="relative aspect-video overflow-hidden rounded-2xl ring-1 ring-border">
 										<img
+											loading="lazy"
 											src={thumb}
 											alt={v.title || ""}
 											className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
@@ -2389,6 +2400,7 @@ function AlbumGrid(p: AlbumGridProps) {
 							>
 								<div className="aspect-[4/3] bg-muted">
 									<img
+										loading="lazy"
 										src={imgFor(a)}
 										alt={a.title || ""}
 										className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
@@ -2485,6 +2497,7 @@ function PublicationList(p: PublicationListProps) {
 								>
 									{it.image ? (
 										<img
+											loading="lazy"
 											src={it.image}
 											alt={it.title || ""}
 											className={`rounded-xl object-cover ring-1 ring-border ${stacked ? "aspect-[3/4] w-full" : `shrink-0 ${list ? "h-16 w-12" : "h-24 w-[4.5rem]"}`}`}
@@ -2613,6 +2626,7 @@ function People(p: PeopleProps) {
 									<div className="mx-auto h-24 w-24 overflow-hidden rounded-full shadow-md ring-4 ring-card transition group-hover:scale-105">
 										{person.photoUrl ? (
 											<img
+												loading="lazy"
 												src={person.photoUrl}
 												alt={person.name || ""}
 												className="h-full w-full object-cover"
@@ -2755,6 +2769,7 @@ function PartnerLogo({ row, linked }: { row: PartnerRow; linked: boolean }) {
 			<span className="grid h-28 w-48 place-items-center rounded-xl bg-white px-5 ring-1 ring-border transition hover:ring-[var(--accent)]">
 				{row.logoUrl ? (
 					<img
+						loading="lazy"
 						src={row.logoUrl}
 						alt={row.name}
 						className="max-h-16 max-w-full object-contain"
@@ -2873,6 +2888,7 @@ function PartnerCategory({
 							{r.logoUrl ? (
 								<span className="grid h-12 w-28 place-items-center rounded-lg bg-white p-2 ring-1 ring-border transition group-hover:ring-[var(--accent)]">
 									<img
+										loading="lazy"
 										src={r.logoUrl}
 										alt={r.name}
 										// max-h-8 not max-h-full: the row is auto-sized, so a
@@ -2970,6 +2986,7 @@ function ProjectList(p: ProjectListProps) {
 								>
 									{r.image ? (
 										<img
+											loading="lazy"
 											src={r.image}
 											alt={r.name || ""}
 											className="mb-4 h-12 w-auto max-w-[10rem] object-contain"
@@ -3052,6 +3069,7 @@ function Certificates(p: CertificatesProps) {
 									<div className="aspect-[3/4] overflow-hidden rounded-2xl bg-muted ring-1 ring-border">
 										{it.image ? (
 											<img
+												loading="lazy"
 												src={it.image}
 												alt={it.title || ""}
 												className="h-full w-full object-cover transition duration-500 group-hover:scale-105"

@@ -144,6 +144,7 @@ export function Footer({ settings }: { settings: Record<string, string> }) {
 				<div className="md:col-span-5">
 					<div className="flex items-center gap-3">
 						<img
+							loading="lazy"
 							src={siteLogo(settings)}
 							alt={siteShortName(settings)}
 							className="h-12 w-12 shrink-0 rounded-full object-cover bg-white ring-1 ring-white/20"
@@ -276,6 +277,7 @@ export function Footer({ settings }: { settings: Record<string, string> }) {
 									// Uploaded image fills the whole circle (cover crops the overflow)
 									// so there are no gaps around it.
 									<img
+										loading="lazy"
 										src={sc.logoUrl}
 										alt=""
 										className="h-full w-full object-cover"
