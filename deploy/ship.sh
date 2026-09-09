@@ -41,9 +41,7 @@ SHA="$(git rev-parse --short HEAD)"
 
 if [ "$RUN_CHECKS" = 1 ]; then
 	step "Gates (the ones CI used to run)"
-	bunx tsc --noEmit
-	bun run lint
-	bunx vitest run
+	bun run check
 fi
 
 step "Push $BRANCH ($SHA)"

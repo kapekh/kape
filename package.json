@@ -23,7 +23,7 @@
     "db:studio": "drizzle-kit studio",
     "format": "biome format",
     "lint": "biome lint",
-    "check": "biome check"
+    "check": "bunx tsc --noEmit && biome check && vitest run"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",

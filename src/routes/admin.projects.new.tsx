@@ -5,9 +5,9 @@ import type { LangOpt } from "#/components/admin/PostForm";
 import {
 	type DonorOpt,
 	type ParentOpt,
-	parentOptions,
 	ProjectForm,
 	type ProjectFormValue,
+	parentOptions,
 } from "#/components/admin/ProjectForm";
 import { useModules } from "#/components/admin/useModules";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
