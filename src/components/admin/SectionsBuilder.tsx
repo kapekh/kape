@@ -65,6 +65,58 @@ function FormPicker({
 	);
 }
 
+/** Dropdown of public people — lets a section borrow one's photo, name and job title. */
+function PersonPicker({
+	id,
+	value,
+	onChange,
+}: {
+	id?: string;
+	value: string;
+	onChange: (v: string) => void;
+}) {
+	const [people, setPeople] = useState<
+		{ id: number; slug: string | null; name: string; position: string }[]
+	>([]);
+	useEffect(() => {
+		trpcClient.adminPeople.list
+			.query()
+			.then((rows) =>
+				setPeople(
+					rows
+						.filter((r) => r.isPublic)
+						.map((r) => ({
+							id: r.id,
+							slug: r.slug,
+							name: r.nameEn,
+							position: r.position,
+						})),
+				),
+			)
+			.catch(() => {});
+	}, []);
+	// a seeded page names its person by slug, so the picker answers to both
+	const picked = people.find(
+		(p) => String(p.id) === value || (value !== "" && p.slug === value),
+	);
+	return (
+		<select
+			id={id}
+			className={fieldInput}
+			value={picked ? String(picked.id) : value}
+			onChange={(e) => onChange(e.target.value)}
+		>
+			<option value="">— None (use the image below) —</option>
+			{people.map((p) => (
+				<option key={p.id} value={String(p.id)}>
+					{p.position ? `${p.name} — ${p.position}` : p.name}
+				</option>
+			))}
+			{value && !picked && <option value={value}>{value} (missing)</option>}
+		</select>
+	);
+}
+
 const uid = () =>
 	globalThis.crypto?.randomUUID?.() ??
 	`s_${Date.now().toString(36)}_${Math.floor(Math.random() * 1e6).toString(36)}`;
@@ -582,6 +634,8 @@ function FieldInput({
 				</div>
 			) : field.kind === "form" ? (
 				<FormPicker id={fieldId} value={str} onChange={onChange} />
+			) : field.kind === "person" ? (
+				<PersonPicker id={fieldId} value={str} onChange={onChange} />
 			) : field.kind === "select" ? (
 				<select
 					id={fieldId}

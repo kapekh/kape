@@ -500,9 +500,10 @@ const directorSpeechSections: SectionNode[] = [
 	},
 	{
 		id: "beginning",
-		type: "richtext",
-		layout: "narrow",
+		type: "split",
+		layout: "media-right",
 		props: {
+			personId: "person-sambath",
 			title: "Where it all began",
 			body: richDoc(
 				para(

@@ -567,6 +567,13 @@ const Empty = ({ children }: { children: React.ReactNode }) => (
 	</p>
 );
 
+const initials = (name: string) =>
+	String(name || "")
+		.split(/\s+/)
+		.slice(0, 2)
+		.map((w) => w[0])
+		.join("");
+
 // renders empty while editing: an unwritten caption needs a node to click into
 function ImageCaption({
 	path,
@@ -1650,51 +1657,97 @@ type SplitProps = Common & {
 	bodyHtml?: string;
 	statValue?: string;
 	statLabel?: string;
+	/** Resolved from `personId`: the portrait, and its caption in this language. */
+	person?: SourceRow["people"] | null;
 };
 
 function Split(p: SplitProps) {
 	const mark = useMark();
+	const row = useRowMark();
+	const mayEditPeople = useMayEditPeople();
 	const mediaLeft = p.layout === "media-left";
-	const media = p.image ? (
-		<div className="relative">
-			<div className="overflow-hidden rounded-3xl ring-1 ring-border shadow-[var(--shadow-soft)]">
-				<img
-					src={p.image}
-					alt={p.title || ""}
-					className="h-[420px] w-full object-cover md:h-[480px]"
-					onError={onImageError}
-					ref={imageFallbackRef}
-				/>
-			</div>
-			<ImageEdit
-				path="image"
-				label="section image"
-				hasImage
-				className="right-3 top-3"
-			/>
-			{p.statValue && (
-				<div className="absolute -bottom-8 -right-6 max-w-[220px] rounded-2xl bg-card p-6 shadow-[var(--shadow-lift)] ring-1 ring-border">
-					<div
-						{...mark("statValue")}
-						className="font-display text-4xl font-semibold text-[var(--accent)]"
-					>
-						{p.statValue}
-					</div>
-					<div
-						{...mark("statLabel")}
-						className="mt-1 text-xs uppercase tracking-wider text-muted-foreground"
-					>
-						{p.statLabel}
-					</div>
+	const person = p.person ?? null;
+	const photo = person ? person.photoUrl : p.image;
+	const media =
+		person || p.image ? (
+			<div className="relative">
+				<div
+					className={`${person ? "group relative " : ""}overflow-hidden rounded-3xl ring-1 ring-border shadow-[var(--shadow-soft)]`}
+				>
+					{photo ? (
+						<img
+							src={photo}
+							alt={person?.name || p.title || ""}
+							className="h-[420px] w-full object-cover md:h-[480px]"
+							onError={onImageError}
+							ref={imageFallbackRef}
+						/>
+					) : (
+						<div className="grid h-[420px] w-full place-items-center bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] font-display text-6xl font-bold text-primary-foreground md:h-[480px]">
+							{initials(person?.name ?? "")}
+						</div>
+					)}
+					{person && mayEditPeople && (
+						<PersonPhotoEdit
+							personId={person.id}
+							name={person.name}
+							hasPhoto={Boolean(person.photoUrl)}
+							shape="portrait"
+						/>
+					)}
 				</div>
-			)}
-			<ImageCaption
-				path="imageCaption"
-				text={p.imageCaption}
-				className={p.statValue ? "mt-12" : ""}
-			/>
-		</div>
-	) : null;
+				{!person && (
+					<ImageEdit
+						path="image"
+						label="section image"
+						hasImage
+						className="right-3 top-3"
+					/>
+				)}
+				{p.statValue && (
+					<div className="absolute -bottom-8 -right-6 max-w-[220px] rounded-2xl bg-card p-6 shadow-[var(--shadow-lift)] ring-1 ring-border">
+						<div
+							{...mark("statValue")}
+							className="font-display text-4xl font-semibold text-[var(--accent)]"
+						>
+							{p.statValue}
+						</div>
+						<div
+							{...mark("statLabel")}
+							className="mt-1 text-xs uppercase tracking-wider text-muted-foreground"
+						>
+							{p.statLabel}
+						</div>
+					</div>
+				)}
+				{person ? (
+					<div
+						className={p.statValue ? "mt-12 text-center" : "mt-5 text-center"}
+					>
+						<div
+							{...row("person", person, "name")}
+							className="font-display text-lg font-semibold text-primary"
+						>
+							{person.name}
+						</div>
+						{person.position && (
+							<div
+								{...row("person", person, "position")}
+								className="mt-1 text-sm text-muted-foreground"
+							>
+								{person.position}
+							</div>
+						)}
+					</div>
+				) : (
+					<ImageCaption
+						path="imageCaption"
+						text={p.imageCaption}
+						className={p.statValue ? "mt-12" : ""}
+					/>
+				)}
+			</div>
+		) : null;
 	const text = (
 		<div>
 			{p.eyebrow && (
@@ -2475,12 +2528,6 @@ function People(p: PeopleProps) {
 		name: (person) => person.name || "Team member",
 		save: (ids) => trpcClient.adminPeople.reorder.mutate({ ids }),
 	});
-	const initials = (name: string) =>
-		String(name || "")
-			.split(/\s+/)
-			.slice(0, 2)
-			.map((w) => w[0])
-			.join("");
 	return (
 		<Band p={p} className={PAD}>
 			<Container>

@@ -43,7 +43,8 @@ export type FieldKind =
 	| "cards"
 	| "select"
 	| "colour"
-	| "form";
+	| "form"
+	| "person";
 
 export type SectionField = {
 	key: string;
@@ -334,12 +335,23 @@ export const SECTION_DEFS: SectionDef[] = [
 			EYEBROW,
 			{ key: "title", label: "Title", kind: "text" },
 			{ key: "body", label: "Body", kind: "richtext" },
-			{ key: "image", label: "Image", kind: "image" },
+			{
+				key: "personId",
+				label: "Person",
+				kind: "person",
+				help: "Their photo fills the media column, with their name and job title under it in each language. Only people shown on the public team can be picked.",
+			},
+			{
+				key: "image",
+				label: "Image",
+				kind: "image",
+				help: "Used when no person is picked above.",
+			},
 			{
 				key: "imageCaption",
 				label: "Image caption",
 				kind: "text",
-				help: "Shown under the image. Leave empty for no caption.",
+				help: "Shown under the image. Leave empty for no caption. A picked person captions themselves.",
 			},
 			{ key: "statValue", label: "Overlay stat value", kind: "text" },
 			{ key: "statLabel", label: "Overlay stat label", kind: "text" },

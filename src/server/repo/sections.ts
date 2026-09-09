@@ -150,6 +150,21 @@ async function selectSource(
 	}
 }
 
+/** A section's `personId`, which an older page may hold as the person's slug. */
+const personRef = (props: Record<string, unknown>): string => {
+	const v = props.personId;
+	return typeof v === "string" || typeof v === "number" ? String(v).trim() : "";
+};
+
+async function resolvePerson(
+	db: DB,
+	ref: string,
+	lang: string,
+): Promise<PersonItem | null> {
+	const rows = await listPeople(db, lang);
+	return rows.find((p) => String(p.id) === ref || p.slug === ref) ?? null;
+}
+
 /** Where a post content-type's detail pages live (for per-item links). */
 const POST_LINK_BASE: Record<string, string> = {
 	news: "/news",
@@ -186,6 +201,10 @@ export async function resolveSections(
 			}
 			if (typeof props.body === "string" && props.body) {
 				props.bodyHtml = renderBody(props.body);
+			}
+			const ref = personRef(props);
+			if (ref && (opts?.allowSource?.("people") ?? true)) {
+				props.person = await resolvePerson(db, ref, lang);
 			}
 			if (s?.query) {
 				const perPage = perPageOf(props);
