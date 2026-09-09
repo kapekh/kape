@@ -76,3 +76,29 @@ describe("a term's label", () => {
 		expect(r.untranslated).toBe("Kandal");
 	});
 });
+
+describe("an org-chart node's name and title", () => {
+	const r = run<{
+		en: { name: string; title: string };
+		km: { name: string; title: string };
+	}>(`
+		await org.createOrgNode(db, {
+			parentId: null, personId: null,
+			translations: [
+				{ lang: "en", name: "Executive Director", title: "Leads the organisation" },
+				{ lang: "km", name: "នាយកប្រតិបត្តិ", title: "ដឹកនាំអង្គការ" },
+			],
+		});
+		const pick = (roots) => ({ name: roots[0].name, title: roots[0].title });
+		out.en = pick(await org.getOrgTree(db, "en"));
+		out.km = pick(await org.getOrgTree(db, "km"));
+	`);
+
+	it("read back in the language asked for", () => {
+		expect(r.en).toEqual({
+			name: "Executive Director",
+			title: "Leads the organisation",
+		});
+		expect(r.km).toEqual({ name: "នាយកប្រតិបត្តិ", title: "ដឹកនាំអង្គការ" });
+	});
+});

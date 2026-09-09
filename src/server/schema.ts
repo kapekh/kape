@@ -606,8 +606,7 @@ export const orgNodes = sqliteTable(
 			.default(1)
 			.references(() => tenants.id),
 		parentId: integer("parent_id"),
-		name: text("name").notNull(),
-		title: text("title"), // role / position
+		// name and title are `translations` rows (entity_type 'org_node')
 		personId: integer("person_id"), // optional link to a people.id (no FK — remapped on migration)
 		sort: integer("sort").notNull().default(0),
 		posX: integer("pos_x"), // saved canvas position (null = auto-layout)

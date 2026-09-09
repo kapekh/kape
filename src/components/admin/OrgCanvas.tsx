@@ -18,12 +18,14 @@ import { useEffect } from "react";
 export type OrgRow = {
 	id: number;
 	parentId: number | null;
+	/** default language, for the canvas; every language is in `translations` */
 	name: string;
 	title: string | null;
 	personId: number | null;
 	sort: number;
 	posX: number | null;
 	posY: number | null;
+	translations: Record<string, { name?: string; title?: string }>;
 };
 
 type NodeData = {

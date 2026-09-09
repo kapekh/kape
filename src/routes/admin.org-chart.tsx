@@ -3,6 +3,7 @@ import { Network, Plus } from "lucide-react";
 import { useCallback, useEffect, useId, useState } from "react";
 
 import { fieldLabel } from "#/components/admin/form-ui";
+import { LangTabs } from "#/components/admin/LangTabs";
 import { OrgCanvas, type OrgRow } from "#/components/admin/OrgCanvas";
 import { SearchableSelect } from "#/components/admin/SearchableSelect";
 import { Button } from "#/components/ui/button";
@@ -20,6 +21,10 @@ export const Route = createFileRoute("/admin/org-chart")({
 });
 
 type PersonOpt = { value: string; label: string };
+type LangOpt = Awaited<
+	ReturnType<typeof trpcClient.i18n.languages.query>
+>[number];
+type NodeText = { name: string; title: string };
 
 /** A node's id + all descendant ids (so a node can't be reparented under itself). */
 function withDescendants(rows: OrgRow[], id: number): Set<number> {
@@ -38,14 +43,14 @@ function withDescendants(rows: OrgRow[], id: number): Set<number> {
 
 type FormValue = {
 	parentId: number | null;
-	name: string;
-	title: string | null;
 	personId: number | null;
+	translations: ({ lang: string } & NodeText)[];
 };
 
 function NodeForm({
 	rows,
 	people,
+	languages,
 	initial,
 	fixedParent,
 	onSave,
@@ -54,6 +59,7 @@ function NodeForm({
 }: {
 	rows: OrgRow[];
 	people: PersonOpt[];
+	languages: LangOpt[];
 	initial?: OrgRow;
 	fixedParent?: number | null;
 	onSave: (v: FormValue) => void;
@@ -61,8 +67,16 @@ function NodeForm({
 	saving?: boolean;
 }) {
 	const uid = useId();
-	const [name, setName] = useState(initial?.name ?? "");
-	const [title, setTitle] = useState(initial?.title ?? "");
+	const defaultLang =
+		(languages.find((l) => l.isDefault) ?? languages[0])?.code ?? "";
+	const [text, setText] = useState<Record<string, NodeText>>(() => {
+		const t: Record<string, NodeText> = {};
+		for (const l of languages) {
+			const e = initial?.translations[l.code] ?? {};
+			t[l.code] = { name: e.name ?? "", title: e.title ?? "" };
+		}
+		return t;
+	});
 	const [personId, setPersonId] = useState(
 		initial?.personId != null ? String(initial.personId) : "",
 	);
@@ -84,46 +98,60 @@ function NodeForm({
 			label: r.name + (r.title ? ` — ${r.title}` : ""),
 		}));
 
+	const setField = (lang: string, field: keyof NodeText, value: string) =>
+		setText((prev) => ({ ...prev, [lang]: { ...prev[lang], [field]: value } }));
+
 	function submit(e: React.FormEvent) {
 		e.preventDefault();
-		if (!name.trim()) return;
+		if (!text[defaultLang]?.name.trim()) return;
 		onSave({
 			parentId: parentId ? Number(parentId) : null,
-			name: name.trim(),
-			title: title.trim() || null,
 			personId: personId ? Number(personId) : null,
+			translations: languages.map((l) => ({
+				lang: l.code,
+				name: text[l.code]?.name.trim() ?? "",
+				title: text[l.code]?.title.trim() ?? "",
+			})),
 		});
 	}
 
 	return (
 		<form onSubmit={submit} className="space-y-3">
+			<LangTabs languages={languages}>
+				{(l) => (
+					<div className="grid gap-3 sm:grid-cols-2">
+						<div>
+							<label className={fieldLabel} htmlFor={`${uid}-name-${l.code}`}>
+								{l.code === defaultLang ? "Name (required)" : "Name"}
+							</label>
+							<Input
+								id={`${uid}-name-${l.code}`}
+								className={l.code === "km" ? "font-khmer" : undefined}
+								value={text[l.code]?.name ?? ""}
+								onChange={(e) => setField(l.code, "name", e.target.value)}
+								placeholder="e.g. Executive Director"
+								aria-required={l.code === defaultLang}
+								// only mounts inside the Add/Edit modal, opened by an explicit click:
+								// focus belongs in the modal, not on the trigger behind it
+								autoFocus={l.code === languages[0]?.code}
+							/>
+						</div>
+						<div>
+							<label className={fieldLabel} htmlFor={`${uid}-title-${l.code}`}>
+								Title / role
+							</label>
+							<Input
+								id={`${uid}-title-${l.code}`}
+								className={l.code === "km" ? "font-khmer" : undefined}
+								value={text[l.code]?.title ?? ""}
+								onChange={(e) => setField(l.code, "title", e.target.value)}
+								placeholder="e.g. Director of Programs"
+							/>
+						</div>
+					</div>
+				)}
+			</LangTabs>
 			<div className="grid gap-3 sm:grid-cols-2">
-				<div>
-					<label className={fieldLabel} htmlFor={`${uid}-name`}>
-						Name
-					</label>
-					<Input
-						id={`${uid}-name`}
-						value={name}
-						onChange={(e) => setName(e.target.value)}
-						placeholder="e.g. Executive Director"
-						// only mounts inside the Add/Edit modal, opened by an explicit click:
-						// focus belongs in the modal, not on the trigger behind it
-						autoFocus
-						required
-					/>
-				</div>
-				<div>
-					<label className={fieldLabel} htmlFor={`${uid}-title`}>
-						Title / role
-					</label>
-					<Input
-						id={`${uid}-title`}
-						value={title}
-						onChange={(e) => setTitle(e.target.value)}
-						placeholder="e.g. Director of Programs"
-					/>
-				</div>
 				<div>
 					<label className={fieldLabel} htmlFor={`${uid}-person`}>
 						Link to team member (optional — photo + profile)
@@ -166,18 +194,21 @@ function NodeForm({
 function OrgChartAdmin() {
 	const [rows, setRows] = useState<OrgRow[]>([]);
 	const [people, setPeople] = useState<PersonOpt[]>([]);
+	const [langs, setLangs] = useState<LangOpt[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [mounted, setMounted] = useState(false); // React Flow is client-only
 	const [editing, setEditing] = useState<number | null>(null);
 	const [adding, setAdding] = useState<number | null | undefined>(undefined); // parentId for new node; undefined = closed
 
 	const refresh = useCallback(async () => {
-		const [n, ppl] = await Promise.all([
+		const [n, ppl, languages] = await Promise.all([
 			trpcClient.adminOrg.list.query(),
 			trpcClient.adminPeople.list.query(),
+			trpcClient.i18n.languages.query(),
 		]);
 		setRows(n as OrgRow[]);
 		setPeople(ppl.map((p) => ({ value: String(p.id), label: p.nameEn })));
+		setLangs(languages);
 		setLoading(false);
 	}, []);
 
@@ -360,6 +391,7 @@ function OrgChartAdmin() {
 						<NodeForm
 							rows={rows}
 							people={people}
+							languages={langs}
 							initial={editingNode}
 							fixedParent={adding ?? null}
 							onSave={(v) => save(v, editing ?? undefined)}

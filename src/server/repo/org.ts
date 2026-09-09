@@ -1,9 +1,20 @@
 import { and, asc, eq, inArray } from "drizzle-orm";
 
 import type { DB } from "../db";
-import { media, orgNodes, people } from "../schema";
+import { media, orgNodes, people, translations } from "../schema";
+import {
+	type EntityText,
+	getDefaultLang,
+	resolveTranslations,
+	textByLang,
+	writeEntityText,
+} from "./i18n";
 
 const TENANT = 1;
+
+/** Org-chart text that lives in `translations`, not in a column of `org_nodes`. */
+export const ORG_TEXT_FIELDS = ["name", "title"] as const;
+export type OrgText = EntityText<(typeof ORG_TEXT_FIELDS)[number]>;
 
 /* --------------------------------- public --------------------------------- */
 
@@ -69,13 +80,20 @@ export async function getOrgTree(db: DB, lang: string): Promise<OrgNode[]> {
 			});
 	}
 
+	const text = await resolveTranslations(
+		db,
+		"org_node",
+		rows.map((r) => r.id),
+		lang,
+	);
 	const byId = new Map<number, OrgNode>();
 	for (const r of rows) {
 		const linked = r.personId != null ? persons.get(r.personId) : undefined;
+		const own = text.get(r.id) ?? {};
 		byId.set(r.id, {
 			id: r.id,
-			name: linked?.name || r.name,
-			title: r.title ?? "",
+			name: linked?.name || own.name || "",
+			title: own.title ?? "",
 			photoUrl: linked?.photoUrl ?? null,
 			personSlug: linked?.slug ?? null,
 			posX: r.posX,
@@ -98,18 +116,19 @@ export async function getOrgTree(db: DB, lang: string): Promise<OrgNode[]> {
 
 export type OrgInput = {
 	parentId: number | null;
-	name: string;
-	title: string | null;
 	personId: number | null;
+	translations: OrgText[];
 };
 
-export function adminListOrg(db: DB) {
-	return db
+/**
+ * Every node, with each language of its name and title: the canvas draws the
+ * default language and the editor's tabs need the rest.
+ */
+export async function adminListOrg(db: DB) {
+	const rows = await db
 		.select({
 			id: orgNodes.id,
 			parentId: orgNodes.parentId,
-			name: orgNodes.name,
-			title: orgNodes.title,
 			personId: orgNodes.personId,
 			sort: orgNodes.sort,
 			posX: orgNodes.posX,
@@ -118,6 +137,21 @@ export function adminListOrg(db: DB) {
 		.from(orgNodes)
 		.where(eq(orgNodes.tenantId, TENANT))
 		.orderBy(asc(orgNodes.sort));
+	const defaultLang = await getDefaultLang(db);
+	const text = await textByLang(
+		db,
+		"org_node",
+		rows.map((r) => r.id),
+	);
+	return rows.map((r) => {
+		const byLang = text.get(r.id) ?? {};
+		return {
+			...r,
+			name: byLang[defaultLang]?.name ?? "",
+			title: byLang[defaultLang]?.title ?? null,
+			translations: byLang,
+		};
+	});
 }
 
 /** Persist a node's canvas position (n8n-style free drag). */
@@ -166,12 +200,17 @@ export async function createOrgNode(db: DB, input: OrgInput): Promise<number> {
 		.values({
 			tenantId: TENANT,
 			parentId: input.parentId ?? null,
-			name: input.name,
-			title: input.title ?? null,
 			personId: input.personId ?? null,
 			sort,
 		})
 		.returning({ id: orgNodes.id });
+	await writeEntityText(
+		db,
+		"org_node",
+		row.id,
+		ORG_TEXT_FIELDS,
+		input.translations,
+	);
 	return row.id;
 }
 
@@ -184,12 +223,17 @@ export async function updateOrgNode(
 		.update(orgNodes)
 		.set({
 			parentId: input.parentId ?? null,
-			name: input.name,
-			title: input.title ?? null,
 			personId: input.personId ?? null,
 			updatedAt: new Date().toISOString(),
 		})
 		.where(and(eq(orgNodes.tenantId, TENANT), eq(orgNodes.id, id)));
+	await writeEntityText(
+		db,
+		"org_node",
+		id,
+		ORG_TEXT_FIELDS,
+		input.translations,
+	);
 }
 
 /** Delete a node and all its descendants. */
@@ -208,6 +252,14 @@ export async function deleteOrgNode(db: DB, id: number): Promise<void> {
 				grew = true;
 			}
 	}
+	await db
+		.delete(translations)
+		.where(
+			and(
+				eq(translations.entityType, "org_node"),
+				inArray(translations.entityId, [...ids]),
+			),
+		);
 	await db
 		.delete(orgNodes)
 		.where(and(eq(orgNodes.tenantId, TENANT), inArray(orgNodes.id, [...ids])));

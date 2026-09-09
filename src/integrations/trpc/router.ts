@@ -146,6 +146,7 @@ import {
 	deleteOrgNode,
 	getOrgTree,
 	moveOrgNode,
+	type OrgInput,
 	reparentOrgNode,
 	setOrgPosition,
 	updateOrgNode,
@@ -607,16 +608,14 @@ const orgRouter = {
 
 const orgInput = z.object({
 	parentId: z.number().nullable(),
-	name: z.string().min(1),
-	title: z
-		.string()
-		.nullish()
-		.transform((v) => v ?? null),
 	personId: z
 		.number()
 		.nullish()
 		.transform((v) => v ?? null),
-});
+	translations: z.array(
+		z.object({ lang: z.string(), name: z.string(), title: z.string() }),
+	),
+}) satisfies z.ZodType<OrgInput>;
 
 const adminOrgRouter = {
 	list: adminProcedure.query(({ ctx }) => adminListOrg(ctx.db)),
