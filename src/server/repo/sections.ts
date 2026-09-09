@@ -30,7 +30,6 @@ import {
 	type ProjectPin,
 } from "./projects";
 import { listOffices, listPartners } from "./site";
-import { staffDirectory, staffDocuments, staffEvents } from "./staff";
 
 // allowSource is for sections the client just handed us; without it the preview procedure is a read path into every domain table
 export type ResolveOptions = {
@@ -82,9 +81,6 @@ export type SourceRow = {
 	orgchart: OrgNode;
 	offices: Awaited<ReturnType<typeof listOffices>>[number];
 	partners: Awaited<ReturnType<typeof listPartners>>[number];
-	staff: Awaited<ReturnType<typeof staffDirectory>>[number];
-	events: Awaited<ReturnType<typeof staffEvents>>[number];
-	documents: Awaited<ReturnType<typeof staffDocuments>>[number];
 };
 
 // every dynamic section offers a Limit; only some sources take one, so cut here too
@@ -139,12 +135,6 @@ async function selectSource(
 			return listPartners(db);
 		case "projects":
 			return listProjectCards(db, lang, q.category, limit ?? q.limit);
-		case "staff":
-			return staffDirectory(db);
-		case "events":
-			return staffEvents(db, lang);
-		case "documents":
-			return staffDocuments(db, lang);
 		default:
 			return null;
 	}

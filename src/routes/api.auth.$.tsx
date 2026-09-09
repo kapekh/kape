@@ -52,6 +52,12 @@ export async function handler({ request }: { request: Request }) {
 
 	// POST /api/auth/login  { email, password } -> set session cookie
 	if (request.method === "POST" && action === "login") {
+		// a cross-site form can post text/plain with a cookie-less body and log the
+		// victim into an account of the attacker's choosing; a fetch cannot send
+		// json cross-site without a preflight this route never answers
+		const contentType = request.headers.get("content-type") ?? "";
+		if (!contentType.toLowerCase().startsWith("application/json"))
+			return Response.json({ error: "Expected JSON" }, { status: 415 });
 		const body = (await request.json().catch(() => ({}))) as {
 			email?: string;
 			password?: string;

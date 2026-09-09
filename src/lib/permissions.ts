@@ -14,13 +14,19 @@ export type PermissionArea =
 	| "navigation"
 	| "lists"
 	| "settings"
-	| "users";
+	| "users"
+	| "portal";
 
 export const PERMISSION_AREAS: {
 	key: PermissionArea;
 	label: string;
 	group: string;
 }[] = [
+	{
+		key: "portal",
+		label: "Staff portal (internal news, documents, calendar, directory)",
+		group: "Staff",
+	},
 	{ key: "pages", label: "Pages", group: "Content" },
 	{ key: "posts", label: "Posts (news, stories, videos…)", group: "Content" },
 	{ key: "projects", label: "Projects", group: "Content" },
@@ -42,21 +48,45 @@ export const PERMISSION_AREAS: {
 
 export const ALL_AREAS: PermissionArea[] = PERMISSION_AREAS.map((a) => a.key);
 
+/** The portal is not an admin screen: holding it alone opens /internalsources, never /admin. */
+export const ADMIN_AREAS: PermissionArea[] = ALL_AREAS.filter(
+	(a) => a !== "portal",
+);
+
+export const hasAdminArea = (permissions: readonly string[]) =>
+	permissions.some((a) => a !== "portal");
+
+export type Caller = {
+	permissions: readonly string[];
+	isSuperAdmin: boolean;
+};
+
 /**
  * Areas a caller is asking to put on a role but does not hold themselves.
  * Without this the `users` area buys every other one: edit your own role,
  * tick everything, save.
  */
 export function ungrantableAreas(
-	caller: { permissions: readonly string[]; isSuperAdmin: boolean },
-	requested: readonly PermissionArea[],
-): PermissionArea[] {
+	caller: Caller,
+	requested: readonly string[],
+): string[] {
 	if (caller.isSuperAdmin) return [];
 	return requested.filter((a) => !caller.permissions.includes(a));
 }
 
+/**
+ * The one rule behind every users-and-roles decision: you may hand out, and
+ * touch, only what you hold. A role or an account whose reach exceeds the
+ * caller's is out of reach, whichever direction the edit would move it.
+ */
+export const withinReach = (caller: Caller, held: Caller) =>
+	caller.isSuperAdmin ||
+	(!held.isSuperAdmin &&
+		ungrantableAreas(caller, held.permissions).length === 0);
+
 /** tRPC router key → permission area (server-side enforcement in adminProcedure). */
 export const ROUTER_AREA: Record<string, PermissionArea> = {
+	staff: "portal",
 	adminPages: "pages",
 	adminPosts: "posts",
 	adminProjects: "projects",

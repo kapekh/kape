@@ -2,7 +2,7 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 
 import { moduleForRouter, routerEnabled } from "#/lib/modules";
-import { ROUTER_AREA } from "#/lib/permissions";
+import { hasAdminArea, ROUTER_AREA } from "#/lib/permissions";
 import { parseCookies, SESSION_COOKIE, validateToken } from "#/server/auth";
 import { db } from "#/server/db";
 import { clearCache } from "#/server/render-cache";
@@ -54,7 +54,7 @@ export const adminProcedure = protectedProcedure.use(
 			// The router key maps to a permission area.
 			// The dashboard overview is the shared landing — any admin user may read it.
 			if (routerKey === "admin") {
-				if (ctx.permissions.length === 0)
+				if (!hasAdminArea(ctx.permissions))
 					throw new TRPCError({ code: "FORBIDDEN" });
 			} else {
 				const area = ROUTER_AREA[routerKey];
@@ -69,11 +69,3 @@ export const adminProcedure = protectedProcedure.use(
 		return result;
 	},
 );
-
-/** Requires staff-portal access (staff or admin). */
-export const staffProcedure = protectedProcedure.use(({ ctx, next }) => {
-	if (ctx.user.role !== "staff" && ctx.user.role !== "admin") {
-		throw new TRPCError({ code: "FORBIDDEN" });
-	}
-	return next();
-});

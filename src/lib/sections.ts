@@ -7,9 +7,6 @@ export type QuerySource =
 	| "albums"
 	| "videos"
 	| "publications"
-	| "staff"
-	| "events"
-	| "documents"
 	| "partners"
 	| "orgchart";
 
@@ -559,23 +556,6 @@ export const SECTION_DEFS: SectionDef[] = [
 		sources: [
 			{ value: "locations", label: "Project locations" },
 			{ value: "offices", label: "Offices" },
-		],
-		fields: [
-			EYEBROW,
-			{ key: "title", label: "Section title", kind: "text" },
-			...TONE_FIELDS,
-		],
-	},
-	{
-		type: "directory",
-		label: "Directory table",
-		kind: "dynamic",
-		description: "Tabular listing (staff / events / documents).",
-		layouts: [{ value: "table", label: "Table" }],
-		sources: [
-			{ value: "staff", label: "Staff" },
-			{ value: "events", label: "Events" },
-			{ value: "documents", label: "Documents" },
 		],
 		fields: [
 			EYEBROW,

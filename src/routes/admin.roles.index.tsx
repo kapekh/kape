@@ -66,7 +66,7 @@ function RolesList() {
 		<div>
 			<PageHeader
 				title="Roles"
-				description="What each role can manage. A user gets their areas from the role they hold."
+				description="What each role can manage. A user gets their areas from the role they hold, and anyone with Users & roles can hand out only the areas they hold themselves; administrators are touched by administrators alone."
 				breadcrumb={[{ label: "Admin", to: "/admin" }, { label: "Roles" }]}
 				actions={newRole}
 				toolbar={

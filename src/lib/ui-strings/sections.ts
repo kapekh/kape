@@ -9,7 +9,6 @@ export const sections: Record<string, { en: string; km?: string }> = {
 	// category layouts of the partners section share `empty.partners`.
 	"empty.albums": { en: "No photo albums yet." },
 	"empty.certificates": { en: "No accreditations listed yet." },
-	"empty.directory": { en: "Nothing to list yet." },
 	"empty.map": { en: "No places to show on the map yet." },
 	"empty.orgchart": { en: "No organizational chart yet." },
 	"empty.partners": { en: "No partners listed yet." },

@@ -1,4 +1,4 @@
-import { and, count, eq } from "drizzle-orm";
+import { and, count, eq, ne } from "drizzle-orm";
 
 import { hashPassword, verifyPassword } from "../auth";
 import type { DB } from "../db";
@@ -151,12 +151,13 @@ export async function deleteUser(
 	});
 }
 
-/** A user changes their own password (verifies the current one). Keeps them logged in. */
+/** A user changes their own password (verifies the current one). Keeps this session, signs out every other. */
 export async function changeOwnPassword(
 	db: DB,
 	userId: number,
 	currentPassword: string,
 	newPassword: string,
+	keepSessionId: string,
 ): Promise<void> {
 	const [u] = await db
 		.select()
@@ -168,4 +169,8 @@ export async function changeOwnPassword(
 		throw new Error("Your current password is incorrect.");
 	const passwordHash = await hashPassword(newPassword);
 	await db.update(users).set({ passwordHash }).where(eq(users.id, userId));
+	await db
+		.update(sessions)
+		.set({ revokedAt: new Date().toISOString() })
+		.where(and(eq(sessions.userId, userId), ne(sessions.id, keepSessionId)));
 }

@@ -2714,62 +2714,6 @@ function MapSection(p: MapProps) {
 	);
 }
 
-// column-generic: it prints whatever keys its source's rows carry
-type DirectoryRow =
-	| SourceRow["staff"]
-	| SourceRow["events"]
-	| SourceRow["documents"];
-type DirectoryProps = Common & { data?: DirectoryRow[] };
-
-function Directory(p: DirectoryProps) {
-	const t = useT();
-	const rows: Record<string, unknown>[] = Array.isArray(p.data) ? p.data : [];
-	const cols = rows.length
-		? Object.keys(rows[0]).filter((k) => k !== "id")
-		: [];
-	return (
-		<Band p={p} className={PAD}>
-			<Container>
-				<Heading eyebrow={p.eyebrow} title={p.title} />
-				{rows.length === 0 ? (
-					<Empty>{t("empty.directory", "Nothing to list yet.")}</Empty>
-				) : (
-					<div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-sm">
-						<table className="w-full text-sm">
-							<thead className="bg-muted/60 text-left">
-								<tr>
-									{cols.map((c) => (
-										<th
-											key={c}
-											className="px-4 py-3 font-semibold capitalize text-foreground/70"
-										>
-											{c.replace(/([A-Z])/g, " $1")}
-										</th>
-									))}
-								</tr>
-							</thead>
-							<tbody className="divide-y divide-border">
-								{rows.map((r, n) => (
-									<tr
-										key={String(r.id ?? n)}
-										className="hover:bg-muted/30 transition"
-									>
-										{cols.map((c) => (
-											<td key={c} className="px-4 py-3 text-foreground/80">
-												{String(r[c] ?? "")}
-											</td>
-										))}
-									</tr>
-								))}
-							</tbody>
-						</table>
-					</div>
-				)}
-			</Container>
-		</Band>
-	);
-}
-
 type PartnerRow = SourceRow["partners"];
 type PartnersProps = Common & { data?: PartnerRow[] };
 
@@ -3322,7 +3266,6 @@ export const sectionRegistry = {
 	publicationList: PublicationList,
 	people: People,
 	map: MapSection,
-	directory: Directory,
 	partners: Partners,
 	orgChart: OrgChart,
 };

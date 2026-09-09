@@ -53,18 +53,15 @@ export const CORE_ROUTERS = [
 	"adminUsers",
 	"adminRoles",
 	"adminPeople",
+	"staff",
 ];
 
-// staff, events and documents are the staff portal's and are core for now, a decision rather than an omission
 export const CORE_SOURCES: QuerySource[] = [
 	"posts",
 	"videos",
 	"albums",
 	"publications",
 	"people",
-	"staff",
-	"events",
-	"documents",
 ];
 
 /** Taxonomies no module owns: they categorise content types every install has. */

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_AREAS, ungrantableAreas } from "#/lib/permissions";
+import {
+	ADMIN_AREAS,
+	ALL_AREAS,
+	hasAdminArea,
+	ungrantableAreas,
+	withinReach,
+} from "#/lib/permissions";
 
 describe("ungrantableAreas", () => {
 	it("lets an administrator grant anything", () => {
@@ -22,5 +28,52 @@ describe("ungrantableAreas", () => {
 		expect(ungrantableAreas(caller, ["posts", "settings"])).toEqual([
 			"settings",
 		]);
+	});
+});
+
+describe("withinReach", () => {
+	const manager = { permissions: ["users", "posts"], isSuperAdmin: false };
+
+	it("puts an administrator out of everyone's reach but another administrator", () => {
+		const admin = { permissions: ALL_AREAS, isSuperAdmin: true };
+		expect(withinReach(manager, admin)).toBe(false);
+		expect(withinReach(admin, admin)).toBe(true);
+	});
+
+	it("reaches a role holding no more than the caller", () => {
+		expect(withinReach(manager, { permissions: [], isSuperAdmin: false })).toBe(
+			true,
+		);
+		expect(
+			withinReach(manager, { permissions: ["posts"], isSuperAdmin: false }),
+		).toBe(true);
+		expect(withinReach(manager, manager)).toBe(true);
+	});
+
+	it("does not reach a role holding an area the caller lacks", () => {
+		expect(
+			withinReach(manager, {
+				permissions: ["posts", "settings"],
+				isSuperAdmin: false,
+			}),
+		).toBe(false);
+		// the staff portal is an area like any other
+		expect(
+			withinReach(manager, { permissions: ["portal"], isSuperAdmin: false }),
+		).toBe(false);
+	});
+});
+
+describe("the staff portal area", () => {
+	it("is the one area that opens no admin screen", () => {
+		expect(ALL_AREAS).toContain("portal");
+		expect(ADMIN_AREAS).not.toContain("portal");
+		expect(ADMIN_AREAS.length).toBe(ALL_AREAS.length - 1);
+	});
+
+	it("alone does not admit anyone to the admin", () => {
+		expect(hasAdminArea(["portal"])).toBe(false);
+		expect(hasAdminArea([])).toBe(false);
+		expect(hasAdminArea(["portal", "posts"])).toBe(true);
 	});
 });

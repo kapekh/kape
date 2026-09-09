@@ -6,7 +6,11 @@ import { trpcRouter } from "./router";
 
 export const RESULT_MARKER = "__C10_RESULT__";
 
-type Step = { call: string; input?: unknown } | { sql: string };
+// `as` signs in a fresh account holding exactly these areas; the steps after it run as them
+type Step =
+	| { call: string; input?: unknown }
+	| { sql: string }
+	| { as: { role: string; permissions: string[] } };
 type Plan = { steps: Step[] };
 
 type Result =
@@ -59,19 +63,42 @@ async function seed(): Promise<string> {
 	return sessionCookie(token).split(";")[0];
 }
 
-const plan = JSON.parse(await Bun.stdin.text()) as Plan;
-const cookie = await seed();
-const ctx = await createTRPCContext({
-	req: new Request("http://localhost/api/trpc", { headers: { cookie } }),
-});
-if (!ctx.user) throw new Error("scratch session did not authenticate");
+async function callerFor(cookie: string) {
+	const ctx = await createTRPCContext({
+		req: new Request("http://localhost/api/trpc", { headers: { cookie } }),
+	});
+	if (!ctx.user) throw new Error("scratch session did not authenticate");
+	return trpcRouter.createCaller(ctx);
+}
 
-const caller = trpcRouter.createCaller(ctx);
+let signedIn = 0;
+async function signInAs(role: string, permissions: string[]): Promise<string> {
+	const raw = db.$client;
+	raw.run(
+		`INSERT OR IGNORE INTO roles (tenant_id, key, name, permissions, is_system) VALUES (1, ?, ?, ?, 0)`,
+		[role, role, JSON.stringify(permissions)],
+	);
+	const id = 1000 + ++signedIn;
+	raw.run(
+		`INSERT INTO users (id, tenant_id, email, password_hash, name, role) VALUES (?, 1, ?, 'x', ?, ?)`,
+		[id, `${role}-${id}@test.example`, role, role],
+	);
+	const { token } = await createSession(db, id, "c10-test-caller");
+	return sessionCookie(token).split(";")[0];
+}
+
+const plan = JSON.parse(await Bun.stdin.text()) as Plan;
+let caller = await callerFor(await seed());
 const results: Result[] = [];
 
 for (const step of plan.steps) {
 	if ("sql" in step) {
 		results.push({ rows: db.$client.query(step.sql).all() });
+		continue;
+	}
+	if ("as" in step) {
+		caller = await callerFor(await signInAs(step.as.role, step.as.permissions));
+		results.push({ ok: true, value: step.as.role });
 		continue;
 	}
 	try {

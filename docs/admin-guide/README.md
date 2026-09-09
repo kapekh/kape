@@ -436,15 +436,30 @@ you make a role that describes a job, and you give people that role.
 
 ![The role editor: fifteen permission areas grouped into Content, Fundraising, Records and Site](images/role-editor.png)
 
-Fifteen areas, grouped the way the sidebar is:
+Sixteen areas, grouped the way the sidebar is:
 
+- **Staff** — Staff portal (the internal news, documents, calendar and directory at `/internalsources`)
 - **Content** — Pages · Posts · Projects · Media library · Forms & submissions
 - **Fundraising** — Campaigns & donations
 - **Records** — People & org chart · Partners & donors · Schools · Offices · Contact messages
 - **Site** — Header, footer & menus · Lists & categories · Site settings & languages · Users & roles
 
-The count under the role's name tells you how many of the fifteen are ticked. **Administrator** is not
-a role you build here; it is the super-role and it reaches everything.
+The count under the role's name tells you how many are ticked. **Administrator** is not a role you
+build here; it is the super-role and it reaches everything. **Staff** is the built-in role that holds
+the Staff portal and nothing else; a colleague who edits pages *and* reads the portal gets one role
+with both areas ticked, not two accounts.
+
+**Dividing the work.** One rule decides what a person with *Users & roles* may do: they hand out,
+and touch, only the areas they hold themselves.
+
+- They can create roles and accounts whose areas are a subset of their own.
+- They cannot give anyone an area they lack, and cannot edit, delete or reset the password of a
+  role or account that holds one.
+- Administrators are touched by administrators alone: nobody else can create one, demote one,
+  reset one, or delete one, however many there are.
+
+So a **Team lead** role holding *Users & roles* plus the content areas can run the editors' accounts
+day to day, and can never grow past what an administrator gave it.
 
 Give a new colleague the narrowest role that lets them do their job. Widening a role later takes
 seconds; explaining a deleted page does not.

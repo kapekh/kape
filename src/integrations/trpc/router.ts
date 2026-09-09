@@ -2,6 +2,7 @@ import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { FORM_FIELD_TYPES } from "#/lib/forms";
+import { DEFAULT_LANG, LANGS } from "#/lib/i18n-config";
 import {
 	disallowedSections,
 	moduleForRouter,
@@ -15,6 +16,7 @@ import {
 	type PermissionArea,
 	ROUTER_AREA,
 	ungrantableAreas,
+	withinReach,
 } from "#/lib/permissions";
 import type { SectionNode } from "#/lib/sections";
 import { checkSettingValue } from "#/lib/site-theme";
@@ -190,6 +192,7 @@ import {
 	deleteRole,
 	getRoleForEdit,
 	listRolesForPicker,
+	resolvePermissions,
 	roleExists,
 	updateRole,
 } from "#/server/repo/roles";
@@ -228,7 +231,6 @@ import {
 	createTRPCRouter,
 	protectedProcedure,
 	publicProcedure,
-	staffProcedure,
 } from "./init";
 
 const postInput = z.object({
@@ -272,14 +274,16 @@ const authRouter = {
 				newPassword: z.string().min(8),
 			}),
 		)
-		.mutation(({ ctx, input }) =>
-			changeOwnPassword(
+		.mutation(({ ctx, input }) => {
+			if (!ctx.sessionId) throw new TRPCError({ code: "UNAUTHORIZED" });
+			return changeOwnPassword(
 				ctx.db,
 				ctx.user.id,
 				input.currentPassword,
 				input.newPassword,
-			),
-		),
+				ctx.sessionId,
+			);
+		}),
 } satisfies TRPCRouterRecord;
 
 const userInput = z.object({
@@ -290,21 +294,69 @@ const userInput = z.object({
 		.transform((v) => v ?? null),
 	role: z.string().min(1),
 });
-async function assertRole(ctx: TRPCContext, role: string) {
-	// Handing out the super-role is not something the `users` area should buy —
-	// otherwise any custom role granted "Users & roles" can mint an admin.
-	if (role === "admin" && !ctx.isSuperAdmin)
-		throw new TRPCError({
-			code: "FORBIDDEN",
-			message: "Only an administrator can grant the Administrator role.",
-		});
-	if (role === "admin" || role === "staff") return; // built-in
-	if (!(await roleExists(ctx.db, role)))
+const areaLabels = (areas: readonly string[]) =>
+	areas
+		.map((a) => PERMISSION_AREAS.find((p) => p.key === a)?.label ?? a)
+		.join(", ");
+
+// the users area hands out only what its holder has: a role that reaches
+// further, or an account holding one, is an administrator's to touch
+function assertGrantable(ctx: TRPCContext, requested: PermissionArea[]) {
+	const over = ungrantableAreas(ctx, requested);
+	if (over.length === 0) return;
+	throw new TRPCError({
+		code: "FORBIDDEN",
+		message: `You can't grant access you don't have yourself: ${areaLabels(over)}.`,
+	});
+}
+
+function assertReach(
+	ctx: TRPCContext,
+	held: { permissions: readonly string[]; isSuperAdmin: boolean },
+	what: string,
+) {
+	if (withinReach(ctx, held)) return;
+	throw new TRPCError({
+		code: "FORBIDDEN",
+		message: held.isSuperAdmin
+			? `Only an administrator can change ${what}.`
+			: `${what} reaches areas you don't hold, so only someone who does can change it: ${areaLabels(ungrantableAreas(ctx, held.permissions))}.`,
+	});
+}
+
+async function assertRoleAssignable(ctx: TRPCContext, roleKey: string) {
+	const held = await resolvePermissions(ctx.db, roleKey);
+	if (!held.isSuperAdmin && !(await roleExists(ctx.db, roleKey)))
 		throw new TRPCError({
 			code: "BAD_REQUEST",
 			message: "That role no longer exists.",
 		});
+	assertReach(ctx, held, held.isSuperAdmin ? "an administrator" : "That role");
 }
+
+async function assertUserInReach(ctx: TRPCContext, id: number) {
+	if (ctx.isSuperAdmin) return;
+	const target = await getUserForEdit(ctx.db, id);
+	if (!target) return;
+	const held = await resolvePermissions(ctx.db, target.role);
+	assertReach(
+		ctx,
+		held,
+		held.isSuperAdmin ? "an administrator's account" : "This account's role",
+	);
+}
+
+async function assertRoleInReach(ctx: TRPCContext, id: number) {
+	if (ctx.isSuperAdmin) return;
+	const role = await getRoleForEdit(ctx.db, id);
+	if (!role) return;
+	assertReach(
+		ctx,
+		{ permissions: role.permissions, isSuperAdmin: role.key === "admin" },
+		role.key === "admin" ? "the Administrator role" : "This role",
+	);
+}
+
 const adminUsersRouter = {
 	list: adminProcedure.query(({ ctx }) => adminListUsers(ctx.db)),
 	get: adminProcedure
@@ -314,33 +366,28 @@ const adminUsersRouter = {
 	create: adminProcedure
 		.input(userInput.extend({ password: z.string().min(8) }))
 		.mutation(async ({ ctx, input }) => {
-			await assertRole(ctx, input.role);
+			await assertRoleAssignable(ctx, input.role);
 			return createUser(ctx.db, input);
 		}),
 	update: adminProcedure
 		.input(userInput.extend({ id: z.number() }))
 		.mutation(async ({ ctx, input }) => {
-			await assertRole(ctx, input.role);
+			await assertUserInReach(ctx, input.id);
+			await assertRoleAssignable(ctx, input.role);
 			return updateUser(ctx.db, input.id, input);
 		}),
 	resetPassword: adminProcedure
 		.input(z.object({ id: z.number(), password: z.string().min(8) }))
 		.mutation(async ({ ctx, input }) => {
-			// Same door as assertRole: resetting an administrator's password is
-			// taking their account, so it stays with administrators.
-			if (!ctx.isSuperAdmin) {
-				const target = await getUserForEdit(ctx.db, input.id);
-				if (target?.role === "admin")
-					throw new TRPCError({
-						code: "FORBIDDEN",
-						message: "Only an administrator can reset an administrator.",
-					});
-			}
+			await assertUserInReach(ctx, input.id);
 			return setUserPassword(ctx.db, input.id, input.password);
 		}),
 	delete: adminProcedure
 		.input(z.object({ id: z.number() }))
-		.mutation(({ ctx, input }) => deleteUser(ctx.db, input.id, ctx.user.id)),
+		.mutation(async ({ ctx, input }) => {
+			await assertUserInReach(ctx, input.id);
+			return deleteUser(ctx.db, input.id, ctx.user.id);
+		}),
 } satisfies TRPCRouterRecord;
 
 const AREA_KEYS = ALL_AREAS as [PermissionArea, ...PermissionArea[]];
@@ -348,17 +395,6 @@ const roleInput = z.object({
 	name: z.string().min(1),
 	permissions: z.array(z.enum(AREA_KEYS)).default([]),
 });
-function assertGrantable(ctx: TRPCContext, requested: PermissionArea[]) {
-	const over = ungrantableAreas(ctx, requested);
-	if (over.length === 0) return;
-	const labels = over
-		.map((a) => PERMISSION_AREAS.find((p) => p.key === a)?.label ?? a)
-		.join(", ");
-	throw new TRPCError({
-		code: "FORBIDDEN",
-		message: `You can't grant access you don't have yourself: ${labels}.`,
-	});
-}
 const adminRolesRouter = {
 	list: adminProcedure.query(({ ctx }) => adminListRoles(ctx.db)),
 	areas: adminProcedure.query(() => PERMISSION_AREAS),
@@ -373,13 +409,17 @@ const adminRolesRouter = {
 		}),
 	update: adminProcedure
 		.input(roleInput.extend({ id: z.number() }))
-		.mutation(({ ctx, input }) => {
+		.mutation(async ({ ctx, input }) => {
+			await assertRoleInReach(ctx, input.id);
 			assertGrantable(ctx, input.permissions);
 			return updateRole(ctx.db, input.id, input);
 		}),
 	delete: adminProcedure
 		.input(z.object({ id: z.number() }))
-		.mutation(({ ctx, input }) => deleteRole(ctx.db, input.id)),
+		.mutation(async ({ ctx, input }) => {
+			await assertRoleInReach(ctx, input.id);
+			return deleteRole(ctx.db, input.id);
+		}),
 } satisfies TRPCRouterRecord;
 
 // lang is optional, not defaulted: without one the repo reads whichever language is flagged default
@@ -650,9 +690,11 @@ const pagesRouter = {
 const routesRouter = {
 	resolve: publicProcedure
 		.input(
-			langInput.extend({
+			// every answer is cached under (path, lang, page), so each has to be finite
+			z.object({
 				path: z.string(),
-				page: z.number().int().positive().optional(),
+				lang: z.enum(LANGS as [string, ...string[]]).default(DEFAULT_LANG),
+				page: z.number().int().positive().max(500).optional(),
 			}),
 		)
 		.query(({ ctx, input }) =>
@@ -928,18 +970,18 @@ const languageInput = z.object({
 	sort: z.number(),
 });
 
-// Staff portal (requires staff/admin role) — internal, never public.
+// the portal is an area like any other, so adminProcedure gates it through ROUTER_AREA
 const staffRouter = {
-	news: staffProcedure
+	news: adminProcedure
 		.input(langInput)
 		.query(({ ctx, input }) => staffNews(ctx.db, input.lang)),
-	events: staffProcedure
+	events: adminProcedure
 		.input(langInput)
 		.query(({ ctx, input }) => staffEvents(ctx.db, input.lang)),
-	documents: staffProcedure
+	documents: adminProcedure
 		.input(langInput)
 		.query(({ ctx, input }) => staffDocuments(ctx.db, input.lang)),
-	directory: staffProcedure.query(({ ctx }) => staffDirectory(ctx.db)),
+	directory: adminProcedure.query(({ ctx }) => staffDirectory(ctx.db)),
 } satisfies TRPCRouterRecord;
 
 const personInput = z.object({

@@ -1,41 +1,9 @@
-import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 
-// the browser is not a trust boundary; bun:sqlite cannot load in a vitest worker, so the caller shells out
-const MARKER = "__C10_RESULT__"; // must match test-caller.ts
+import { failed, planRunner, type Result, rowsOf } from "./test-run";
 
-type Step = { call: string; input?: unknown } | { sql: string };
-type Row = Record<string, unknown>;
-type Result =
-	| { ok: true; value: unknown }
-	| { ok: false; error: string; code: string | null }
-	| { rows: Row[] };
-
-const dir = mkdtempSync(join(tmpdir(), "c10-trpc-"));
-afterAll(() => rmSync(dir, { recursive: true, force: true }));
-
-let scratch = 0;
-
-function run(steps: Step[]): Result[] {
-	const stdout = execFileSync("bun", ["src/integrations/trpc/test-caller.ts"], {
-		input: JSON.stringify({ steps }),
-		encoding: "utf8",
-		env: {
-			...process.env,
-			DATABASE_PATH: join(dir, `scratch-${++scratch}.db`),
-			SSG_CACHE: "off",
-		},
-	});
-	const at = stdout.indexOf(MARKER);
-	if (at < 0) throw new Error(`caller printed no ${MARKER}:\n${stdout}`);
-	return JSON.parse(stdout.slice(at + MARKER.length)) as Result[];
-}
-
-const failed = (r: Result) => ("ok" in r && r.ok === false ? r : null);
-const rowsOf = (r: Result): Row[] => ("rows" in r ? r.rows : []);
+const { run, dispose } = planRunner();
+afterAll(dispose);
 
 type Usage = { kind: string; label: string; href: string | null };
 function usageOf(r: Result): Usage[] {

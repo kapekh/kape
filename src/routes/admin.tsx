@@ -29,7 +29,7 @@ import { EmptyState } from "#/components/ui/empty-state";
 import { PageHeader } from "#/components/ui/page-header";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { adminPathEnabled, MODULES_SETTING } from "#/lib/modules";
-import { NAV_AREA } from "#/lib/permissions";
+import { hasAdminArea, NAV_AREA } from "#/lib/permissions";
 import { adminTitle, siteLogo, siteShortName } from "#/lib/site-identity";
 import { darkModeAvailable } from "#/lib/site-theme";
 import { useModalPanel } from "#/lib/use-modal-panel";
@@ -45,7 +45,7 @@ function returnTo(href: string): { redirect?: string } {
 
 type AdminAccess =
 	| { kind: "anon" }
-	| { kind: "forbidden"; email: string }
+	| { kind: "forbidden"; email: string; portal: boolean }
 	| {
 			kind: "ok";
 			email: string;
@@ -61,8 +61,12 @@ const resolveAdminAccess = createServerFn({ method: "GET" }).handler(
 		const auth = await validateToken(db, getCookie(SESSION_COOKIE));
 		if (!auth) return { kind: "anon" };
 		const perms = await resolvePermissions(db, auth.user.role);
-		if (!perms.isSuperAdmin && perms.permissions.length === 0)
-			return { kind: "forbidden", email: auth.user.email };
+		if (!perms.isSuperAdmin && !hasAdminArea(perms.permissions))
+			return {
+				kind: "forbidden",
+				email: auth.user.email,
+				portal: perms.permissions.includes("portal"),
+			};
 		return {
 			kind: "ok",
 			email: auth.user.email,
@@ -110,12 +114,13 @@ type OkAccess = Extract<AdminAccess, { kind: "ok" }>;
 // split so neither branch calls the other's hooks
 function AdminShell() {
 	const { access } = Route.useRouteContext();
-	if (access.kind === "forbidden") return <NoAccess email={access.email} />;
+	if (access.kind === "forbidden")
+		return <NoAccess email={access.email} portal={access.portal} />;
 	return <AdminLayout access={access} />;
 }
 
 // the refusal is the server's; this only says so, instead of handing back the sign-in form they already used
-function NoAccess({ email }: { email: string }) {
+function NoAccess({ email, portal }: { email: string; portal: boolean }) {
 	const navigate = useNavigate();
 
 	async function logout() {
@@ -143,10 +148,15 @@ function NoAccess({ email }: { email: string }) {
 					description="Someone who can reach the Users screen can give this account an area. Until then there is nothing here to show you."
 					action={
 						<div className="flex flex-wrap justify-center gap-2">
-							<Button asChild>
-								<a href="/internalsources">Go to Internal Sources</a>
-							</Button>
-							<Button variant="secondary" onClick={logout}>
+							{portal && (
+								<Button asChild>
+									<a href="/internalsources">Go to the staff portal</a>
+								</Button>
+							)}
+							<Button
+								variant={portal ? "secondary" : "primary"}
+								onClick={logout}
+							>
 								Log out
 							</Button>
 						</div>

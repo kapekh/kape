@@ -129,7 +129,7 @@ describe("every query source is claimed, by a module or by the core", () => {
 		expect(
 			cases.length,
 			"resolveQuery no longer reads like this",
-		).toBeGreaterThan(10);
+		).toBeGreaterThanOrEqual(10);
 		expect(orphans(cases), "add to MODULES or to CORE_SOURCES").toEqual([]);
 	});
 

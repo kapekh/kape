@@ -34,7 +34,7 @@ function Portal() {
 			.query()
 			.then((u) => {
 				if (!alive) return;
-				if (u && (u.role === "staff" || u.role === "admin")) {
+				if (u && (u.isSuperAdmin || u.permissions.includes("portal"))) {
 					setName(u.name || u.email);
 					setReady(true);
 				} else {
