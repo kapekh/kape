@@ -22,7 +22,6 @@ public/uploads/
 !.env.example
 
 *.local
-graphify-out/
 prerender-paths.json
 /image*.png
 *.pptx
