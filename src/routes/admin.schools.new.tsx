@@ -57,6 +57,12 @@ function NewSchool() {
 	}
 
 	if (!ready) return <EditorSkeleton />;
+	// the name lives inside LangTabs, which renders nothing without a language:
+	// no languages means a form that would save a school with no name at all
+	if (!langs.length)
+		return (
+			<p className="text-sm text-destructive">This form could not be loaded.</p>
+		);
 	return (
 		<SchoolForm
 			initial={null}

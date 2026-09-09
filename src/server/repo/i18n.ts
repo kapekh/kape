@@ -65,15 +65,6 @@ export async function writeEntityText<F extends string>(
 	fields: readonly F[],
 	byLang: readonly EntityText<F>[],
 ): Promise<void> {
-	await db
-		.delete(translations)
-		.where(
-			and(
-				eq(translations.entityType, entityType),
-				eq(translations.entityId, id),
-				inArray(translations.field, [...fields]),
-			),
-		);
 	const rows = byLang.flatMap((tr) =>
 		fields
 			.filter((field) => (tr[field] ?? "") !== "")
@@ -86,7 +77,19 @@ export async function writeEntityText<F extends string>(
 				value: tr[field] as string,
 			})),
 	);
-	if (rows.length) await db.insert(translations).values(rows);
+	// one transaction: a failure between the two leaves the record with no name in any language
+	db.transaction((tx) => {
+		tx.delete(translations)
+			.where(
+				and(
+					eq(translations.entityType, entityType),
+					eq(translations.entityId, id),
+					inArray(translations.field, [...fields]),
+				),
+			)
+			.run();
+		if (rows.length) tx.insert(translations).values(rows).run();
+	});
 }
 
 /** Drop every translation row of one entity, for a delete. */
@@ -139,6 +142,19 @@ export async function getDefaultLang(db: DB): Promise<string> {
 		.where(eq(languages.isDefault, true))
 		.limit(1);
 	return row?.code ?? "en";
+}
+
+/** Every list, link and search names a record by the default language's row. */
+export async function requireDefaultName(
+	db: DB,
+	byLang: readonly { lang: string; name?: string }[],
+	what: string,
+): Promise<void> {
+	const lang = await getDefaultLang(db);
+	if (!byLang.find((tr) => tr.lang === lang)?.name?.trim())
+		throw new Error(
+			`A ${what} needs a name in the default language (${lang}); every list and link uses it.`,
+		);
 }
 
 /**

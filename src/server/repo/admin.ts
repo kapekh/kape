@@ -69,6 +69,7 @@ import {
 	deleteEntityText,
 	type EntityText,
 	getDefaultLang,
+	requireDefaultName,
 	resolveOne,
 	resolveTranslations,
 	textByLang,
@@ -2264,6 +2265,7 @@ export async function getOffice(db: DB, id: number) {
 }
 export async function createOffice(db: DB, v: OfficeInput): Promise<number> {
 	const { translations: text, ...cols } = v;
+	await requireDefaultName(db, text, "office");
 	const [r] = await db
 		.insert(offices)
 		.values({ tenantId: TENANT, ...cols })
@@ -2277,6 +2279,7 @@ export async function updateOffice(
 	v: OfficeInput,
 ): Promise<void> {
 	const { translations: text, ...cols } = v;
+	await requireDefaultName(db, text, "office");
 	await db
 		.update(offices)
 		.set(cols)
@@ -2529,6 +2532,7 @@ export async function getSchool(db: DB, id: number) {
 }
 export async function createSchool(db: DB, v: SchoolInput): Promise<number> {
 	const { translations: text, ...cols } = v;
+	await requireDefaultName(db, text, "school");
 	const [r] = await db
 		.insert(schools)
 		.values({ tenantId: TENANT, ...cols })
@@ -2542,6 +2546,7 @@ export async function updateSchool(
 	v: SchoolInput,
 ): Promise<void> {
 	const { translations: text, ...cols } = v;
+	await requireDefaultName(db, text, "school");
 	await db
 		.update(schools)
 		.set(cols)

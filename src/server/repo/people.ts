@@ -7,6 +7,7 @@ import {
 	deleteEntityText,
 	type EntityText,
 	getDefaultLang,
+	requireDefaultName,
 	resolveOneWithFallback,
 	resolveTranslations,
 	resolveWithFallback,
@@ -272,21 +273,11 @@ const cols = (input: PersonInput) => ({
 	sort: input.sort,
 });
 
-/** Every list, link and search names a person by the default language's row. */
-async function requireDefaultName(db: DB, byLang: PersonTranslation[]) {
-	const lang = await getDefaultLang(db);
-	const name = byLang.find((tr) => tr.lang === lang)?.name?.trim();
-	if (!name)
-		throw new Error(
-			`A person needs a name in the default language (${lang}); every list and link uses it.`,
-		);
-}
-
 export async function createPerson(
 	db: DB,
 	input: PersonInput,
 ): Promise<number> {
-	await requireDefaultName(db, input.translations);
+	await requireDefaultName(db, input.translations, "person");
 	const [row] = await db
 		.insert(people)
 		.values({ tenantId: TENANT, ...cols(input) })
@@ -306,7 +297,7 @@ export async function updatePerson(
 	id: number,
 	input: PersonInput,
 ): Promise<void> {
-	await requireDefaultName(db, input.translations);
+	await requireDefaultName(db, input.translations, "person");
 	await db
 		.update(people)
 		.set({ ...cols(input), updatedAt: new Date().toISOString() })

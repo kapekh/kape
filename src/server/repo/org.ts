@@ -5,6 +5,7 @@ import { media, orgNodes, people, translations } from "../schema";
 import {
 	type EntityText,
 	getDefaultLang,
+	requireDefaultName,
 	resolveTranslations,
 	textByLang,
 	writeEntityText,
@@ -198,6 +199,7 @@ export async function reparentOrgNode(
 }
 
 export async function createOrgNode(db: DB, input: OrgInput): Promise<number> {
+	await requireDefaultName(db, input.translations, "box");
 	const sort = await siblingCount(db, input.parentId);
 	const [row] = await db
 		.insert(orgNodes)
@@ -223,6 +225,7 @@ export async function updateOrgNode(
 	id: number,
 	input: OrgInput,
 ): Promise<void> {
+	await requireDefaultName(db, input.translations, "box");
 	await db
 		.update(orgNodes)
 		.set({
