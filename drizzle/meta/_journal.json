@@ -169,6 +169,13 @@
       "when": 1788935843231,
       "tag": "0023_stale_radioactive_man",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1788937246824,
+      "tag": "0024_elite_mister_sinister",
+      "breakpoints": true
     }
   ]
 }

@@ -274,7 +274,7 @@ export const people = sqliteTable(
 
 /* ---- Fundraising campaigns + donations (Baray payment gateway) ---- */
 
-// every donation belongs to one; title and blurb are inline bilingual like site_settings
+// every donation belongs to one
 export const campaigns = sqliteTable(
 	"campaigns",
 	{
@@ -285,10 +285,7 @@ export const campaigns = sqliteTable(
 			.references(() => tenants.id),
 		slug: text("slug").notNull(),
 		status: text("status").notNull().default("active"), // active | draft | ended
-		title: text("title").notNull(),
-		titleKm: text("title_km"),
-		blurb: text("blurb"),
-		blurbKm: text("blurb_km"),
+		// title and blurb are `translations` rows (entity_type 'campaign')
 		currency: text("currency").notNull().default("USD"), // USD | KHR
 		goalAmount: text("goal_amount"), // numeric string; null = no goal (show total only)
 		coverMediaId: integer("cover_media_id").references(() => media.id),

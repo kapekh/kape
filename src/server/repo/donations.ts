@@ -2,6 +2,7 @@ import { and, desc, eq } from "drizzle-orm";
 
 import type { DB } from "../db";
 import { campaigns, donations } from "../schema";
+import { defaultLangText } from "./i18n";
 
 const TENANT = 1;
 
@@ -97,7 +98,7 @@ export async function adminListDonations(db: DB) {
 			displayName: donations.displayName,
 			createdAt: donations.createdAt,
 			campaignId: donations.campaignId,
-			campaignTitle: campaigns.title,
+			campaignTitle: defaultLangText("campaign", campaigns.id, "title"),
 		})
 		.from(donations)
 		.leftJoin(campaigns, eq(donations.campaignId, campaigns.id))

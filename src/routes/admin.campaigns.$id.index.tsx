@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
 	CampaignForm,
 	type CampaignFormValue,
+	type LangOpt,
 } from "#/components/admin/CampaignForm";
 import { EditorSkeleton } from "#/components/admin/EditorSkeleton";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
@@ -20,10 +21,17 @@ function EditCampaign() {
 	const { id } = Route.useParams();
 	const navigate = useNavigate();
 	const [initial, setInitial] = useState<Initial>(null);
+	const [langs, setLangs] = useState<LangOpt[]>([]);
 	const [saving, setSaving] = useState(false);
 
 	useEffect(() => {
-		trpcClient.adminCampaigns.get.query({ id: Number(id) }).then(setInitial);
+		Promise.all([
+			trpcClient.adminCampaigns.get.query({ id: Number(id) }),
+			trpcClient.i18n.languages.query(),
+		]).then(([c, languages]) => {
+			setInitial(c);
+			setLangs(languages);
+		});
 	}, [id]);
 
 	async function onSubmit(v: CampaignFormValue) {
@@ -43,6 +51,7 @@ function EditCampaign() {
 	return (
 		<CampaignForm
 			initial={initial}
+			languages={langs}
 			onSubmit={onSubmit}
 			saving={saving}
 			title="Edit campaign"

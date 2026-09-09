@@ -1614,6 +1614,7 @@ type MediaRef = {
 	label?: SQLiteColumn;
 	/** the row's name is a `translations` row, so the default language names it */
 	labelEntity?: string;
+	labelField?: string;
 	tenant?: SQLiteColumn;
 	join?: { table: SQLiteTable; on: SQL };
 	href?: (rowId: number) => string;
@@ -1676,7 +1677,8 @@ export const MEDIA_REFS: MediaRef[] = [
 		table: campaigns,
 		column: campaigns.coverMediaId,
 		rowId: campaigns.id,
-		label: campaigns.title,
+		labelEntity: "campaign",
+		labelField: "title",
 		tenant: campaigns.tenantId,
 		href: (r) => `/admin/campaigns/${r}`,
 	},
@@ -1783,7 +1785,10 @@ async function refUsage(
 		: null;
 	return rows.map((r) => ({
 		kind: ref.kind,
-		label: named?.get(r.rowId)?.name || r.label || `#${r.rowId}`,
+		label:
+			named?.get(r.rowId)?.[ref.labelField ?? "name"] ||
+			r.label ||
+			`#${r.rowId}`,
 		href: ref.href?.(r.rowId) ?? null,
 	}));
 }
@@ -1864,6 +1869,14 @@ const TRANSLATED_ENTITIES: Record<
 		label: defaultLangText("person", people.id, "name"),
 		tenant: people.tenantId,
 		href: (r) => `/admin/people/${r}`,
+	},
+	campaign: {
+		kind: "Campaign text",
+		table: campaigns,
+		id: campaigns.id,
+		label: campaigns.slug,
+		tenant: campaigns.tenantId,
+		href: (r) => `/admin/campaigns/${r}`,
 	},
 };
 

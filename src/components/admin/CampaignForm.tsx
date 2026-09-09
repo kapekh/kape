@@ -20,17 +20,18 @@ import {
 	Field,
 	FormSection,
 } from "./form-ui";
+import { LangTabs } from "./LangTabs";
 import { MediaPicker } from "./MediaPicker";
 import { useDirtyGuard } from "./useDirty";
 import { useFieldErrors } from "./useFieldErrors";
 
+type CampaignText = { title: string; blurb: string };
+
+export type LangOpt = { code: string; name: string };
+
 export type CampaignFormValue = {
 	slug: string;
 	status: "active" | "draft" | "ended";
-	title: string;
-	titleKm: string | null;
-	blurb: string | null;
-	blurbKm: string | null;
 	currency: "USD" | "KHR";
 	goalAmount: string | null;
 	coverMediaId: number | null;
@@ -40,15 +41,12 @@ export type CampaignFormValue = {
 	showSupporters: boolean;
 	featured: boolean;
 	sort: number;
+	translations: ({ lang: string } & CampaignText)[];
 };
 
 type Initial = {
 	slug: string;
 	status: string;
-	title: string;
-	titleKm: string | null;
-	blurb: string | null;
-	blurbKm: string | null;
 	currency: string;
 	goalAmount: number | string | null;
 	coverMediaId: number | null;
@@ -58,6 +56,7 @@ type Initial = {
 	showSupporters: boolean;
 	featured: boolean;
 	sort: number;
+	translations?: Record<string, Partial<CampaignText>>;
 } | null;
 
 function Check({
@@ -91,11 +90,13 @@ function Check({
 
 export function CampaignForm({
 	initial,
+	languages,
 	onSubmit,
 	saving,
 	title,
 }: {
 	initial: Initial;
+	languages: LangOpt[];
 	onSubmit: (v: CampaignFormValue) => void;
 	saving?: boolean;
 	title: string;
@@ -104,10 +105,14 @@ export function CampaignForm({
 	const [status, setStatus] = useState<CampaignFormValue["status"]>(
 		(initial?.status as CampaignFormValue["status"]) ?? "active",
 	);
-	const [titleEn, setTitleEn] = useState(initial?.title ?? "");
-	const [titleKm, setTitleKm] = useState(initial?.titleKm ?? "");
-	const [blurb, setBlurb] = useState(initial?.blurb ?? "");
-	const [blurbKm, setBlurbKm] = useState(initial?.blurbKm ?? "");
+	const [trans, setTrans] = useState<Record<string, CampaignText>>(() => {
+		const t: Record<string, CampaignText> = {};
+		for (const l of languages) {
+			const e = initial?.translations?.[l.code] ?? {};
+			t[l.code] = { title: e.title ?? "", blurb: e.blurb ?? "" };
+		}
+		return t;
+	});
 	const [currency, setCurrency] = useState<CampaignFormValue["currency"]>(
 		(initial?.currency as CampaignFormValue["currency"]) ?? "USD",
 	);
@@ -137,6 +142,9 @@ export function CampaignForm({
 	);
 	const [featured, setFeatured] = useState(initial?.featured ?? false);
 
+	const defaultLang = languages[0]?.code;
+	const defaultTitle = defaultLang ? (trans[defaultLang]?.title ?? "") : "";
+
 	const slugify = (s: string) =>
 		s
 			.toLowerCase()
@@ -144,15 +152,17 @@ export function CampaignForm({
 			.replace(/[^a-z0-9]+/g, "-")
 			.replace(/^-+|-+$/g, "");
 
+	const setText = (lang: string, field: keyof CampaignText, value: string) =>
+		setTrans((prev) => ({
+			...prev,
+			[lang]: { ...prev[lang], [field]: value },
+		}));
+
 	function submit(e: React.FormEvent) {
 		e.preventDefault();
 		onSubmit({
-			slug: slug || slugify(titleEn),
+			slug: slug || slugify(defaultTitle),
 			status,
-			title: titleEn,
-			titleKm: titleKm || null,
-			blurb: blurb || null,
-			blurbKm: blurbKm || null,
 			currency,
 			goalAmount: goal.trim() ? goal.trim() : null,
 			coverMediaId: coverMediaId ? Number(coverMediaId) : null,
@@ -168,6 +178,7 @@ export function CampaignForm({
 			showSupporters,
 			featured,
 			sort: initial?.sort ?? 0,
+			translations: languages.map((l) => ({ lang: l.code, ...trans[l.code] })),
 		});
 	}
 
@@ -177,10 +188,7 @@ export function CampaignForm({
 		JSON.stringify({
 			slug,
 			status,
-			titleEn,
-			titleKm,
-			blurb,
-			blurbKm,
+			trans,
 			currency,
 			goal,
 			coverMediaId,
@@ -208,37 +216,54 @@ export function CampaignForm({
 				main={
 					<div className="space-y-5">
 						<FormSection
-							split
 							title="Campaign"
-							description="Title and description shown on the donate page (English + Khmer)."
+							description="Title and description shown on the donate page, each in its own language. Switch languages with the tabs — your text is kept as you switch."
 						>
 							<div className="space-y-6">
-								<div className="grid gap-4 sm:grid-cols-2">
-									<Field label="Title (EN)" required error={errors.title}>
-										{(p) => (
-											<Input
-												{...p}
-												{...invalid("title")}
-												value={titleEn}
-												onChange={(e) => setTitleEn(e.target.value)}
-												placeholder="Where every child learns"
-											/>
-										)}
-									</Field>
-									<Field label="Title (KM)">
-										{(p) => (
-											<Input
-												{...p}
-												className="font-khmer"
-												value={titleKm}
-												onChange={(e) => setTitleKm(e.target.value)}
-											/>
-										)}
-									</Field>
-								</div>
+								<LangTabs languages={languages}>
+									{(l) => (
+										<div className="space-y-6">
+											<Field
+												label="Title"
+												required={l.code === defaultLang}
+												error={errors.title}
+											>
+												{(p) => (
+													<Input
+														{...p}
+														{...invalid("title")}
+														className={
+															l.code === "km" ? "font-khmer" : undefined
+														}
+														value={trans[l.code]?.title ?? ""}
+														onChange={(e) =>
+															setText(l.code, "title", e.target.value)
+														}
+														placeholder="Where every child learns"
+													/>
+												)}
+											</Field>
+											<Field label="Blurb">
+												{(p) => (
+													<Textarea
+														{...p}
+														rows={3}
+														className={
+															l.code === "km" ? "font-khmer" : undefined
+														}
+														value={trans[l.code]?.blurb ?? ""}
+														onChange={(e) =>
+															setText(l.code, "blurb", e.target.value)
+														}
+													/>
+												)}
+											</Field>
+										</div>
+									)}
+								</LangTabs>
 								<Field
 									label="Slug"
-									hint={`URL: /donate/${slug || slugify(titleEn) || "…"}`}
+									hint={`URL: /donate/${slug || slugify(defaultTitle) || "…"}`}
 								>
 									{(p) => (
 										<Input
@@ -250,29 +275,6 @@ export function CampaignForm({
 										/>
 									)}
 								</Field>
-								<div className="grid gap-4 sm:grid-cols-2">
-									<Field label="Blurb (EN)">
-										{(p) => (
-											<Textarea
-												{...p}
-												rows={3}
-												value={blurb}
-												onChange={(e) => setBlurb(e.target.value)}
-											/>
-										)}
-									</Field>
-									<Field label="Blurb (KM)">
-										{(p) => (
-											<Textarea
-												{...p}
-												className="font-khmer"
-												rows={3}
-												value={blurbKm}
-												onChange={(e) => setBlurbKm(e.target.value)}
-											/>
-										)}
-									</Field>
-								</div>
 							</div>
 						</FormSection>
 

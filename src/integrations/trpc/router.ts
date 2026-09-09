@@ -100,6 +100,7 @@ import {
 } from "#/server/repo/admin";
 import {
 	adminListCampaigns,
+	type CampaignInput,
 	createCampaign,
 	deleteCampaign,
 	getCampaignBySlug,
@@ -1212,19 +1213,6 @@ const adminHeroRouter = {
 const campaignInput = z.object({
 	slug: z.string().min(1),
 	status: z.enum(["active", "draft", "ended"]),
-	title: z.string().min(1),
-	titleKm: z
-		.string()
-		.nullish()
-		.transform((v) => v ?? null),
-	blurb: z
-		.string()
-		.nullish()
-		.transform((v) => v ?? null),
-	blurbKm: z
-		.string()
-		.nullish()
-		.transform((v) => v ?? null),
 	currency: z.enum(["USD", "KHR"]),
 	goalAmount: z
 		.string()
@@ -1237,7 +1225,10 @@ const campaignInput = z.object({
 	showSupporters: z.boolean(),
 	featured: z.boolean(),
 	sort: z.number(),
-});
+	translations: z.array(
+		z.object({ lang: z.string(), title: z.string(), blurb: z.string() }),
+	),
+}) satisfies z.ZodType<CampaignInput>;
 
 const adminCampaignsRouter = {
 	list: adminProcedure.query(({ ctx }) => adminListCampaigns(ctx.db)),

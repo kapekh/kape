@@ -2,17 +2,25 @@ import { and, asc, desc, eq, inArray, ne, sql } from "drizzle-orm";
 
 import type { DB } from "../db";
 import { campaigns, donations } from "../schema";
+import {
+	deleteEntityText,
+	type EntityText,
+	getDefaultLang,
+	resolveTranslations,
+	textByLang,
+	writeEntityText,
+} from "./i18n";
 import { attachMediaUrl } from "./media-util";
 
 const TENANT = 1;
 
+/** Campaign text that lives in `translations`, not in a column of `campaigns`. */
+export const CAMPAIGN_TEXT_FIELDS = ["title", "blurb"] as const;
+export type CampaignText = EntityText<(typeof CAMPAIGN_TEXT_FIELDS)[number]>;
+
 export type CampaignInput = {
 	slug: string;
 	status: "active" | "draft" | "ended";
-	title: string;
-	titleKm: string | null;
-	blurb: string | null;
-	blurbKm: string | null;
 	currency: "USD" | "KHR";
 	goalAmount: string | null;
 	coverMediaId: number | null;
@@ -22,24 +30,10 @@ export type CampaignInput = {
 	showSupporters: boolean;
 	featured: boolean;
 	sort: number;
+	translations: CampaignText[];
 };
 
 export type CampaignProgress = { raised: number; supporters: number };
-
-const localize = <
-	T extends {
-		title: string;
-		titleKm: string | null;
-		blurb: string | null;
-		blurbKm: string | null;
-	},
->(
-	c: T,
-	lang: string,
-) => ({
-	title: lang === "km" ? c.titleKm || c.title : c.title,
-	blurb: lang === "km" ? c.blurbKm || c.blurb : c.blurb,
-});
 
 /** Raised total + supporter count from *paid* donations, per campaign id. */
 async function progressByCampaign(
@@ -74,14 +68,15 @@ async function progressByCampaign(
 
 function publicShape(
 	row: typeof campaigns.$inferSelect & { coverUrl: string | null },
-	lang: string,
+	text: Record<string, string> | undefined,
 	prog: CampaignProgress | undefined,
 ) {
 	return {
 		id: row.id,
 		slug: row.slug,
 		status: row.status,
-		...localize(row, lang),
+		title: text?.title ?? "",
+		blurb: text?.blurb ?? null,
 		currency: row.currency,
 		goalAmount: row.goalAmount != null ? Number(row.goalAmount) : null,
 		coverUrl: row.coverUrl,
@@ -108,11 +103,10 @@ export async function listActiveCampaigns(
 		.where(and(eq(campaigns.tenantId, TENANT), eq(campaigns.status, "active")))
 		.orderBy(desc(campaigns.featured), asc(campaigns.sort), asc(campaigns.id));
 	const withUrl = await attachMediaUrl(db, rows, "coverMediaId", "coverUrl");
-	const prog = await progressByCampaign(
-		db,
-		rows.map((r) => r.id),
-	);
-	return withUrl.map((r) => publicShape(r, lang, prog.get(r.id)));
+	const ids = rows.map((r) => r.id);
+	const prog = await progressByCampaign(db, ids);
+	const text = await resolveTranslations(db, "campaign", ids, lang);
+	return withUrl.map((r) => publicShape(r, text.get(r.id), prog.get(r.id)));
 }
 
 /** A single campaign (active or ended) plus its recent public supporters. */
@@ -131,10 +125,11 @@ export async function getCampaignBySlug(db: DB, slug: string, lang: string) {
 	if (!row) return null;
 	const [withUrl] = await attachMediaUrl(db, [row], "coverMediaId", "coverUrl");
 	const prog = (await progressByCampaign(db, [row.id])).get(row.id);
+	const text = await resolveTranslations(db, "campaign", [row.id], lang);
 	const recentSupporters = row.showSupporters
 		? await listSupporters(db, row.id, 12)
 		: [];
-	return { ...publicShape(withUrl, lang, prog), recentSupporters };
+	return { ...publicShape(withUrl, text.get(row.id), prog), recentSupporters };
 }
 
 /** Recent paid, non-anonymous donors for the supporters wall. */
@@ -194,16 +189,21 @@ export async function adminListCampaigns(db: DB) {
 		.where(eq(campaigns.tenantId, TENANT))
 		.orderBy(desc(campaigns.featured), asc(campaigns.sort), asc(campaigns.id));
 	const withUrl = await attachMediaUrl(db, rows, "coverMediaId", "coverUrl");
-	const prog = await progressByCampaign(
-		db,
-		rows.map((r) => r.id),
-	);
-	return withUrl.map((r) => ({
-		...r,
-		goalAmount: r.goalAmount != null ? Number(r.goalAmount) : null,
-		raised: prog.get(r.id)?.raised ?? 0,
-		supporters: prog.get(r.id)?.supporters ?? 0,
-	}));
+	const ids = rows.map((r) => r.id);
+	const prog = await progressByCampaign(db, ids);
+	const defaultLang = await getDefaultLang(db);
+	const text = await textByLang(db, "campaign", ids);
+	return withUrl.map((r) => {
+		const byLang = text.get(r.id) ?? {};
+		return {
+			...r,
+			title: byLang[defaultLang]?.title ?? "",
+			blurb: byLang[defaultLang]?.blurb ?? "",
+			goalAmount: r.goalAmount != null ? Number(r.goalAmount) : null,
+			raised: prog.get(r.id)?.raised ?? 0,
+			supporters: prog.get(r.id)?.supporters ?? 0,
+		};
+	});
 }
 
 export async function getCampaignForEdit(db: DB, id: number) {
@@ -214,7 +214,13 @@ export async function getCampaignForEdit(db: DB, id: number) {
 		.limit(1);
 	if (!row) return null;
 	const [withUrl] = await attachMediaUrl(db, [row], "coverMediaId", "coverUrl");
-	return withUrl;
+	const byLang = (await textByLang(db, "campaign", [id])).get(id) ?? {};
+	const defaultLang = await getDefaultLang(db);
+	return {
+		...withUrl,
+		title: byLang[defaultLang]?.title ?? "",
+		translations: byLang,
+	};
 }
 
 /** Keep at most one featured campaign — clear others when this one is featured. */
@@ -234,10 +240,12 @@ export async function createCampaign(
 	db: DB,
 	input: CampaignInput,
 ): Promise<number> {
+	const { translations: text, ...cols } = input;
 	const [r] = await db
 		.insert(campaigns)
-		.values({ tenantId: TENANT, ...input })
+		.values({ tenantId: TENANT, ...cols })
 		.returning({ id: campaigns.id });
+	await writeEntityText(db, "campaign", r.id, CAMPAIGN_TEXT_FIELDS, text);
 	if (input.featured) await clearOtherFeatured(db, r.id);
 	return r.id;
 }
@@ -247,10 +255,12 @@ export async function updateCampaign(
 	id: number,
 	input: CampaignInput,
 ): Promise<void> {
+	const { translations: text, ...cols } = input;
 	await db
 		.update(campaigns)
-		.set({ ...input, updatedAt: new Date().toISOString() })
+		.set({ ...cols, updatedAt: new Date().toISOString() })
 		.where(and(eq(campaigns.tenantId, TENANT), eq(campaigns.id, id)));
+	await writeEntityText(db, "campaign", id, CAMPAIGN_TEXT_FIELDS, text);
 	if (input.featured) await clearOtherFeatured(db, id);
 }
 
@@ -278,6 +288,7 @@ export async function deleteCampaign(db: DB, id: number): Promise<void> {
 	await db
 		.delete(donations)
 		.where(and(eq(donations.tenantId, TENANT), eq(donations.campaignId, id)));
+	await deleteEntityText(db, "campaign", id);
 	await db
 		.delete(campaigns)
 		.where(and(eq(campaigns.tenantId, TENANT), eq(campaigns.id, id)));

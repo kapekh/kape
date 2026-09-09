@@ -31,6 +31,7 @@ function run<T>(body: string): T {
 			"-e",
 			`import { db } from "${root}/src/server/db.ts";
 			 import * as admin from "${root}/src/server/repo/admin.ts";
+			 import * as campaigns from "${root}/src/server/repo/campaigns.ts";
 			 import * as content from "${root}/src/server/repo/content.ts";
 			 import * as org from "${root}/src/server/repo/org.ts";
 			 import * as site from "${root}/src/server/repo/site.ts";
@@ -168,5 +169,45 @@ describe("a school's name and address", () => {
 
 	it("names the row in the default language for the admin list", () => {
 		expect(r.listed).toBe("Rompok Primary School");
+	});
+});
+
+describe("a campaign's title and blurb", () => {
+	const r = run<{
+		en: { title: string; blurb: string };
+		km: { title: string; blurb: string };
+		listed: string;
+	}>(`
+		const id = await campaigns.createCampaign(db, {
+			slug: "every-child-learns", status: "active", currency: "USD",
+			goalAmount: null, coverMediaId: null, presets: [], allowCustom: true,
+			impactTiers: [], showSupporters: true, featured: false, sort: 0,
+			translations: [
+				{ lang: "en", title: "Where every child learns", blurb: "Books and desks for one classroom." },
+				{ lang: "km", title: "កន្លែងដែលកុមារគ្រប់រូបរៀន", blurb: "សៀវភៅ និងតុសម្រាប់ថ្នាក់រៀនមួយ។" },
+			],
+		});
+		const pick = (rows) => {
+			const c = rows.find((x) => x.id === id);
+			return { title: c.title, blurb: c.blurb };
+		};
+		out.en = pick(await campaigns.listActiveCampaigns(db, "en"));
+		out.km = pick(await campaigns.listActiveCampaigns(db, "km"));
+		out.listed = (await campaigns.adminListCampaigns(db)).find((c) => c.id === id).title;
+	`);
+
+	it("reads back on the donate page in the language asked for", () => {
+		expect(r.en).toEqual({
+			title: "Where every child learns",
+			blurb: "Books and desks for one classroom.",
+		});
+		expect(r.km).toEqual({
+			title: "កន្លែងដែលកុមារគ្រប់រូបរៀន",
+			blurb: "សៀវភៅ និងតុសម្រាប់ថ្នាក់រៀនមួយ។",
+		});
+	});
+
+	it("names the row in the default language for the admin list", () => {
+		expect(r.listed).toBe("Where every child learns");
 	});
 });
