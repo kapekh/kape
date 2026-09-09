@@ -1,13 +1,13 @@
 import { and, asc, eq, inArray } from "drizzle-orm";
 
 import type { DB } from "../db";
-import { media, orgNodes, people, translations } from "../schema";
+import { media, orgNodes, people } from "../schema";
 import {
+	deleteEntityText,
 	type EntityText,
-	getDefaultLang,
-	requireDefaultName,
+	readEntityText,
+	requireDefaultText,
 	resolveTranslations,
-	textByLang,
 	writeEntityText,
 } from "./i18n";
 
@@ -142,18 +142,17 @@ export async function adminListOrg(db: DB) {
 		.from(orgNodes)
 		.where(eq(orgNodes.tenantId, TENANT))
 		.orderBy(asc(orgNodes.sort));
-	const defaultLang = await getDefaultLang(db);
-	const text = await textByLang(
+	const { textOf } = await readEntityText(
 		db,
 		"org_node",
 		rows.map((r) => r.id),
 	);
 	return rows.map((r) => {
-		const byLang = text.get(r.id) ?? {};
+		const { text, byLang } = textOf(r.id);
 		return {
 			...r,
-			name: byLang[defaultLang]?.name ?? "",
-			title: byLang[defaultLang]?.title ?? null,
+			name: text.name ?? "",
+			title: text.title ?? null,
 			translations: byLang,
 		};
 	});
@@ -199,7 +198,7 @@ export async function reparentOrgNode(
 }
 
 export async function createOrgNode(db: DB, input: OrgInput): Promise<number> {
-	await requireDefaultName(db, input.translations, "box");
+	await requireDefaultText(db, input.translations, "box");
 	const sort = await siblingCount(db, input.parentId);
 	const [row] = await db
 		.insert(orgNodes)
@@ -225,7 +224,7 @@ export async function updateOrgNode(
 	id: number,
 	input: OrgInput,
 ): Promise<void> {
-	await requireDefaultName(db, input.translations, "box");
+	await requireDefaultText(db, input.translations, "box");
 	await db
 		.update(orgNodes)
 		.set({
@@ -259,14 +258,7 @@ export async function deleteOrgNode(db: DB, id: number): Promise<void> {
 				grew = true;
 			}
 	}
-	await db
-		.delete(translations)
-		.where(
-			and(
-				eq(translations.entityType, "org_node"),
-				inArray(translations.entityId, [...ids]),
-			),
-		);
+	await deleteEntityText(db, "org_node", [...ids]);
 	await db
 		.delete(orgNodes)
 		.where(and(eq(orgNodes.tenantId, TENANT), inArray(orgNodes.id, [...ids])));

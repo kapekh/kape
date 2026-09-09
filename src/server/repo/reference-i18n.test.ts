@@ -292,3 +292,27 @@ describe("a label wanted where no language was asked for", () => {
 		expect(r.mediaLabel).toBe("Label proof form");
 	});
 });
+
+describe("a campaign with no title in the default language", () => {
+	const r = run<{ refused: string; listed: number }>(`
+		try {
+			await campaigns.createCampaign(db, {
+				slug: "no-default-title", status: "active", currency: "USD",
+				goalAmount: null, coverMediaId: null, presets: [], allowCustom: true,
+				impactTiers: [], showSupporters: true, featured: false, sort: 0,
+				translations: [{ lang: "km", title: "គ្មានចំណងជើងអង់គ្លេស", blurb: "" }],
+			});
+			out.refused = "";
+		} catch (e) {
+			out.refused = String(e.message ?? e);
+		}
+		out.listed = (await campaigns.adminListCampaigns(db))
+			.filter((c) => c.slug === "no-default-title").length;
+	`);
+
+	// no screen can name, list or link a row the default language has no title for
+	it("is refused rather than stored unnameable", () => {
+		expect(r.refused).toContain("needs a title in the default language");
+		expect(r.listed).toBe(0);
+	});
+});

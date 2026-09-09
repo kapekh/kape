@@ -11,9 +11,9 @@ import {
 import {
 	deleteEntityText,
 	type EntityText,
-	getDefaultLang,
+	readEntityText,
+	requireDefaultText,
 	resolveOne,
-	textByLang,
 	writeEntityText,
 } from "./i18n";
 
@@ -94,15 +94,14 @@ export async function adminListForms(db: DB) {
 		.where(eq(formSubmissions.tenantId, TENANT))
 		.groupBy(formSubmissions.formId);
 	const byForm = new Map(counts.map((c) => [c.formId, Number(c.n)]));
-	const defaultLang = await getDefaultLang(db);
-	const text = await textByLang(
+	const { textOf } = await readEntityText(
 		db,
 		"form",
 		rows.map((r) => r.id),
 	);
 	return rows.map((r) => ({
 		...r,
-		title: text.get(r.id)?.[defaultLang]?.title ?? "",
+		title: textOf(r.id).text.title ?? "",
 		submissionCount: byForm.get(r.id) ?? 0,
 	}));
 }
@@ -129,17 +128,13 @@ export async function getFormForEdit(db: DB, id: number) {
 		.where(and(eq(forms.tenantId, TENANT), eq(forms.id, id)))
 		.limit(1);
 	if (!row) return null;
-	const byLang = (await textByLang(db, "form", [id])).get(id) ?? {};
-	const defaultLang = await getDefaultLang(db);
-	return {
-		...row,
-		title: byLang[defaultLang]?.title ?? "",
-		translations: byLang,
-	};
+	const { text, byLang } = (await readEntityText(db, "form", [id])).textOf(id);
+	return { ...row, title: text.title ?? "", translations: byLang };
 }
 
 export async function createForm(db: DB, input: FormInput): Promise<number> {
 	const { translations: text, ...cols } = input;
+	await requireDefaultText(db, text, "form", "title");
 	const [r] = await db
 		.insert(forms)
 		.values({ tenantId: TENANT, ...cols })
@@ -154,6 +149,7 @@ export async function updateForm(
 	input: FormInput,
 ): Promise<void> {
 	const { translations: text, ...cols } = input;
+	await requireDefaultText(db, text, "form", "title");
 	await db
 		.update(forms)
 		.set({ ...cols, updatedAt: new Date().toISOString() })

@@ -23,13 +23,16 @@ export type EntityText<F extends string> = { lang: string } & Partial<
 export type TextByLang = Map<number, Record<string, Record<string, string>>>;
 
 /**
- * Every stored language of the given entities' text.
+ * Every stored language of the given entities' text, narrowed to `fields` when
+ * the caller names them — a list that shows a name has no use for a rich-text
+ * body it would only ship to the browser.
  * The admin screens edit all languages at once, so they cannot use the resolver.
  */
 export async function textByLang(
 	db: DB,
 	entityType: string,
 	ids: number[],
+	fields?: readonly string[],
 ): Promise<TextByLang> {
 	const byId: TextByLang = new Map();
 	for (const id of ids) byId.set(id, {});
@@ -46,6 +49,7 @@ export async function textByLang(
 			and(
 				eq(translations.entityType, entityType),
 				inArray(translations.entityId, ids),
+				fields?.length ? inArray(translations.field, [...fields]) : undefined,
 			),
 		);
 	for (const r of rows) {
@@ -55,6 +59,36 @@ export async function textByLang(
 		byLang[r.lang][r.field] = r.value;
 	}
 	return byId;
+}
+
+/** One entity's text: the default language's values, and every language's. */
+export type EntityTextView = {
+	text: Record<string, string>;
+	byLang: Record<string, Record<string, string>>;
+};
+
+/**
+ * What every admin list and edit screen reads: each row named in the default
+ * language, with the other languages beside it for the editor's tabs and the
+ * list's search box.
+ */
+export async function readEntityText(
+	db: DB,
+	entityType: string,
+	ids: number[],
+	fields?: readonly string[],
+): Promise<{ defaultLang: string; textOf: (id: number) => EntityTextView }> {
+	const [defaultLang, byId] = await Promise.all([
+		getDefaultLang(db),
+		textByLang(db, entityType, ids, fields),
+	]);
+	return {
+		defaultLang,
+		textOf: (id) => {
+			const byLang = byId.get(id) ?? {};
+			return { text: byLang[defaultLang] ?? {}, byLang };
+		},
+	};
 }
 
 /** Replace one entity's rows for `fields`. A blank value stores no row. */
@@ -92,18 +126,20 @@ export async function writeEntityText<F extends string>(
 	});
 }
 
-/** Drop every translation row of one entity, for a delete. */
+/** Drop every translation row of one entity, or of a whole subtree, for a delete. */
 export async function deleteEntityText(
 	db: DB,
 	entityType: string,
-	id: number,
+	id: number | number[],
 ): Promise<void> {
 	await db
 		.delete(translations)
 		.where(
 			and(
 				eq(translations.entityType, entityType),
-				eq(translations.entityId, id),
+				Array.isArray(id)
+					? inArray(translations.entityId, id)
+					: eq(translations.entityId, id),
 			),
 		);
 }
@@ -134,26 +170,47 @@ export const defaultLangText = (
 	>`(select value from translations where entity_type = ${entityType} and entity_id = ${outer} and field = ${field} and lang = coalesce((select code from languages where is_default = 1 limit 1), 'en'))`;
 };
 
-/** The fallback language code (defaults to 'en' if none flagged). */
+const defaultLangOf = new WeakMap<DB, string>();
+
+/** Forget the memoised default language. Every writer of `languages` calls this. */
+export function forgetDefaultLang(db: DB): void {
+	defaultLangOf.delete(db);
+}
+
+/**
+ * The fallback language code (defaults to 'en' if none flagged), memoised:
+ * rendering one page asks for it a dozen times and it changes only from the
+ * languages screen.
+ */
 export async function getDefaultLang(db: DB): Promise<string> {
+	const memo = defaultLangOf.get(db);
+	if (memo !== undefined) return memo;
 	const [row] = await db
 		.select({ code: languages.code })
 		.from(languages)
 		.where(eq(languages.isDefault, true))
 		.limit(1);
-	return row?.code ?? "en";
+	// an uninstalled database has no answer yet, only the fallback — nothing to remember
+	if (!row?.code) return "en";
+	defaultLangOf.set(db, row.code);
+	return row.code;
 }
 
-/** Every list, link and search names a record by the default language's row. */
-export async function requireDefaultName(
+/**
+ * Every list, link and search names a record by the default language's row, so
+ * the field a record is named by — `name` for most, `title` for others — has to
+ * be there in that language.
+ */
+export async function requireDefaultText(
 	db: DB,
-	byLang: readonly { lang: string; name?: string }[],
+	byLang: readonly EntityText<string>[],
 	what: string,
+	field = "name",
 ): Promise<void> {
 	const lang = await getDefaultLang(db);
-	if (!byLang.find((tr) => tr.lang === lang)?.name?.trim())
+	if (!byLang.find((tr) => tr.lang === lang)?.[field]?.trim())
 		throw new Error(
-			`A ${what} needs a name in the default language (${lang}); every list and link uses it.`,
+			`A ${what} needs a ${field} in the default language (${lang}); every list and link uses it.`,
 		);
 }
 
@@ -165,7 +222,7 @@ export async function resolveWithFallback(
 	db: DB,
 	entityType: string,
 	ids: number[],
-	lang: string,
+	requested?: string,
 ): Promise<{ values: TranslationMap; fallback: FallbackMap }> {
 	const values: TranslationMap = new Map();
 	const fallback: FallbackMap = new Map();
@@ -176,6 +233,7 @@ export async function resolveWithFallback(
 	}
 
 	const defaultLang = await getDefaultLang(db);
+	const lang = requested ?? defaultLang;
 	const wanted = Array.from(new Set([defaultLang, lang]));
 
 	const rows = await db
@@ -218,11 +276,12 @@ export async function resolveWithFallback(
 	return { values, fallback };
 }
 
+/** Resolved fields for `lang`, or for the default language when none is asked for. */
 export async function resolveTranslations(
 	db: DB,
 	entityType: string,
 	ids: number[],
-	lang: string,
+	lang?: string,
 ): Promise<TranslationMap> {
 	const { values } = await resolveWithFallback(db, entityType, ids, lang);
 	return values;

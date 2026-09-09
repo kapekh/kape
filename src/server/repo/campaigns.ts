@@ -5,9 +5,9 @@ import { campaigns, donations } from "../schema";
 import {
 	deleteEntityText,
 	type EntityText,
-	getDefaultLang,
+	readEntityText,
+	requireDefaultText,
 	resolveTranslations,
-	textByLang,
 	writeEntityText,
 } from "./i18n";
 import { attachMediaUrl } from "./media-util";
@@ -191,14 +191,13 @@ export async function adminListCampaigns(db: DB) {
 	const withUrl = await attachMediaUrl(db, rows, "coverMediaId", "coverUrl");
 	const ids = rows.map((r) => r.id);
 	const prog = await progressByCampaign(db, ids);
-	const defaultLang = await getDefaultLang(db);
-	const text = await textByLang(db, "campaign", ids);
+	const { textOf } = await readEntityText(db, "campaign", ids);
 	return withUrl.map((r) => {
-		const byLang = text.get(r.id) ?? {};
+		const { text } = textOf(r.id);
 		return {
 			...r,
-			title: byLang[defaultLang]?.title ?? "",
-			blurb: byLang[defaultLang]?.blurb ?? "",
+			title: text.title ?? "",
+			blurb: text.blurb ?? "",
 			goalAmount: r.goalAmount != null ? Number(r.goalAmount) : null,
 			raised: prog.get(r.id)?.raised ?? 0,
 			supporters: prog.get(r.id)?.supporters ?? 0,
@@ -214,13 +213,10 @@ export async function getCampaignForEdit(db: DB, id: number) {
 		.limit(1);
 	if (!row) return null;
 	const [withUrl] = await attachMediaUrl(db, [row], "coverMediaId", "coverUrl");
-	const byLang = (await textByLang(db, "campaign", [id])).get(id) ?? {};
-	const defaultLang = await getDefaultLang(db);
-	return {
-		...withUrl,
-		title: byLang[defaultLang]?.title ?? "",
-		translations: byLang,
-	};
+	const { text, byLang } = (await readEntityText(db, "campaign", [id])).textOf(
+		id,
+	);
+	return { ...withUrl, title: text.title ?? "", translations: byLang };
 }
 
 /** Keep at most one featured campaign — clear others when this one is featured. */
@@ -241,6 +237,7 @@ export async function createCampaign(
 	input: CampaignInput,
 ): Promise<number> {
 	const { translations: text, ...cols } = input;
+	await requireDefaultText(db, text, "campaign", "title");
 	const [r] = await db
 		.insert(campaigns)
 		.values({ tenantId: TENANT, ...cols })
@@ -256,6 +253,7 @@ export async function updateCampaign(
 	input: CampaignInput,
 ): Promise<void> {
 	const { translations: text, ...cols } = input;
+	await requireDefaultText(db, text, "campaign", "title");
 	await db
 		.update(campaigns)
 		.set({ ...cols, updatedAt: new Date().toISOString() })

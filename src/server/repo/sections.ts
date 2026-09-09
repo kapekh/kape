@@ -22,7 +22,7 @@ import {
 	type VideoItem,
 } from "./content";
 import { getOrgTree, type OrgNode } from "./org";
-import { listPeople, type PersonItem } from "./people";
+import { getPersonItem, listPeople, type PersonItem } from "./people";
 import {
 	listProjectCards,
 	listProjectLocations,
@@ -156,14 +156,6 @@ const personRef = (props: Record<string, unknown>): string => {
 	return typeof v === "string" || typeof v === "number" ? String(v).trim() : "";
 };
 
-async function resolvePerson(
-	all: Promise<PersonItem[]>,
-	ref: string,
-): Promise<PersonItem | null> {
-	const rows = await all;
-	return rows.find((p) => String(p.id) === ref || p.slug === ref) ?? null;
-}
-
 /** Where a post content-type's detail pages live (for per-item links). */
 const POST_LINK_BASE: Record<string, string> = {
 	news: "/news",
@@ -180,9 +172,6 @@ export async function resolveSections(
 	opts?: ResolveOptions,
 ): Promise<SectionNode[]> {
 	if (!Array.isArray(sections)) return [];
-	// every person-backed section on the page reads the one list, not one each
-	let everyone: Promise<PersonItem[]> | null = null;
-	const people = () => (everyone ??= listPeople(db, lang));
 	return Promise.all(
 		sections.map(async (s) => {
 			let props: Record<string, unknown> = { ...(s?.props ?? {}) };
@@ -206,7 +195,7 @@ export async function resolveSections(
 			}
 			const ref = personRef(props);
 			if (ref && (opts?.allowSource?.("people") ?? true)) {
-				props.person = await resolvePerson(people(), ref);
+				props.person = await getPersonItem(db, ref, lang);
 			}
 			if (s?.query) {
 				const perPage = perPageOf(props);

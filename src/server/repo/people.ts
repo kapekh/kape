@@ -1,4 +1,4 @@
-import { and, asc, eq, ne } from "drizzle-orm";
+import { and, asc, eq, ne, or } from "drizzle-orm";
 
 import type { DB } from "../db";
 import { renderBody } from "../richtext";
@@ -6,8 +6,8 @@ import { media, people } from "../schema";
 import {
 	deleteEntityText,
 	type EntityText,
-	getDefaultLang,
-	requireDefaultName,
+	readEntityText,
+	requireDefaultText,
 	resolveOneWithFallback,
 	resolveTranslations,
 	resolveWithFallback,
@@ -64,6 +64,43 @@ export async function listPeople(db: DB, lang: string): Promise<PersonItem[]> {
 		),
 		updatedAt: r.updatedAt,
 	}));
+}
+
+/** One public person by id or slug, shaped exactly as `listPeople` shapes a row. */
+export async function getPersonItem(
+	db: DB,
+	ref: string,
+	lang: string,
+): Promise<PersonItem | null> {
+	const asId = Number(ref);
+	const byRef =
+		Number.isSafeInteger(asId) && String(asId) === ref
+			? or(eq(people.id, asId), eq(people.slug, ref))
+			: eq(people.slug, ref);
+	const [row] = await db
+		.select()
+		.from(people)
+		.where(and(eq(people.tenantId, TENANT), eq(people.isPublic, true), byRef))
+		.orderBy(asc(people.sort))
+		.limit(1);
+	if (!row) return null;
+	const [withUrl] = await attachMediaUrl(db, [row], "photoMediaId", "photoUrl");
+	const { fields, fallback } = await resolveOneWithFallback(
+		db,
+		"person",
+		row.id,
+		lang,
+	);
+	return {
+		id: row.id,
+		slug: row.slug ?? "",
+		name: fields.name ?? "",
+		position: fields.position ?? "",
+		section: row.tier,
+		photoUrl: withUrl.photoUrl,
+		i18nFallback: fallback.filter((f) => INLINE_TEXT_FIELDS.has(f)),
+		updatedAt: row.updatedAt,
+	};
 }
 
 export type Colleague = {
@@ -189,6 +226,7 @@ export async function staffDirectory(db: DB) {
 		db,
 		"person",
 		rows.map((r) => r.id),
+		["name"],
 	);
 	return withUrl.map((r) => {
 		const names: Record<string, string> = {};
@@ -227,18 +265,19 @@ export async function adminListPeople(db: DB) {
 		.where(eq(people.tenantId, TENANT))
 		.orderBy(asc(people.tier), asc(people.sort));
 	const withUrl = await attachMediaUrl(db, rows, "photoMediaId", "photoUrl");
-	const defaultLang = await getDefaultLang(db);
-	const text = await textByLang(
+	// no bio: the list only names and searches, and a prosemirror body is most of the payload
+	const { defaultLang, textOf } = await readEntityText(
 		db,
 		"person",
 		withUrl.map((r) => r.id),
+		["name", "position"],
 	);
 	return withUrl.map((r) => {
-		const byLang = text.get(r.id) ?? {};
+		const { text, byLang } = textOf(r.id);
 		return {
 			...r,
-			name: byLang[defaultLang]?.name ?? "",
-			position: byLang[defaultLang]?.position ?? "",
+			name: text.name ?? "",
+			position: text.position ?? "",
 			altNames: Object.entries(byLang)
 				.filter(([lang, fields]) => lang !== defaultLang && fields.name)
 				.map(([lang, fields]) => ({ lang, value: fields.name })),
@@ -277,7 +316,7 @@ export async function createPerson(
 	db: DB,
 	input: PersonInput,
 ): Promise<number> {
-	await requireDefaultName(db, input.translations, "person");
+	await requireDefaultText(db, input.translations, "person");
 	const [row] = await db
 		.insert(people)
 		.values({ tenantId: TENANT, ...cols(input) })
@@ -297,7 +336,7 @@ export async function updatePerson(
 	id: number,
 	input: PersonInput,
 ): Promise<void> {
-	await requireDefaultName(db, input.translations, "person");
+	await requireDefaultText(db, input.translations, "person");
 	await db
 		.update(people)
 		.set({ ...cols(input), updatedAt: new Date().toISOString() })

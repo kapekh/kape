@@ -68,8 +68,10 @@ import {
 	defaultLangText,
 	deleteEntityText,
 	type EntityText,
+	forgetDefaultLang,
 	getDefaultLang,
-	requireDefaultName,
+	readEntityText,
+	requireDefaultText,
 	resolveOne,
 	resolveTranslations,
 	textByLang,
@@ -1781,7 +1783,6 @@ async function refUsage(
 				db,
 				ref.labelEntity,
 				rows.map((r) => r.rowId),
-				await getDefaultLang(db),
 			)
 		: null;
 	return rows.map((r) => ({
@@ -2235,18 +2236,17 @@ export async function adminListOffices(db: DB) {
 		.where(eq(offices.tenantId, TENANT))
 		.orderBy(asc(offices.sort));
 	const withUrl = await attachMediaUrl(db, rows, "imageMediaId", "imageUrl");
-	const defaultLang = await getDefaultLang(db);
-	const text = await textByLang(
+	const { textOf } = await readEntityText(
 		db,
 		"office",
 		rows.map((r) => r.id),
 	);
 	return withUrl.map((r) => {
-		const byLang = text.get(r.id) ?? {};
+		const { text, byLang } = textOf(r.id);
 		return {
 			...r,
-			name: byLang[defaultLang]?.name ?? "",
-			address: byLang[defaultLang]?.address ?? "",
+			name: text.name ?? "",
+			address: text.address ?? "",
 			translations: byLang,
 		};
 	});
@@ -2265,7 +2265,7 @@ export async function getOffice(db: DB, id: number) {
 }
 export async function createOffice(db: DB, v: OfficeInput): Promise<number> {
 	const { translations: text, ...cols } = v;
-	await requireDefaultName(db, text, "office");
+	await requireDefaultText(db, text, "office");
 	const [r] = await db
 		.insert(offices)
 		.values({ tenantId: TENANT, ...cols })
@@ -2279,7 +2279,7 @@ export async function updateOffice(
 	v: OfficeInput,
 ): Promise<void> {
 	const { translations: text, ...cols } = v;
-	await requireDefaultName(db, text, "office");
+	await requireDefaultText(db, text, "office");
 	await db
 		.update(offices)
 		.set(cols)
@@ -2464,14 +2464,7 @@ export async function updateHero(
 	await setTranslations(db, "hero_slide", id, heroRows(input));
 }
 export async function deleteHero(db: DB, id: number): Promise<void> {
-	await db
-		.delete(translations)
-		.where(
-			and(
-				eq(translations.entityType, "hero_slide"),
-				eq(translations.entityId, id),
-			),
-		);
+	await deleteEntityText(db, "hero_slide", id);
 	await db
 		.delete(heroSlides)
 		.where(and(eq(heroSlides.tenantId, TENANT), eq(heroSlides.id, id)));
@@ -2500,19 +2493,18 @@ export async function adminListSchools(db: DB) {
 		.select()
 		.from(schools)
 		.where(eq(schools.tenantId, TENANT));
-	const defaultLang = await getDefaultLang(db);
-	const text = await textByLang(
+	const { textOf } = await readEntityText(
 		db,
 		"school",
 		rows.map((r) => r.id),
 	);
 	return rows
 		.map((r) => {
-			const byLang = text.get(r.id) ?? {};
+			const { text, byLang } = textOf(r.id);
 			return {
 				...r,
-				name: byLang[defaultLang]?.name ?? "",
-				address: byLang[defaultLang]?.address ?? "",
+				name: text.name ?? "",
+				address: text.address ?? "",
 				translations: byLang,
 			};
 		})
@@ -2532,7 +2524,7 @@ export async function getSchool(db: DB, id: number) {
 }
 export async function createSchool(db: DB, v: SchoolInput): Promise<number> {
 	const { translations: text, ...cols } = v;
-	await requireDefaultName(db, text, "school");
+	await requireDefaultText(db, text, "school");
 	const [r] = await db
 		.insert(schools)
 		.values({ tenantId: TENANT, ...cols })
@@ -2546,7 +2538,7 @@ export async function updateSchool(
 	v: SchoolInput,
 ): Promise<void> {
 	const { translations: text, ...cols } = v;
-	await requireDefaultName(db, text, "school");
+	await requireDefaultText(db, text, "school");
 	await db
 		.update(schools)
 		.set(cols)
@@ -3039,6 +3031,7 @@ export async function createLanguage(
 ): Promise<void> {
 	await db.insert(languages).values(input);
 	if (input.isDefault) await ensureSingleDefault(db, input.code);
+	forgetDefaultLang(db);
 }
 
 export async function updateLanguage(
@@ -3048,6 +3041,7 @@ export async function updateLanguage(
 ): Promise<void> {
 	await db.update(languages).set(input).where(eq(languages.code, code));
 	if (input.isDefault) await ensureSingleDefault(db, code);
+	forgetDefaultLang(db);
 }
 
 export async function deleteLanguage(db: DB, code: string): Promise<void> {
@@ -3056,4 +3050,5 @@ export async function deleteLanguage(db: DB, code: string): Promise<void> {
 		tx.delete(uiStrings).where(eq(uiStrings.lang, code)).run();
 		tx.delete(languages).where(eq(languages.code, code)).run();
 	});
+	forgetDefaultLang(db);
 }
