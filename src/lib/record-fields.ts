@@ -5,12 +5,12 @@
 export const TRANSLATED_FIELDS: Record<string, readonly string[]> = {
 	page: ["title", "excerpt", "body"],
 	post: ["title", "excerpt", "body"],
-	person: ["bio"],
+	person: ["position", "bio"],
 	project: ["name", "summary", "body"],
 };
 
 // columns of `people`, not translation rows
-export const PERSON_COLUMN_FIELDS: readonly string[] = ["name", "position"];
+export const PERSON_COLUMN_FIELDS: readonly string[] = ["name"];
 
 // a name is one column per language, so a language missing here can hold none
 export const PERSON_NAME_COLUMNS: Record<string, "nameEn" | "nameKm"> = {

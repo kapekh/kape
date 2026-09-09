@@ -83,9 +83,7 @@ const LABELS: Record<string, Record<string, string>> = {
 const ONE_LINE = new Set(["title", "name", "position"]);
 
 // one column for every language, so an editor is told before they retype it
-const SHARED_ACROSS_LANGUAGES: Record<string, readonly string[]> = {
-	person: ["position"],
-};
+const SHARED_ACROSS_LANGUAGES: Record<string, readonly string[]> = {};
 
 export const fieldLabel = (entity: string, field: string): string =>
 	LABELS[entity]?.[field] ?? field;

@@ -26,10 +26,11 @@ import { RichTextEditor } from "./RichTextEditor";
 import { useDirtyGuard } from "./useDirty";
 import { useFieldErrors } from "./useFieldErrors";
 
+type PersonText = { position: string; bio: string };
+
 export type PersonFormValue = {
 	nameEn: string;
 	nameKm: string | null;
-	position: string | null;
 	tier: string;
 	isPublic: boolean;
 	slug: string | null;
@@ -40,13 +41,12 @@ export type PersonFormValue = {
 	email: string | null;
 	program: string | null;
 	sort: number;
-	bio: { en: string; km: string };
+	translations: ({ lang: string } & PersonText)[];
 };
 
 type Initial = {
 	nameEn: string;
 	nameKm: string | null;
-	position: string | null;
 	tier: string;
 	isPublic: boolean;
 	slug: string | null;
@@ -57,7 +57,7 @@ type Initial = {
 	email: string | null;
 	program: string | null;
 	sort: number;
-	bio?: Record<string, string>;
+	translations?: Record<string, Partial<PersonText>>;
 } | null;
 
 // radix rejects "" as an item value; the stored value is still "" for "not recorded"
@@ -86,7 +86,6 @@ export function PeopleForm({
 	const uid = useId();
 	const [nameEn, setNameEn] = useState(initial?.nameEn ?? "");
 	const [nameKm, setNameKm] = useState(initial?.nameKm ?? "");
-	const [position, setPosition] = useState(initial?.position ?? "");
 	const [tier, setTier] = useState(initial?.tier ?? "team");
 	const [isPublic, setIsPublic] = useState(initial?.isPublic ?? true);
 	const [slug, setSlug] = useState(initial?.slug ?? "");
@@ -98,19 +97,27 @@ export function PeopleForm({
 	const [phone, setPhone] = useState(initial?.phone ?? "");
 	const [email, setEmail] = useState(initial?.email ?? "");
 	const [program, setProgram] = useState(initial?.program ?? "");
-	const [bio, setBio] = useState<Record<string, string>>(() => {
-		const b: Record<string, string> = {};
-		for (const l of languages) b[l.code] = initial?.bio?.[l.code] ?? "";
-		return b;
+	const [trans, setTrans] = useState<Record<string, PersonText>>(() => {
+		const t: Record<string, PersonText> = {};
+		for (const l of languages) {
+			const e = initial?.translations?.[l.code] ?? {};
+			t[l.code] = { position: e.position ?? "", bio: e.bio ?? "" };
+		}
+		return t;
 	});
 	const { errors, invalid } = useFieldErrors();
+
+	const setText = (lang: string, field: keyof PersonText, value: string) =>
+		setTrans((prev) => ({
+			...prev,
+			[lang]: { ...prev[lang], [field]: value },
+		}));
 
 	function submit(e: React.FormEvent) {
 		e.preventDefault();
 		onSubmit({
 			nameEn,
 			nameKm: nameKm || null,
-			position: position || null,
 			tier,
 			isPublic,
 			slug: slug || null,
@@ -121,7 +128,7 @@ export function PeopleForm({
 			email: email || null,
 			program: program || null,
 			sort: initial?.sort ?? 0,
-			bio: { en: bio.en ?? "", km: bio.km ?? "" },
+			translations: languages.map((l) => ({ lang: l.code, ...trans[l.code] })),
 		});
 	}
 
@@ -129,7 +136,6 @@ export function PeopleForm({
 		JSON.stringify({
 			nameEn,
 			nameKm,
-			position,
 			tier,
 			isPublic,
 			slug,
@@ -139,7 +145,7 @@ export function PeopleForm({
 			phone,
 			email,
 			program,
-			bio,
+			trans,
 		}),
 		savedAt,
 	);
@@ -163,7 +169,7 @@ export function PeopleForm({
 						<FormSection
 							split
 							title="Identity"
-							description="Name and role, shown on the public team page and the internal directory."
+							description="Name, shown on the public team page and the internal directory."
 						>
 							<div className="space-y-6">
 								<Field label="Name (English)" required error={errors.nameEn}>
@@ -188,37 +194,42 @@ export function PeopleForm({
 										/>
 									)}
 								</Field>
-								<Field label="Position / role">
-									{(p) => (
-										<Input
-											{...p}
-											value={position}
-											onChange={(e) => setPosition(e.target.value)}
-											placeholder="Executive Director"
-										/>
-									)}
-								</Field>
 							</div>
 						</FormSection>
 
 						<FormSection
-							title="Bio"
-							description="Profile biography. Switch languages with the tabs — your text is kept as you switch."
+							title="Position and bio"
+							description="Job title and profile biography, each in its own language. Switch languages with the tabs — your text is kept as you switch."
 						>
 							<LangTabs languages={languages}>
 								{(l) => (
-									<div>
-										<span
-											id={`${uid}-bio-${l.code}-label`}
-											className={fieldLabel}
-										>
-											Biography
-										</span>
-										<RichTextEditor
-											ariaLabelledBy={`${uid}-bio-${l.code}-label`}
-											value={bio[l.code] ?? ""}
-											onChange={(v) => setBio((p) => ({ ...p, [l.code]: v }))}
-										/>
+									<div className="space-y-6">
+										<Field label="Position / role">
+											{(p) => (
+												<Input
+													{...p}
+													className={l.code === "km" ? "font-khmer" : undefined}
+													value={trans[l.code]?.position ?? ""}
+													onChange={(e) =>
+														setText(l.code, "position", e.target.value)
+													}
+													placeholder="Executive Director"
+												/>
+											)}
+										</Field>
+										<div>
+											<span
+												id={`${uid}-bio-${l.code}-label`}
+												className={fieldLabel}
+											>
+												Biography
+											</span>
+											<RichTextEditor
+												ariaLabelledBy={`${uid}-bio-${l.code}-label`}
+												value={trans[l.code]?.bio ?? ""}
+												onChange={(v) => setText(l.code, "bio", v)}
+											/>
+										</div>
 									</div>
 								)}
 							</LangTabs>

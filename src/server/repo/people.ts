@@ -1,13 +1,21 @@
-import { and, asc, eq, ne } from "drizzle-orm";
+import { and, asc, eq, inArray, ne } from "drizzle-orm";
 
 import { DEFAULT_LANG } from "#/lib/i18n-config";
 import type { DB } from "../db";
 import { renderBody } from "../richtext";
 import { media, people, translations } from "../schema";
-import { resolveOneWithFallback } from "./i18n";
+import {
+	getDefaultLang,
+	resolveOneWithFallback,
+	resolveTranslations,
+	resolveWithFallback,
+} from "./i18n";
 import { attachMediaUrl } from "./media-util";
 
 const TENANT = 1;
+
+/** Person text that lives in `translations`, not in a column of `people`. */
+export const PERSON_TEXT_FIELDS = ["position", "bio"] as const;
 
 type NameColumns = { nameEn: string; nameKm: string | null };
 
@@ -43,14 +51,23 @@ export async function listPeople(db: DB, lang: string): Promise<PersonItem[]> {
 		.where(and(eq(people.tenantId, TENANT), eq(people.isPublic, true)))
 		.orderBy(asc(people.sort));
 	const withUrl = await attachMediaUrl(db, rows, "photoMediaId", "photoUrl");
+	const { values, fallback } = await resolveWithFallback(
+		db,
+		"person",
+		rows.map((r) => r.id),
+		lang,
+	);
 	return withUrl.map((r) => ({
 		id: r.id,
 		slug: r.slug ?? "",
 		name: pickName(r, lang),
-		position: r.position ?? "",
+		position: values.get(r.id)?.position ?? "",
 		section: r.tier,
 		photoUrl: r.photoUrl,
-		i18nFallback: nameFallback(r, lang),
+		i18nFallback: [
+			...nameFallback(r, lang),
+			...(fallback.get(r.id) ?? []).filter((f) => f === "position"),
+		],
 		updatedAt: r.updatedAt,
 	}));
 }
@@ -104,11 +121,17 @@ async function colleaguesOf(
 		"photoMediaId",
 		"photoUrl",
 	);
+	const text = await resolveTranslations(
+		db,
+		"person",
+		withUrl.map((r) => r.id),
+		lang,
+	);
 	return withUrl.map((r) => ({
 		id: r.id,
 		slug: r.slug ?? "",
 		name: pickName(r, lang),
-		position: r.position ?? "",
+		position: text.get(r.id)?.position ?? "",
 		photoUrl: r.photoUrl,
 	}));
 }
@@ -151,7 +174,7 @@ export async function getPersonBySlug(
 		id: p.id,
 		slug: p.slug ?? "",
 		name: pickName(p, lang),
-		position: p.position ?? "",
+		position: f.position ?? "",
 		tier: p.tier,
 		program: p.program ?? "",
 		photoUrl,
@@ -173,10 +196,13 @@ export async function staffDirectory(db: DB) {
 
 /* --------------------------------- admin ---------------------------------- */
 
+export type PersonTranslation = { lang: string } & Partial<
+	Record<(typeof PERSON_TEXT_FIELDS)[number], string>
+>;
+
 export type PersonInput = {
 	nameEn: string;
 	nameKm: string | null;
-	position: string | null;
 	tier: string;
 	isPublic: boolean;
 	slug: string | null;
@@ -187,16 +213,62 @@ export type PersonInput = {
 	email: string | null;
 	program: string | null;
 	sort: number;
-	bio: { en: string; km: string };
+	translations: PersonTranslation[];
 };
 
+async function personText(
+	db: DB,
+	ids: number[],
+): Promise<Map<number, Record<string, Record<string, string>>>> {
+	const byId = new Map<number, Record<string, Record<string, string>>>();
+	for (const id of ids) byId.set(id, {});
+	if (ids.length === 0) return byId;
+	const rows = await db
+		.select({
+			entityId: translations.entityId,
+			field: translations.field,
+			lang: translations.lang,
+			value: translations.value,
+		})
+		.from(translations)
+		.where(
+			and(
+				eq(translations.entityType, "person"),
+				inArray(translations.entityId, ids),
+			),
+		);
+	for (const r of rows) {
+		const byLang = byId.get(r.entityId);
+		if (!byLang) continue;
+		byLang[r.lang] ??= {};
+		byLang[r.lang][r.field] = r.value;
+	}
+	return byId;
+}
+
+/**
+ * Every person, with each language's position: the list column shows the default
+ * language's and the search box reaches all of them.
+ */
 export async function adminListPeople(db: DB) {
 	const rows = await db
 		.select()
 		.from(people)
 		.where(eq(people.tenantId, TENANT))
 		.orderBy(asc(people.tier), asc(people.sort));
-	return attachMediaUrl(db, rows, "photoMediaId", "photoUrl");
+	const withUrl = await attachMediaUrl(db, rows, "photoMediaId", "photoUrl");
+	const defaultLang = await getDefaultLang(db);
+	const text = await personText(
+		db,
+		withUrl.map((r) => r.id),
+	);
+	return withUrl.map((r) => {
+		const byLang = text.get(r.id) ?? {};
+		const positions: Record<string, string> = {};
+		for (const [lang, fields] of Object.entries(byLang))
+			if (fields.position) positions[lang] = fields.position;
+		return { ...r, position: positions[defaultLang] ?? "", positions };
+	});
 }
 
 export async function getPerson(db: DB, id: number) {
@@ -206,25 +278,12 @@ export async function getPerson(db: DB, id: number) {
 		.where(and(eq(people.tenantId, TENANT), eq(people.id, id)))
 		.limit(1);
 	if (!p) return null;
-	const rows = await db
-		.select({ lang: translations.lang, value: translations.value })
-		.from(translations)
-		.where(
-			and(
-				eq(translations.entityType, "person"),
-				eq(translations.entityId, id),
-				eq(translations.field, "bio"),
-			),
-		);
-	const bio: Record<string, string> = {};
-	for (const r of rows) bio[r.lang] = r.value;
-	return { ...p, bio };
+	return { ...p, translations: (await personText(db, [id])).get(id) ?? {} };
 }
 
 const cols = (input: PersonInput) => ({
 	nameEn: input.nameEn,
 	nameKm: input.nameKm ?? null,
-	position: input.position ?? null,
 	tier: input.tier,
 	isPublic: input.isPublic,
 	slug: input.slug ?? null,
@@ -237,42 +296,32 @@ const cols = (input: PersonInput) => ({
 	sort: input.sort,
 });
 
-async function writeBio(db: DB, id: number, bio: { en: string; km: string }) {
+async function writePersonText(
+	db: DB,
+	id: number,
+	byLang: PersonTranslation[],
+) {
 	await db
 		.delete(translations)
 		.where(
 			and(
 				eq(translations.entityType, "person"),
 				eq(translations.entityId, id),
-				eq(translations.field, "bio"),
+				inArray(translations.field, [...PERSON_TEXT_FIELDS]),
 			),
 		);
-	const rows = [] as {
-		tenantId: number;
-		entityType: string;
-		entityId: number;
-		field: string;
-		lang: string;
-		value: string;
-	}[];
-	if (bio.en)
-		rows.push({
-			tenantId: TENANT,
-			entityType: "person",
-			entityId: id,
-			field: "bio",
-			lang: "en",
-			value: bio.en,
-		});
-	if (bio.km)
-		rows.push({
-			tenantId: TENANT,
-			entityType: "person",
-			entityId: id,
-			field: "bio",
-			lang: "km",
-			value: bio.km,
-		});
+	const rows = byLang.flatMap((tr) =>
+		PERSON_TEXT_FIELDS.filter((field) => (tr[field] ?? "") !== "").map(
+			(field) => ({
+				tenantId: TENANT,
+				entityType: "person",
+				entityId: id,
+				field,
+				lang: tr.lang,
+				value: tr[field] as string,
+			}),
+		),
+	);
 	if (rows.length) await db.insert(translations).values(rows);
 }
 
@@ -284,7 +333,7 @@ export async function createPerson(
 		.insert(people)
 		.values({ tenantId: TENANT, ...cols(input) })
 		.returning({ id: people.id });
-	await writeBio(db, row.id, input.bio);
+	await writePersonText(db, row.id, input.translations);
 	return row.id;
 }
 
@@ -297,7 +346,7 @@ export async function updatePerson(
 		.update(people)
 		.set({ ...cols(input), updatedAt: new Date().toISOString() })
 		.where(and(eq(people.tenantId, TENANT), eq(people.id, id)));
-	await writeBio(db, id, input.bio);
+	await writePersonText(db, id, input.translations);
 }
 
 // narrow on purpose: the public grid holds no other field to send back
@@ -318,11 +367,7 @@ export async function deletePerson(db: DB, id: number): Promise<void> {
 	await db
 		.delete(translations)
 		.where(
-			and(
-				eq(translations.entityType, "person"),
-				eq(translations.entityId, id),
-				eq(translations.field, "bio"),
-			),
+			and(eq(translations.entityType, "person"), eq(translations.entityId, id)),
 		);
 	await db
 		.delete(people)

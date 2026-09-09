@@ -626,45 +626,51 @@ describe("updateField across entities", () => {
 		});
 	});
 
-	it("writes a person's name to the column for that language, and refuses to empty the default one", () => {
+	it("writes a person's name to the column for that language, and a position per language", () => {
 		const seen = run<{
-			km: { name_en: string; name_km: string | null; position: string | null };
-			en: { name_en: string; name_km: string | null; position: string | null };
+			cols: { name_en: string; name_km: string | null };
+			positions: { lang: string; value: string }[];
 			refused: string;
-			rows: unknown[];
 		}>(`
 			const personId = await people.createPerson(db, {
-				nameEn: "Sok Dara", nameKm: null, position: "Teacher", tier: "staff",
+				nameEn: "Sok Dara", nameKm: null, tier: "staff",
 				isPublic: true, slug: "sok-dara", photoMediaId: null, staffNo: null,
 				sex: null, phone: null, email: null, program: null, sort: 0,
-				bio: { en: "", km: "" },
+				translations: [{ lang: "en", position: "Teacher", bio: "" }],
 			});
-			const row = () => db.$client
-				.query("select name_en, name_km, position from people where id = ?")
-				.get(personId);
 			await admin.updateField(db, {
 				entity: "person", entityId: personId, lang: "km",
 				target: "field:name", value: "សុខ ដារ៉ា",
 			});
-			const km = row();
 			await admin.updateField(db, {
 				entity: "person", entityId: personId, lang: "en",
 				target: "field:position", value: "Head teacher",
 			});
-			const en = row();
+			await admin.updateField(db, {
+				entity: "person", entityId: personId, lang: "km",
+				target: "field:position", value: "នាយកសាលា",
+			});
+			const cols = db.$client
+				.query("select name_en, name_km from people where id = ?")
+				.get(personId);
+			const positions = db.$client
+				.query("select lang, value from translations where entity_type = 'person' and field = 'position' and entity_id = ? order by lang")
+				.all(personId);
 			const refused = await refusal(admin.updateField(db, {
 				entity: "person", entityId: personId, lang: "en",
 				target: "field:name", value: "   ",
 			}));
-			const rows = db.$client
-				.query("select field, lang from translations where entity_type = 'person' and entity_id = ?")
-				.all(personId);
-			return { km, en, refused, rows };
+			return { cols, positions, refused };
 		`);
-		// the Khmer name lands in its own column, and neither name is a translations row
-		expect(seen.km).toMatchObject({ name_en: "Sok Dara", name_km: "សុខ ដារ៉ា" });
-		expect(seen.en).toMatchObject({ position: "Head teacher" });
-		expect(seen.rows).toEqual([]);
+		expect(seen.cols).toMatchObject({
+			name_en: "Sok Dara",
+			name_km: "សុខ ដារ៉ា",
+		});
+		// a Khmer position no longer overwrites what an English reader sees
+		expect(seen.positions).toEqual([
+			{ lang: "en", value: "Head teacher" },
+			{ lang: "km", value: "នាយកសាលា" },
+		]);
 		expect(seen.refused).toContain("needs a name in the default language");
 	});
 
@@ -674,10 +680,10 @@ describe("updateField across entities", () => {
 				.query("insert or ignore into languages (code, name, native_name, is_default, enabled, rtl, sort) values ('fr','French','Français',0,1,0,2)")
 				.run();
 			const personId = await people.createPerson(db, {
-				nameEn: "Mao Sy", nameKm: null, position: null, tier: "staff",
+				nameEn: "Mao Sy", nameKm: null, tier: "staff",
 				isPublic: true, slug: "mao-sy", photoMediaId: null, staffNo: null,
 				sex: null, phone: null, email: null, program: null, sort: 0,
-				bio: { en: "", km: "" },
+				translations: [],
 			});
 			const refused = await refusal(admin.updateField(db, {
 				entity: "person", entityId: personId, lang: "fr",

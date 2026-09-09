@@ -64,7 +64,7 @@ function PeopleList() {
 			q,
 			r.nameEn,
 			r.nameKm,
-			r.position,
+			...Object.values(r.positions),
 			TIER_LABELS[r.tier] ?? r.tier,
 		),
 	);

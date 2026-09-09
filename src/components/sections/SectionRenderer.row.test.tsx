@@ -225,7 +225,7 @@ describe("what a row marker resolves to", () => {
 		expect(
 			rowEditTarget(nodeFor(name), { ...PAGE, lang: "fr" }, EVERYTHING),
 		).toBeNull();
-		// the position is one column for every language, so French keeps its box
+		// the position is a translations row, so every language holds its own
 		expect(
 			rowEditTarget(
 				nodeFor({ ...name, "data-cms-target": "field:position" }),
@@ -235,7 +235,7 @@ describe("what a row marker resolves to", () => {
 		).toBeTruthy();
 	});
 
-	it("says a shared column is shared, and a one-line field is one line", () => {
+	it("warns about nothing shared on a position, and a one-line field is one line", () => {
 		const target = rowEditTarget(
 			nodeFor({
 				"data-cms-entity": "person",
@@ -248,7 +248,7 @@ describe("what a row marker resolves to", () => {
 		);
 		expect(target?.label).toBe("Position");
 		expect(target?.multiline).toBe(false);
-		expect(target?.note).toMatch(/One value for every language/);
+		expect(target?.note).toBeUndefined();
 	});
 });
 
@@ -305,17 +305,19 @@ describe("editing a listed record where it is read", () => {
 
 	it("outlines no name in a language with no column, so no box opens empty", async () => {
 		signIn(["people"]);
-		const { container } = await editing(sections(), "fr");
+		const nodes = sections();
+		const team = nodes[0].props as { data: (typeof person)[] };
+		team.data = [{ ...person, i18nFallback: ["position"] }];
+		const { container } = await editing(nodes, "fr");
 		const name = marked(container, "person", person.id, "name");
 		if (!name) throw new Error("the person's name is not marked");
 		expect(name.getAttribute("data-cms-source")).toBeNull();
 		expect(name.getAttribute("tabindex")).toBeNull();
-		// the position is shared across languages, so it is still typed into
-		expect(
-			marked(container, "person", person.id, "position")?.getAttribute(
-				"data-cms-source",
-			),
-		).toBe(person.position);
+		// the position is per language now: French edits its own row, and is told
+		// the English one is only showing through
+		const position = marked(container, "person", person.id, "position");
+		expect(position?.getAttribute("data-cms-source")).toBe(person.position);
+		expect(position?.hasAttribute("data-cms-fell-back")).toBe(true);
 	});
 
 	it("offers a person nothing to an editor who only holds posts", async () => {

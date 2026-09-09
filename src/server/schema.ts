@@ -252,7 +252,7 @@ export const people = sqliteTable(
 			.references(() => tenants.id),
 		nameEn: text("name_en").notNull(),
 		nameKm: text("name_km"),
-		position: text("position"), // role / job title
+		// position is a `translations` row (entity_type 'person', field 'position')
 		tier: text("tier").notNull().default("staff"), // board | smt | pm | team | staff
 		isPublic: integer("is_public", { mode: "boolean" })
 			.notNull()

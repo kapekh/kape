@@ -1197,7 +1197,6 @@ async function writeTranslationField(
 async function writePersonColumn(
 	db: DB,
 	input: UpdateFieldInput,
-	field: string,
 	value: string,
 ): Promise<UpdateFieldResult> {
 	const updatedAt = await stampVersion(
@@ -1206,15 +1205,6 @@ async function writePersonColumn(
 		input.entityId,
 		input.expectedUpdatedAt,
 	);
-	if (field === "position") {
-		// one column for every language: saying so beats letting a Khmer editor
-		// silently rewrite what an English reader sees
-		await db
-			.update(people)
-			.set({ position: value || null })
-			.where(eq(people.id, input.entityId));
-		return { wrote: "translation", cleared: !value, updatedAt };
-	}
 	const column = PERSON_NAME_COLUMNS[input.lang];
 	if (!column)
 		throw new Error(
@@ -1301,7 +1291,7 @@ export async function updateField(
 		input.entity === "person" &&
 		PERSON_COLUMN_FIELDS.includes(target.field)
 	)
-		return writePersonColumn(db, input, target.field, value);
+		return writePersonColumn(db, input, value);
 	return target.kind === "field"
 		? writeTranslationField(db, input, target.field, value)
 		: writeSectionField(db, input, target, value);

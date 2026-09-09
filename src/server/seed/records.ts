@@ -632,7 +632,20 @@ export async function seedVideos() {
 	}
 }
 
-// position has no Khmer column, so it ships English-only
+const POSITION_KM: Record<string, string> = {
+	"Chairman, Board of Directors": "ប្រធានក្រុមប្រឹក្សាភិបាល",
+	"Board Member": "សមាជិកក្រុមប្រឹក្សាភិបាល",
+	"Board of Directors": "ក្រុមប្រឹក្សាភិបាល",
+	"Executive Director": "នាយកប្រតិបត្តិ",
+	"Vice Director": "អនុនាយក",
+	"Finance Director": "នាយកហិរញ្ញវត្ថុ",
+	"Senior Management Team": "ក្រុមគ្រប់គ្រងជាន់ខ្ពស់",
+	"NGSI Program Manager": "អ្នកគ្រប់គ្រងកម្មវិធី NGSI",
+	"Program Manager": "អ្នកគ្រប់គ្រងកម្មវិធី",
+	Coordinator: "អ្នកសម្របសម្រួល",
+	Manager: "អ្នកគ្រប់គ្រង",
+};
+
 export async function seedLeadership() {
 	const bioSoon = {
 		en: ["Biography coming soon."],
@@ -898,7 +911,6 @@ export async function seedLeadership() {
 				tenantId: TENANT,
 				nameEn: pn.name.en,
 				nameKm: pn.name.km,
-				position: pn.position,
 				tier: pn.tier,
 				email: pn.email ?? null,
 				isPublic: true,
@@ -907,6 +919,7 @@ export async function seedLeadership() {
 			})
 			.returning({ id: people.id });
 		await addTranslations("person", row.id, {
+			position: { en: pn.position, km: POSITION_KM[pn.position] },
 			bio: { en: docParas(pn.bio.en), km: docParas(pn.bio.km) },
 		});
 	}

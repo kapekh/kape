@@ -950,10 +950,6 @@ const personInput = z.object({
 		.string()
 		.nullish()
 		.transform((v) => v ?? null),
-	position: z
-		.string()
-		.nullish()
-		.transform((v) => v ?? null),
 	tier: z.string(),
 	isPublic: z.boolean(),
 	slug: z
@@ -985,7 +981,13 @@ const personInput = z.object({
 		.nullish()
 		.transform((v) => v ?? null),
 	sort: z.number(),
-	bio: z.object({ en: z.string(), km: z.string() }),
+	translations: z.array(
+		z.object({
+			lang: z.string(),
+			position: z.string(),
+			bio: z.string(),
+		}),
+	),
 }) satisfies z.ZodType<PersonInput>;
 
 const adminPeopleRouter = {
