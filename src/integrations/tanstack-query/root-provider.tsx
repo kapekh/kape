@@ -9,7 +9,8 @@ import type { TRPCRouter } from "#/integrations/trpc/router";
 function getUrl() {
 	const base = (() => {
 		if (typeof window !== "undefined") return "";
-		return `http://localhost:${process.env.PORT ?? 3000}`;
+		// 127.0.0.1, not localhost: the server binds ipv4 and a container resolves localhost to ::1 first
+		return `http://127.0.0.1:${process.env.PORT ?? 3000}`;
 	})();
 	return `${base}/api/trpc`;
 }

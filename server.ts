@@ -15,9 +15,16 @@ const allowedHosts = (process.env.ALLOWED_HOSTS ?? "")
 	.split(",")
 	.map((h) => h.trim())
 	.filter(Boolean);
-const hostAllowed = (host: string) =>
-	allowedHosts.length === 0 ||
-	allowedHosts.includes(host.replace(/:\d+$/, ""));
+// ssr loaders call this same server over loopback, so loopback always passes
+const LOOPBACK = new Set(["localhost", "127.0.0.1", "[::1]"]);
+const hostAllowed = (host: string) => {
+	const name = host.replace(/:\d+$/, "");
+	return (
+		allowedHosts.length === 0 ||
+		LOOPBACK.has(name) ||
+		allowedHosts.includes(name)
+	);
+};
 
 const IMMUTABLE = "public, max-age=31536000, immutable";
 const SHORT = "public, max-age=3600";
