@@ -76,8 +76,9 @@ describe("deleting a project a school still points at", () => {
 		const donorId = await admin.createDonor(db, { name: "Test Donor", url: "", sort: 0 });
 		const projectId = await admin.createProject(db, { ...${projectInput}, donorIds: [donorId] });
 		await admin.createSchool(db, {
-			name: "Attached School", code: "", level: "primary", province: "",
-			projectId, coverMediaId: null, address: "", lat: "", lng: "", sort: 0,
+			translations: [{ lang: "en", name: "Attached School", address: "" }],
+			code: "", level: "primary", province: "",
+			projectId, coverMediaId: null, lat: "", lng: "", sort: 0,
 		});
 		const counts = () => ({
 			translations: n("select count(*) c from translations where entity_type='project' and entity_id=?", projectId),

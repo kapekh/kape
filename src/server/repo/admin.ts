@@ -1757,7 +1757,7 @@ export const MEDIA_REFS: MediaRef[] = [
 		table: schools,
 		column: schools.coverMediaId,
 		rowId: schools.id,
-		label: schools.name,
+		labelEntity: "school",
 		tenant: schools.tenantId,
 		href: (r) => `/admin/schools/${r}`,
 	},
@@ -2482,24 +2482,44 @@ export async function deleteHero(db: DB, id: number): Promise<void> {
 
 /* ---------------- Schools ---------------- */
 
+/** School text that lives in `translations`, not in a column of `schools`. */
+export const SCHOOL_TEXT_FIELDS = ["name", "address"] as const;
+export type SchoolText = EntityText<(typeof SCHOOL_TEXT_FIELDS)[number]>;
+
 export type SchoolInput = {
-	name: string;
 	code: string;
 	level: string;
 	province: string;
 	projectId: number | null;
 	coverMediaId: number | null;
-	address: string;
 	lat: string;
 	lng: string;
 	sort: number;
+	translations: SchoolText[];
 };
-export function adminListSchools(db: DB) {
-	return db
+/** Ordered by `sort`, ties broken on the default-language name — the order `reorderSchools` renumbers. */
+export async function adminListSchools(db: DB) {
+	const rows = await db
 		.select()
 		.from(schools)
-		.where(eq(schools.tenantId, TENANT))
-		.orderBy(asc(schools.sort), asc(schools.name));
+		.where(eq(schools.tenantId, TENANT));
+	const defaultLang = await getDefaultLang(db);
+	const text = await textByLang(
+		db,
+		"school",
+		rows.map((r) => r.id),
+	);
+	return rows
+		.map((r) => {
+			const byLang = text.get(r.id) ?? {};
+			return {
+				...r,
+				name: byLang[defaultLang]?.name ?? "",
+				address: byLang[defaultLang]?.address ?? "",
+				translations: byLang,
+			};
+		})
+		.sort((a, b) => a.sort - b.sort || a.name.localeCompare(b.name));
 }
 export async function getSchool(db: DB, id: number) {
 	const [r] = await db
@@ -2507,13 +2527,19 @@ export async function getSchool(db: DB, id: number) {
 		.from(schools)
 		.where(and(eq(schools.tenantId, TENANT), eq(schools.id, id)))
 		.limit(1);
-	return r ?? null;
+	if (!r) return null;
+	return {
+		...r,
+		translations: (await textByLang(db, "school", [id])).get(id) ?? {},
+	};
 }
 export async function createSchool(db: DB, v: SchoolInput): Promise<number> {
+	const { translations: text, ...cols } = v;
 	const [r] = await db
 		.insert(schools)
-		.values({ tenantId: TENANT, ...v })
+		.values({ tenantId: TENANT, ...cols })
 		.returning({ id: schools.id });
+	await writeEntityText(db, "school", r.id, SCHOOL_TEXT_FIELDS, text);
 	return r.id;
 }
 export async function updateSchool(
@@ -2521,12 +2547,15 @@ export async function updateSchool(
 	id: number,
 	v: SchoolInput,
 ): Promise<void> {
+	const { translations: text, ...cols } = v;
 	await db
 		.update(schools)
-		.set(v)
+		.set(cols)
 		.where(and(eq(schools.tenantId, TENANT), eq(schools.id, id)));
+	await writeEntityText(db, "school", id, SCHOOL_TEXT_FIELDS, text);
 }
 export async function deleteSchool(db: DB, id: number): Promise<void> {
+	await deleteEntityText(db, "school", id);
 	await db
 		.delete(schools)
 		.where(and(eq(schools.tenantId, TENANT), eq(schools.id, id)));

@@ -1118,71 +1118,91 @@ export async function seedProjectLocations(projectIds: Record<string, number>) {
 
 /** Schools KAPE supports (cover images reuse seeded media #1–#5). */
 export async function seedSchools(projectIds: Record<string, number>) {
-	await db.insert(schools).values([
+	// the school register ships English only; a Khmer name or address is the editor's to write
+	const seed: {
+		name: string;
+		address: string;
+		cols: Omit<typeof schools.$inferInsert, "tenantId">;
+	}[] = [
 		{
-			tenantId: TENANT,
 			name: "Hun Sen Rolea B'ier High School",
-			code: "NGS-001",
-			level: "high",
-			province: "Kampong Cham",
-			projectId: projectIds.NGS,
-			coverMediaId: 1,
 			address: "Rolea B'ier, Kampong Chhnang",
-			lat: "12.245",
-			lng: "104.668",
-			sort: 0,
+			cols: {
+				code: "NGS-001",
+				level: "high",
+				province: "Kampong Cham",
+				projectId: projectIds.NGS,
+				coverMediaId: 1,
+				lat: "12.245",
+				lng: "104.668",
+				sort: 0,
+			},
 		},
 		{
-			tenantId: TENANT,
 			name: "Preah Sisowath High School",
-			code: "NGS-002",
-			level: "high",
-			province: "Phnom Penh",
-			projectId: projectIds.NGS,
-			coverMediaId: 2,
 			address: "Phnom Penh",
-			lat: "11.563",
-			lng: "104.928",
-			sort: 1,
+			cols: {
+				code: "NGS-002",
+				level: "high",
+				province: "Phnom Penh",
+				projectId: projectIds.NGS,
+				coverMediaId: 2,
+				lat: "11.563",
+				lng: "104.928",
+				sort: 1,
+			},
 		},
 		{
-			tenantId: TENANT,
 			name: "Rompok Primary School",
-			code: "HCC-014",
-			level: "primary",
-			province: "Kratie",
-			projectId: projectIds.HCC,
-			coverMediaId: 3,
 			address: "Rompok, Kratie",
-			lat: "12.488",
-			lng: "106.019",
-			sort: 2,
+			cols: {
+				code: "HCC-014",
+				level: "primary",
+				province: "Kratie",
+				projectId: projectIds.HCC,
+				coverMediaId: 3,
+				lat: "12.488",
+				lng: "106.019",
+				sort: 2,
+			},
 		},
 		{
-			tenantId: TENANT,
 			name: "Hun Sen Kampong Cham Preschool",
-			code: "HCC-021",
-			level: "preschool",
-			province: "Kampong Cham",
-			projectId: projectIds.HCC,
-			coverMediaId: 4,
 			address: "Kampong Cham Town",
-			lat: "11.992",
-			lng: "105.463",
-			sort: 3,
+			cols: {
+				code: "HCC-021",
+				level: "preschool",
+				province: "Kampong Cham",
+				projectId: projectIds.HCC,
+				coverMediaId: 4,
+				lat: "11.992",
+				lng: "105.463",
+				sort: 3,
+			},
 		},
 		{
-			tenantId: TENANT,
 			name: "Battambang Regional Teacher Training Center",
-			code: "EYE-003",
-			level: "higher",
-			province: "Battambang",
-			projectId: projectIds.EYE ?? null,
-			coverMediaId: 5,
 			address: "Battambang",
-			lat: "13.095",
-			lng: "103.203",
-			sort: 4,
+			cols: {
+				code: "EYE-003",
+				level: "higher",
+				province: "Battambang",
+				projectId: projectIds.EYE ?? null,
+				coverMediaId: 5,
+				lat: "13.095",
+				lng: "103.203",
+				sort: 4,
+			},
 		},
-	]);
+	];
+	for (const school of seed) {
+		const [row] = await db
+			.insert(schools)
+			.values({ tenantId: TENANT, ...school.cols })
+			.returning({ id: schools.id });
+		await addTranslations("school", row.id, {
+			name: { en: school.name },
+			address: { en: school.address },
+		});
+	}
 }

@@ -1,4 +1,12 @@
-import { and, asc, eq, getTableColumns, isNull, type SQL } from "drizzle-orm";
+import {
+	and,
+	asc,
+	eq,
+	getTableColumns,
+	isNull,
+	type SQL,
+	sql,
+} from "drizzle-orm";
 import type { AnySQLiteColumn, SQLiteTable } from "drizzle-orm/sqlite-core";
 
 import { applyOrder, type SortableId } from "#/lib/reorder";
@@ -18,6 +26,7 @@ import {
 	terms,
 } from "../schema";
 import { StaleWriteError } from "./admin";
+import { getDefaultLang } from "./i18n";
 
 const TENANT = 1;
 
@@ -29,7 +38,7 @@ type OrderedScope = {
 	sortProp: "sort" | "sortOrder";
 	where: SQL | undefined;
 	// breaks a tie the way the list the editor dragged breaks it; defaults to `key`
-	tie?: AnySQLiteColumn;
+	tie?: AnySQLiteColumn | SQL;
 };
 
 type TenantOrdered = SQLiteTable & {
@@ -102,9 +111,11 @@ export function reorderOffices(db: DB, ids: number[]): Promise<void> {
 	return renumber(db, tenantScope(offices), ids);
 }
 
-export function reorderSchools(db: DB, ids: number[]): Promise<void> {
-	// the schools list ties on name, so the first renumber has to read it that way
-	return renumber(db, { ...tenantScope(schools), tie: schools.name }, ids);
+export async function reorderSchools(db: DB, ids: number[]): Promise<void> {
+	// the schools list ties on the default-language name, so the first renumber has to read it that way
+	const lang = await getDefaultLang(db);
+	const tie = sql`(select value from translations where entity_type = 'school' and entity_id = ${schools.id} and field = 'name' and lang = ${lang})`;
+	return renumber(db, { ...tenantScope(schools), tie }, ids);
 }
 
 export function reorderDonors(db: DB, ids: number[]): Promise<void> {

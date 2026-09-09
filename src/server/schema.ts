@@ -724,13 +724,12 @@ export const schools = sqliteTable("schools", {
 		.notNull()
 		.default(1)
 		.references(() => tenants.id),
-	name: text("name").notNull(),
+	// name and address are `translations` rows (entity_type 'school')
 	code: text("code"), // optional school/EMIS code
 	level: text("level"), // preschool | primary | secondary | high | higher
 	province: text("province"), // location term key
 	projectId: integer("project_id").references(() => projects.id),
 	coverMediaId: integer("cover_media_id").references(() => media.id),
-	address: text("address"),
 	lat: text("lat"),
 	lng: text("lng"),
 	sort: integer("sort").notNull().default(0),

@@ -18,37 +18,39 @@ import {
 	FormSection,
 	fieldLabel,
 } from "./form-ui";
+import { LangTabs } from "./LangTabs";
 import { MapPicker } from "./MapPicker";
 import { MediaPicker } from "./MediaPicker";
 import { SearchableSelect } from "./SearchableSelect";
 import { useDirtyGuard } from "./useDirty";
 import { useFieldErrors } from "./useFieldErrors";
 
+type SchoolText = { name: string; address: string };
+
 export type SchoolFormValue = {
-	name: string;
 	code: string;
 	level: string;
 	province: string;
 	projectId: number | null;
 	coverMediaId: number | null;
-	address: string;
 	lat: string;
 	lng: string;
 	sort: number;
+	translations: ({ lang: string } & SchoolText)[];
 };
 type Initial = {
-	name: string;
 	code: string | null;
 	level: string | null;
 	province: string | null;
 	projectId: number | null;
 	coverMediaId: number | null;
-	address: string | null;
 	lat: string | null;
 	lng: string | null;
 	sort: number;
+	translations?: Record<string, Partial<SchoolText>>;
 } | null;
 export type TermOpt = { key: string; label: string };
+export type LangOpt = { code: string; name: string };
 export type ProjectOpt = { id: number; code: string; name: string };
 
 const LEVELS = [
@@ -63,6 +65,7 @@ export function SchoolForm({
 	initial,
 	provinces,
 	projects,
+	languages,
 	onSubmit,
 	saving,
 	title,
@@ -71,13 +74,21 @@ export function SchoolForm({
 	initial: Initial;
 	provinces: TermOpt[];
 	projects: ProjectOpt[];
+	languages: LangOpt[];
 	onSubmit: (v: SchoolFormValue) => void;
 	saving?: boolean;
 	title: string;
 	savedAt?: string | null;
 }) {
 	const uid = useId();
-	const [name, setName] = useState(initial?.name ?? "");
+	const [trans, setTrans] = useState<Record<string, SchoolText>>(() => {
+		const t: Record<string, SchoolText> = {};
+		for (const l of languages) {
+			const e = initial?.translations?.[l.code] ?? {};
+			t[l.code] = { name: e.name ?? "", address: e.address ?? "" };
+		}
+		return t;
+	});
 	const [code, setCode] = useState(initial?.code ?? "");
 	const [level, setLevel] = useState(initial?.level ?? "primary");
 	const [province, setProvince] = useState(initial?.province ?? "");
@@ -87,36 +98,39 @@ export function SchoolForm({
 	const [coverMediaId, setCoverMediaId] = useState(
 		initial?.coverMediaId != null ? String(initial.coverMediaId) : "",
 	);
-	const [address, setAddress] = useState(initial?.address ?? "");
 	const [lat, setLat] = useState(initial?.lat ?? "");
 	const [lng, setLng] = useState(initial?.lng ?? "");
 	const { errors, invalid } = useFieldErrors();
 
+	const setText = (lang: string, field: keyof SchoolText, value: string) =>
+		setTrans((prev) => ({
+			...prev,
+			[lang]: { ...prev[lang], [field]: value },
+		}));
+
 	function submit(e: React.FormEvent) {
 		e.preventDefault();
 		onSubmit({
-			name,
 			code,
 			level,
 			province,
 			projectId: projectId ? Number(projectId) : null,
 			coverMediaId: coverMediaId ? Number(coverMediaId) : null,
-			address,
 			lat,
 			lng,
 			sort: initial?.sort ?? 0,
+			translations: languages.map((l) => ({ lang: l.code, ...trans[l.code] })),
 		});
 	}
 
 	const dirty = useDirtyGuard(
 		JSON.stringify({
-			name,
+			trans,
 			code,
 			level,
 			province,
 			projectId,
 			coverMediaId,
-			address,
 			lat,
 			lng,
 		}),
@@ -140,22 +154,54 @@ export function SchoolForm({
 				main={
 					<>
 						<FormSection
+							title="Name and address"
+							description="What the school is called and where it is, each in its own language. Switch languages with the tabs — your text is kept as you switch."
+						>
+							<LangTabs languages={languages}>
+								{(l) => (
+									<div className="space-y-6">
+										<Field
+											label="School name"
+											required={l.code === languages[0]?.code}
+											error={errors.name}
+										>
+											{(p) => (
+												<Input
+													{...p}
+													{...invalid("name")}
+													className={l.code === "km" ? "font-khmer" : undefined}
+													value={trans[l.code]?.name ?? ""}
+													onChange={(e) =>
+														setText(l.code, "name", e.target.value)
+													}
+													placeholder="e.g. Hun Sen Rolea B'ier High School"
+												/>
+											)}
+										</Field>
+										<Field label="Address">
+											{(p) => (
+												<Input
+													{...p}
+													className={l.code === "km" ? "font-khmer" : undefined}
+													value={trans[l.code]?.address ?? ""}
+													onChange={(e) =>
+														setText(l.code, "address", e.target.value)
+													}
+													placeholder="Village / commune / district"
+												/>
+											)}
+										</Field>
+									</div>
+								)}
+							</LangTabs>
+						</FormSection>
+
+						<FormSection
 							split
 							title="School details"
-							description="The school's name and where it sits in the programme."
+							description="Where this school sits in the programme."
 						>
 							<div className="space-y-6">
-								<Field label="School name" required error={errors.name}>
-									{(p) => (
-										<Input
-											{...p}
-											{...invalid("name")}
-											value={name}
-											onChange={(e) => setName(e.target.value)}
-											placeholder="e.g. Hun Sen Rolea B'ier High School"
-										/>
-									)}
-								</Field>
 								<Field label="School code">
 									{(p) => (
 										<Input
@@ -223,19 +269,9 @@ export function SchoolForm({
 
 						<FormSection
 							title="Location"
-							description="Address and exact map position for the schools map."
+							description="Exact map position for the schools map."
 						>
 							<div className="space-y-6">
-								<Field label="Address">
-									{(p) => (
-										<Input
-											{...p}
-											value={address}
-											onChange={(e) => setAddress(e.target.value)}
-											placeholder="Village / commune / district"
-										/>
-									)}
-								</Field>
 								<fieldset>
 									<legend className={fieldLabel}>Map position</legend>
 									<p className="mb-3 text-[13px] text-admin-ink-muted">

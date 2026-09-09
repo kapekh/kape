@@ -134,3 +134,39 @@ describe("an office's name and address", () => {
 		});
 	});
 });
+
+describe("a school's name and address", () => {
+	const r = run<{
+		en: { name: string; address: string };
+		km: { name: string; address: string };
+		listed: string;
+	}>(`
+		const id = await admin.createSchool(db, {
+			code: "NGS-001", level: "high", province: "", projectId: null,
+			coverMediaId: null, lat: "", lng: "", sort: 0,
+			translations: [
+				{ lang: "en", name: "Rompok Primary School", address: "Rompok, Kratie" },
+				{ lang: "km", name: "សាលាបឋមសិក្សារំពក", address: "រំពក ក្រចេះ" },
+			],
+		});
+		const row = (await admin.getSchool(db, id)).translations;
+		out.en = { name: row.en.name, address: row.en.address };
+		out.km = { name: row.km.name, address: row.km.address };
+		out.listed = (await admin.adminListSchools(db)).find((s) => s.id === id).name;
+	`);
+
+	it("keeps a language of its own", () => {
+		expect(r.en).toEqual({
+			name: "Rompok Primary School",
+			address: "Rompok, Kratie",
+		});
+		expect(r.km).toEqual({
+			name: "សាលាបឋមសិក្សារំពក",
+			address: "រំពក ក្រចេះ",
+		});
+	});
+
+	it("names the row in the default language for the admin list", () => {
+		expect(r.listed).toBe("Rompok Primary School");
+	});
+});

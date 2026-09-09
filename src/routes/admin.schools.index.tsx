@@ -88,10 +88,11 @@ function SchoolsList() {
 		...new Set(rows.map((r) => r.level).filter((l): l is string => !!l)),
 	].sort();
 	const ofLevel = level ? rows.filter((r) => r.level === level) : rows;
+	// every language's name, so searching in Khmer finds the row the list names in English
 	const shown = ofLevel.filter((r) =>
 		matchesQuery(
 			q,
-			r.name,
+			...Object.values(r.translations).map((t) => t.name ?? ""),
 			r.code,
 			levelLabel(r),
 			provinceLabel(r),

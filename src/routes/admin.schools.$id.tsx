@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { EditorSkeleton } from "#/components/admin/EditorSkeleton";
 import {
+	type LangOpt,
 	type ProjectOpt,
 	SchoolForm,
 	type SchoolFormValue,
@@ -26,6 +27,7 @@ function EditSchool() {
 	const [data, setData] = useState<SchoolRow | null>(null);
 	const [provinces, setProvinces] = useState<TermOpt[]>([]);
 	const [projects, setProjects] = useState<ProjectOpt[]>([]);
+	const [langs, setLangs] = useState<LangOpt[]>([]);
 	const [notFound, setNotFound] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [savedAt, setSavedAt] = useState<string | null>(null);
@@ -36,11 +38,13 @@ function EditSchool() {
 			trpcClient.adminSchools.get.query({ id: sid }),
 			trpcClient.terms.list.query({ taxonomy: "location" }),
 			modules.list("projects", () => trpcClient.adminProjects.list.query()),
-		]).then(([s, prov, proj]) => {
+			trpcClient.i18n.languages.query(),
+		]).then(([s, prov, proj, languages]) => {
 			if (!s) setNotFound(true);
 			else setData(s);
 			setProvinces(prov);
 			setProjects(proj.map((p) => ({ id: p.id, code: p.code, name: p.name })));
+			setLangs(languages);
 		});
 	}, [sid, modules.list]);
 
@@ -64,6 +68,7 @@ function EditSchool() {
 			initial={data}
 			provinces={provinces}
 			projects={projects}
+			languages={langs}
 			onSubmit={onSubmit}
 			saving={saving}
 			title="Edit school"

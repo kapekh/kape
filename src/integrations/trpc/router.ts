@@ -81,6 +81,7 @@ import {
 	movePage,
 	type OfficeInput,
 	readership,
+	type SchoolInput,
 	StaleWriteError,
 	updateDonor,
 	updateField,
@@ -1167,17 +1168,18 @@ const donorInput = z.object({
 	logoMediaId: z.number().nullish(),
 });
 const schoolInput = z.object({
-	name: z.string().min(1),
 	code: z.string(),
 	level: z.string(),
 	province: z.string(),
 	projectId: z.number().nullable(),
 	coverMediaId: z.number().nullable(),
-	address: z.string(),
 	lat: z.string(),
 	lng: z.string(),
 	sort: z.number(),
-});
+	translations: z.array(
+		z.object({ lang: z.string(), name: z.string(), address: z.string() }),
+	),
+}) satisfies z.ZodType<SchoolInput>;
 
 const adminSchoolsRouter = {
 	list: adminProcedure.query(({ ctx }) => adminListSchools(ctx.db)),

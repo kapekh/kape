@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { EditorSkeleton } from "#/components/admin/EditorSkeleton";
 import {
+	type LangOpt,
 	type ProjectOpt,
 	SchoolForm,
 	type SchoolFormValue,
@@ -20,6 +21,7 @@ function NewSchool() {
 	const navigate = useNavigate();
 	const [provinces, setProvinces] = useState<TermOpt[]>([]);
 	const [projects, setProjects] = useState<ProjectOpt[]>([]);
+	const [langs, setLangs] = useState<LangOpt[]>([]);
 	const [ready, setReady] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const modules = useModules();
@@ -28,12 +30,14 @@ function NewSchool() {
 		Promise.all([
 			trpcClient.terms.list.query({ taxonomy: "location" }),
 			modules.list("projects", () => trpcClient.adminProjects.list.query()),
+			trpcClient.i18n.languages.query(),
 		])
-			.then(([prov, proj]) => {
+			.then(([prov, proj, languages]) => {
 				setProvinces(prov);
 				setProjects(
 					proj.map((p) => ({ id: p.id, code: p.code, name: p.name })),
 				);
+				setLangs(languages);
 			})
 			// In `finally`, so a query that fails for any other reason leaves a usable
 			// form rather than a spinner nobody can get past.
@@ -58,6 +62,7 @@ function NewSchool() {
 			initial={null}
 			provinces={provinces}
 			projects={projects}
+			languages={langs}
 			onSubmit={onSubmit}
 			saving={saving}
 			title="New school"
