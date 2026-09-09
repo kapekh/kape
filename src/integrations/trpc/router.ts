@@ -79,6 +79,7 @@ import {
 	listContentTypes,
 	MediaInUseError,
 	movePage,
+	type OfficeInput,
 	readership,
 	StaleWriteError,
 	updateDonor,
@@ -451,7 +452,9 @@ const siteRouter = {
 	announcement: publicProcedure
 		.input(langInput)
 		.query(({ ctx, input }) => listActiveAnnouncements(ctx.db, input.lang)),
-	offices: publicProcedure.query(({ ctx }) => listOffices(ctx.db)),
+	offices: publicProcedure
+		.input(langInput)
+		.query(({ ctx, input }) => listOffices(ctx.db, input.lang)),
 	partners: publicProcedure.query(({ ctx }) => listPartners(ctx.db)),
 	projectLocations: publicProcedure
 		.input(langInput)
@@ -1032,9 +1035,7 @@ const partnerInput = z.object({
 	logoMediaId: z.number().nullish(),
 });
 const officeInput = z.object({
-	name: z.string().min(1),
 	province: z.string(),
-	address: z.string(),
 	phone: z.string(),
 	email: z.string(),
 	lat: z.string(),
@@ -1042,7 +1043,10 @@ const officeInput = z.object({
 	isHq: z.boolean(),
 	sort: z.number(),
 	imageMediaId: z.number().nullish(),
-});
+	translations: z.array(
+		z.object({ lang: z.string(), name: z.string(), address: z.string() }),
+	),
+}) satisfies z.ZodType<OfficeInput>;
 const statInput = z.object({
 	value: z.number(),
 	sort: z.number(),

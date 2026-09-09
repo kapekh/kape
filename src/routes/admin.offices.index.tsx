@@ -58,8 +58,14 @@ function OfficesList() {
 
 	const provinceLabel = (r: Row) =>
 		r.province ? (provinces[r.province] ?? r.province) : "";
+	// every language's name, so searching in Khmer finds the row the list names in English
 	const shown = rows.filter((r) =>
-		matchesQuery(q, r.name, provinceLabel(r), r.phone),
+		matchesQuery(
+			q,
+			...Object.values(r.translations).map((t) => t.name ?? ""),
+			provinceLabel(r),
+			r.phone,
+		),
 	);
 	const reorder = useListReorder({
 		rows: shown,

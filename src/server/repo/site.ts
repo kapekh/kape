@@ -133,13 +133,24 @@ export async function listActiveAnnouncements(db: DB, lang: string) {
 	}));
 }
 
-export async function listOffices(db: DB) {
+export async function listOffices(db: DB, lang: string) {
 	const rows = await db
 		.select()
 		.from(offices)
 		.where(eq(offices.tenantId, TENANT))
 		.orderBy(asc(offices.sort));
-	return attachMediaUrl(db, rows, "imageMediaId", "imageUrl");
+	const withUrl = await attachMediaUrl(db, rows, "imageMediaId", "imageUrl");
+	const text = await resolveTranslations(
+		db,
+		"office",
+		rows.map((r) => r.id),
+		lang,
+	);
+	return withUrl.map((r) => ({
+		...r,
+		name: text.get(r.id)?.name ?? "",
+		address: text.get(r.id)?.address ?? "",
+	}));
 }
 
 export async function listPartners(db: DB) {

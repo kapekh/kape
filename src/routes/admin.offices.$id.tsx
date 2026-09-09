@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { EditorSkeleton } from "#/components/admin/EditorSkeleton";
 import {
+	type LangOpt,
 	OfficeForm,
 	type OfficeFormValue,
 	type TermOpt,
@@ -23,6 +24,7 @@ function EditOffice() {
 	const oid = Number(id);
 	const [data, setData] = useState<OfficeRow | null>(null);
 	const [provinces, setProvinces] = useState<TermOpt[]>([]);
+	const [langs, setLangs] = useState<LangOpt[]>([]);
 	const [notFound, setNotFound] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [savedAt, setSavedAt] = useState<string | null>(null);
@@ -31,10 +33,12 @@ function EditOffice() {
 		Promise.all([
 			trpcClient.adminOffices.get.query({ id: oid }),
 			trpcClient.terms.list.query({ taxonomy: "location" }),
-		]).then(([o, prov]) => {
+			trpcClient.i18n.languages.query(),
+		]).then(([o, prov, languages]) => {
 			if (!o) setNotFound(true);
 			else setData(o);
 			setProvinces(prov);
+			setLangs(languages);
 		});
 	}, [oid]);
 
@@ -57,6 +61,7 @@ function EditOffice() {
 		<OfficeForm
 			initial={data}
 			provinces={provinces}
+			languages={langs}
 			onSubmit={onSubmit}
 			saving={saving}
 			title="Edit office"

@@ -706,9 +706,8 @@ export const offices = sqliteTable("offices", {
 		.notNull()
 		.default(1)
 		.references(() => tenants.id),
-	name: text("name").notNull(),
+	// name and address are `translations` rows (entity_type 'office')
 	province: text("province"), // term key
-	address: text("address"),
 	phone: text("phone"),
 	email: text("email"),
 	lat: text("lat"),

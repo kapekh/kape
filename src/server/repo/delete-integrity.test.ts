@@ -236,8 +236,9 @@ describe("deleting a taxonomy term something still points at", () => {
 			taxonomy: "location", key: "kandal", labels: { en: "Kandal" }, sort: 1,
 		});
 		const officeId = await admin.createOffice(db, {
-			name: "Head Office", province: "kampong-cham", address: "", phone: "",
-			email: "", lat: "", lng: "", isHq: true, sort: 0,
+			province: "kampong-cham", phone: "", email: "", lat: "", lng: "",
+			isHq: true, sort: 0,
+			translations: [{ lang: "en", name: "Head Office", address: "" }],
 		});
 		const left = () => n("select count(*) c from terms where id=?", termId);
 

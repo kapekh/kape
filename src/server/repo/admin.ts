@@ -70,6 +70,7 @@ import {
 import { deleteUpload } from "../storage";
 import {
 	deleteEntityText,
+	type EntityText,
 	getDefaultLang,
 	resolveOne,
 	resolveTranslations,
@@ -1638,6 +1639,8 @@ type MediaRef = {
 	column: SQLiteColumn;
 	rowId: SQLiteColumn;
 	label?: SQLiteColumn;
+	/** the row's name is a `translations` row, so the default language names it */
+	labelEntity?: string;
 	tenant?: SQLiteColumn;
 	join?: { table: SQLiteTable; on: SQL };
 	href?: (rowId: number) => string;
@@ -1745,7 +1748,7 @@ export const MEDIA_REFS: MediaRef[] = [
 		table: offices,
 		column: offices.imageMediaId,
 		rowId: offices.id,
-		label: offices.name,
+		labelEntity: "office",
 		tenant: offices.tenantId,
 		href: (r) => `/admin/offices/${r}`,
 	},
@@ -1790,18 +1793,26 @@ async function refUsage(
 	if (ref.join) q = q.innerJoin(ref.join.table, ref.join.on);
 
 	const seen = new Set<number>();
-	const out: MediaUsage[] = [];
+	const rows: { rowId: number; label: string }[] = [];
 	for (const r of await q.where(where)) {
 		const rowId = Number(r.rowId);
 		if (seen.has(rowId)) continue;
 		seen.add(rowId);
-		out.push({
-			kind: ref.kind,
-			label: String(r.label ?? "") || `#${rowId}`,
-			href: ref.href?.(rowId) ?? null,
-		});
+		rows.push({ rowId, label: String(r.label ?? "") });
 	}
-	return out;
+	const named = ref.labelEntity
+		? await resolveTranslations(
+				db,
+				ref.labelEntity,
+				rows.map((r) => r.rowId),
+				await getDefaultLang(db),
+			)
+		: null;
+	return rows.map((r) => ({
+		kind: ref.kind,
+		label: named?.get(r.rowId)?.name || r.label || `#${r.rowId}`,
+		href: ref.href?.(r.rowId) ?? null,
+	}));
 }
 
 // not foreign keys: the URL is a substring of someone's content, so a delete cannot clear it
@@ -2205,10 +2216,12 @@ export async function deletePartner(db: DB, id: number): Promise<void> {
 
 /* ---------------- Offices ---------------- */
 
+/** Office text that lives in `translations`, not in a column of `offices`. */
+export const OFFICE_TEXT_FIELDS = ["name", "address"] as const;
+export type OfficeText = EntityText<(typeof OFFICE_TEXT_FIELDS)[number]>;
+
 export type OfficeInput = {
-	name: string;
 	province: string;
-	address: string;
 	phone: string;
 	email: string;
 	lat: string;
@@ -2216,14 +2229,32 @@ export type OfficeInput = {
 	isHq: boolean;
 	sort: number;
 	imageMediaId?: number | null;
+	translations: OfficeText[];
 };
+
+/** Every office, with each language of its name and address for the list search. */
 export async function adminListOffices(db: DB) {
 	const rows = await db
 		.select()
 		.from(offices)
 		.where(eq(offices.tenantId, TENANT))
 		.orderBy(asc(offices.sort));
-	return attachMediaUrl(db, rows, "imageMediaId", "imageUrl");
+	const withUrl = await attachMediaUrl(db, rows, "imageMediaId", "imageUrl");
+	const defaultLang = await getDefaultLang(db);
+	const text = await textByLang(
+		db,
+		"office",
+		rows.map((r) => r.id),
+	);
+	return withUrl.map((r) => {
+		const byLang = text.get(r.id) ?? {};
+		return {
+			...r,
+			name: byLang[defaultLang]?.name ?? "",
+			address: byLang[defaultLang]?.address ?? "",
+			translations: byLang,
+		};
+	});
 }
 export async function getOffice(db: DB, id: number) {
 	const [r] = await db
@@ -2231,13 +2262,19 @@ export async function getOffice(db: DB, id: number) {
 		.from(offices)
 		.where(and(eq(offices.tenantId, TENANT), eq(offices.id, id)))
 		.limit(1);
-	return r ?? null;
+	if (!r) return null;
+	return {
+		...r,
+		translations: (await textByLang(db, "office", [id])).get(id) ?? {},
+	};
 }
 export async function createOffice(db: DB, v: OfficeInput): Promise<number> {
+	const { translations: text, ...cols } = v;
 	const [r] = await db
 		.insert(offices)
-		.values({ tenantId: TENANT, ...v })
+		.values({ tenantId: TENANT, ...cols })
 		.returning({ id: offices.id });
+	await writeEntityText(db, "office", r.id, OFFICE_TEXT_FIELDS, text);
 	return r.id;
 }
 export async function updateOffice(
@@ -2245,12 +2282,15 @@ export async function updateOffice(
 	id: number,
 	v: OfficeInput,
 ): Promise<void> {
+	const { translations: text, ...cols } = v;
 	await db
 		.update(offices)
-		.set(v)
+		.set(cols)
 		.where(and(eq(offices.tenantId, TENANT), eq(offices.id, id)));
+	await writeEntityText(db, "office", id, OFFICE_TEXT_FIELDS, text);
 }
 export async function deleteOffice(db: DB, id: number): Promise<void> {
+	await deleteEntityText(db, "office", id);
 	await db
 		.delete(offices)
 		.where(and(eq(offices.tenantId, TENANT), eq(offices.id, id)));

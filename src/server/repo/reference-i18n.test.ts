@@ -102,3 +102,35 @@ describe("an org-chart node's name and title", () => {
 		expect(r.km).toEqual({ name: "នាយកប្រតិបត្តិ", title: "ដឹកនាំអង្គការ" });
 	});
 });
+
+describe("an office's name and address", () => {
+	const r = run<{
+		en: { name: string; address: string };
+		km: { name: string; address: string };
+	}>(`
+		const id = await admin.createOffice(db, {
+			province: "", phone: "", email: "", lat: "", lng: "", isHq: true, sort: 0,
+			translations: [
+				{ lang: "en", name: "Head Office (PTTC)", address: "National Road 7, Kampong Cham" },
+				{ lang: "km", name: "ការិយាល័យកណ្ដាល", address: "ផ្លូវជាតិលេខ ៧ កំពង់ចាម" },
+			],
+		});
+		const pick = (rows) => {
+			const o = rows.find((x) => x.id === id);
+			return { name: o.name, address: o.address };
+		};
+		out.en = pick(await site.listOffices(db, "en"));
+		out.km = pick(await site.listOffices(db, "km"));
+	`);
+
+	it("read back in the language asked for", () => {
+		expect(r.en).toEqual({
+			name: "Head Office (PTTC)",
+			address: "National Road 7, Kampong Cham",
+		});
+		expect(r.km).toEqual({
+			name: "ការិយាល័យកណ្ដាល",
+			address: "ផ្លូវជាតិលេខ ៧ កំពង់ចាម",
+		});
+	});
+});

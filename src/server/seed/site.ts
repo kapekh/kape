@@ -101,52 +101,71 @@ export async function seedStats() {
 
 /** Offices (Contact map + cards). */
 export async function seedOffices() {
-	await db.insert(offices).values([
+	// the office register ships English only; a Khmer name or address is the editor's to write
+	const seed: {
+		name: string;
+		address?: string;
+		cols: Omit<typeof offices.$inferInsert, "tenantId">;
+	}[] = [
 		{
-			tenantId: TENANT,
 			name: "Head Office (PTTC)",
-			province: "Kampong Cham",
 			address: "National Road 7, Kampong Cham Town",
-			phone: "042-941-481",
-			email: "kape@kapekh.org",
-			lat: "11.9925",
-			lng: "105.4636",
-			isHq: true,
-			sort: 0,
+			cols: {
+				province: "Kampong Cham",
+				phone: "042-941-481",
+				email: "kape@kapekh.org",
+				lat: "11.9925",
+				lng: "105.4636",
+				isHq: true,
+				sort: 0,
+			},
 		},
 		{
-			tenantId: TENANT,
 			name: "Phnom Penh Sub-Office",
-			province: "Phnom Penh",
 			address: "House #57, St 302, BKK1",
-			phone: "011 222 222",
-			email: "communications@kapekh.org",
-			lat: "11.5564",
-			lng: "104.9282",
-			isHq: false,
-			sort: 1,
+			cols: {
+				province: "Phnom Penh",
+				phone: "011 222 222",
+				email: "communications@kapekh.org",
+				lat: "11.5564",
+				lng: "104.9282",
+				isHq: false,
+				sort: 1,
+			},
 		},
 		{
-			tenantId: TENANT,
 			name: "Siem Reap",
-			province: "Siem Reap",
-			phone: "011 222 222",
-			email: "communications@kapekh.org",
-			lat: "13.3671",
-			lng: "103.8448",
-			isHq: false,
-			sort: 2,
+			cols: {
+				province: "Siem Reap",
+				phone: "011 222 222",
+				email: "communications@kapekh.org",
+				lat: "13.3671",
+				lng: "103.8448",
+				isHq: false,
+				sort: 2,
+			},
 		},
 		{
-			tenantId: TENANT,
 			name: "Kratie",
-			province: "Kratie",
-			phone: "011 222 222",
-			email: "communications@kapekh.org",
-			lat: "12.4881",
-			lng: "106.0188",
-			isHq: false,
-			sort: 3,
+			cols: {
+				province: "Kratie",
+				phone: "011 222 222",
+				email: "communications@kapekh.org",
+				lat: "12.4881",
+				lng: "106.0188",
+				isHq: false,
+				sort: 3,
+			},
 		},
-	]);
+	];
+	for (const o of seed) {
+		const [row] = await db
+			.insert(offices)
+			.values({ tenantId: TENANT, ...o.cols })
+			.returning({ id: offices.id });
+		await addTranslations("office", row.id, {
+			name: { en: o.name },
+			...(o.address ? { address: { en: o.address } } : {}),
+		});
+	}
 }

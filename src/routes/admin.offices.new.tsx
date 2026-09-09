@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { EditorSkeleton } from "#/components/admin/EditorSkeleton";
 import {
+	type LangOpt,
 	OfficeForm,
 	type OfficeFormValue,
 	type TermOpt,
@@ -17,12 +18,17 @@ export const Route = createFileRoute("/admin/offices/new")({
 function NewOffice() {
 	const navigate = useNavigate();
 	const [provinces, setProvinces] = useState<TermOpt[]>([]);
+	const [langs, setLangs] = useState<LangOpt[]>([]);
 	const [ready, setReady] = useState(false);
 	const [saving, setSaving] = useState(false);
 
 	useEffect(() => {
-		trpcClient.terms.list.query({ taxonomy: "location" }).then((prov) => {
+		Promise.all([
+			trpcClient.terms.list.query({ taxonomy: "location" }),
+			trpcClient.i18n.languages.query(),
+		]).then(([prov, languages]) => {
 			setProvinces(prov);
+			setLangs(languages);
 			setReady(true);
 		});
 	}, []);
@@ -44,6 +50,7 @@ function NewOffice() {
 		<OfficeForm
 			initial={null}
 			provinces={provinces}
+			languages={langs}
 			onSubmit={onSubmit}
 			saving={saving}
 			title="New office"

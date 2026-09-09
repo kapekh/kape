@@ -134,7 +134,7 @@ async function selectSource(
 		case "orgchart":
 			return getOrgTree(db, lang);
 		case "offices":
-			return listOffices(db);
+			return listOffices(db, lang);
 		case "partners":
 			return listPartners(db);
 		case "projects":

@@ -16,7 +16,7 @@ export const Route = createFileRoute("/$lang/contact")({
 			});
 		const [offices, settings, i18n] = await Promise.all([
 			context.queryClient.ensureQueryData(
-				context.trpc.site.offices.queryOptions(),
+				context.trpc.site.offices.queryOptions({ lang: params.lang }),
 			),
 			context.queryClient.ensureQueryData(
 				context.trpc.site.settings.queryOptions(),
