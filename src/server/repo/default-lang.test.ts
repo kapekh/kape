@@ -48,9 +48,19 @@ const out = execFileSync(
 		   enabled: true, isDefault: true, rtl: false, sort: 1,
 		 });
 		 const moved = await getDefaultLang(db);
+		 const refused = await deleteLanguage(db, "km").then(() => "", (e) => e.message);
+		 const unflagged = await updateLanguage(db, "km", {
+		   name: "Khmer", nativeName: "ខ្មែរ",
+		   enabled: true, isDefault: false, rtl: false, sort: 1,
+		 }).then(() => "", (e) => e.message);
+		 const stillDefault = await getDefaultLang(db);
+		 await updateLanguage(db, "en", {
+		   name: "English", nativeName: "English",
+		   enabled: true, isDefault: true, rtl: false, sort: 0,
+		 });
 		 await deleteLanguage(db, "km");
 		 const deleted = await getDefaultLang(db);
-		 console.log(JSON.stringify({ installed, created, updated, moved, deleted }));
+		 console.log(JSON.stringify({ installed, created, updated, moved, refused, unflagged, stillDefault, deleted }));
 		 process.exit(0);`,
 	],
 	{
@@ -64,6 +74,9 @@ const seen = JSON.parse(out.trim().split("\n").at(-1) as string) as {
 	created: string;
 	updated: string;
 	moved: string;
+	refused: string;
+	unflagged: string;
+	stillDefault: string;
 	deleted: string;
 };
 
@@ -84,7 +97,14 @@ describe("the memoised default language", () => {
 		expect(seen.moved).toBe("km");
 	});
 
-	it("falls back once the default language is deleted", () => {
+	// every record is named by its default-language row, so the flag is handed on, never dropped
+	it("refuses to delete or un-default the default language", () => {
+		expect(seen.refused).toMatch(/default language/);
+		expect(seen.unflagged).toMatch(/default language/);
+		expect(seen.stillDefault).toBe("km");
+	});
+
+	it("lets the old default go once another language holds the flag", () => {
 		expect(seen.deleted).toBe("en");
 	});
 });

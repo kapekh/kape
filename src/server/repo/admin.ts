@@ -3034,17 +3034,28 @@ export async function createLanguage(
 	forgetDefaultLang(db);
 }
 
+// every record is named by its default-language row, so the default is handed on, never dropped
+async function refuseUnlessAnotherDefault(db: DB, code: string, doing: string) {
+	if ((await getDefaultLang(db)) !== code) return;
+	throw new Error(
+		`${code} is the default language, which every list and link names records by. Make another language the default before ${doing} it.`,
+	);
+}
+
 export async function updateLanguage(
 	db: DB,
 	code: string,
 	input: Omit<LanguageInput, "code">,
 ): Promise<void> {
+	if (!input.isDefault)
+		await refuseUnlessAnotherDefault(db, code, "un-defaulting");
 	await db.update(languages).set(input).where(eq(languages.code, code));
 	if (input.isDefault) await ensureSingleDefault(db, code);
 	forgetDefaultLang(db);
 }
 
 export async function deleteLanguage(db: DB, code: string): Promise<void> {
+	await refuseUnlessAnotherDefault(db, code, "deleting");
 	db.transaction((tx) => {
 		tx.delete(translations).where(eq(translations.lang, code)).run();
 		tx.delete(uiStrings).where(eq(uiStrings.lang, code)).run();

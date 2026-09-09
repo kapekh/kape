@@ -78,6 +78,7 @@ function PersonPicker({
 	const [people, setPeople] = useState<
 		{ id: number; slug: string | null; name: string; position: string }[]
 	>([]);
+	const [failed, setFailed] = useState(false);
 	useEffect(() => {
 		trpcClient.adminPeople.list
 			.query()
@@ -93,7 +94,10 @@ function PersonPicker({
 						})),
 				),
 			)
-			.catch(() => {});
+			.catch((err) => {
+				console.error("[sections] people could not be listed", err);
+				setFailed(true);
+			});
 	}, []);
 	// a seeded page names its person by slug, so the picker answers to both
 	const picked = people.find(
@@ -112,7 +116,16 @@ function PersonPicker({
 					{p.position ? `${p.name} — ${p.position}` : p.name}
 				</option>
 			))}
-			{value && !picked && <option value={value}>{value} (missing)</option>}
+			{value && !picked && (
+				<option value={value}>
+					{value} {failed ? "(people could not be loaded)" : "(missing)"}
+				</option>
+			)}
+			{failed && !value && (
+				<option value="" disabled>
+					People could not be loaded. Reload the page to pick one.
+				</option>
+			)}
 		</select>
 	);
 }

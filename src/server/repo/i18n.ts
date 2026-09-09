@@ -101,14 +101,15 @@ export async function writeEntityText<F extends string>(
 ): Promise<void> {
 	const rows = byLang.flatMap((tr) =>
 		fields
-			.filter((field) => (tr[field] ?? "") !== "")
-			.map((field) => ({
+			.map((field) => ({ field, value: (tr[field] ?? "").trim() }))
+			.filter(({ value }) => value !== "")
+			.map(({ field, value }) => ({
 				tenantId: TENANT,
 				entityType,
 				entityId: id,
 				field,
 				lang: tr.lang,
-				value: tr[field] as string,
+				value,
 			})),
 	);
 	// one transaction: a failure between the two leaves the record with no name in any language
