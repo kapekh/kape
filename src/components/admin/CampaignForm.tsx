@@ -20,14 +20,14 @@ import {
 	Field,
 	FormSection,
 } from "./form-ui";
-import { LangTabs } from "./LangTabs";
+import { defaultLanguage, LangTabs } from "./LangTabs";
 import { MediaPicker } from "./MediaPicker";
 import { useDirtyGuard } from "./useDirty";
 import { useFieldErrors } from "./useFieldErrors";
 
 type CampaignText = { title: string; blurb: string };
 
-export type LangOpt = { code: string; name: string };
+export type LangOpt = { code: string; name: string; isDefault: boolean };
 
 export type CampaignFormValue = {
 	slug: string;
@@ -142,7 +142,7 @@ export function CampaignForm({
 	);
 	const [featured, setFeatured] = useState(initial?.featured ?? false);
 
-	const defaultLang = languages[0]?.code;
+	const defaultLang = defaultLanguage(languages)?.code;
 	const defaultTitle = defaultLang ? (trans[defaultLang]?.title ?? "") : "";
 
 	const slugify = (s: string) =>

@@ -7,6 +7,7 @@ import {
 	fieldInput,
 	fieldLabel,
 } from "#/components/admin/form-ui";
+import { defaultLanguage } from "#/components/admin/LangTabs";
 import {
 	dragItem,
 	EmptyState,
@@ -56,7 +57,7 @@ export function TermsManager({
 		key: string;
 		labels: Record<string, string>;
 	}>({ key: "", labels: {} });
-	const defaultLang = (langs.find((l) => l.isDefault) ?? langs[0])?.code ?? "";
+	const defaultLang = defaultLanguage(langs)?.code ?? "";
 	const named = (r: Term) => r.labels[defaultLang] || r.key;
 	const reorder = useListReorder({
 		rows,

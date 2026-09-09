@@ -11,7 +11,7 @@ import {
 	FormSection,
 	fieldLabel,
 } from "./form-ui";
-import { LangTabs } from "./LangTabs";
+import { defaultLanguage, LangTabs } from "./LangTabs";
 import { MapPicker } from "./MapPicker";
 import { MediaPicker } from "./MediaPicker";
 import { SearchableSelect } from "./SearchableSelect";
@@ -43,7 +43,7 @@ type Initial = {
 	translations?: Record<string, Partial<OfficeText>>;
 } | null;
 export type TermOpt = { key: string; label: string };
-export type LangOpt = { code: string; name: string };
+export type LangOpt = { code: string; name: string; isDefault: boolean };
 
 export function OfficeForm({
 	initial,
@@ -142,7 +142,7 @@ export function OfficeForm({
 									<div className="space-y-6">
 										<Field
 											label="Office name"
-											required={l.code === languages[0]?.code}
+											required={l.code === defaultLanguage(languages)?.code}
 											error={errors.name}
 										>
 											{(p) => (

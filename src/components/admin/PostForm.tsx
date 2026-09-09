@@ -40,7 +40,12 @@ import { SearchableSelect } from "./SearchableSelect";
 import { useDirtyGuard } from "./useDirty";
 import { useFieldErrors } from "./useFieldErrors";
 
-export type LangOpt = { code: string; name: string; nativeName: string };
+export type LangOpt = {
+	code: string;
+	name: string;
+	nativeName: string;
+	isDefault: boolean;
+};
 export type TypeOpt = { key: string; name: string };
 export type PostStatus = "draft" | "published" | "archived";
 export type PostFormValue = {

@@ -8,7 +8,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { LangTabs } from "./LangTabs";
+import { defaultLanguage, LangTabs } from "./LangTabs";
 
 // no setupFiles in vitest.config.ts, so auto-cleanup is not registered
 afterEach(cleanup);
@@ -25,6 +25,21 @@ const renderTabs = () =>
 const tabs = () => screen.getAllByRole("tab");
 const selected = () =>
 	tabs().find((t) => t.getAttribute("aria-selected") === "true");
+
+describe("defaultLanguage", () => {
+	it("is the flagged language, not whichever sorts first", () => {
+		const langs = [
+			{ code: "km", name: "Khmer", isDefault: false },
+			{ code: "en", name: "English", isDefault: true },
+		];
+		expect(defaultLanguage(langs)?.code).toBe("en");
+	});
+
+	it("falls back to the first when nothing is flagged", () => {
+		expect(defaultLanguage(LANGS)?.code).toBe("en");
+		expect(defaultLanguage([])).toBeUndefined();
+	});
+});
 
 describe("LangTabs", () => {
 	it("points each tab at the panel it controls", () => {

@@ -32,7 +32,7 @@ import {
 	Field,
 	FormSection,
 } from "./form-ui";
-import { LangTabs } from "./LangTabs";
+import { defaultLanguage, LangTabs } from "./LangTabs";
 import { RichTextEditor } from "./RichTextEditor";
 import { useDirtyGuard } from "./useDirty";
 import { useFieldErrors } from "./useFieldErrors";
@@ -47,7 +47,7 @@ type FormText = {
 	successMessage: string;
 };
 
-export type LangOpt = { code: string; name: string };
+export type LangOpt = { code: string; name: string; isDefault: boolean };
 
 export type FormBuilderValue = {
 	slug: string;
@@ -124,7 +124,7 @@ export function FormBuilder({
 	const { errors, invalid } = useFieldErrors();
 	const uid = useId();
 
-	const defaultLang = languages[0]?.code;
+	const defaultLang = defaultLanguage(languages)?.code;
 	const defaultTitle = defaultLang ? (trans[defaultLang]?.title ?? "") : "";
 
 	const setText = (lang: string, field: keyof FormText, value: string) =>

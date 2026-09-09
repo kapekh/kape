@@ -3,7 +3,7 @@ import { Network, Plus } from "lucide-react";
 import { useCallback, useEffect, useId, useState } from "react";
 
 import { fieldLabel } from "#/components/admin/form-ui";
-import { LangTabs } from "#/components/admin/LangTabs";
+import { defaultLanguage, LangTabs } from "#/components/admin/LangTabs";
 import { OrgCanvas, type OrgRow } from "#/components/admin/OrgCanvas";
 import { SearchableSelect } from "#/components/admin/SearchableSelect";
 import { Button } from "#/components/ui/button";
@@ -67,8 +67,9 @@ function NodeForm({
 	saving?: boolean;
 }) {
 	const uid = useId();
-	const defaultLang =
-		(languages.find((l) => l.isDefault) ?? languages[0])?.code ?? "";
+	const defaultLangOpt = defaultLanguage(languages);
+	const defaultLang = defaultLangOpt?.code ?? "";
+	const [nameError, setNameError] = useState<string | null>(null);
 	const [text, setText] = useState<Record<string, NodeText>>(() => {
 		const t: Record<string, NodeText> = {};
 		for (const l of languages) {
@@ -98,12 +99,22 @@ function NodeForm({
 			label: r.name + (r.title ? ` — ${r.title}` : ""),
 		}));
 
-	const setField = (lang: string, field: keyof NodeText, value: string) =>
+	const setField = (lang: string, field: keyof NodeText, value: string) => {
+		if (field === "name" && lang === defaultLang && value.trim())
+			setNameError(null);
 		setText((prev) => ({ ...prev, [lang]: { ...prev[lang], [field]: value } }));
+	};
 
 	function submit(e: React.FormEvent) {
 		e.preventDefault();
-		if (!text[defaultLang]?.name.trim()) return;
+		// `required` inside an unselected tab panel makes the form unsubmittable
+		if (!text[defaultLang]?.name.trim()) {
+			setNameError(
+				`This box needs a name in ${defaultLangOpt?.name ?? "the default language"}; the chart labels it with that.`,
+			);
+			return;
+		}
+		setNameError(null);
 		onSave({
 			parentId: parentId ? Number(parentId) : null,
 			personId: personId ? Number(personId) : null,
@@ -117,6 +128,14 @@ function NodeForm({
 
 	return (
 		<form onSubmit={submit} className="space-y-3">
+			{nameError && (
+				<p
+					role="alert"
+					className="text-[13px] font-medium text-admin-danger-ink"
+				>
+					{nameError}
+				</p>
+			)}
 			<LangTabs languages={languages}>
 				{(l) => (
 					<div className="grid gap-3 sm:grid-cols-2">
@@ -133,7 +152,7 @@ function NodeForm({
 								aria-required={l.code === defaultLang}
 								// only mounts inside the Add/Edit modal, opened by an explicit click:
 								// focus belongs in the modal, not on the trigger behind it
-								autoFocus={l.code === languages[0]?.code}
+								autoFocus={l.code === defaultLang}
 							/>
 						</div>
 						<div>

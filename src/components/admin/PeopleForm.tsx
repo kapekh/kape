@@ -19,7 +19,7 @@ import {
 	FormSection,
 	fieldLabel,
 } from "./form-ui";
-import { LangTabs } from "./LangTabs";
+import { defaultLanguage, LangTabs } from "./LangTabs";
 import { MediaPicker } from "./MediaPicker";
 import type { LangOpt } from "./PostForm";
 import { RichTextEditor } from "./RichTextEditor";
@@ -105,7 +105,7 @@ export function PeopleForm({
 	});
 	const [nameError, setNameError] = useState<string | null>(null);
 	const { errors, invalid } = useFieldErrors();
-	const defaultLang = languages[0];
+	const defaultLang = defaultLanguage(languages);
 
 	const setText = (lang: string, field: keyof PersonText, value: string) => {
 		if (field === "name" && lang === defaultLang?.code && value.trim())

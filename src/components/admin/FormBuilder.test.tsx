@@ -35,7 +35,7 @@ const initial = {
 	translations: { en: { title: "Alumni" } },
 };
 
-const languages = [{ code: "en", name: "English" }];
+const languages = [{ code: "en", name: "English", isDefault: true }];
 
 afterEach(cleanup);
 

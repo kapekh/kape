@@ -1,5 +1,12 @@
 import { useEffect, useId, useRef, useState } from "react";
 
+// `sort` orders the tabs; `is_default` says which language a record must have. both are set separately in /admin/languages, so the first tab is not the default one
+export function defaultLanguage<
+	L extends { code: string; isDefault?: boolean },
+>(languages: L[]): L | undefined {
+	return languages.find((l) => l.isDefault) ?? languages[0];
+}
+
 // values live in the parent form and every panel stays mounted, so a tab change loses nothing; role="tab" is why the arrow keys and roving tabindex are here
 export function LangTabs<
 	L extends { code: string; name: string; nativeName?: string },
