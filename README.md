@@ -47,7 +47,7 @@ any deploy:
 - **`DATABASE_PATH`** — use an **absolute** path in production so the DB file (and
   login sessions) survive restarts. Read by the app **and** by drizzle-kit, so a
   shell where it is unset runs `db:migrate` against a different file.
-- **`ALLOWED_HOSTS`** — required by `bun run start`. See below.
+- **`ALLOWED_HOSTS`** — optional Host header allowlist for `bun run start`. See below.
 
 #### Running behind a proxy
 
@@ -68,9 +68,10 @@ Bind the app to localhost or an internal network and let only the proxy reach it
 
 Leave the variable empty for the default `docker compose up` deployment, which publishes the port directly with nothing in front.
 
-`bun run start` is `vite preview`, which refuses any Host header it does not recognise.
-Set `ALLOWED_HOSTS` to your domain, comma separated for more than one, or every request comes back `Blocked request`.
+`bun run start` runs `server.ts`, a Bun server over the built `dist/`.
+Set `ALLOWED_HOSTS` to your domain, comma separated for more than one, and any other Host header comes back `Blocked request`; leave it empty to answer every host.
 `bun run dev` ignores it.
+The server sends pages uncompressed and expects the proxy in front to compress them (Caddy's `encode`, or Cloudflare).
 
 Optional integrations, each degrades gracefully when unset:
 
@@ -139,9 +140,9 @@ docker run --rm -v <project>_kape-uploads:/from -v <project>_cms-uploads:/to \
 
 Keep the old volumes until the site is verified.
 
-**3. `ALLOWED_HOSTS` is new and required by `bun run start`.**
+**3. `ALLOWED_HOSTS` is new.**
 The deployed domain used to be hardcoded in `vite.config.ts`.
-It now comes from the environment, and `vite preview` rejects any Host header it does not recognise, so with the variable unset **every request 403s with `Blocked request`** — including the ones from your health check.
+It now comes from the environment: set, `bun run start` rejects any other Host header with `Blocked request`; unset, it answers every host.
 
 ```bash
 # .env

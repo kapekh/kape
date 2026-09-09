@@ -154,7 +154,7 @@ Four of these decide whether the deploy works at all:
   Change it and every logged-in admin is signed out.
   It is also the one value that must never reach the repo.
 - **`ALLOWED_HOSTS`** is a Host header allowlist.
-  Unset, every request comes back `Blocked request`, including yours.
+  Set, any other Host header comes back `Blocked request`; unset, every host is answered.
 - **`VITE_SITE_URL`** is read at **build** time, not at runtime, because Vite inlines `VITE_*` into the bundle.
   Changing it later means rebuilding the image, not just restarting.
 - **`TRUSTED_PROXY_HEADER=cf-connecting-ip`** is safe only once step 6 closes the origin to non-Cloudflare traffic.

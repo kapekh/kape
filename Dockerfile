@@ -22,17 +22,15 @@ WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
-# Copy only what `bun run start` (vite preview) needs. The old `COPY . .` also
-# shipped internal notes and tooling into the runtime image - .work/ (job briefs,
-# reports, screenshots), feedback/, .claude/, .mcp.json, .cursorrules - which is
+# Copy only what `bun run start` needs. The old `COPY . .` also shipped internal
+# notes and tooling into the runtime image - .work/ (job briefs, reports,
+# screenshots), feedback/, .claude/, .mcp.json, .cursorrules - which is
 # disclosure to anyone who can pull the image. (.env and *.db were already
 # excluded by .dockerignore.)
 #
-# src/ has to ship: the @tanstack/react-start vite plugin resolves the router
-# entry from /app/src when `vite preview` boots, so the built dist/ alone won't
-# start. Dropping src/ needs a different production entrypoint (run
-# dist/server/server.js directly) - a separate decision, not this change.
-COPY package.json vite.config.ts tsconfig.json tsr.config.json ./
+# server.ts serves dist/ directly. src/ still ships because the entrypoint runs
+# src/server/install.ts, which migrates and seeds before the server starts.
+COPY package.json server.ts tsconfig.json ./
 COPY src ./src
 COPY drizzle ./drizzle
 COPY public ./public

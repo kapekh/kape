@@ -21,8 +21,8 @@ services:
       - DATABASE_PATH=${DATABASE_PATH:-/data/cms.db}
       - VITE_SITE_URL=${VITE_SITE_URL:-}
       - AUTH_SECRET=${AUTH_SECRET:?AUTH_SECRET must be set — see .env.example}
-      # Host header allowlist for the production preview server. Unset means every
-      # request is refused with "Blocked request", so set it to your domain(s).
+      # Host header allowlist for the production server. Set it to your domain(s);
+      # any other Host is refused with "Blocked request". Unset answers every host.
       - ALLOWED_HOSTS=${ALLOWED_HOSTS:-}
       # Empty by default: this compose file publishes the port directly, with no
       # proxy in front, so rate limits must key on the socket peer address.
@@ -69,7 +69,7 @@ services:
 #
 #   - the volumes were kape-data / kape-uploads
 #   - the database file inside was kape.db
-#   - ALLOWED_HOSTS is new and mandatory; unset, every request 403s
+#   - ALLOWED_HOSTS is new; set, any other Host header 403s
 #
 # Compose will not tell you about the first two. It creates the new, empty
 # volumes, the installer sees a first boot, and the site comes back blank while
