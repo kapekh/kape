@@ -157,11 +157,10 @@ const personRef = (props: Record<string, unknown>): string => {
 };
 
 async function resolvePerson(
-	db: DB,
+	all: Promise<PersonItem[]>,
 	ref: string,
-	lang: string,
 ): Promise<PersonItem | null> {
-	const rows = await listPeople(db, lang);
+	const rows = await all;
 	return rows.find((p) => String(p.id) === ref || p.slug === ref) ?? null;
 }
 
@@ -181,6 +180,9 @@ export async function resolveSections(
 	opts?: ResolveOptions,
 ): Promise<SectionNode[]> {
 	if (!Array.isArray(sections)) return [];
+	// every person-backed section on the page reads the one list, not one each
+	let everyone: Promise<PersonItem[]> | null = null;
+	const people = () => (everyone ??= listPeople(db, lang));
 	return Promise.all(
 		sections.map(async (s) => {
 			let props: Record<string, unknown> = { ...(s?.props ?? {}) };
@@ -204,7 +206,7 @@ export async function resolveSections(
 			}
 			const ref = personRef(props);
 			if (ref && (opts?.allowSource?.("people") ?? true)) {
-				props.person = await resolvePerson(db, ref, lang);
+				props.person = await resolvePerson(people(), ref);
 			}
 			if (s?.query) {
 				const perPage = perPageOf(props);

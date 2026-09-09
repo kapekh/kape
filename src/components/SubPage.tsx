@@ -60,12 +60,7 @@ export const postRecord = (
 	updatedAt: post.updatedAt,
 });
 
-/**
- * A project's name and summary are translations rows like a page's title, and so
- * is a person's position; a person's name is still a column per language, which
- * `updateField` writes directly. Neither payload carries an `updatedAt`, so both
- * save without a version check.
- */
+// neither payload carries an `updatedAt`, so both save without a version check
 export const projectRecord = (
 	project: Pick<ResolvedProject, "id" | "name" | "summary" | "i18nFallback">,
 ): PageRecord => ({

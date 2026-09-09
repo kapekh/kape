@@ -114,7 +114,8 @@ export function reorderOffices(db: DB, ids: number[]): Promise<void> {
 export async function reorderSchools(db: DB, ids: number[]): Promise<void> {
 	// the schools list ties on the default-language name, so the first renumber has to read it that way
 	const lang = await getDefaultLang(db);
-	const tie = sql`(select value from translations where entity_type = 'school' and entity_id = ${schools.id} and field = 'name' and lang = ${lang})`;
+	// nocase, because the list ties with localeCompare and binary puts every capital first
+	const tie = sql`(select value from translations where entity_type = 'school' and entity_id = ${schools.id} and field = 'name' and lang = ${lang}) collate nocase`;
 	return renumber(db, { ...tenantScope(schools), tie }, ids);
 }
 
