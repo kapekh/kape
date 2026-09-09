@@ -9,17 +9,6 @@ type Announcement = Awaited<
 	ReturnType<typeof trpcClient.site.announcement.query>
 >[number];
 
-const DISMISSED_KEY = "announcements-dismissed";
-
-function readDismissed(): number[] {
-	try {
-		const raw = JSON.parse(localStorage.getItem(DISMISSED_KEY) ?? "[]");
-		return Array.isArray(raw) ? raw.filter((n) => typeof n === "number") : [];
-	} catch {
-		return [];
-	}
-}
-
 // stays mounted once opened: unmounting skips the native focus restore
 export function AnnouncementPopup() {
 	const { lang, t } = useLang();
@@ -28,18 +17,17 @@ export function AnnouncementPopup() {
 	const [items, setItems] = useState<Announcement[]>([]);
 	const [index, setIndex] = useState(0);
 	const [open, setOpen] = useState(false);
-	const seen = useRef(new Set<number>());
 	const closedByApp = useRef(false);
 
 	useEffect(() => {
 		trpcClient.site.announcement
 			.query({ lang: lang || "" })
 			.then((rows) => {
-				const dismissed = readDismissed();
-				const fresh = rows.filter((r) => !dismissed.includes(r.id));
-				setItems(fresh);
+				// every open notice, on every visit: closing one is for this page view
+				// only, and a notice nobody remembers seeing is a notice nobody read
+				setItems(rows);
 				setIndex(0);
-				setOpen(fresh.length > 0);
+				setOpen(rows.length > 0);
 			})
 			.catch((err) => {
 				console.error("[announcement] could not be loaded", err);
@@ -57,16 +45,7 @@ export function AnnouncementPopup() {
 		}
 	}, [open, editing]);
 
-	useEffect(() => {
-		const current = items[index];
-		if (current) seen.current.add(current.id);
-	}, [items, index]);
-
 	function dismiss() {
-		// only what was actually displayed: closing notice 1 of 2 must not bury
-		// notice 2, which the visitor never saw
-		const ids = new Set([...readDismissed(), ...seen.current]);
-		localStorage.setItem(DISMISSED_KEY, JSON.stringify([...ids]));
 		setOpen(false);
 	}
 

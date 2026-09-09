@@ -72,9 +72,6 @@ vi.mock("@/lib/inline-edit", () => ({
 
 const { AnnouncementPopup } = await import("./AnnouncementPopup");
 
-const KEY = "announcements-dismissed";
-const dismissed = () => JSON.parse(localStorage.getItem(KEY) ?? "[]");
-
 async function mount() {
 	let view!: ReturnType<typeof render>;
 	await act(async () => {
@@ -96,36 +93,49 @@ HTMLDialogElement.prototype.close = function close() {
 	this.dispatchEvent(new Event("close"));
 };
 
-describe("announcement dismissal", () => {
+describe("the announcement popup", () => {
 	beforeEach(() => {
 		localStorage.clear();
 		document.body.innerHTML = "";
 		inline.editing = false;
 	});
 
-	it("dismisses only the notice the visitor actually saw", async () => {
+	it("offers every open notice, not just the first", async () => {
 		await mount();
+
 		expect(screen.getByText("1 of 2")).toBeTruthy();
+		expect(screen.getByText(ROWS[0].title)).toBeTruthy();
 
-		await act(async () => {
-			screen.getByText("Close").click();
-		});
-
-		expect(dismissed()).toEqual([ROWS[0].id]);
-	});
-
-	it("dismisses every notice the visitor paged through", async () => {
-		await mount();
 		await act(async () => {
 			screen.getByText(/Next/).click();
 		});
-		expect(screen.getByText("2 of 2")).toBeTruthy();
 
+		expect(screen.getByText("2 of 2")).toBeTruthy();
+		expect(screen.getByText(ROWS[1].title)).toBeTruthy();
+	});
+
+	// closing it used to be remembered forever, so a visitor saw each notice once
+	it("opens again on the next visit after being closed", async () => {
+		await mount();
+		await act(async () => {
+			screen.getByText("Close").click();
+		});
+		expect(document.querySelector("dialog")?.open).toBe(false);
+
+		document.body.innerHTML = "";
+		await mount();
+
+		expect(document.querySelector("dialog")?.open).toBe(true);
+		expect(screen.getByText("1 of 2")).toBeTruthy();
+	});
+
+	it("remembers nothing about the visitor", async () => {
+		await mount();
 		await act(async () => {
 			screen.getByText("Close").click();
 		});
 
-		expect(dismissed().sort()).toEqual([ROWS[0].id, ROWS[1].id]);
+		expect(Object.keys(localStorage)).toEqual([]);
 	});
 
 	it("points read-more at the notice's own detail page", async () => {
@@ -144,16 +154,9 @@ describe("announcement dismissal", () => {
 		inline.editing = true;
 		await rerender();
 		expect(dialog()?.open).toBe(false);
-		expect(dismissed()).toEqual([]);
 
 		inline.editing = false;
 		await rerender();
 		expect(dialog()?.open).toBe(true);
-	});
-
-	it("shows nothing once every notice is dismissed", async () => {
-		localStorage.setItem(KEY, JSON.stringify([ROWS[0].id, ROWS[1].id]));
-		await mount();
-		expect(screen.queryByText(/\d of \d/)).toBeNull();
 	});
 });
