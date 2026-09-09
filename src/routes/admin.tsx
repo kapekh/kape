@@ -21,8 +21,9 @@ import { useCallback, useEffect, useState } from "react";
 import { AdminHeaderProvider } from "#/components/admin/AdminHeader";
 import { AdminIcon } from "#/components/admin/AdminIcon";
 import { CommandPalette } from "#/components/admin/CommandPalette";
+import { GuidePanel } from "#/components/admin/GuidePanel";
 import { startTour, startTourOnce, TourHost } from "#/components/admin/Tour";
-import { tourForPath } from "#/components/admin/tours";
+import { TOURS, tourForPath } from "#/components/admin/tours";
 import { ThemeToggle } from "#/components/ThemeToggle";
 import { Button } from "#/components/ui/button";
 import { EmptyState } from "#/components/ui/empty-state";
@@ -96,6 +97,11 @@ export const Route = createFileRoute("/admin")({
 		const modules =
 			access.modules === null ? {} : { [MODULES_SETTING]: access.modules };
 		if (!adminPathEnabled(modules, location.pathname))
+			throw redirect({ to: "/admin" });
+		// a typed URL into an area the role lacks would render the screen's shell
+		// around a refused list, New button and all
+		const area = NAV_AREA[`/admin/${location.pathname.split("/")[2] ?? ""}`];
+		if (area && !access.isSuperAdmin && !access.permissions.includes(area))
 			throw redirect({ to: "/admin" });
 		return { access };
 	},
@@ -354,6 +360,7 @@ function AdminLayout({ access }: { access: OkAccess }) {
 	const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
 	// Full-bleed "studio" chrome (no padding / max-width) for the page builder.
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
+	const searchStr = useRouterState({ select: (s) => s.location.searchStr });
 	const activeType = useRouterState({
 		select: (s) => (s.location.search as { type?: string }).type,
 	});
@@ -430,6 +437,10 @@ function AdminLayout({ access }: { access: OkAccess }) {
 	const [accountOpen, setAccountOpen] = useState(false);
 	const closeAccount = () => setAccountOpen(false);
 	const accountRef = useModalPanel(closeAccount, accountOpen);
+	const [tourMenuOpen, setTourMenuOpen] = useState(false);
+	const closeTourMenu = () => setTourMenuOpen(false);
+	const tourMenuRef = useModalPanel(closeTourMenu, tourMenuOpen);
+	const [guidesOpen, setGuidesOpen] = useState(false);
 
 	async function logout() {
 		await fetch("/api/auth/logout", { method: "POST" });
@@ -438,11 +449,13 @@ function AdminLayout({ access }: { access: OkAccess }) {
 
 	// Show an item if this install has the module behind it, and it has no area
 	// mapping (e.g. Dashboard) or the user holds that area.
-	const canSee = (it: NavItem) => {
-		if (!adminPathEnabled(settings, it.to)) return false;
-		const area = NAV_AREA[it.to];
+	const canOpen = (path: string) => {
+		const to = path.split("?")[0];
+		if (!adminPathEnabled(settings, to)) return false;
+		const area = NAV_AREA[to] ?? NAV_AREA[`/admin/${to.split("/")[2] ?? ""}`];
 		return !area || isSuper || perms.has(area);
 	};
+	const canSee = (it: NavItem) => canOpen(it.to);
 	const visibleNav = NAV.map((s) => ({
 		...s,
 		items: s.items.filter(canSee),
@@ -640,15 +653,64 @@ function AdminLayout({ access }: { access: OkAccess }) {
 						className="flex min-w-0 flex-1 items-center gap-3"
 					/>
 					<div className="flex shrink-0 items-center gap-1">
-						<button
-							type="button"
-							data-tour="tour-button"
-							onClick={() => startTour(tourForPath(pathname))}
-							className="flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium text-admin-ink-muted transition-colors duration-150 ease-out hover:bg-admin-accent-soft hover:text-admin-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
-						>
-							Tour
-							<Compass className="size-4 shrink-0" aria-hidden="true" />
-						</button>
+						<div className="relative">
+							<button
+								type="button"
+								data-tour="tour-button"
+								onClick={() => setTourMenuOpen((o) => !o)}
+								aria-haspopup="dialog"
+								aria-expanded={tourMenuOpen}
+								className="flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium text-admin-ink-muted transition-colors duration-150 ease-out hover:bg-admin-accent-soft hover:text-admin-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50 aria-expanded:bg-admin-accent-soft"
+							>
+								Guides
+								<Compass className="size-4 shrink-0" aria-hidden="true" />
+							</button>
+							{tourMenuOpen && (
+								<>
+									<button
+										type="button"
+										aria-label="Close guides menu"
+										onClick={closeTourMenu}
+										className="fixed inset-0 z-30 cursor-default"
+									/>
+									<div
+										ref={tourMenuRef}
+										role="dialog"
+										aria-modal="true"
+										aria-label="Guides"
+										tabIndex={-1}
+										className="absolute right-0 top-full z-40 mt-2 w-64 rounded-xl border border-admin-border bg-admin-panel-raised p-2 shadow-[var(--shadow-soft)] focus:outline-none"
+									>
+										<button
+											type="button"
+											onClick={() => {
+												closeTourMenu();
+												startTour(tourForPath(pathname, searchStr));
+											}}
+											className={menuItem}
+										>
+											Tour this screen
+											<span className="block text-[13px] text-admin-ink-muted">
+												{TOURS[tourForPath(pathname, searchStr)].title}
+											</span>
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												closeTourMenu();
+												setGuidesOpen(true);
+											}}
+											className={menuItem}
+										>
+											All guides
+											<span className="block text-[13px] text-admin-ink-muted">
+												Every walkthrough, and which you have taken
+											</span>
+										</button>
+									</div>
+								</>
+							)}
+						</div>
 						<a
 							href={viewTarget.href}
 							target="_blank"
@@ -754,6 +816,12 @@ function AdminLayout({ access }: { access: OkAccess }) {
 				</AdminHeaderProvider>
 			</div>
 			<TourHost />
+			{/* outside the header: its backdrop-blur would pin a fixed panel inside it */}
+			<GuidePanel
+				open={guidesOpen}
+				onClose={() => setGuidesOpen(false)}
+				canOpen={canOpen}
+			/>
 		</div>
 	);
 }

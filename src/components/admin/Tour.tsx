@@ -26,6 +26,21 @@ export function startTour(id: TourId) {
 	emit();
 }
 
+export function seenTours(): Set<TourId> {
+	const seen = new Set<TourId>();
+	try {
+		for (const id of Object.keys(TOURS) as TourId[])
+			if (localStorage.getItem(SEEN + id)) seen.add(id);
+	} catch {}
+	return seen;
+}
+
+export function forgetTours(): void {
+	try {
+		for (const id of Object.keys(TOURS)) localStorage.removeItem(SEEN + id);
+	} catch {}
+}
+
 // never over a running tour: two screens asking at once talk over each other
 export function startTourOnce(id: TourId) {
 	if (running) return;
@@ -280,12 +295,22 @@ function TourRun({ id }: { id: TourId }) {
 				</p>
 				<p className="mt-2 text-[13px] text-admin-ink-muted">{step.body}</p>
 				<div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-					<p className="text-[13px] text-admin-ink-muted">
-						Step {i + 1} of {tour.steps.length}
-						<span className="block text-admin-ink-subtle">
+					<div className="text-[13px] text-admin-ink-muted">
+						<div className="flex items-center gap-1.5" aria-hidden="true">
+							{tour.steps.map((s, n) => (
+								<span
+									key={s.title}
+									className={`h-1.5 rounded-full transition-all ${n === i ? "w-5 bg-admin-accent" : n < i ? "w-1.5 bg-admin-accent/50" : "w-1.5 bg-admin-border"}`}
+								/>
+							))}
+						</div>
+						<span className="sr-only">
+							Step {i + 1} of {tour.steps.length}.
+						</span>
+						<span className="mt-1 block text-admin-ink-subtle">
 							N next, P back, Esc ends
 						</span>
-					</p>
+					</div>
 					<div className="flex items-center gap-2">
 						{!last && (
 							<Button type="button" size="sm" variant="ghost" onClick={end}>

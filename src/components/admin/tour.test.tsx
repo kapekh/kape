@@ -2,8 +2,9 @@
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { startTourOnce, TourHost } from "./Tour";
-import { TOURS, tourForPath } from "./tours";
+import { GUIDE_GROUPS } from "./guides";
+import { forgetTours, seenTours, startTourOnce, TourHost } from "./Tour";
+import { TOURS, type TourId, tourForPath } from "./tours";
 
 vi.stubGlobal(
 	"matchMedia",
@@ -67,6 +68,38 @@ describe("admin tours", () => {
 		// partner-categories must not be read as the partners list
 		expect(tourForPath("/admin/partners")).toBe("partners");
 		expect(tourForPath("/admin/unknown-screen")).toBe("shell");
+		// the announcements list is the posts list wearing a filter
+		expect(tourForPath("/admin/posts", "?type=announcement")).toBe(
+			"announcements",
+		);
+		expect(tourForPath("/admin/posts", "?type=news")).toBe("posts");
+		expect(tourForPath("/admin/posts/4", "?type=announcement")).toBe("editor");
+	});
+
+	it("lists every tour in the guides panel exactly once, on the screen it walks", () => {
+		const listed = GUIDE_GROUPS.flatMap((g) => g.guides);
+		const ids = listed.map((g) => g.id);
+		expect([...ids].sort()).toEqual((Object.keys(TOURS) as TourId[]).sort());
+		for (const g of listed) {
+			// a guide that opens a screen must be the tour that screen offers,
+			// unless it says it needs a record open first
+			const [pathname, search = ""] = g.path.split("?");
+			if (!g.note)
+				expect(tourForPath(pathname, `?${search}`), g.id).toBe(
+					g.id === "shell" ? "dashboard" : g.id,
+				);
+			expect(g.summary.length, g.id).toBeGreaterThan(20);
+		}
+	});
+
+	it("remembers which tours were taken, and can forget them", () => {
+		expect(seenTours().size).toBe(0);
+		render(<TourHost />);
+		act(() => startTourOnce("media"));
+		act(() => screen.getByRole("button", { name: "End tour" }).click());
+		expect([...seenTours()]).toEqual(["media"]);
+		forgetTours();
+		expect(seenTours().size).toBe(0);
 	});
 
 	it("gives every admin screen in the sidebar a tour of its own", () => {

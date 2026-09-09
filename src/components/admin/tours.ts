@@ -45,8 +45,8 @@ export const TOURS = {
 			},
 			{
 				target: "[data-tour=tour-button]",
-				title: "This tour, on any screen",
-				body: "Tour walks you through whatever screen you are on. N moves forward, P goes back, Escape ends it.",
+				title: "Guides, on any screen",
+				body: "Tour this screen walks you through whatever you have open. All guides lists every walkthrough, marks the ones you have taken, and opens the right screen for you. N moves forward, P goes back, Escape ends.",
 			},
 		],
 	},
@@ -194,6 +194,11 @@ export const TOURS = {
 				body: "The line under the box shows the address you are about to get. Changing it changes where the page lives, and any link pointing at the old address stops working.",
 			},
 			{
+				target: "[data-tour=page-sections]",
+				title: "A portrait from the team",
+				body: "A Text + media section can pick a person instead of an image. Their photo fills the media column with their name and job title under it, in each language, and changing their photo under People changes it here.",
+			},
+			{
 				target: "[data-tour=page-save]",
 				title: "The preview is not saved",
 				body: "The right half redraws as you edit, in English and approximately. Nothing reaches the site until Save page, and Draft keeps it off the site entirely.",
@@ -217,6 +222,26 @@ export const TOURS = {
 				target: TABLE,
 				title: "The slug is the public address",
 				body: "The title links to the editor. The slug is the last part of the URL visitors see, so changing it breaks links people already have.",
+			},
+		],
+	},
+	announcements: {
+		title: "Announcements",
+		steps: [
+			{
+				target: HEADER,
+				title: "The notice on the home page",
+				body: "A published announcement pops up over the home page on every visit, in the visitor's language. Closing it is for that page view only.",
+			},
+			{
+				target: TABLE,
+				title: "The deadline hides it",
+				body: "Past its deadline a published notice stays published but stops showing, and the row says Hidden since that date. Clear or move the date to bring it back.",
+			},
+			{
+				target: ACTIONS,
+				title: "Title, message, link",
+				body: "The title is the headline, the excerpt is the message under it, and the link is where Read more goes. Several open notices are shown one at a time with arrows.",
 			},
 		],
 	},
@@ -360,8 +385,13 @@ export const TOURS = {
 			},
 			{
 				target: ACTIONS,
-				title: "The org chart draws on this list",
-				body: "A box in Site then Org Chart can be linked to a person here, which gives it their photo and profile.",
+				title: "Name and job title, per language",
+				body: "Open a person and each language has its own tab. A Khmer title typed under the Khmer tab shows only on the Khmer site; the English stays as it was. A tab left empty falls back to the default language.",
+			},
+			{
+				target: ACTIONS,
+				title: "One photo, everywhere",
+				body: "The photo set here is the one on the team page, in the org chart, and beside any page section that picks this person, such as the director's message.",
 			},
 		],
 	},
@@ -531,7 +561,12 @@ export const TOURS = {
 			{
 				target: TABLE,
 				title: "The role decides what they reach",
-				body: "An account with no role reaches nothing. Roles are built under Site then Roles.",
+				body: "An account with no role reaches nothing. Staff reaches the internal portal only. Roles are built under Site then Roles.",
+			},
+			{
+				target: ACTIONS,
+				title: "You can only hand out what you hold",
+				body: "Creating or changing an account is limited to roles within your own reach: every area that role grants must be one you have. Administrator accounts are managed by administrators only.",
 			},
 			{
 				target: ROW_MENU,
@@ -562,6 +597,11 @@ export const TOURS = {
 				target: TABLE,
 				title: "Users counts who holds it",
 				body: "Change a role and everyone in that column is affected the next time they load a screen.",
+			},
+			{
+				target: ACTIONS,
+				title: "Reach applies here too",
+				body: "A role can only be given areas you hold yourself, and a role that outranks yours cannot be edited or deleted. The Staff portal area opens the internal site, not the admin.",
 			},
 		],
 	},
@@ -725,9 +765,15 @@ const RECORD_EDITORS = new Set([
 ]);
 
 /** The tour that fits the screen someone is on. */
-export function tourForPath(pathname: string): TourId {
+export function tourForPath(pathname: string, search = ""): TourId {
 	const [, , screen, id, sub] = pathname.split("/");
 	if (!screen) return "dashboard";
+	if (
+		screen === "posts" &&
+		!id &&
+		/(^|[?&])type=announcement(&|$)/.test(search)
+	)
+		return "announcements";
 	if (screen === "forms")
 		return sub === "submissions"
 			? "formResponses"
