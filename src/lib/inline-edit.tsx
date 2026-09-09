@@ -56,8 +56,6 @@ export type FieldEditTarget = {
 	multiline: boolean;
 	/** Human name for the field, e.g. "Lead". */
 	label: string;
-	/** Anything an editor has to know before typing, e.g. that a field is shared. */
-	note?: string;
 };
 
 /** What the bar is editing. */
@@ -82,22 +80,11 @@ const LABELS: Record<string, Record<string, string>> = {
 // Enter saves these; the rest keep it for newlines and save on the modifier
 const ONE_LINE = new Set(["title", "name", "position"]);
 
-// one column for every language, so an editor is told before they retype it
-const SHARED_ACROSS_LANGUAGES: Record<string, readonly string[]> = {};
-
 export const fieldLabel = (entity: string, field: string): string =>
 	LABELS[entity]?.[field] ?? field;
 
 export const isMultiline = (field: string, shown: string): boolean =>
 	!ONE_LINE.has(field) || shown.includes("\n");
-
-export const sharedNote = (
-	entity: string,
-	field: string,
-): string | undefined =>
-	SHARED_ACROSS_LANGUAGES[entity]?.includes(field)
-		? "One value for every language: what you type here is what every reader sees."
-		: undefined;
 
 /** Identifies the box, so selecting another field remounts it with its own value. */
 export const targetKey = (t: EditTarget): string =>

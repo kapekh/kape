@@ -13,7 +13,6 @@ import {
 	fieldLabel,
 	isMultiline,
 	rememberVersion,
-	sharedNote,
 	useInlineEdit,
 	useStudioLink,
 } from "@/lib/inline-edit";
@@ -126,7 +125,6 @@ export function recordFieldTarget(
 		fellBack: record.fallback.includes(field),
 		multiline: isMultiline(field, shown),
 		label: fieldLabel(record.entity, field),
-		note: sharedNote(record.entity, field),
 	};
 }
 

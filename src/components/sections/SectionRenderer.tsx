@@ -10,7 +10,6 @@ import {
 	isEditableEntity,
 	isMultiline,
 	rememberVersion,
-	sharedNote,
 	useInlineEdit,
 	useStudioLink,
 	versionFor,
@@ -178,7 +177,6 @@ export function rowEditTarget(
 		fellBack: node.hasAttribute("data-cms-fell-back"),
 		multiline: isMultiline(field, shown),
 		label: fieldLabel(entity, field),
-		note: sharedNote(entity, field),
 	};
 }
 

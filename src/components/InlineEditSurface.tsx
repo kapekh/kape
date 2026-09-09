@@ -232,9 +232,7 @@ export function InlineEditSurface() {
 			label: target.label,
 			multiline: target.multiline,
 			hint: stored
-				? target.kind === "field"
-					? target.note
-					: undefined
+				? undefined
 				: `No ${langName} text stored, so the page is showing “${target.shown}”. What you type becomes the ${langName} version.`,
 		});
 	};

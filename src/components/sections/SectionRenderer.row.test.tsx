@@ -247,7 +247,6 @@ describe("what a row marker resolves to", () => {
 		);
 		expect(target?.label).toBe("Position");
 		expect(target?.multiline).toBe(false);
-		expect(target?.note).toBeUndefined();
 	});
 });
 

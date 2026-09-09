@@ -1,5 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+	act,
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { LangTabs } from "./LangTabs";
@@ -70,5 +76,34 @@ describe("LangTabs", () => {
 		const panels = screen.getAllByRole("tabpanel", { hidden: true });
 		expect(panels).toHaveLength(3);
 		expect(panels.filter((p) => !p.hasAttribute("hidden"))).toHaveLength(1);
+	});
+	it("shows the language whose box the browser refused", () => {
+		render(
+			<form>
+				<LangTabs languages={LANGS}>
+					{(l) => (
+						<input
+							aria-label={`Name ${l.code}`}
+							name={`name-${l.code}`}
+							required={l.code === "en"}
+						/>
+					)}
+				</LangTabs>
+			</form>,
+		);
+		const panelFor = (code: string) =>
+			screen.getByLabelText(`Name ${code}`).closest('[role="tabpanel"]');
+		fireEvent.click(screen.getByRole("tab", { name: /Khmer/ }));
+		expect(panelFor("en")?.hasAttribute("hidden")).toBe(true);
+
+		// what a submit does: every invalid control gets an `invalid` event, and a
+		// required box in a hidden panel would report its error where nobody looks
+		const form = document.querySelector("form") as HTMLFormElement;
+		act(() => {
+			expect(form.checkValidity()).toBe(false);
+		});
+
+		expect(panelFor("en")?.hasAttribute("hidden")).toBe(false);
+		expect(panelFor("km")?.hasAttribute("hidden")).toBe(true);
 	});
 });

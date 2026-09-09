@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 // values live in the parent form and every panel stays mounted, so a tab change loses nothing; role="tab" is why the arrow keys and roving tabindex are here
 export function LangTabs<
@@ -13,10 +13,30 @@ export function LangTabs<
 	const [active, setActive] = useState<string | null>(null);
 	const base = useId();
 	const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+	const wrap = useRef<HTMLDivElement>(null);
 	const activeCode =
 		active && languages.some((l) => l.code === active)
 			? active
 			: languages[0]?.code;
+
+	// a required box in a hidden panel reports its error where nobody can read it,
+	// and the browser refuses the submit anyway. `invalid` does not bubble, so this
+	// listens in the capture phase and shows the panel that failed
+	useEffect(() => {
+		const el = wrap.current;
+		if (!el) return;
+		const reveal = (e: Event) => {
+			const panel = (e.target as HTMLElement).closest?.('[role="tabpanel"]');
+			const code = panel?.id.startsWith(`${base}-panel-`)
+				? panel.id.slice(`${base}-panel-`.length)
+				: null;
+			if (!code) return;
+			setActive(code);
+			requestAnimationFrame(() => (e.target as HTMLElement).focus?.());
+		};
+		el.addEventListener("invalid", reveal, true);
+		return () => el.removeEventListener("invalid", reveal, true);
+	}, [base]);
 
 	if (languages.length === 0) return null;
 
@@ -49,7 +69,7 @@ export function LangTabs<
 	}
 
 	return (
-		<div>
+		<div ref={wrap}>
 			<div
 				role="tablist"
 				aria-label="Language"
