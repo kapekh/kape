@@ -236,8 +236,8 @@ export function SubPage({
 							className="h-full w-full object-cover"
 						/>
 					)}
-					<div className="absolute inset-0 bg-gradient-to-b from-primary/90 via-primary/75 to-background" />
-					<div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,transparent_35%,rgba(0,0,0,0.25))]" />
+					{/* lands on --background before the section ends: no seam into the page */}
+					<div className="absolute inset-0 bg-gradient-to-b from-primary/90 via-primary/75 to-background to-95%" />
 				</div>
 				<div className="mx-auto max-w-7xl text-primary-foreground">
 					<nav className="flex flex-wrap items-center gap-2 text-xs opacity-85">
