@@ -56,7 +56,7 @@ function EditUser() {
 				saving={saving}
 				title="Edit user"
 			/>
-			<div className="mx-auto mt-6 max-w-5xl">
+			<div className="mx-auto mt-6 w-full">
 				<ResetPasswordCard userId={uid} />
 			</div>
 		</div>

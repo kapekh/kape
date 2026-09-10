@@ -33,7 +33,7 @@ export function EditorSkeleton({
 			<output className="sr-only">{label}</output>
 			<Card
 				padding="none"
-				className="mx-auto mb-6 flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3"
+				className="mx-auto mb-6 flex w-full flex-wrap items-center justify-between gap-3 px-4 py-3"
 			>
 				<Skeleton className="h-7 w-48" />
 				<div className="flex items-center gap-2">
@@ -41,7 +41,7 @@ export function EditorSkeleton({
 					<Skeleton className="h-10 w-28" />
 				</div>
 			</Card>
-			<div className="mx-auto grid max-w-5xl items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+			<div className="mx-auto grid w-full items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
 				<div className="min-w-0 space-y-6">
 					<SectionSkeleton fields={3} />
 					<SectionSkeleton fields={1} />
