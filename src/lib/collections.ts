@@ -1,5 +1,7 @@
 // one top-level prefix per content type; the page tree wins over a legacy redirect
 
+import { isFormClosed } from "#/lib/forms";
+
 type CollectionKind = "post" | "album" | "project" | "people";
 
 export type CollectionDef = {
@@ -62,6 +64,37 @@ export const COLLECTIONS: Record<string, CollectionDef> = {
 
 export const collectionFor = (prefix: string): CollectionDef | undefined =>
 	COLLECTIONS[prefix];
+
+// a job and a public announcement are the same notice under two labels: the
+// careers page lists both and the home-page popup shows both
+export const NOTICE_CONTENT_TYPES = ["job", "announcement"];
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+// only the date the picker itself writes may hide a published notice; anything
+// else reads as no deadline and stays up, where its author can see it and fix it
+export const noticeExpired = (deadline: string): boolean =>
+	ISO_DATE.test(deadline) && isFormClosed(deadline);
+
+/** The deadline a post's meta carries, or "" when it has none. */
+export const noticeDeadline = (meta: unknown): string => {
+	const d = (meta as Record<string, unknown> | null)?.deadline;
+	return typeof d === "string" ? d : "";
+};
+
+type Notice = { deadline: string; publishedAt: string };
+
+/** Drop expired notices; the rest run nearest deadline first, then the undated, newest first. */
+export function openNotices<T extends Notice>(items: T[]): T[] {
+	const open = items.filter((n) => !noticeExpired(n.deadline));
+	const dated = open
+		.filter((n) => n.deadline)
+		.sort((a, b) => a.deadline.localeCompare(b.deadline));
+	const evergreen = open
+		.filter((n) => !n.deadline)
+		.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+	return [...dated, ...evergreen];
+}
 
 // one source of truth for three lists: event was blocked in the sitemap but still resolvable as a detail page
 export const NON_PUBLIC_CONTENT_TYPES = new Set([

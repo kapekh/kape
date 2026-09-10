@@ -790,7 +790,15 @@ const pageInput = z.object({
 
 const navInput = z.object({
 	parentId: z.number().nullable(),
-	targetKind: z.enum(["page", "post_list", "post", "url", "view", "none"]),
+	targetKind: z.enum([
+		"page",
+		"post_list",
+		"post",
+		"url",
+		"view",
+		"none",
+		"project_list",
+	]),
 	targetRef: z.string(),
 	visible: z.boolean(),
 	imageMediaId: z.number().nullable(),

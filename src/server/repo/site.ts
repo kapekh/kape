@@ -1,6 +1,11 @@
-import { and, asc, eq, sql } from "drizzle-orm";
-import { COLLECTIONS, collectionHref } from "#/lib/collections";
-import { isFormClosed as isDeadlinePast } from "#/lib/forms";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import {
+	COLLECTIONS,
+	collectionHref,
+	NOTICE_CONTENT_TYPES,
+	noticeDeadline,
+	openNotices,
+} from "#/lib/collections";
 
 import type { DB } from "../db";
 import {
@@ -81,13 +86,7 @@ export async function listHeroSlides(db: DB, lang: string) {
 	}));
 }
 
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
-
-// only the date the picker itself writes may hide a published notice; anything
-// else reads as no deadline and stays up, where its author can see it and fix it
-const expired = (deadline: string) =>
-	ISO_DATE.test(deadline) && isDeadlinePast(deadline);
-
+/** What the home page pops up: published jobs and announcements, none past their deadline. */
 export async function listActiveAnnouncements(db: DB, lang: string) {
 	const rows = await db
 		.select({
@@ -100,27 +99,18 @@ export async function listActiveAnnouncements(db: DB, lang: string) {
 		.where(
 			and(
 				eq(posts.tenantId, TENANT),
-				eq(posts.contentType, "announcement"),
+				inArray(posts.contentType, NOTICE_CONTENT_TYPES),
 				eq(posts.status, "published"),
 			),
 		);
-	const items = rows.map((r) => {
-		const m = (r.meta ?? {}) as Record<string, unknown>;
-		return {
+	const active = openNotices(
+		rows.map((r) => ({
 			id: r.id,
 			slug: r.slug,
-			deadline: typeof m.deadline === "string" ? m.deadline : "",
+			deadline: noticeDeadline(r.meta),
 			publishedAt: r.publishedAt ?? "",
-		};
-	});
-	const open = items.filter((r) => !expired(r.deadline));
-	const dated = open
-		.filter((r) => r.deadline)
-		.sort((a, b) => a.deadline.localeCompare(b.deadline));
-	const evergreen = open
-		.filter((r) => !r.deadline)
-		.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
-	const active = [...dated, ...evergreen];
+		})),
+	);
 	const f = await resolveTranslations(
 		db,
 		"post",

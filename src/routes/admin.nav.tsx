@@ -129,7 +129,14 @@ type NavRow = Awaited<
 >[number];
 type NavNode = NavRow & { children: NavNode[] };
 
-type NavTargetKind = "none" | "page" | "post_list" | "view" | "url" | "post";
+type NavTargetKind =
+	| "none"
+	| "page"
+	| "post_list"
+	| "view"
+	| "url"
+	| "post"
+	| "project_list";
 type FormValue = {
 	targetKind: NavTargetKind;
 	targetRef: string;
@@ -139,7 +146,9 @@ type FormValue = {
 	descriptions: Record<string, string>;
 };
 
-const TARGET_KINDS: NavTargetKind[] = ["page", "post", "url"];
+const TARGET_KINDS: NavTargetKind[] = ["page", "post", "url", "project_list"];
+// a project_list group lists the projects table by status; the status is its ref
+const PROJECT_STATUSES = ["current", "past"];
 
 function buildTree(items: NavRow[]): NavNode[] {
 	const byId = new Map<number, NavNode>();
@@ -263,8 +272,9 @@ function NavItemForm({
 		return o;
 	});
 
+	const listsProjects = targetKind === "project_list";
 	// Page/post links already provide a title, so the label there is an optional override.
-	const inherits = !isGroup && targetKind !== "url";
+	const inherits = !isGroup && targetKind !== "url" && !listsProjects;
 	const labelInputs = (
 		<div className="space-y-1.5">
 			{languages.map((l) => (
@@ -302,7 +312,15 @@ function NavItemForm({
 						<select
 							className={inp}
 							value={targetKind}
-							onChange={(e) => setTargetKind(e.target.value as NavTargetKind)}
+							onChange={(e) => {
+								const kind = e.target.value as NavTargetKind;
+								setTargetKind(kind);
+								if (
+									kind === "project_list" &&
+									!PROJECT_STATUSES.includes(targetRef)
+								)
+									setTargetRef(PROJECT_STATUSES[0]);
+							}}
 						>
 							{TARGET_KINDS.map((k) => (
 								<option key={k} value={k}>
@@ -318,6 +336,19 @@ function NavItemForm({
 									value={targetRef}
 									onChange={(e) => setTargetRef(e.target.value)}
 								/>
+							) : listsProjects ? (
+								<select
+									className={`${inp} w-full`}
+									aria-label="Project status"
+									value={targetRef}
+									onChange={(e) => setTargetRef(e.target.value)}
+								>
+									{PROJECT_STATUSES.map((st) => (
+										<option key={st} value={st}>
+											{st} projects
+										</option>
+									))}
+								</select>
 							) : (
 								<SearchableSelect
 									value={targetRef}
@@ -340,7 +371,9 @@ function NavItemForm({
 					<p className="text-[13px] leading-relaxed text-admin-ink-muted">
 						{inherits
 							? `The menu name, brief and image come from the linked ${targetKind} — leave the label blank to use its title.`
-							: "Give this link a menu label."}
+							: listsProjects
+								? "Every project with this status is listed under this label, so a project added under Projects is in the menu at once."
+								: "Give this link a menu label."}
 					</p>
 				</>
 			)}

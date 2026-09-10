@@ -1,5 +1,7 @@
 import { and, asc, eq, inArray } from "drizzle-orm";
 
+import { publicPathOf } from "#/lib/public-path";
+
 import type { DB } from "../db";
 import { media, navItems, pages, posts, projects } from "../schema";
 import { resolveTranslations } from "./i18n";
@@ -53,6 +55,10 @@ function classifyTarget(
 		return { kind: "page", slug: targetRef };
 	return null;
 }
+
+// a group of this kind lists the projects table by status, so a project added in
+// the admin is in the menu at once and moves when its status changes
+const PROJECT_LIST = "project_list";
 
 // card fields come from the target entity, falling back to the nav item's own for label-only groups and external URLs
 export async function getNavTree(db: DB, lang: string): Promise<NavNode[]> {
@@ -180,6 +186,49 @@ export async function getNavTree(db: DB, lang: string): Promise<NavNode[]> {
 	// Nav items' own (fallback) images.
 	await resolveMedia(items.map((i) => i.imageMediaId));
 
+	// The children a project group lists, keyed by the group's nav item.
+	const listed = new Map<number, NavNode[]>();
+	const groups = items.filter((i) => i.targetKind === PROJECT_LIST);
+	if (groups.length) {
+		const rows = await db
+			.select()
+			.from(projects)
+			.where(eq(projects.tenantId, TENANT))
+			.orderBy(asc(projects.sort), asc(projects.id));
+		const tr = await resolveTranslations(
+			db,
+			"project",
+			rows.map((r) => r.id),
+			lang,
+		);
+		await resolveMedia(rows.map((r) => r.logoMediaId));
+		const node = (
+			r: (typeof rows)[number],
+			parentSlug: string | null,
+		): NavNode => ({
+			id: -r.id, // below zero, so it never meets a nav_items id
+			label: r.code,
+			description: tr.get(r.id)?.summary || null,
+			imageUrl:
+				r.logoMediaId != null ? (mediaUrl.get(r.logoMediaId) ?? null) : null,
+			targetKind: "page",
+			targetRef: `projects/${parentSlug ? `${parentSlug}/` : ""}${r.slug}`,
+			href: publicPathOf({ kind: "project", slug: r.slug, parentSlug }),
+			// a sub-project sits under its parent whatever its own status
+			children: rows
+				.filter((c) => c.parentId === r.id)
+				.map((c) => node(c, r.slug)),
+		});
+		for (const g of groups) {
+			listed.set(
+				g.id,
+				rows
+					.filter((r) => r.parentId == null && r.status === g.targetRef)
+					.map((r) => node(r, null)),
+			);
+		}
+	}
+
 	const targetFor = (it: (typeof items)[number]): Meta | undefined => {
 		const c = cls.get(it.id);
 		if (!c) return undefined;
@@ -203,7 +252,7 @@ export async function getNavTree(db: DB, lang: string): Promise<NavNode[]> {
 			targetKind: it.targetKind,
 			targetRef: it.targetRef,
 			href: hrefFor(it.targetKind, it.targetRef),
-			children: [],
+			children: listed.get(it.id) ?? [], // hand-added children follow the listed ones
 		});
 	}
 

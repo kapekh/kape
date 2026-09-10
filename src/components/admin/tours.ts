@@ -231,7 +231,7 @@ export const TOURS = {
 			{
 				target: HEADER,
 				title: "The notice on the home page",
-				body: "A published announcement pops up over the home page on every visit, in the visitor's language. Closing it is for that page view only.",
+				body: "A published announcement or job vacancy pops up over the home page on every visit, in the visitor's language, and is listed on the careers page. Closing the popup is for that page view only.",
 			},
 			{
 				target: TABLE,

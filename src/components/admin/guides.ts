@@ -59,7 +59,7 @@ export const GUIDE_GROUPS: { label: string; guides: Guide[] }[] = [
 				id: "announcements",
 				path: "/admin/posts?type=announcement",
 				summary:
-					"The notice that pops up on the home page, and the deadline that hides it.",
+					"Announcements and job vacancies: the home-page popup, the careers list, and the deadline that hides them.",
 			},
 			{
 				id: "editor",

@@ -1,5 +1,10 @@
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 
+import {
+	NOTICE_CONTENT_TYPES,
+	noticeDeadline,
+	openNotices,
+} from "#/lib/collections";
 import type { SectionNode } from "#/lib/sections";
 import type { DB } from "../db";
 import { renderBody } from "../richtext";
@@ -373,7 +378,7 @@ export type JobItem = {
 	updatedAt: string;
 };
 
-/** Active job vacancies (type=job): published and not past their deadline. */
+/** What the careers page lists: published jobs and announcements, none past their deadline. */
 export async function listJobs(db: DB, lang: string): Promise<JobItem[]> {
 	const rows = await db
 		.select()
@@ -381,15 +386,17 @@ export async function listJobs(db: DB, lang: string): Promise<JobItem[]> {
 		.where(
 			and(
 				eq(posts.tenantId, TENANT),
-				eq(posts.contentType, "job"),
+				inArray(posts.contentType, NOTICE_CONTENT_TYPES),
 				eq(posts.status, "published"),
 			),
 		);
-	const today = new Date().toISOString().slice(0, 10);
-	const active = rows.filter((r) => {
-		const dl = (r.meta as Record<string, unknown> | null)?.deadline;
-		return !dl || String(dl) >= today; // hide past-deadline jobs
-	});
+	const active = openNotices(
+		rows.map((r) => ({
+			...r,
+			deadline: noticeDeadline(r.meta),
+			publishedAt: r.publishedAt ?? "",
+		})),
+	);
 	const { values: f, fallback } = await resolveWithFallback(
 		db,
 		"post",
@@ -404,7 +411,7 @@ export async function listJobs(db: DB, lang: string): Promise<JobItem[]> {
 			title: f.get(r.id)?.title ?? "",
 			location: String(m.location ?? ""),
 			employmentType: String(m.employmentType ?? ""),
-			deadline: String(m.deadline ?? ""),
+			deadline: r.deadline,
 			i18nFallback: fallback.get(r.id) ?? [],
 			updatedAt: r.updatedAt,
 		};

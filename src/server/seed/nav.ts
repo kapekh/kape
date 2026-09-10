@@ -3,7 +3,7 @@ import { navItems } from "../schema";
 import { addTranslations, createPlaceholderMedia, TENANT } from "./helpers";
 
 type SeedNav = {
-	kind: string; // page | post_list | view | url | none
+	kind: string; // page | post_list | view | url | none | project_list
 	ref: string;
 	en: string;
 	km: string;
@@ -166,59 +166,6 @@ const NAV_META: Record<string, { brief?: string; img: string }> = {
 		brief: "Give your time and skills to our mission.",
 		img: "kape-volunteer",
 	},
-	// Current projects (brief = full project name where it differs from the code)
-	"current-projects/ngs": {
-		brief: "New Generation Schools",
-		img: "kape-proj-ngs",
-	},
-	"current-projects/ngprc": {
-		brief: "New Generation Pedagogical Research Center",
-		img: "kape-proj-ngprc",
-	},
-	"current-projects/hcc": {
-		brief: "Happy Cambodian Children",
-		img: "kape-proj-hcc",
-	},
-	"current-projects/class": { img: "kape-proj-class" },
-	"current-projects/iep": {
-		brief: "Inclusive Education Project",
-		img: "kape-proj-iep",
-	},
-	"current-projects/dep": {
-		brief: "Digital Education Project",
-		img: "kape-proj-dep",
-	},
-	"current-projects/mldp": { img: "kape-proj-mldp" },
-	"current-projects/equal-i3l": { img: "kape-proj-equal" },
-	"current-projects/llse": {
-		brief: "Life-Long Skills Education",
-		img: "kape-proj-llse",
-	},
-	// Past projects
-	"past-projects/ibec": {
-		brief: "Improved Basic Education in Cambodia",
-		img: "kape-proj-ibec",
-	},
-	"past-projects/e2l": {
-		brief: "Enabling Education for Learning",
-		img: "kape-proj-e2l",
-	},
-	"past-projects/lslag": { img: "kape-proj-lslag" },
-	"past-projects/seek": { img: "kape-proj-seek" },
-	"past-projects/kyla": { img: "kape-proj-kyla" },
-	"past-projects/sfe": {
-		brief: "Schools for Empowerment",
-		img: "kape-proj-sfe",
-	},
-	"past-projects/bfc": { brief: "Books for Cambodia", img: "kape-proj-bfc" },
-	"past-projects/escup": {
-		brief: "Educational support for underserved communities",
-		img: "kape-proj-escup",
-	},
-	"past-projects/bsi": {
-		brief: "Beacon Schools Initiative",
-		img: "kape-proj-bsi",
-	},
 };
 
 /** Look up a node's card metadata by its ref (or label for containers). */
@@ -311,12 +258,6 @@ export async function seedNav() {
 		en,
 		km,
 	});
-	const proj = (ref: string, code: string): SeedNav => ({
-		kind: "page",
-		ref,
-		en: code,
-		km: code,
-	});
 	const NAV: SeedNav[] = [
 		{ kind: "page", ref: "", en: "Home", km: "ទំព័រដើម" },
 		{
@@ -352,39 +293,18 @@ export async function seedNav() {
 			en: "What We Do",
 			km: "សកម្មភាពយើង",
 			children: [
+				// the project groups list the projects table by status
 				{
-					kind: "none",
-					ref: "",
+					kind: "project_list",
+					ref: "current",
 					en: "Current Projects",
 					km: "គម្រោងបច្ចុប្បន្ន",
-					children: [
-						proj("current-projects/ngs", "NGS"),
-						proj("current-projects/ngprc", "NGPRC"),
-						proj("current-projects/hcc", "HCC"),
-						proj("current-projects/class", "CLASS"),
-						proj("current-projects/iep", "IEP"),
-						proj("current-projects/dep", "DEP"),
-						proj("current-projects/mldp", "MLDP"),
-						proj("current-projects/equal-i3l", "EQUAL-i3L"),
-						proj("current-projects/llse", "LLSE"),
-					],
 				},
 				{
-					kind: "none",
-					ref: "",
+					kind: "project_list",
+					ref: "past",
 					en: "Past Projects",
 					km: "គម្រោងពីមុន",
-					children: [
-						proj("past-projects/ibec", "IBEC"),
-						proj("past-projects/e2l", "E2L"),
-						proj("past-projects/lslag", "LSLAG"),
-						proj("past-projects/seek", "SEEK"),
-						proj("past-projects/kyla", "KYLA"),
-						proj("past-projects/sfe", "SfE"),
-						proj("past-projects/bfc", "BfC"),
-						proj("past-projects/escup", "ESCUP"),
-						proj("past-projects/bsi", "BSI"),
-					],
 				},
 				p(
 					"what-we-do/impact-stories",
