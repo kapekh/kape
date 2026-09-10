@@ -23,7 +23,13 @@ export const SEED_ROLES: SeedRole[] = [
 		permissions: ALL_AREAS,
 		isSystem: true,
 	},
-	{ key: "staff", name: "Staff", permissions: ["portal"], isSystem: true },
+	{
+		key: "staff",
+		name: "Staff",
+		// staff help with content, so they get the editor's areas as well as the portal
+		permissions: ["portal", ...EDITOR_AREAS],
+		isSystem: true,
+	},
 	{
 		key: "editor",
 		name: "Editor",

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { landingPath } from "#/lib/permissions";
 import {
 	adminHintCookie,
 	authenticate,
@@ -20,6 +21,7 @@ import {
 	peekCount,
 	rateLimit,
 } from "#/server/ratelimit";
+import { resolvePermissions } from "#/server/repo/roles";
 
 // the address limit is the real defence and keys on the socket peer, which a caller cannot rotate; the per-account part only ever delays, or it is a lockout aimed at a named administrator
 const IP_LIMIT = 20;
@@ -89,7 +91,11 @@ export async function handler({ request }: { request: Request }) {
 			user.id,
 			request.headers.get("user-agent") ?? undefined,
 		);
-		return Response.json({ user }, { headers: sessionHeaders(request, token) });
+		const home = landingPath(await resolvePermissions(db, user.role));
+		return Response.json(
+			{ user, home },
+			{ headers: sessionHeaders(request, token) },
+		);
 	}
 
 	// POST /api/auth/logout -> revoke session + clear cookie

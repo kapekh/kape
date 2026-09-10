@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ADMIN_AREAS, ALL_AREAS } from "#/lib/permissions";
+import { ALL_AREAS } from "#/lib/permissions";
 import { SEED_ROLES } from "./roles";
 
 const byKey = (k: string) => SEED_ROLES.find((r) => r.key === k);
@@ -24,10 +24,11 @@ describe("seeded roles", () => {
 		}
 	});
 
-	it("keeps staff out of the admin, and in the portal", () => {
+	it("lets staff into the portal and into content, and no further", () => {
 		const staff = byKey("staff")?.permissions ?? [];
-		expect(staff).toEqual(["portal"]);
-		expect(staff.filter((p) => ADMIN_AREAS.includes(p))).toEqual([]);
+		expect(staff).toEqual(["portal", ...(byKey("editor")?.permissions ?? [])]);
+		for (const governing of ["users", "settings", "navigation", "campaigns"])
+			expect(staff).not.toContain(governing);
 	});
 
 	it("never hands the users area to a non-system role", () => {

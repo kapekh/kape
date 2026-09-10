@@ -4,6 +4,7 @@ import {
 	ADMIN_AREAS,
 	ALL_AREAS,
 	hasAdminArea,
+	landingPath,
 	ungrantableAreas,
 	withinReach,
 } from "#/lib/permissions";
@@ -75,5 +76,28 @@ describe("the staff portal area", () => {
 		expect(hasAdminArea(["portal"])).toBe(false);
 		expect(hasAdminArea([])).toBe(false);
 		expect(hasAdminArea(["portal", "posts"])).toBe(true);
+	});
+});
+
+describe("where an account lands after signing in", () => {
+	const at = (permissions: string[], isSuperAdmin = false) =>
+		landingPath({ permissions, isSuperAdmin });
+
+	it("sends someone to the portal only when that is all they hold", () => {
+		expect(at(["portal"])).toBe("/internalsources");
+	});
+
+	it("sends staff who also help with content to the admin", () => {
+		expect(at(["portal", "pages", "posts", "projects", "media"])).toBe(
+			"/admin",
+		);
+	});
+
+	it("sends an administrator to the admin", () => {
+		expect(at([], true)).toBe("/admin");
+	});
+
+	it("sends an account with nothing to the admin, which explains itself", () => {
+		expect(at([])).toBe("/admin");
 	});
 });

@@ -62,6 +62,18 @@ export type Caller = {
 };
 
 /**
+ * Where an account lands after signing in, decided by what it can reach rather
+ * than what its role is called: the portal only when that is all it holds, and
+ * /admin otherwise — which explains itself to an account holding nothing.
+ */
+export const landingPath = (caller: Caller): string =>
+	caller.isSuperAdmin || hasAdminArea(caller.permissions)
+		? "/admin"
+		: caller.permissions.includes("portal")
+			? "/internalsources"
+			: "/admin";
+
+/**
  * Areas a caller is asking to put on a role but does not hold themselves.
  * Without this the `users` area buys every other one: edit your own role,
  * tick everything, save.
