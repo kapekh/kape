@@ -38,7 +38,7 @@ export function EditorHeader({
 	return (
 		<Card
 			padding="none"
-			className="mx-auto mb-6 flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3"
+			className="mx-auto mb-6 flex w-full flex-wrap items-center justify-between gap-3 px-4 py-3"
 		>
 			<h1 className="text-xl font-semibold text-admin-ink">{title}</h1>
 			<div className="flex items-center gap-2">
@@ -64,7 +64,7 @@ export function EditorHeader({
 	);
 }
 
-// capped and centred, or fields stretch and the rail strands a lone card
+// as wide as the shell, so an editor has the room the dashboard has
 export function EditorGrid({
 	main,
 	aside,
@@ -73,7 +73,7 @@ export function EditorGrid({
 	aside: React.ReactNode;
 }) {
 	return (
-		<div className="mx-auto grid max-w-5xl items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+		<div className="mx-auto grid w-full items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
 			<div data-tour="editor-main" className="min-w-0 space-y-6">
 				{main}
 			</div>
