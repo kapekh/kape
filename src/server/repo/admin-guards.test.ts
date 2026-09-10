@@ -215,6 +215,15 @@ describe("sub-projects", () => {
 		).toContain("sub-projects of its own");
 	});
 
+	// BMZ/REACH was saved as bmz/reach once, and /projects/bmz/reach looked for a parent named bmz
+	it("refuses a slug the route would read as a parent and child", () => {
+		expect(
+			attempt(
+				`await admin.createProject(db, ${projectInput({ code: "BMZ/REACH", slug: "bmz/reach" })})`,
+			),
+		).toContain('Try "bmz-reach"');
+	});
+
 	it("refuses a parent that does not exist", () => {
 		expect(
 			attempt(

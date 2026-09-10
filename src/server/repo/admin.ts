@@ -2740,6 +2740,7 @@ export async function createProject(
 	db: DB,
 	input: ProjectInput,
 ): Promise<number> {
+	requireValidSegment(input.slug); // a slash reads as parent/child and 404s
 	await requireFreeSlug(db, "project", input.slug);
 	await requireValidProjectParent(db, input.parentId);
 	const [p] = await db
@@ -2754,6 +2755,7 @@ export async function updateProject(
 	id: number,
 	input: ProjectInput,
 ): Promise<void> {
+	requireValidSegment(input.slug);
 	await requireFreeSlug(db, "project", input.slug, id);
 	await requireValidProjectParent(db, input.parentId, id);
 	await db
