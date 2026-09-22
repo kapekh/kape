@@ -18,6 +18,7 @@ import {
 	ungrantableAreas,
 	withinReach,
 } from "#/lib/permissions";
+import { isProjectEndDate } from "#/lib/project-dates";
 import type { SectionNode } from "#/lib/sections";
 import { checkSettingValue } from "#/lib/site-theme";
 import { PAGE_TITLE_MAX } from "#/lib/slug";
@@ -1333,7 +1334,9 @@ const projectInput = z.object({
 	status: z.enum(["current", "past"]),
 	sort: z.number(),
 	startDate: z.string(),
-	endDate: z.string(),
+	endDate: z.string().refine(isProjectEndDate, {
+		message: "The end date must be a date or open-ended.",
+	}),
 	targetAreas: z.array(z.string()),
 	snapshots: z.array(z.object({ value: z.string(), label: z.string() })),
 	translations: z.array(

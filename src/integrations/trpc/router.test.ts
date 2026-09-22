@@ -543,3 +543,34 @@ describe("what the public reads", () => {
 		expect(report(out[7]).totalDownloads).toBe(8);
 	});
 });
+
+const makeProject = (slug: string, endDate: string) => ({
+	call: "adminProjects.create",
+	input: {
+		code: slug,
+		slug,
+		status: "current",
+		sort: 0,
+		startDate: "",
+		endDate,
+		targetAreas: [],
+		snapshots: [],
+		translations: [{ lang: "en", name: slug, summary: "", body: "" }],
+		donorIds: [],
+		locations: [],
+	},
+});
+
+describe("adminProjects.create end date", () => {
+	const out = run([
+		makeProject("oe-label", "Open-ended"),
+		makeProject("oe-open", "open"),
+		{ sql: "SELECT slug, end_date FROM projects" },
+	]);
+
+	it("refuses the label in place of the sentinel, and stores only the sentinel", () => {
+		expect(failed(out[0])?.code).toBe("BAD_REQUEST");
+		expect(failed(out[1])).toBeNull();
+		expect(rowsOf(out[2])).toEqual([{ slug: "oe-open", end_date: "open" }]);
+	});
+});

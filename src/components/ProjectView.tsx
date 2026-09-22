@@ -2,6 +2,7 @@ import type { ResolvedProject } from "#/server/repo/projects";
 import { RichBody } from "@/components/RichBody";
 import { projectRecord, Section, SubPage } from "@/components/SubPage";
 import { useT } from "@/lib/i18n";
+import { OPEN_ENDED } from "@/lib/project-dates";
 
 function formatDate(iso: string) {
 	const d = new Date(`${iso}T00:00:00Z`);
@@ -14,13 +15,13 @@ function formatDate(iso: string) {
 	});
 }
 
-function DateBox({ label, iso }: { label: string; iso: string }) {
+function DateBox({ label, value }: { label: string; value: string }) {
 	return (
 		<div className="rounded-lg border border-border bg-background/60 p-3">
 			<div className="text-[10px] uppercase tracking-wider text-muted-foreground">
 				{label}
 			</div>
-			<div className="font-medium text-foreground">{formatDate(iso)}</div>
+			<div className="font-medium text-foreground">{value}</div>
 		</div>
 	);
 }
@@ -103,13 +104,17 @@ export function ProjectView({
 							{project.startDate && (
 								<DateBox
 									label={t("project.startDate", "Start date")}
-									iso={project.startDate}
+									value={formatDate(project.startDate)}
 								/>
 							)}
 							{project.endDate && (
 								<DateBox
 									label={t("project.endDate", "End date")}
-									iso={project.endDate}
+									value={
+										project.endDate === OPEN_ENDED
+											? t("project.openEnded", "Open-ended")
+											: formatDate(project.endDate)
+									}
 								/>
 							)}
 						</div>

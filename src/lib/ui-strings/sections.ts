@@ -42,6 +42,7 @@ export const sections: Record<string, { en: string; km?: string }> = {
 	"project.endDate": { en: "End date" },
 	"project.notfound.body": { en: "This project doesn't exist or was moved." },
 	"project.notfound.title": { en: "Project not found" },
+	"project.openEnded": { en: "Open-ended" },
 	"project.past": { en: "Past project" },
 	"project.snapshots": { en: "Snapshots" },
 	"project.startDate": { en: "Start date" },

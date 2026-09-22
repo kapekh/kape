@@ -16,6 +16,7 @@ import {
 	useSortableArray,
 } from "#/components/ui/sortable.tsx";
 import { Textarea } from "#/components/ui/textarea.tsx";
+import { OPEN_ENDED } from "#/lib/project-dates";
 import {
 	cancelButtonClass,
 	dragGrip,
@@ -538,9 +539,21 @@ export function ProjectForm({
 									<Input
 										id="project-end-date"
 										type="date"
-										value={endDate}
+										value={endDate === OPEN_ENDED ? "" : endDate}
+										disabled={endDate === OPEN_ENDED}
 										onChange={(e) => setEndDate(e.target.value)}
 									/>
+									<label className="mt-2 flex min-h-6 cursor-pointer items-center gap-2.5 text-sm text-admin-ink">
+										<input
+											type="checkbox"
+											className="size-4 rounded border-admin-border accent-[var(--admin-accent)]"
+											checked={endDate === OPEN_ENDED}
+											onChange={(e) =>
+												setEndDate(e.target.checked ? OPEN_ENDED : "")
+											}
+										/>{" "}
+										Open-ended
+									</label>
 								</div>
 							</div>
 						</FormSection>
