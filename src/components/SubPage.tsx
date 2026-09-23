@@ -3,6 +3,7 @@ import type { ResolvedPage, ResolvedPost } from "#/server/repo/content";
 import type { ResolvedPerson } from "#/server/repo/people";
 import type { ResolvedProject } from "#/server/repo/projects";
 import { NavLink } from "@/components/NavLink";
+import { Picture } from "@/components/Picture";
 import { type CmsMarker, cmsMark } from "@/components/sections/SectionRenderer";
 import { useLang } from "@/lib/i18n";
 import { localizedHref } from "@/lib/i18n-config";
@@ -191,6 +192,7 @@ export function SubPage({
 	title,
 	lead,
 	heroImage,
+	heroImageWidth,
 	badge,
 	crumbs,
 	wide = false,
@@ -205,6 +207,8 @@ export function SubPage({
 	title: string;
 	lead?: string;
 	heroImage?: string;
+	/** Intrinsic width of `heroImage`; it decides which derivatives exist. */
+	heroImageWidth?: number | null;
 	badge?: string;
 	crumbs?: Crumb[];
 	/** Full-width body (max-w-7xl, no single card) for layouts that supply their
@@ -230,9 +234,12 @@ export function SubPage({
 					{/* Cover-less pages skip the photo and use the brand gradient alone, so
               they don't all wear the same stock hero image. */}
 					{heroImage && (
-						<img
+						<Picture
+							eager
 							src={heroImage}
+							width={heroImageWidth}
 							alt=""
+							sizes="100vw"
 							className="h-full w-full object-cover"
 						/>
 					)}

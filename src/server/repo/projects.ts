@@ -30,7 +30,7 @@ export type ResolvedProject = {
 	endDate: string | null;
 	targetAreas: string[];
 	snapshots: ProjectSnapshot[];
-	donors: { name: string; logoUrl: string | null }[];
+	donors: { name: string; logoUrl: string | null; logoWidth: number | null }[];
 	i18nFallback: string[];
 };
 
@@ -69,7 +69,11 @@ export async function getProjectBySlug(
 		endDate: p.endDate,
 		targetAreas: p.targetAreas ?? [],
 		snapshots: p.snapshots ?? [],
-		donors: dsWithLogo.map((d) => ({ name: d.name, logoUrl: d.logoUrl })),
+		donors: dsWithLogo.map((d) => ({
+			name: d.name,
+			logoUrl: d.logoUrl,
+			logoWidth: d.logoUrlWidth,
+		})),
 		i18nFallback: fallback,
 	};
 }

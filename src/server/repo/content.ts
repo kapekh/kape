@@ -70,6 +70,7 @@ type ChildLink = {
 	title: string;
 	excerpt: string;
 	coverUrl: string | null;
+	coverWidth: number | null;
 };
 
 export type ResolvedPage = {
@@ -79,6 +80,7 @@ export type ResolvedPage = {
 	title: string;
 	excerpt: string; // brief — used for the menu card + SEO meta description
 	coverUrl: string | null; // hero/cover image — used for the card + og:image
+	coverWidth: number | null;
 	body: string | null; // ProseMirror JSON (string) or null
 	bodyHtml: string; // server-rendered HTML
 	sections: SectionNode[] | null; // page-builder sections (dynamic ones already resolved)
@@ -110,20 +112,21 @@ async function getChildPages(
 	const out: ChildLink[] = [];
 	for (const r of rows) {
 		const f = await resolveOne(db, "page", r.id, lang);
-		let coverUrl: string | null = null;
+		let cover: Cover = { url: null, width: null };
 		if (r.heroMediaId != null) {
 			const [m] = await db
-				.select({ url: media.url })
+				.select({ url: media.url, width: media.width })
 				.from(media)
 				.where(eq(media.id, r.heroMediaId))
 				.limit(1);
-			coverUrl = m?.url ?? null;
+			cover = { url: m?.url ?? null, width: m?.width ?? null };
 		}
 		out.push({
 			slug: r.slug,
 			title: f.title ?? r.segment ?? r.slug,
 			excerpt: f.excerpt ?? "",
-			coverUrl,
+			coverUrl: cover.url,
+			coverWidth: cover.width,
 		});
 	}
 	return out;
@@ -159,14 +162,14 @@ export async function getPageBySlug(
 		page.id,
 		lang,
 	);
-	let coverUrl: string | null = null;
+	let cover: Cover = { url: null, width: null };
 	if (page.heroMediaId != null) {
 		const [m] = await db
-			.select({ url: media.url })
+			.select({ url: media.url, width: media.width })
 			.from(media)
 			.where(eq(media.id, page.heroMediaId))
 			.limit(1);
-		coverUrl = m?.url ?? null;
+		cover = { url: m?.url ?? null, width: m?.width ?? null };
 	}
 	const sections =
 		Array.isArray(page.sections) && page.sections.length
@@ -197,7 +200,8 @@ export async function getPageBySlug(
 		status: page.status,
 		title: fields.title ?? "",
 		excerpt: fields.excerpt ?? "",
-		coverUrl,
+		coverUrl: cover.url,
+		coverWidth: cover.width,
 		body: fields.body ?? null,
 		bodyHtml,
 		sections,
@@ -439,6 +443,7 @@ export type VideoItem = {
 	excerpt: string;
 	youtubeUrl: string;
 	image: string | null; // cover image URL (null → renderer supplies a fallback)
+	imageWidth: number | null;
 	i18nFallback: string[];
 	updatedAt: string;
 };
@@ -475,6 +480,10 @@ export async function listVideos(db: DB, lang: string): Promise<VideoItem[]> {
 			image:
 				r.coverMediaId != null
 					? (covers.get(r.coverMediaId)?.url ?? null)
+					: null,
+			imageWidth:
+				r.coverMediaId != null
+					? (covers.get(r.coverMediaId)?.width ?? null)
 					: null,
 			i18nFallback: fallback.get(r.id) ?? [],
 			updatedAt: r.updatedAt,
@@ -619,6 +628,7 @@ export type ResolvedPost = {
 	excerpt: string;
 	bodyHtml: string;
 	coverUrl: string | null;
+	coverWidth: number | null;
 	gallery: AlbumPhoto[];
 	// what a publication or a video is FOR: without them the detail page had to
 	// fetch the whole collection listing to find one record's own file
@@ -681,14 +691,14 @@ export async function getPostBySlug(
 		lang,
 	);
 
-	let coverUrl: string | null = null;
+	let cover: Cover = { url: null, width: null };
 	if (post.coverMediaId) {
 		const [c] = await db
-			.select({ url: media.url })
+			.select({ url: media.url, width: media.width })
 			.from(media)
 			.where(eq(media.id, post.coverMediaId))
 			.limit(1);
-		coverUrl = c?.url ?? null;
+		cover = { url: c?.url ?? null, width: c?.width ?? null };
 	}
 
 	const pm = await db
@@ -715,7 +725,8 @@ export async function getPostBySlug(
 		title: f.title ?? "",
 		excerpt: f.excerpt ?? "",
 		bodyHtml: renderBody(f.body ?? null),
-		coverUrl,
+		coverUrl: cover.url,
+		coverWidth: cover.width,
 		gallery: pm.map((p) => photo(p, caps)),
 		fileUrl: meta.fileUrl ? String(meta.fileUrl) : null,
 		youtubeUrl: meta.youtube_url ? String(meta.youtube_url) : null,

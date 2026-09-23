@@ -395,6 +395,7 @@ function ResolvedRoute() {
 					title={page.title}
 					lead={page.excerpt || undefined}
 					heroImage={page.coverUrl || undefined}
+					heroImageWidth={page.coverWidth}
 					record={record}
 					titleField="title"
 					leadField="excerpt"
@@ -422,6 +423,7 @@ function ResolvedRoute() {
 					title={page.title}
 					lead={page.excerpt || undefined}
 					heroImage={page.coverUrl || undefined}
+					heroImageWidth={page.coverWidth}
 					record={record}
 					titleField="title"
 					leadField="excerpt"
@@ -435,9 +437,11 @@ function ResolvedRoute() {
 							>
 								{c.coverUrl && (
 									<div className="aspect-[16/10] overflow-hidden">
-										<img
+										<Picture
 											src={c.coverUrl}
+											width={c.coverWidth}
 											alt={c.title}
+											sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
 											className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
 										/>
 									</div>
@@ -468,6 +472,7 @@ function ResolvedRoute() {
 				title={page.title}
 				lead={page.excerpt || undefined}
 				heroImage={page.coverUrl || undefined}
+				heroImageWidth={page.coverWidth}
 				record={record}
 				titleField="title"
 				leadField="excerpt"
@@ -509,6 +514,7 @@ function ResolvedRoute() {
 				title={post.title}
 				lead={post.excerpt || undefined}
 				heroImage={post.coverUrl || undefined}
+				heroImageWidth={post.coverWidth}
 				record={record}
 				titleField="title"
 				leadField="excerpt"

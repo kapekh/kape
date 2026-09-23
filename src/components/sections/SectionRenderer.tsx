@@ -23,6 +23,7 @@ import {
 	translatableFields,
 } from "#/lib/sections";
 import type { JobItem, PostListItem } from "#/server/repo/content";
+import type { MediaWidths } from "#/server/repo/media-widths";
 import type { PageInfo, SourceRow } from "#/server/repo/sections";
 import { useLang, useT } from "@/lib/i18n";
 import { localizedHref } from "@/lib/i18n-config";
@@ -620,6 +621,18 @@ const imgFor = (r: Imaged): { src: string; width: number | null } =>
 			? { src: r.cover, width: r.coverWidth ?? null }
 			: { src: PLACEHOLDER_IMAGE, width: null };
 
+const NO_WIDTHS: MediaWidths = {};
+const SectionMediaWidths = createContext<MediaWidths>(NO_WIDTHS);
+
+/**
+ * An editor's image props are bare urls; the server looked their widths up and
+ * sent them beside the section, keyed by url.
+ */
+function useImageWidth(): (url: string | null | undefined) => number | null {
+	const widths = useContext(SectionMediaWidths);
+	return (url) => (url ? (widths[url] ?? null) : null);
+}
+
 /** Returns a language-prefixing localizer for internal hrefs (path-based i18n). */
 function useL() {
 	const { lang } = useLang();
@@ -736,6 +749,7 @@ type HeroProps = Common & {
 function Slideshow({ slides }: { slides: HeroSlide[] }) {
 	const t = useT();
 	const mark = useMark();
+	const widthOf = useImageWidth();
 	const [i, setI] = useState(0);
 	const [paused, setPaused] = useState(false);
 	useEffect(() => {
@@ -765,13 +779,13 @@ function Slideshow({ slides }: { slides: HeroSlide[] }) {
 						aria-hidden={idx !== i}
 					>
 						{s.image && (
-							<img
-								loading={idx === i ? "eager" : "lazy"}
+							<Picture
+								eager={idx === i}
 								src={s.image}
+								width={widthOf(s.image)}
 								alt={s.caption || ""}
+								sizes="(min-width: 1024px) 50vw, 100vw"
 								className="h-full w-full object-cover"
-								onError={onImageError}
-								ref={imageFallbackRef}
 							/>
 						)}
 						{/* one button, on the slide on screen: the others are still in the dom */}
@@ -844,6 +858,7 @@ function Hero(p: HeroProps) {
 	const t = useT();
 	const mark = useMark();
 	const anchored = useAnchored();
+	const widthOf = useImageWidth();
 	const layout = p.layout ?? "banner";
 	const slides: HeroSlide[] = Array.isArray(p.slides) ? p.slides : [];
 	const stats: HeroStat[] = Array.isArray(p.stats) ? p.stats : [];
@@ -953,12 +968,13 @@ function Hero(p: HeroProps) {
 					</div>
 					{p.image && (
 						<figure className={anchored("m-0")}>
-							<img
+							<Picture
+								eager
 								src={p.image}
+								width={widthOf(p.image)}
 								alt={p.title || ""}
+								sizes="(min-width: 1024px) 50vw, 100vw"
 								className="rounded-3xl object-cover w-full aspect-[4/3] shadow-[var(--shadow-soft)]"
-								onError={onImageError}
-								ref={imageFallbackRef}
 							/>
 							<ImageEdit
 								path="image"
@@ -983,12 +999,13 @@ function Hero(p: HeroProps) {
 		>
 			<div className="absolute inset-0">
 				{bg && (
-					<img
+					<Picture
+						eager
 						src={bg}
+						width={widthOf(bg)}
 						alt=""
+						sizes="100vw"
 						className="h-full w-full object-cover"
-						onError={onImageError}
-						ref={imageFallbackRef}
 					/>
 				)}
 				<div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/45" />
@@ -1058,13 +1075,12 @@ function RichText(p: RichTextProps) {
 						<figure className="mb-6 md:float-right md:ml-10 md:w-64">
 							<div className="group relative overflow-hidden rounded-2xl ring-1 ring-border shadow-[var(--shadow-soft)]">
 								{person.photoUrl ? (
-									<img
-										loading="lazy"
+									<Picture
 										src={person.photoUrl}
+										width={person.photoUrlWidth}
 										alt={person.name}
+										sizes="(min-width: 768px) 256px, 100vw"
 										className="aspect-[3/4] w-full object-cover"
-										onError={onImageError}
-										ref={imageFallbackRef}
 									/>
 								) : (
 									<div className="grid aspect-[3/4] w-full place-items-center bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] font-display text-5xl font-bold text-primary-foreground">
@@ -1122,6 +1138,7 @@ function Cards(p: CardsProps) {
 	const t = useT();
 	const mark = useMark();
 	const anchored = useAnchored();
+	const widthOf = useImageWidth();
 	const cols =
 		p.layout === "cols-2"
 			? "md:grid-cols-2"
@@ -1188,13 +1205,12 @@ function Cards(p: CardsProps) {
 									key={n}
 									className="relative flex min-h-[260px] flex-col justify-end overflow-hidden rounded-3xl border border-border p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-[var(--shadow-soft)]"
 								>
-									<img
-										loading="lazy"
+									<Picture
 										src={it.image}
+										width={widthOf(it.image)}
 										alt={it.title || ""}
+										sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw"
 										className="absolute inset-0 h-full w-full object-cover"
-										onError={onImageError}
-										ref={imageFallbackRef}
 									/>
 									<ImageEdit
 										path={`items[${n}].image`}
@@ -1241,13 +1257,12 @@ function Cards(p: CardsProps) {
 							>
 								{it.image ? (
 									<>
-										<img
-											loading="lazy"
+										<Picture
 											src={it.image}
+											width={widthOf(it.image)}
 											alt={it.title || ""}
+											sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw"
 											className="aspect-video w-full object-cover"
-											onError={onImageError}
-											ref={imageFallbackRef}
 										/>
 										<ImageEdit
 											path={`items[${n}].image`}
@@ -1301,19 +1316,19 @@ function Cards(p: CardsProps) {
 function LogoTile({ item, index }: { item: CardItem; index: number }) {
 	const L = useL();
 	const mark = useMark();
+	const widthOf = useImageWidth();
 	const href = item.href || item.buttons?.find((b) => b?.href)?.href || "";
 	const inner = (
 		<>
 			<span className="grid h-20 place-items-center rounded-xl border border-border bg-white p-3 transition group-hover:border-[var(--accent)]">
 				{item.image ? (
 					// title renders beside it and names the tile; alt would read twice
-					<img
-						loading="lazy"
+					<Picture
 						src={item.image}
+						width={widthOf(item.image)}
 						alt=""
+						sizes="(min-width: 1024px) 200px, (min-width: 640px) 33vw, 50vw"
 						className="max-h-14 max-w-full object-contain"
-						onError={onImageError}
-						ref={imageFallbackRef}
 					/>
 				) : (
 					<span className="t-meta font-medium text-foreground/70">
@@ -1377,6 +1392,7 @@ function StatItem({
 }) {
 	const mark = useMark();
 	const anchored = useAnchored();
+	const widthOf = useImageWidth();
 	const digits = String(value).replace(/[^0-9]/g, "");
 	const target = digits ? Number(digits) : 0;
 	const n = useCount(target, run);
@@ -1388,13 +1404,12 @@ function StatItem({
 	return (
 		<div className={anchored("group")}>
 			{icon && (
-				<img
-					loading="lazy"
+				<Picture
 					src={icon}
+					width={widthOf(icon)}
 					alt=""
+					sizes="40px"
 					className="mb-4 h-10 w-10 object-contain opacity-90"
-					onError={onImageError}
-					ref={imageFallbackRef}
 				/>
 			)}
 			<ImageEdit
@@ -1451,6 +1466,7 @@ type StatsProps = Common & {
 
 function Stats(p: StatsProps) {
 	const mark = useMark();
+	const widthOf = useImageWidth();
 	const items: StatRow[] = Array.isArray(p.items) ? p.items : [];
 	const [bandRef, inView] = useInView<HTMLElement>();
 	const band = p.layout !== "plain";
@@ -1470,13 +1486,12 @@ function Stats(p: StatsProps) {
 							<ImageAnchor key={n}>
 								<div>
 									{it.icon && (
-										<img
-											loading="lazy"
+										<Picture
 											src={it.icon}
+											width={widthOf(it.icon)}
 											alt=""
+											sizes="40px"
 											className="mb-3 h-10 w-10 object-contain"
-											onError={onImageError}
-											ref={imageFallbackRef}
 										/>
 									)}
 									<div
@@ -1734,9 +1749,11 @@ function Split(p: SplitProps) {
 	const mark = useMark();
 	const row = useRowMark();
 	const mayEditPeople = useMayEditPeople();
+	const widthOf = useImageWidth();
 	const mediaLeft = p.layout === "media-left";
 	const person = p.person ?? null;
 	const photo = person ? person.photoUrl : p.image;
+	const photoWidth = person ? person.photoUrlWidth : widthOf(p.image);
 	const media =
 		person || p.image ? (
 			<div className="relative">
@@ -1744,16 +1761,16 @@ function Split(p: SplitProps) {
 					className={`${person ? "group relative " : ""}overflow-hidden rounded-3xl ring-1 ring-border shadow-[var(--shadow-soft)]`}
 				>
 					{photo ? (
-						<img
+						<Picture
 							src={photo}
+							width={photoWidth}
 							alt={person?.name || p.title || ""}
+							sizes="(min-width: 768px) 50vw, 100vw"
 							className={
 								person
 									? "aspect-[4/5] w-full object-cover object-top"
 									: "h-[420px] w-full object-cover md:h-[480px]"
 							}
-							onError={onImageError}
-							ref={imageFallbackRef}
 						/>
 					) : (
 						<div
@@ -2368,7 +2385,7 @@ function VideoGrid(p: VideoGridProps) {
 					<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 						{videos.map((v) => {
 							const id = youtubeId(v.youtubeUrl);
-							const thumb = id ? youtubeThumb(id) : imgFor(v).src;
+							const cover = imgFor(v);
 							return (
 								<NavLink
 									key={v.id}
@@ -2378,14 +2395,24 @@ function VideoGrid(p: VideoGridProps) {
 									className="group cursor-pointer"
 								>
 									<div className="relative aspect-video overflow-hidden rounded-2xl ring-1 ring-border">
-										<img
-											loading="lazy"
-											src={thumb}
-											alt={v.title || ""}
-											className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-											onError={onThumbError}
-											ref={thumbFallbackRef}
-										/>
+										{id ? (
+											<img
+												loading="lazy"
+												src={youtubeThumb(id)}
+												alt={v.title || ""}
+												className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+												onError={onThumbError}
+												ref={thumbFallbackRef}
+											/>
+										) : (
+											<Picture
+												src={cover.src}
+												width={cover.width}
+												alt={v.title || ""}
+												sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw"
+												className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+											/>
+										)}
 										<div className="absolute inset-0 bg-primary/20 transition group-hover:bg-primary/10" />
 										<div className="absolute inset-0 grid place-items-center">
 											<span className="grid h-16 w-16 place-items-center rounded-full bg-background/95 text-[var(--accent)] shadow-[var(--shadow-lift)] transition group-hover:scale-110">
@@ -2661,13 +2688,12 @@ function People(p: PeopleProps) {
 								>
 									<div className="mx-auto h-24 w-24 overflow-hidden rounded-full shadow-md ring-4 ring-card transition group-hover:scale-105">
 										{person.photoUrl ? (
-											<img
-												loading="lazy"
+											<Picture
 												src={person.photoUrl}
+												width={person.photoUrlWidth}
 												alt={person.name || ""}
+												sizes="96px"
 												className="h-full w-full object-cover"
-												onError={onImageError}
-												ref={imageFallbackRef}
 											/>
 										) : (
 											<div className="grid h-full w-full place-items-center bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] text-primary-foreground font-display text-2xl font-bold">
@@ -2804,13 +2830,12 @@ function PartnerLogo({ row, linked }: { row: PartnerRow; linked: boolean }) {
 		<PartnerLink row={row} linked={linked} className="shrink-0">
 			<span className="grid h-28 w-48 place-items-center rounded-xl bg-white px-5 ring-1 ring-border transition hover:ring-[var(--accent)]">
 				{row.logoUrl ? (
-					<img
-						loading="lazy"
+					<Picture
 						src={row.logoUrl}
+						width={row.logoUrlWidth}
 						alt={row.name}
+						sizes="192px"
 						className="max-h-16 max-w-full object-contain"
-						onError={onImageError}
-						ref={imageFallbackRef}
 					/>
 				) : (
 					<span className="text-center text-sm font-medium text-foreground/80">
@@ -2923,15 +2948,14 @@ function PartnerCategory({
 						<PartnerLink row={r} linked className="group inline-flex">
 							{r.logoUrl ? (
 								<span className="grid h-12 w-28 place-items-center rounded-lg bg-white p-2 ring-1 ring-border transition group-hover:ring-[var(--accent)]">
-									<img
-										loading="lazy"
+									<Picture
 										src={r.logoUrl}
+										width={r.logoUrlWidth}
 										alt={r.name}
+										sizes="112px"
 										// max-h-8 not max-h-full: the row is auto-sized, so a
 										// percentage resolves against the image itself and caps nothing
 										className="max-h-8 max-w-full object-contain grayscale opacity-75 transition duration-300 group-hover:grayscale-0 group-hover:opacity-100"
-										onError={onImageError}
-										ref={imageFallbackRef}
 									/>
 								</span>
 							) : (
@@ -3080,6 +3104,7 @@ type CertificatesProps = Common & {
 function Certificates(p: CertificatesProps) {
 	const t = useT();
 	const mark = useMark();
+	const widthOf = useImageWidth();
 	const items: CertificateItem[] = Array.isArray(p.items) ? p.items : [];
 	const { openPdf, reader } = usePdfReader();
 	const cols =
@@ -3103,13 +3128,12 @@ function Certificates(p: CertificatesProps) {
 								<>
 									<div className="aspect-[3/4] overflow-hidden rounded-2xl bg-muted ring-1 ring-border">
 										{it.image ? (
-											<img
-												loading="lazy"
+											<Picture
 												src={it.image}
+												width={widthOf(it.image)}
 												alt={it.title || ""}
+												sizes="(min-width: 1024px) 300px, (min-width: 640px) 50vw, 100vw"
 												className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-												onError={onImageError}
-												ref={imageFallbackRef}
 											/>
 										) : (
 											<div className="grid h-full w-full place-items-center text-[var(--accent)]">
@@ -3412,9 +3436,16 @@ export function SectionRenderer({
 							</>
 						)}
 						<SectionId.Provider value={s.id}>
-							<OwnsPageTitle.Provider value={i === titleIndex}>
-								{body}
-							</OwnsPageTitle.Provider>
+							<SectionMediaWidths.Provider
+								value={
+									(s.props as { mediaWidths?: MediaWidths } | undefined)
+										?.mediaWidths ?? NO_WIDTHS
+								}
+							>
+								<OwnsPageTitle.Provider value={i === titleIndex}>
+									{body}
+								</OwnsPageTitle.Provider>
+							</SectionMediaWidths.Provider>
 						</SectionId.Provider>
 					</div>
 				);

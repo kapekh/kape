@@ -17,8 +17,11 @@ const hero = (props: Record<string, unknown>): SectionNode => ({
 	props,
 });
 
-// a static section runs no query, so the renderer never reaches the database
-const noDb = {} as DB;
+// no source table to read, but the image a section names is still looked up for
+// its width: answers that lookup with no row, as an unrecorded url would
+const noDb = {
+	select: () => ({ from: () => ({ where: async () => [] }) }),
+} as unknown as DB;
 
 describe("section overlay fallback", () => {
 	it("names the text fields the requested language does not cover", async () => {

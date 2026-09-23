@@ -8,8 +8,9 @@ const ENABLED = process.env.SSG_CACHE !== "off";
 const TTL_SECONDS = 7 * 24 * 60 * 60; // backstop; precise invalidation is the primary mechanism
 
 // bump when the rendered HTML or the cached payload's shape changes; old rows age out on the TTL.
-// v7: an image in a listed row carries its intrinsic width, which says which derivatives it has.
-const FORMAT = "v7";
+// v8: page and post covers, portraits, donor and org-chart logos, and a section's
+// own image props all carry their intrinsic width too.
+const FORMAT = "v8";
 
 export const cacheKey = (path: string, lang: string) =>
 	`${FORMAT}::${lang || "en"}::${path.replace(/^\/+|\/+$/g, "")}`;

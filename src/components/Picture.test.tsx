@@ -108,4 +108,34 @@ describe("Picture", () => {
 			"lazy",
 		);
 	});
+
+	// React preloads every eager <img> in the SSR shell, so this has to be asked for
+	it("loads eagerly only where a call site asks", () => {
+		render(<Picture eager src={SRC} width={4384} alt="the hero" />);
+		expect(screen.getByAltText("the hero").getAttribute("loading")).toBe(
+			"eager",
+		);
+	});
+
+	it("leaves a second picture lazy while one is eager", () => {
+		render(
+			<>
+				<Picture eager src={SRC} width={4384} alt="the hero" />
+				<Picture src={NEXT} width={4384} alt="a card" />
+			</>,
+		);
+		expect(screen.getByAltText("the hero").getAttribute("loading")).toBe(
+			"eager",
+		);
+		expect(screen.getByAltText("a card").getAttribute("loading")).toBe("lazy");
+	});
+
+	it("stays eager through the fallback to the original", () => {
+		render(<Picture eager src={SRC} width={4384} alt="the hero" />);
+		fail();
+		expect(sourceOf()).toBeNull();
+		expect(screen.getByAltText("the hero").getAttribute("loading")).toBe(
+			"eager",
+		);
+	});
 });

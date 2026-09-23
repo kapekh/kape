@@ -33,6 +33,7 @@ export type PersonItem = {
 	position: string;
 	section: string;
 	photoUrl: string | null;
+	photoUrlWidth: number | null;
 	i18nFallback: string[];
 	/** What this row was loaded at, so an inline edit is checked against it. */
 	updatedAt: string;
@@ -59,6 +60,7 @@ export async function listPeople(db: DB, lang: string): Promise<PersonItem[]> {
 		position: values.get(r.id)?.position ?? "",
 		section: r.tier,
 		photoUrl: r.photoUrl,
+		photoUrlWidth: r.photoUrlWidth,
 		i18nFallback: (fallback.get(r.id) ?? []).filter((f) =>
 			INLINE_TEXT_FIELDS.has(f),
 		),
@@ -98,6 +100,7 @@ export async function getPersonItem(
 		position: fields.position ?? "",
 		section: row.tier,
 		photoUrl: withUrl.photoUrl,
+		photoUrlWidth: withUrl.photoUrlWidth,
 		i18nFallback: fallback.filter((f) => INLINE_TEXT_FIELDS.has(f)),
 		updatedAt: row.updatedAt,
 	};
@@ -109,6 +112,7 @@ export type Colleague = {
 	name: string;
 	position: string;
 	photoUrl: string | null;
+	photoUrlWidth: number | null;
 };
 
 export type ResolvedPerson = {
@@ -121,6 +125,7 @@ export type ResolvedPerson = {
 	/** Department, e.g. "Digital Education Programming". Shown when set. */
 	program: string;
 	photoUrl: string | null;
+	photoUrlWidth: number | null;
 	bodyHtml: string;
 	i18nFallback: string[];
 	/** Everyone else public in the same tier, so a profile is not a dead end. */
@@ -164,6 +169,7 @@ async function colleaguesOf(
 		name: text.get(r.id)?.name ?? "",
 		position: text.get(r.id)?.position ?? "",
 		photoUrl: r.photoUrl,
+		photoUrlWidth: r.photoUrlWidth,
 	}));
 }
 
@@ -192,13 +198,15 @@ export async function getPersonBySlug(
 		lang,
 	);
 	let photoUrl: string | null = null;
+	let photoUrlWidth: number | null = null;
 	if (p.photoMediaId) {
 		const [m] = await db
-			.select({ url: media.url })
+			.select({ url: media.url, width: media.width })
 			.from(media)
 			.where(eq(media.id, p.photoMediaId))
 			.limit(1);
 		photoUrl = m?.url ?? null;
+		photoUrlWidth = m?.width ?? null;
 	}
 	return {
 		id: p.id,
@@ -208,6 +216,7 @@ export async function getPersonBySlug(
 		tier: p.tier,
 		program: p.program ?? "",
 		photoUrl,
+		photoUrlWidth,
 		bodyHtml: renderBody(f.bio ?? null),
 		i18nFallback: fallback,
 		colleagues: await colleaguesOf(db, p, lang),

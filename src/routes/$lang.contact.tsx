@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { ContactForm } from "@/components/ContactForm";
 import { type MapMarker, MapView } from "@/components/MapView";
+import { Picture } from "@/components/Picture";
 import { Card, Grid, SubPage } from "@/components/SubPage";
 import { useLang } from "@/lib/i18n";
 import { DEFAULT_LANG, LANGS } from "@/lib/i18n-config";
@@ -159,9 +160,11 @@ function ContactPage() {
 						{provincial.map((o) => (
 							<Card key={o.id} title={o.name}>
 								{o.imageUrl && (
-									<img
+									<Picture
 										src={o.imageUrl}
+										width={o.imageUrlWidth}
 										alt={o.name}
+										sizes="(min-width: 1024px) 360px, (min-width: 640px) 50vw, 100vw"
 										className="mb-3 aspect-video w-full rounded-lg object-cover"
 									/>
 								)}

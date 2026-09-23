@@ -17,12 +17,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLang } from "@/lib/i18n";
 import { localizedHref } from "@/lib/i18n-config";
 import { NavLink } from "./NavLink";
+import { Picture } from "./Picture";
 
 export type PublicOrgNode = {
 	id: number;
 	name: string;
 	title: string;
 	photoUrl: string | null;
+	photoWidth: number | null;
 	personSlug: string | null;
 	posX: number | null;
 	posY: number | null;
@@ -111,10 +113,11 @@ function OrgPublicNode({ data }: NodeProps<Node<NodeData>>) {
 	const card = (
 		<div className="w-[210px] text-center">
 			{node.photoUrl ? (
-				<img
-					loading="lazy"
+				<Picture
 					src={node.photoUrl}
+					width={node.photoWidth}
 					alt={node.name}
+					sizes="96px"
 					className="mx-auto h-24 w-24 rounded-full object-cover shadow-[var(--shadow-lift)] ring-4 ring-card transition group-hover:scale-105"
 				/>
 			) : (

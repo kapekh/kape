@@ -4,11 +4,11 @@ import {
 	PersonPhotoEdit,
 	useMayEditPeople,
 } from "@/components/PersonPhotoEdit";
+import { Picture } from "@/components/Picture";
 import { RichBody } from "@/components/RichBody";
 import { personRecord, SubPage } from "@/components/SubPage";
 import { useLang, useT } from "@/lib/i18n";
 import { localizedHref } from "@/lib/i18n-config";
-import { imageFallbackRef, onImageError } from "@/lib/placeholder";
 
 type T = ReturnType<typeof useT>;
 
@@ -38,22 +38,30 @@ const initials = (name: string) =>
 function Portrait({
 	name,
 	photoUrl,
+	photoWidth,
+	sizes,
+	eager = false,
 	className = "",
 	textClass = "text-5xl",
 }: {
 	name: string;
 	photoUrl: string | null;
+	photoWidth: number | null;
+	sizes: string;
+	/** The profile's own portrait; a colleague's thumbnail is below the fold. */
+	eager?: boolean;
 	className?: string;
 	textClass?: string;
 }) {
 	if (photoUrl)
 		return (
-			<img
+			<Picture
+				eager={eager}
 				src={photoUrl}
+				width={photoWidth}
 				alt={name}
+				sizes={sizes}
 				className={`h-full w-full object-cover ${className}`}
-				onError={onImageError}
-				ref={imageFallbackRef}
 			/>
 		);
 	return (
@@ -88,6 +96,8 @@ function ColleagueCard({ person }: { person: Colleague }) {
 				<Portrait
 					name={person.name}
 					photoUrl={person.photoUrl}
+					photoWidth={person.photoUrlWidth}
+					sizes="56px"
 					textClass="text-base"
 				/>
 			</div>
@@ -144,7 +154,13 @@ export function PersonView({
 									: "aspect-[4/5] bg-muted"
 							}
 						>
-							<Portrait name={person.name} photoUrl={person.photoUrl} />
+							<Portrait
+								eager
+								name={person.name}
+								photoUrl={person.photoUrl}
+								photoWidth={person.photoUrlWidth}
+								sizes="320px"
+							/>
 							{mayEdit && (
 								<PersonPhotoEdit
 									personId={person.id}

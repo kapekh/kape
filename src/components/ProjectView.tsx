@@ -1,4 +1,5 @@
 import type { ResolvedProject } from "#/server/repo/projects";
+import { Picture } from "@/components/Picture";
 import { RichBody } from "@/components/RichBody";
 import { projectRecord, Section, SubPage } from "@/components/SubPage";
 import { useT } from "@/lib/i18n";
@@ -82,9 +83,11 @@ export function ProjectView({
 										title={d.name}
 										className="grid h-10 w-24 place-items-center rounded-lg border border-border bg-white p-1.5 shadow-sm"
 									>
-										<img
+										<Picture
 											src={d.logoUrl}
+											width={d.logoWidth}
 											alt={d.name}
+											sizes="96px"
 											className="max-h-full max-w-full object-contain"
 										/>
 									</span>

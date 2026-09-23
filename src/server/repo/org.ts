@@ -24,6 +24,7 @@ export type OrgNode = {
 	name: string;
 	title: string;
 	photoUrl: string | null;
+	photoWidth: number | null;
 	personSlug: string | null;
 	posX: number | null;
 	posY: number | null;
@@ -46,7 +47,12 @@ export async function getOrgTree(db: DB, lang: string): Promise<OrgNode[]> {
 	];
 	const persons = new Map<
 		number,
-		{ name: string; slug: string | null; photoUrl: string | null }
+		{
+			name: string;
+			slug: string | null;
+			photoUrl: string | null;
+			photoWidth: number | null;
+		}
 	>();
 	if (personIds.length) {
 		const pRows = await db
@@ -69,20 +75,26 @@ export async function getOrgTree(db: DB, lang: string): Promise<OrgNode[]> {
 				pRows.map((p) => p.photoMediaId).filter((x): x is number => x != null),
 			),
 		];
-		const covers = new Map<number, string | null>();
+		const covers = new Map<
+			number,
+			{ url: string | null; width: number | null }
+		>();
 		if (coverIds.length)
 			for (const m of await db
-				.select({ id: media.id, url: media.url })
+				.select({ id: media.id, url: media.url, width: media.width })
 				.from(media)
 				.where(inArray(media.id, coverIds)))
-				covers.set(m.id, m.url);
-		for (const p of pRows)
+				covers.set(m.id, { url: m.url, width: m.width });
+		for (const p of pRows) {
+			const cover =
+				p.photoMediaId != null ? covers.get(p.photoMediaId) : undefined;
 			persons.set(p.id, {
 				name: personNames.get(p.id)?.name ?? "",
 				slug: p.isPublic ? p.slug : null,
-				photoUrl:
-					p.photoMediaId != null ? (covers.get(p.photoMediaId) ?? null) : null,
+				photoUrl: cover?.url ?? null,
+				photoWidth: cover?.width ?? null,
 			});
+		}
 	}
 
 	const text = await resolveTranslations(
@@ -100,6 +112,7 @@ export async function getOrgTree(db: DB, lang: string): Promise<OrgNode[]> {
 			name: linked?.name || own.name || "",
 			title: own.title ?? "",
 			photoUrl: linked?.photoUrl ?? null,
+			photoWidth: linked?.photoWidth ?? null,
 			personSlug: linked?.slug ?? null,
 			posX: r.posX,
 			posY: r.posY,

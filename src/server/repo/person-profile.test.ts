@@ -117,6 +117,7 @@ describe("person profile", () => {
 			"id",
 			"name",
 			"photoUrl",
+			"photoUrlWidth",
 			"position",
 			"program",
 			"slug",

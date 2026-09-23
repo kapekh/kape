@@ -21,6 +21,7 @@ import {
 	type PublicationItem,
 	type VideoItem,
 } from "./content";
+import { imageUrlsIn, mediaWidths } from "./media-widths";
 import { getOrgTree, type OrgNode } from "./org";
 import { getPersonItem, listPeople, type PersonItem } from "./people";
 import {
@@ -162,7 +163,7 @@ export async function resolveSections(
 	opts?: ResolveOptions,
 ): Promise<SectionNode[]> {
 	if (!Array.isArray(sections)) return [];
-	return Promise.all(
+	const resolved = await Promise.all(
 		sections.map(async (s) => {
 			let props: Record<string, unknown> = { ...(s?.props ?? {}) };
 			// per-language text overlay; structural props stay language-agnostic
@@ -211,4 +212,29 @@ export async function resolveSections(
 			return { ...s, props };
 		}),
 	);
+	return attachMediaWidths(db, resolved);
+}
+
+/**
+ * An editor's image props are bare urls, so the width that says which
+ * derivatives exist has to be looked up and carried beside them.
+ */
+async function attachMediaWidths(
+	db: DB,
+	sections: SectionNode[],
+): Promise<SectionNode[]> {
+	const perSection = sections.map((s) => imageUrlsIn(s.props));
+	const all = [...new Set(perSection.flatMap((urls) => [...urls]))];
+	if (!all.length) return sections;
+	const widths = await mediaWidths(db, all);
+	return sections.map((s, i) => {
+		const own = Object.fromEntries(
+			[...perSection[i]]
+				.filter((url) => widths[url] != null)
+				.map((url) => [url, widths[url]]),
+		);
+		return Object.keys(own).length
+			? { ...s, props: { ...(s.props ?? {}), mediaWidths: own } }
+			: s;
+	});
 }
