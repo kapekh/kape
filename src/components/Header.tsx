@@ -1,6 +1,7 @@
 import { useRouterState } from "@tanstack/react-router";
 import { useEffect, useId, useRef, useState } from "react";
 import type { NavNode } from "#/server/repo/nav";
+import { donateOpen } from "@/lib/donate-defaults";
 import { LanguageSwitcher, useLang } from "@/lib/i18n";
 import { localizedHref, stripLang } from "@/lib/i18n-config";
 import { siteLogo, siteName, siteShortName } from "@/lib/site-identity";
@@ -401,6 +402,8 @@ export function Header({
 	// an operator's own label overrides every language and cannot be edited in place
 	const donate = settings.header_donate_label || <T k="nav.donate" />;
 	const donateHref = withLang(settings.header_donate_link || "#donate", lang);
+	// a button leading to a page with nothing to give to is worse than no button
+	const showDonate = donateOpen(settings);
 	const searchHref = withLang(settings.header_search_link || "#", lang);
 	const sitemapHref = withLang(settings.header_sitemap_link || "#", lang);
 	// a labelled control must not hand a reader a machine file (/sitemap.xml)
@@ -722,12 +725,14 @@ export function Header({
 						</nav>
 
 						<div className="flex items-center gap-3">
-							<NavLink
-								href={donateHref}
-								className="hidden md:inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-accent-foreground px-5 py-2.5 text-sm font-semibold shadow-[var(--shadow-lift)] hover:translate-y-[-2px] transition-transform"
-							>
-								{donate}
-							</NavLink>
+							{showDonate && (
+								<NavLink
+									href={donateHref}
+									className="hidden md:inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-accent-foreground px-5 py-2.5 text-sm font-semibold shadow-[var(--shadow-lift)] hover:translate-y-[-2px] transition-transform"
+								>
+									{donate}
+								</NavLink>
+							)}
 							{/* Mobile menu trigger */}
 							<button
 								type="button"
@@ -905,13 +910,15 @@ export function Header({
 						</div>
 						<div className="flex items-center justify-between gap-3 border-t border-border px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
 							<LanguageSwitcher />
-							<NavLink
-								href={donateHref}
-								onClick={() => setMobileOpen(false)}
-								className="inline-flex items-center rounded-full bg-[var(--accent)] text-accent-foreground px-5 py-2.5 text-sm font-semibold shadow-[var(--shadow-lift)]"
-							>
-								{donate}
-							</NavLink>
+							{showDonate && (
+								<NavLink
+									href={donateHref}
+									onClick={() => setMobileOpen(false)}
+									className="inline-flex items-center rounded-full bg-[var(--accent)] text-accent-foreground px-5 py-2.5 text-sm font-semibold shadow-[var(--shadow-lift)]"
+								>
+									{donate}
+								</NavLink>
+							)}
 						</div>
 					</div>
 				</div>

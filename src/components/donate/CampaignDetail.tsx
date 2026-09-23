@@ -15,9 +15,11 @@ type CampaignWithSupporters = NonNullable<
 /** Full campaign page: hero + two-column (donate form ‹› sticky progress/supporters). */
 export function CampaignDetail({
 	campaign,
+	paymentsConfigured,
 	showCrumb = false,
 }: {
 	campaign: CampaignWithSupporters;
+	paymentsConfigured: boolean;
 	showCrumb?: boolean;
 }) {
 	const { lang, t } = useLang();
@@ -76,9 +78,17 @@ export function CampaignDetail({
 				<div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-3 lg:items-start">
 					{/* Sticky progress + supporters (first on mobile for context, right on desktop) */}
 					<aside className="lg:order-2 lg:sticky lg:top-24 space-y-4">
-						<div className="rounded-3xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
-							<CampaignProgress campaign={campaign} />
-						</div>
+						{/* with nothing raised and no gift possible, only a goal is left to show */}
+						{(paymentsConfigured ||
+							campaign.raised > 0 ||
+							campaign.goalAmount != null) && (
+							<div className="rounded-3xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
+								<CampaignProgress
+									campaign={campaign}
+									inviting={paymentsConfigured}
+								/>
+							</div>
+						)}
 						{campaign.showSupporters &&
 							campaign.recentSupporters.length > 0 && (
 								<div className="rounded-3xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
@@ -109,6 +119,22 @@ export function CampaignDetail({
 								>
 									{t("donate.ended.cta", "See active campaigns")}
 								</NavLink>
+							</div>
+						) : !paymentsConfigured ? (
+							// a form that can only end in a 503 is worse than saying so here
+							<div className="py-8 text-center">
+								<h2 className="font-display text-2xl font-semibold text-primary">
+									{t(
+										"donate.unavailable.title",
+										"Giving is unavailable right now",
+									)}
+								</h2>
+								<p className="mt-2 text-muted-foreground">
+									{t(
+										"donate.unavailable.body",
+										"Online giving is being set up, so gifts cannot be accepted yet. Please check back soon.",
+									)}
+								</p>
 							</div>
 						) : (
 							<>

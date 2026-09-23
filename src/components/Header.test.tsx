@@ -87,7 +87,7 @@ const withPages: NavNode[] = [
 	]),
 ];
 
-const mount = (tree: NavNode[] = nav) =>
+const mount = (tree: NavNode[] = nav, settings: Record<string, string> = {}) =>
 	render(
 		<LanguageProvider
 			lang="en"
@@ -95,7 +95,7 @@ const mount = (tree: NavNode[] = nav) =>
 			strings={{}}
 			stringsFallback={[]}
 		>
-			<Header nav={tree} settings={{}} />
+			<Header nav={tree} settings={settings} />
 		</LanguageProvider>,
 	);
 
@@ -253,6 +253,43 @@ describe("hover intent", () => {
 		mount();
 		fireEvent.click(trigger());
 		expect(expanded()).toBe("true");
+	});
+});
+
+describe("donate button", () => {
+	const header = {
+		header_donate_label: "♡ Donate",
+		header_donate_link: "/donate",
+	};
+	const givable = { ...header, donate_open: "1" };
+	// nothing published, or the fundraising module off: the server answers the same
+	const nothingToGiveTo = { ...header, donate_open: "" };
+	const inHeader = () => screen.queryByRole("link", { name: "♡ Donate" });
+	const inDrawer = () => {
+		fireEvent.click(screen.getByRole("button", { name: "Open menu" }));
+		return within(screen.getByRole("dialog")).queryByRole("link", {
+			name: "♡ Donate",
+		});
+	};
+
+	it("offers Donate in the header while a campaign is open for gifts", () => {
+		mount(nav, givable);
+		expect(inHeader()?.getAttribute("href")).toBe("/en/donate");
+	});
+
+	it("offers it in the mobile drawer too", () => {
+		mount(nav, givable);
+		expect(inDrawer()?.getAttribute("href")).toBe("/en/donate");
+	});
+
+	it("drops it from the header when there is nothing to give to", () => {
+		mount(nav, nothingToGiveTo);
+		expect(inHeader()).toBeNull();
+	});
+
+	it("drops it from the mobile drawer as well", () => {
+		mount(nav, nothingToGiveTo);
+		expect(inDrawer()).toBeNull();
 	});
 });
 

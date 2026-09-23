@@ -78,7 +78,7 @@ describe("the installer's bookkeeping row", () => {
 	it("cannot be deleted", () => {
 		expect(
 			attempt(`await admin.deleteSetting(db, "install_completed_at")`),
-		).toContain("written by the installer");
+		).toContain("set by the product");
 	});
 
 	it("cannot be overwritten", () => {
@@ -86,13 +86,29 @@ describe("the installer's bookkeeping row", () => {
 			attempt(
 				`await admin.upsertSetting(db, "install_completed_at", "nonsense")`,
 			),
-		).toContain("written by the installer");
+		).toContain("set by the product");
 	});
 
 	it("does not get in the way of ordinary settings", () => {
 		expect(
 			attempt(`await admin.upsertSetting(db, "site_name_en", "Renamed")`),
 		).toBe("");
+	});
+});
+
+// derived per read from campaigns, modules and the gateway credentials: a row
+// an operator typed would be overwritten anyway, so it is refused up front
+describe("the derived donate flag", () => {
+	it("cannot be written by hand", () => {
+		expect(
+			attempt(`await admin.upsertSetting(db, "donate_open", "1")`),
+		).toContain("set by the product");
+	});
+
+	it("cannot be deleted either", () => {
+		expect(
+			attempt(`await admin.deleteSetting(db, "donate_payments")`),
+		).toContain("set by the product");
 	});
 });
 

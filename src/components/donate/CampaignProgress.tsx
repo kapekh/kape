@@ -14,11 +14,14 @@ export const money = (n: number, currency: string) =>
 /** Raised / goal progress bar + supporter count. Goal is optional. */
 export function CampaignProgress({
 	campaign,
+	inviting = true,
 }: {
 	campaign: Pick<
 		CampaignPublic,
 		"currency" | "goalAmount" | "raised" | "supporters"
 	>;
+	/** False while gifts cannot be taken: the goal is a fact, "give" is not. */
+	inviting?: boolean;
 }) {
 	const { currency, goalAmount, raised, supporters } = campaign;
 	const t = useT();
@@ -26,6 +29,16 @@ export function CampaignProgress({
 		goalAmount && goalAmount > 0
 			? Math.min(100, Math.round((raised / goalAmount) * 100))
 			: null;
+
+	if (raised <= 0 && !inviting) {
+		return goalAmount ? (
+			<div className="font-display text-2xl font-semibold text-primary">
+				{t("donate.goal", "{amount} goal", {
+					amount: money(goalAmount, currency),
+				})}
+			</div>
+		) : null;
+	}
 
 	// Before the first gift, showing "$0 · 0% funded" reads as a stalled campaign.
 	// Lead with the goal and an invitation instead.

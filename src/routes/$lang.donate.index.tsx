@@ -4,7 +4,10 @@ import { CampaignCover } from "@/components/donate/CampaignCover";
 import { money } from "@/components/donate/CampaignProgress";
 import { Slot } from "@/components/donate/Slot";
 import { NavLink } from "@/components/NavLink";
-import { DONATE_DEFAULTS } from "@/lib/donate-defaults";
+import {
+	DONATE_DEFAULTS,
+	donatePaymentsConfigured,
+} from "@/lib/donate-defaults";
 import { useLang } from "@/lib/i18n";
 import { detectLang, localizedHref } from "@/lib/i18n-config";
 import { siteShortName } from "@/lib/site-identity";
@@ -56,6 +59,7 @@ function DonatePage() {
 	const { campaigns, settings } = Route.useLoaderData();
 	const { lang, t } = useLang();
 	const s = (key: string) => settings[key] ?? DONATE_DEFAULTS[key] ?? "";
+	const paymentsReady = donatePaymentsConfigured(settings);
 
 	const featured = campaigns.find((c) => c.featured) ?? campaigns[0] ?? null;
 	const rest = featured
@@ -80,44 +84,68 @@ function DonatePage() {
 					<h1 className="mt-3 t-page-title text-warm-foreground">
 						{s("donate_title")}
 					</h1>
-					{s("donate_intro") && (
+					{/* the intro invites a choice and the stat counts it: neither belongs
+					    on a hub with nothing to choose from */}
+					{campaigns.length > 0 && s("donate_intro") && (
 						<p className="mx-auto mt-5 max-w-2xl t-lead text-warm-foreground-muted/90">
 							{s("donate_intro")}
 						</p>
 					)}
 
-					<div className="mt-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-warm-foreground">
-						<Stat
-							value={String(campaigns.length)}
-							label={t(
-								campaigns.length === 1
-									? "donate.stat.campaign"
-									: "donate.stat.campaigns",
-								campaigns.length === 1 ? "campaign" : "campaigns",
-							)}
-						/>
-						{totalRaised > 0 && (
+					{campaigns.length > 0 && (
+						<div className="mt-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-warm-foreground">
 							<Stat
-								value={money(totalRaised, featured?.currency ?? "USD")}
-								label={t("donate.raised", "raised")}
-							/>
-						)}
-						{totalSupporters > 0 && (
-							<Stat
-								value={totalSupporters.toLocaleString()}
+								value={String(campaigns.length)}
 								label={t(
-									totalSupporters === 1
-										? "donate.supporter"
-										: "donate.supporters",
-									totalSupporters === 1 ? "supporter" : "supporters",
+									campaigns.length === 1
+										? "donate.stat.campaign"
+										: "donate.stat.campaigns",
+									campaigns.length === 1 ? "campaign" : "campaigns",
 								)}
 							/>
-						)}
-					</div>
+							{totalRaised > 0 && (
+								<Stat
+									value={money(totalRaised, featured?.currency ?? "USD")}
+									label={t("donate.raised", "raised")}
+								/>
+							)}
+							{totalSupporters > 0 && (
+								<Stat
+									value={totalSupporters.toLocaleString()}
+									label={t(
+										totalSupporters === 1
+											? "donate.supporter"
+											: "donate.supporters",
+										totalSupporters === 1 ? "supporter" : "supporters",
+									)}
+								/>
+							)}
+						</div>
+					)}
 				</div>
 			</section>
 
-			{campaigns.length === 0 ? (
+			{!paymentsReady && (
+				// with nothing below it, this panel owes the footer the space the
+				// empty-campaigns panel used to give it
+				<section
+					className={`px-6 pt-12 ${campaigns.length > 0 ? "pb-2" : "pb-24"}`}
+				>
+					<div className="mx-auto max-w-2xl rounded-3xl border border-border bg-card px-6 py-8 text-center shadow-[var(--shadow-soft)]">
+						<h2 className="t-subsection text-primary">
+							{t("donate.unavailable.title", "Giving is unavailable right now")}
+						</h2>
+						<p className="mt-2 text-muted-foreground">
+							{t(
+								"donate.unavailable.body",
+								"Online giving is being set up, so gifts cannot be accepted yet. Please check back soon.",
+							)}
+						</p>
+					</div>
+				</section>
+			)}
+
+			{campaigns.length === 0 && paymentsReady ? (
 				<div className="mx-auto max-w-2xl px-6 py-24 text-center">
 					<h2 className="t-subsection text-primary">
 						{t("donate.empty.title", "No active campaigns right now")}
@@ -139,10 +167,12 @@ function DonatePage() {
 						</Slot>
 					</p>
 				</div>
-			) : (
+			) : campaigns.length > 0 ? (
 				<section className="px-6 py-16">
 					<div className="mx-auto max-w-7xl space-y-8">
-						{featured && <FeaturedSpotlight campaign={featured} />}
+						{featured && (
+							<FeaturedSpotlight campaign={featured} inviting={paymentsReady} />
+						)}
 						{rest.length > 0 && (
 							<div>
 								<h2 className="mb-6 t-subsection text-primary">
@@ -152,14 +182,18 @@ function DonatePage() {
 								</h2>
 								<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 									{rest.map((c) => (
-										<CampaignCard key={c.id} campaign={c} />
+										<CampaignCard
+											key={c.id}
+											campaign={c}
+											inviting={paymentsReady}
+										/>
 									))}
 								</div>
 							</div>
 						)}
 					</div>
 				</section>
-			)}
+			) : null}
 		</main>
 	);
 }
@@ -182,7 +216,13 @@ function pctOf(c: CampaignPublic) {
 }
 
 /** Large highlighted card for the featured campaign — split cover / details. */
-function FeaturedSpotlight({ campaign }: { campaign: CampaignPublic }) {
+function FeaturedSpotlight({
+	campaign,
+	inviting,
+}: {
+	campaign: CampaignPublic;
+	inviting: boolean;
+}) {
 	const { lang, t } = useLang();
 	const pct = pctOf(campaign);
 	return (
@@ -246,14 +286,12 @@ function FeaturedSpotlight({ campaign }: { campaign: CampaignPublic }) {
 							</div>
 						</>
 					) : (
-						// No donations yet — an empty $0 / 0% bar reads as failing, so lead
-						// with the goal and an invitation instead.
+						// an empty $0 / 0% bar reads as failing, so lead with the goal
 						<div className="text-sm font-semibold text-[var(--accent)]">
-							{t("donate.beFirst", "Be the first to give")}
+							{inviting && t("donate.beFirst", "Be the first to give")}
 							{campaign.goalAmount ? (
 								<span className="font-normal text-muted-foreground">
-									{" "}
-									·{" "}
+									{inviting ? " · " : ""}
 									{t("donate.goal", "{amount} goal", {
 										amount: money(campaign.goalAmount, campaign.currency),
 									})}
@@ -262,15 +300,23 @@ function FeaturedSpotlight({ campaign }: { campaign: CampaignPublic }) {
 						</div>
 					)}
 				</div>
-				<span className="mt-6 inline-flex w-fit items-center gap-2 rounded-full bg-[var(--accent)] px-6 py-2.5 text-sm font-semibold text-accent-foreground shadow-[var(--shadow-lift)] transition group-hover:-translate-y-0.5">
-					♡ {t("donate.cta.campaign", "Donate to this campaign")} →
-				</span>
+				{inviting && (
+					<span className="mt-6 inline-flex w-fit items-center gap-2 rounded-full bg-[var(--accent)] px-6 py-2.5 text-sm font-semibold text-accent-foreground shadow-[var(--shadow-lift)] transition group-hover:-translate-y-0.5">
+						♡ {t("donate.cta.campaign", "Donate to this campaign")} →
+					</span>
+				)}
 			</div>
 		</NavLink>
 	);
 }
 
-function CampaignCard({ campaign }: { campaign: CampaignPublic }) {
+function CampaignCard({
+	campaign,
+	inviting,
+}: {
+	campaign: CampaignPublic;
+	inviting: boolean;
+}) {
 	const { lang, t } = useLang();
 	const pct = pctOf(campaign);
 	return (
@@ -315,21 +361,19 @@ function CampaignCard({ campaign }: { campaign: CampaignPublic }) {
 									</span>
 								</span>
 								<span className="font-semibold text-[var(--accent)]">
-									{campaign.supporters > 0 ? (
-										`${campaign.supporters} ${t(
-											campaign.supporters === 1
-												? "donate.donor"
-												: "donate.donors",
-											campaign.supporters === 1 ? "donor" : "donors",
-										)}`
-									) : (
-										<>{t("donate.give", "Give")} →</>
-									)}
+									{campaign.supporters > 0
+										? `${campaign.supporters} ${t(
+												campaign.supporters === 1
+													? "donate.donor"
+													: "donate.donors",
+												campaign.supporters === 1 ? "donor" : "donors",
+											)}`
+										: inviting && <>{t("donate.give", "Give")} →</>}
 								</span>
 							</div>
 						</>
 					) : (
-						// No donations yet — invite the first gift rather than show an empty bar.
+						// no gift yet, so the goal stands in for an empty bar
 						<div className="flex items-center justify-between text-sm">
 							<span className="text-muted-foreground">
 								{campaign.goalAmount
@@ -338,9 +382,11 @@ function CampaignCard({ campaign }: { campaign: CampaignPublic }) {
 										})
 									: t("donate.new", "New campaign")}
 							</span>
-							<span className="font-semibold text-[var(--accent)]">
-								{t("donate.beFirstShort", "Be the first")} →
-							</span>
+							{inviting && (
+								<span className="font-semibold text-[var(--accent)]">
+									{t("donate.beFirstShort", "Be the first")} →
+								</span>
+							)}
 						</div>
 					)}
 				</div>

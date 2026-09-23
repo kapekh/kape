@@ -1,6 +1,7 @@
 import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { DONATE_OPEN, DONATE_PAYMENTS } from "#/lib/donate-defaults";
 import { FORM_FIELD_TYPES } from "#/lib/forms";
 import { DEFAULT_LANG, LANGS } from "#/lib/i18n-config";
 import {
@@ -23,6 +24,7 @@ import type { SectionNode } from "#/lib/sections";
 import { checkSettingValue } from "#/lib/site-theme";
 import { PAGE_TITLE_MAX } from "#/lib/slug";
 import type { DB } from "#/server/db";
+import { donationsOpen, paymentsConfigured } from "#/server/donate-open";
 import { invalidateTags, tagSourceQuery } from "#/server/render-cache";
 import type { PageInput } from "#/server/repo/admin";
 import {
@@ -490,7 +492,20 @@ const adminTermsRouter = {
 } satisfies TRPCRouterRecord;
 
 const siteRouter = {
-	settings: publicProcedure.query(({ ctx }) => getSettings(ctx.db)),
+	// the donate flag travels with the settings the header already loads, so no
+	// route pays a second round trip to know whether to offer Donate
+	settings: publicProcedure.query(
+		// annotated: spreading a map under a literal key loses its index signature
+		async ({ ctx }): Promise<Record<string, string>> => {
+			const settings = await getSettings(ctx.db);
+			const open = await donationsOpen(ctx.db, settings);
+			return {
+				...settings,
+				[DONATE_OPEN]: open ? "1" : "",
+				[DONATE_PAYMENTS]: paymentsConfigured() ? "1" : "",
+			};
+		},
+	),
 	stats: publicProcedure
 		.input(langInput)
 		.query(({ ctx, input }) => listStats(ctx.db, input.lang)),
@@ -1276,6 +1291,8 @@ const campaignInput = z.object({
 
 const adminCampaignsRouter = {
 	list: adminProcedure.query(({ ctx }) => adminListCampaigns(ctx.db)),
+	// env never reaches the client, and a campaign cannot take a gift without it
+	paymentsConfigured: adminProcedure.query(() => paymentsConfigured()),
 	get: adminProcedure
 		.input(z.object({ id: z.number() }))
 		.query(({ ctx, input }) => getCampaignForEdit(ctx.db, input.id)),

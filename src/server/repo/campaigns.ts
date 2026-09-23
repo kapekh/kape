@@ -92,6 +92,21 @@ function publicShape(
 
 export type CampaignPublic = ReturnType<typeof publicShape>;
 
+// one rule for "a visitor can give to this", so the hub's list and whatever
+// offers Donate can never disagree
+const givable = () =>
+	and(eq(campaigns.tenantId, TENANT), eq(campaigns.status, "active"));
+
+/** Is there at least one campaign the donate hub would list? */
+export async function hasGivableCampaign(db: DB): Promise<boolean> {
+	const [row] = await db
+		.select({ id: campaigns.id })
+		.from(campaigns)
+		.where(givable())
+		.limit(1);
+	return row != null;
+}
+
 /** Active campaigns for the public donate hub — featured first, then sort. */
 export async function listActiveCampaigns(
 	db: DB,
@@ -100,7 +115,7 @@ export async function listActiveCampaigns(
 	const rows = await db
 		.select()
 		.from(campaigns)
-		.where(and(eq(campaigns.tenantId, TENANT), eq(campaigns.status, "active")))
+		.where(givable())
 		.orderBy(desc(campaigns.featured), asc(campaigns.sort), asc(campaigns.id));
 	const withUrl = await attachMediaUrl(db, rows, "coverMediaId", "coverUrl");
 	const ids = rows.map((r) => r.id);

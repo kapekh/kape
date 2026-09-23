@@ -15,6 +15,7 @@ import {
 } from "drizzle-orm";
 import type { SQLiteColumn, SQLiteTable } from "drizzle-orm/sqlite-core";
 
+import { DONATE_OPEN, DONATE_PAYMENTS } from "#/lib/donate-defaults";
 import { DEFAULT_LANG } from "#/lib/i18n-config";
 import { TRANSLATED_FIELDS } from "#/lib/record-fields";
 import {
@@ -2060,13 +2061,19 @@ export async function deleteMedia(db: DB, id: number): Promise<void> {
 
 /* ---------------- Site settings ---------------- */
 
-// installer bookkeeping, not site configuration: the settings grid puts a Delete button on every row
-const INTERNAL_SETTINGS = new Set(["install_completed_at"]);
+// installer bookkeeping and derived flags, not site configuration: the settings
+// grid puts a Delete button on every row, and a hand-written copy of a derived
+// key would be overwritten on every read anyway
+const INTERNAL_SETTINGS = new Set([
+	"install_completed_at",
+	DONATE_OPEN,
+	DONATE_PAYMENTS,
+]);
 
 const refuseInternal = (key: string) => {
 	if (INTERNAL_SETTINGS.has(key))
 		throw new Error(
-			`"${key}" is written by the installer, not site configuration, and cannot be changed here.`,
+			`"${key}" is set by the product, not site configuration, and cannot be changed here.`,
 		);
 };
 

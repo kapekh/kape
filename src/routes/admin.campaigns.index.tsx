@@ -18,6 +18,7 @@ import {
 	useListQuery,
 	useListReorder,
 } from "#/components/admin/list-ui";
+import { PaymentsNotConfigured } from "#/components/admin/PaymentsNotConfigured";
 import { Badge, type BadgeTone } from "#/components/ui/badge.tsx";
 import { Button } from "#/components/ui/button.tsx";
 import { PageHeader } from "#/components/ui/page-header.tsx";
@@ -144,6 +145,8 @@ function CampaignsList() {
 					) : undefined
 				}
 			/>
+
+			<PaymentsNotConfigured />
 
 			{state !== "ready" ? (
 				<ListStatus state={state} error={error} onRetry={reload} />

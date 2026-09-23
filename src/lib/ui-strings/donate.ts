@@ -41,6 +41,10 @@ export const donate: Record<string, { en: string; km?: string }> = {
 	"donate.supporter": { en: "supporter" },
 	"donate.supporters": { en: "supporters" },
 	"donate.title": { en: "Donate" },
+	"donate.unavailable.body": {
+		en: "Online giving is being set up, so gifts cannot be accepted yet. Please check back soon.",
+	},
+	"donate.unavailable.title": { en: "Giving is unavailable right now" },
 	"donate.wall.empty": { en: "Be the first to support this campaign." },
 
 	// the giving form

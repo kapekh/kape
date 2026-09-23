@@ -1,6 +1,7 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 
 import { CampaignDetail } from "@/components/donate/CampaignDetail";
+import { donatePaymentsConfigured } from "@/lib/donate-defaults";
 import { detectLang } from "@/lib/i18n-config";
 
 export const Route = createFileRoute("/$lang/donate/$campaign")({
@@ -8,7 +9,7 @@ export const Route = createFileRoute("/$lang/donate/$campaign")({
 		const lang = detectLang(location.pathname);
 		// head() runs outside the LanguageProvider, so the meta strings travel
 		// with the loader instead of through useT()
-		const [detail, i18n] = await Promise.all([
+		const [detail, i18n, settings] = await Promise.all([
 			context.queryClient.ensureQueryData(
 				context.trpc.campaigns.bySlug.queryOptions({
 					slug: params.campaign,
@@ -18,10 +19,15 @@ export const Route = createFileRoute("/$lang/donate/$campaign")({
 			context.queryClient.ensureQueryData(
 				context.trpc.i18n.bootstrap.queryOptions({ lang }),
 			),
+			// same query the root route runs: dedup and link batching keep it one request
+			context.queryClient.ensureQueryData(
+				context.trpc.site.settings.queryOptions(),
+			),
 		]);
 		if (!detail) throw notFound();
 		return {
 			detail,
+			paymentsConfigured: donatePaymentsConfigured(settings),
 			meta: {
 				title: i18n.strings["donate.metaTitleCampaign"],
 				description: i18n.strings["donate.metaDescription"],
@@ -51,10 +57,14 @@ export const Route = createFileRoute("/$lang/donate/$campaign")({
 });
 
 function CampaignPage() {
-	const { detail } = Route.useLoaderData();
+	const { detail, paymentsConfigured } = Route.useLoaderData();
 	return (
 		<main>
-			<CampaignDetail campaign={detail} showCrumb />
+			<CampaignDetail
+				campaign={detail}
+				paymentsConfigured={paymentsConfigured}
+				showCrumb
+			/>
 		</main>
 	);
 }

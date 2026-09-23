@@ -76,7 +76,7 @@ function HeaderSettings() {
 	return (
 		<FormSection
 			title="Header settings"
-			description="The donate button and the top-bar utility links. A site path (/…) or full URL; “#donate” jumps to an on-page anchor."
+			description="The donate button and the top-bar utility links. A site path (/…) or full URL; “#donate” jumps to an on-page anchor. The donate button appears only when all three hold: the Fundraising module is on, the payment credentials are set on the server, and a campaign is active."
 		>
 			{loading ? (
 				<SkeletonRows rows={2} />
