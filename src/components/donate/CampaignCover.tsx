@@ -1,3 +1,5 @@
+import { Picture } from "@/components/Picture";
+
 // Paths are 24×24 stroke icons (currentColor).
 const ICONS: string[] = [
 	"M3 5l9-2 9 2v3l-9 2-9-2zM12 10v8M7 11v5l5 2 5-2v-5", // graduation cap
@@ -23,23 +25,28 @@ function hash(s: string) {
 
 export function CampaignCover({
 	coverUrl,
+	coverWidth,
 	slug,
 	alt = "",
 	className = "",
 	iconClass = "h-20 w-20",
+	sizes = "100vw",
 }: {
 	coverUrl: string | null;
+	coverWidth?: number | null;
 	slug: string;
 	alt?: string;
 	className?: string;
 	iconClass?: string;
+	sizes?: string;
 }) {
 	if (coverUrl) {
 		return (
-			<img
+			<Picture
 				src={coverUrl}
+				width={coverWidth}
 				alt={alt}
-				loading="lazy"
+				sizes={sizes}
 				className={`h-full w-full object-cover ${className}`}
 			/>
 		);

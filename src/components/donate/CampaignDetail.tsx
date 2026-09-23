@@ -32,6 +32,7 @@ export function CampaignDetail({
 				<div className="absolute inset-0 -z-10">
 					<CampaignCover
 						coverUrl={campaign.coverUrl}
+						coverWidth={campaign.coverWidth}
 						slug={campaign.slug}
 						iconClass="h-40 w-40"
 					/>

@@ -233,10 +233,12 @@ function FeaturedSpotlight({
 			<div className="relative aspect-[16/10] md:aspect-auto md:min-h-[20rem]">
 				<CampaignCover
 					coverUrl={campaign.coverUrl}
+					coverWidth={campaign.coverWidth}
 					slug={campaign.slug}
 					alt={campaign.title}
 					className="transition-transform duration-500 group-hover:scale-105"
 					iconClass="h-24 w-24"
+					sizes="(min-width: 768px) 50vw, 100vw"
 				/>
 				<span className="absolute left-4 top-4 rounded-full bg-[var(--gold)] px-3 py-1 text-xs font-bold uppercase tracking-wide text-warm-foreground">
 					★ {t("donate.featured", "Featured")}
@@ -327,10 +329,12 @@ function CampaignCard({
 			<div className="relative aspect-[16/10] overflow-hidden">
 				<CampaignCover
 					coverUrl={campaign.coverUrl}
+					coverWidth={campaign.coverWidth}
 					slug={campaign.slug}
 					alt={campaign.title}
 					className="transition-transform duration-500 group-hover:scale-105"
 					iconClass="h-16 w-16"
+					sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
 				/>
 			</div>
 			<div className="flex flex-1 flex-col p-5">

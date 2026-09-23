@@ -14,7 +14,6 @@ import {
 	ExternalLink,
 	Menu,
 	PanelLeft,
-	ShieldAlert,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
@@ -22,15 +21,13 @@ import { AdminHeaderProvider } from "#/components/admin/AdminHeader";
 import { AdminIcon } from "#/components/admin/AdminIcon";
 import { CommandPalette } from "#/components/admin/CommandPalette";
 import { GuidePanel } from "#/components/admin/GuidePanel";
+import { NoAccess } from "#/components/admin/NoAccess";
 import { startTour, startTourOnce, TourHost } from "#/components/admin/Tour";
 import { TOURS, tourForPath } from "#/components/admin/tours";
 import { ThemeToggle } from "#/components/ThemeToggle";
-import { Button } from "#/components/ui/button";
-import { EmptyState } from "#/components/ui/empty-state";
-import { PageHeader } from "#/components/ui/page-header";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { adminPathEnabled, MODULES_SETTING } from "#/lib/modules";
-import { hasAdminArea, NAV_AREA } from "#/lib/permissions";
+import { deniedAreaLabel, hasAdminArea, NAV_AREA } from "#/lib/permissions";
 import { adminTitle, siteLogo, siteShortName } from "#/lib/site-identity";
 import { darkModeAvailable } from "#/lib/site-theme";
 import { useModalPanel } from "#/lib/use-modal-panel";
@@ -46,7 +43,7 @@ function returnTo(href: string): { redirect?: string } {
 
 type AdminAccess =
 	| { kind: "anon" }
-	| { kind: "forbidden"; email: string; portal: boolean }
+	| { kind: "forbidden"; email: string; portal: boolean; area?: string }
 	| {
 			kind: "ok";
 			email: string;
@@ -55,6 +52,26 @@ type AdminAccess =
 			permissions: string[];
 			modules: string | null;
 	  };
+
+type OkAccess = Extract<AdminAccess, { kind: "ok" }>;
+
+/**
+ * A signed-in caller's context for one path: their own access, unchanged, or
+ * a named refusal when the path's area is out of reach. NAV_AREA keys are
+ * lower-case; TanStack's route matching is not, so the segment is folded here
+ * — otherwise `/admin/Users` renders the shell around a list the server still refuses.
+ */
+export function areaGuardAccess(
+	pathname: string,
+	access: OkAccess,
+): OkAccess | Extract<AdminAccess, { kind: "forbidden" }> {
+	const area = deniedAreaLabel(
+		`/admin/${(pathname.split("/")[2] ?? "").toLowerCase()}`,
+		access,
+	);
+	if (!area) return access;
+	return { kind: "forbidden", email: access.email, portal: false, area };
+}
 
 // runs during SSR, so no admin HTML ships to an unauthenticated request; "no session" and "no areas" are answered apart, a login form only helps the first
 const resolveAdminAccess = createServerFn({ method: "GET" }).handler(
@@ -98,12 +115,7 @@ export const Route = createFileRoute("/admin")({
 			access.modules === null ? {} : { [MODULES_SETTING]: access.modules };
 		if (!adminPathEnabled(modules, location.pathname))
 			throw redirect({ to: "/admin" });
-		// a typed URL into an area the role lacks would render the screen's shell
-		// around a refused list, New button and all
-		const area = NAV_AREA[`/admin/${location.pathname.split("/")[2] ?? ""}`];
-		if (area && !access.isSuperAdmin && !access.permissions.includes(area))
-			throw redirect({ to: "/admin" });
-		return { access };
+		return { access: areaGuardAccess(location.pathname, access) };
 	},
 	loader: ({ context }) =>
 		context.queryClient.ensureQueryData(
@@ -115,62 +127,18 @@ export const Route = createFileRoute("/admin")({
 	component: AdminShell,
 });
 
-type OkAccess = Extract<AdminAccess, { kind: "ok" }>;
-
 // split so neither branch calls the other's hooks
 function AdminShell() {
 	const { access } = Route.useRouteContext();
 	if (access.kind === "forbidden")
-		return <NoAccess email={access.email} portal={access.portal} />;
+		return (
+			<NoAccess
+				email={access.email}
+				portal={access.portal}
+				area={access.area}
+			/>
+		);
 	return <AdminLayout access={access} />;
-}
-
-// the refusal is the server's; this only says so, instead of handing back the sign-in form they already used
-function NoAccess({ email, portal }: { email: string; portal: boolean }) {
-	const navigate = useNavigate();
-
-	async function logout() {
-		await fetch("/api/auth/logout", { method: "POST" });
-		navigate({ to: "/login" });
-	}
-
-	return (
-		<main className="admin grid min-h-screen place-items-center bg-admin-bg p-6 text-admin-ink">
-			<div className="w-full max-w-md">
-				<PageHeader
-					className="mb-4 text-center"
-					title="You do not have access to the admin"
-					description={
-						<>
-							You are signed in as{" "}
-							<strong className="font-medium text-admin-ink">{email}</strong>,
-							and that account has no admin areas.
-						</>
-					}
-				/>
-				<EmptyState
-					icon={<ShieldAlert />}
-					title="Ask an administrator to grant one"
-					description="Someone who can reach the Users screen can give this account an area. Until then there is nothing here to show you."
-					action={
-						<div className="flex flex-wrap justify-center gap-2">
-							{portal && (
-								<Button asChild>
-									<a href="/internalsources">Go to the staff portal</a>
-								</Button>
-							)}
-							<Button
-								variant={portal ? "secondary" : "primary"}
-								onClick={logout}
-							>
-								Log out
-							</Button>
-						</div>
-					}
-				/>
-			</div>
-		</main>
-	);
 }
 
 type NavItem = {
@@ -662,7 +630,7 @@ function AdminLayout({ access }: { access: OkAccess }) {
 								aria-expanded={tourMenuOpen}
 								className="flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium text-admin-ink-muted transition-colors duration-150 ease-out hover:bg-admin-accent-soft hover:text-admin-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50 aria-expanded:bg-admin-accent-soft"
 							>
-								Guides
+								<span className="sr-only sm:not-sr-only">Guides</span>
 								<Compass className="size-4 shrink-0" aria-hidden="true" />
 							</button>
 							{tourMenuOpen && (
@@ -719,7 +687,7 @@ function AdminLayout({ access }: { access: OkAccess }) {
 							onFocus={refreshViewTarget}
 							className="flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium text-admin-ink-muted transition-colors duration-150 ease-out hover:bg-admin-accent-soft hover:text-admin-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus/50"
 						>
-							{viewTarget.label}
+							<span className="sr-only sm:not-sr-only">{viewTarget.label}</span>
 							<ExternalLink className="size-4 shrink-0" aria-hidden="true" />
 						</a>
 						<div className="relative">

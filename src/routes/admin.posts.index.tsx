@@ -21,17 +21,17 @@ import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { isFormClosed } from "#/lib/forms";
 import { confirm } from "@/components/Dialogs";
 
-const TYPE_LABELS: Record<string, string> = {
-	news: "News",
-	story: "Stories",
-	video: "Videos",
-	album: "Galleries",
-	publication: "Publications",
-	job: "Careers",
-	event: "Events",
-	document: "Documents",
-	announcement: "Announcements",
-	internal_news: "Internal news",
+const TYPE_LABELS: Record<string, { plural: string; singular: string }> = {
+	news: { plural: "News", singular: "News" },
+	story: { plural: "Stories", singular: "Story" },
+	video: { plural: "Videos", singular: "Video" },
+	album: { plural: "Galleries", singular: "Gallery" },
+	publication: { plural: "Publications", singular: "Publication" },
+	job: { plural: "Careers", singular: "Job vacancy" },
+	event: { plural: "Events", singular: "Event" },
+	document: { plural: "Documents", singular: "Document" },
+	announcement: { plural: "Announcements", singular: "Announcement" },
+	internal_news: { plural: "Internal news", singular: "Internal news" },
 };
 const STATUS_LABELS: Record<string, string> = {
 	draft: "Draft",
@@ -48,7 +48,7 @@ export const Route = createFileRoute("/admin/posts/")({
 	// an undefined type is dropped, not printed into the h1
 	validateSearch: (s: Record<string, unknown>): { type?: string } => {
 		const type = typeof s.type === "string" ? s.type : undefined;
-		return type && type in TYPE_LABELS ? { type } : {};
+		return type && Object.hasOwn(TYPE_LABELS, type) ? { type } : {};
 	},
 	component: PostsList,
 });
@@ -58,7 +58,8 @@ type Row = Awaited<ReturnType<typeof trpcClient.adminPosts.list.query>>[number];
 function PostsList() {
 	const { type: requested } = Route.useSearch();
 	// normalised here as well as in validateSearch, so a typed link and a raw URL behave the same
-	const type = requested && requested in TYPE_LABELS ? requested : undefined;
+	const type =
+		requested && Object.hasOwn(TYPE_LABELS, requested) ? requested : undefined;
 	const load = useCallback(() => trpcClient.adminPosts.list.query(), []);
 	const { rows, setRows, state, error, reload } = useListQuery<Row>(load);
 	const [q, setQ] = useState("");
@@ -74,17 +75,23 @@ function PostsList() {
 		);
 	}
 
-	const label = type ? TYPE_LABELS[type] : undefined;
+	const label = type ? TYPE_LABELS[type].plural : undefined;
 	const ofType = type ? rows.filter((r) => r.contentType === type) : rows;
 	const statuses = [...new Set(ofType.map((r) => r.status))].sort();
 	const ofStatus = status ? ofType.filter((r) => r.status === status) : ofType;
 	const shown = ofStatus.filter((r) =>
-		matchesQuery(q, r.title, r.slug, TYPE_LABELS[r.contentType], r.status),
+		matchesQuery(
+			q,
+			r.title,
+			r.slug,
+			TYPE_LABELS[r.contentType]?.plural,
+			r.status,
+		),
 	);
 	const filtered = q !== "" || status !== "";
 	const heading = label ?? "All posts";
 	const noun = label ? label.toLowerCase() : "posts";
-	const singular = label ? label.replace(/s$/, "").toLowerCase() : "post";
+	const singular = type ? TYPE_LABELS[type].singular.toLowerCase() : "post";
 
 	const newPost = (
 		<Button asChild>
@@ -214,7 +221,7 @@ function PostsList() {
 									</TD>
 									{!type && (
 										<TD label="Type" className="text-admin-ink-muted">
-											{TYPE_LABELS[r.contentType] ?? r.contentType}
+											{TYPE_LABELS[r.contentType]?.plural ?? r.contentType}
 										</TD>
 									)}
 									<TD label="Status">

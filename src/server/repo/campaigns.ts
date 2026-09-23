@@ -67,7 +67,10 @@ async function progressByCampaign(
 }
 
 function publicShape(
-	row: typeof campaigns.$inferSelect & { coverUrl: string | null },
+	row: typeof campaigns.$inferSelect & {
+		coverUrl: string | null;
+		coverUrlWidth: number | null;
+	},
 	text: Record<string, string> | undefined,
 	prog: CampaignProgress | undefined,
 ) {
@@ -80,6 +83,7 @@ function publicShape(
 		currency: row.currency,
 		goalAmount: row.goalAmount != null ? Number(row.goalAmount) : null,
 		coverUrl: row.coverUrl,
+		coverWidth: row.coverUrlWidth,
 		presets: row.presets ?? [],
 		allowCustom: row.allowCustom,
 		impactTiers: row.impactTiers ?? [],
@@ -209,11 +213,13 @@ export async function adminListCampaigns(db: DB) {
 	const { textOf } = await readEntityText(db, "campaign", ids);
 	return withUrl.map((r) => {
 		const { text } = textOf(r.id);
+		const { coverUrlWidth, ...rest } = r;
 		return {
-			...r,
+			...rest,
 			title: text.title ?? "",
 			blurb: text.blurb ?? "",
 			goalAmount: r.goalAmount != null ? Number(r.goalAmount) : null,
+			coverWidth: coverUrlWidth,
 			raised: prog.get(r.id)?.raised ?? 0,
 			supporters: prog.get(r.id)?.supporters ?? 0,
 		};
@@ -231,7 +237,13 @@ export async function getCampaignForEdit(db: DB, id: number) {
 	const { text, byLang } = (await readEntityText(db, "campaign", [id])).textOf(
 		id,
 	);
-	return { ...withUrl, title: text.title ?? "", translations: byLang };
+	const { coverUrlWidth, ...rest } = withUrl;
+	return {
+		...rest,
+		title: text.title ?? "",
+		translations: byLang,
+		coverWidth: coverUrlWidth,
+	};
 }
 
 /** Keep at most one featured campaign — clear others when this one is featured. */

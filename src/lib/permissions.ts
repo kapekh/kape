@@ -96,6 +96,20 @@ export const withinReach = (caller: Caller, held: Caller) =>
 	(!held.isSuperAdmin &&
 		ungrantableAreas(caller, held.permissions).length === 0);
 
+/**
+ * The area a nav path requires, by its label, when the caller can't reach it —
+ * null for a path with no area, or one the caller already holds.
+ */
+export function deniedAreaLabel(
+	pathname: string,
+	caller: Caller,
+): string | null {
+	if (caller.isSuperAdmin) return null;
+	const area = NAV_AREA[pathname];
+	if (!area || caller.permissions.includes(area)) return null;
+	return PERMISSION_AREAS.find((a) => a.key === area)?.label ?? area;
+}
+
 /** tRPC router key → permission area (server-side enforcement in adminProcedure). */
 export const ROUTER_AREA: Record<string, PermissionArea> = {
 	staff: "portal",

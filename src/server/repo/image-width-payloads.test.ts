@@ -39,6 +39,7 @@ type Seen = {
 	colleague: { url: string | null; width: number | null };
 	donor: { url: string | null; width: number | null };
 	orgNode: { url: string | null; width: number | null };
+	campaign: { url: string | null; width: number | null };
 	sectionWidths: Record<string, number>;
 	unmeasured: Record<string, number>;
 };
@@ -49,6 +50,7 @@ const out = execFileSync(
 		"-e",
 		`import { db } from "${root}/src/server/db.ts";
 		 import * as admin from "${root}/src/server/repo/admin.ts";
+		 import * as campaigns from "${root}/src/server/repo/campaigns.ts";
 		 import * as content from "${root}/src/server/repo/content.ts";
 		 import * as org from "${root}/src/server/repo/org.ts";
 		 import * as people from "${root}/src/server/repo/people.ts";
@@ -120,6 +122,14 @@ const out = execFileSync(
 		 });
 		 const node = (await org.getOrgTree(db, "en"))[0];
 
+		 await campaigns.createCampaign(db, {
+			slug: "classrooms", status: "active", currency: "USD", goalAmount: null,
+			coverMediaId: cover, presets: [], allowCustom: true, impactTiers: [],
+			showSupporters: true, featured: false, sort: 0,
+			translations: [{ lang: "en", title: "Classrooms", blurb: "" }],
+		 });
+		 const [campaign] = await campaigns.listActiveCampaigns(db, "en");
+
 		 const [section] = await resolveSections(db, [{
 			id: "s1", type: "cards",
 			props: { title: "Our work", items: [{ image: "${CARD}", title: "One" }] },
@@ -140,6 +150,7 @@ const out = execFileSync(
 			colleague: pair(profile.colleagues[0].photoUrl, profile.colleagues[0].photoUrlWidth),
 			donor: pair(project.donors[0].logoUrl, project.donors[0].logoWidth),
 			orgNode: pair(node.photoUrl, node.photoWidth),
+			campaign: pair(campaign.coverUrl, campaign.coverWidth),
 			sectionWidths: section.props.mediaWidths ?? {},
 			unmeasured: missing.props.mediaWidths ?? {},
 		 }));
@@ -186,6 +197,10 @@ describe("the intrinsic width travels with the image url", () => {
 
 	it("on an org-chart node's portrait", () => {
 		expect(seen.orgNode).toEqual(cover);
+	});
+
+	it("on a donate hub campaign's cover", () => {
+		expect(seen.campaign).toEqual(cover);
 	});
 
 	// an editor's section props hold a bare url, so the width is looked up and sent beside it

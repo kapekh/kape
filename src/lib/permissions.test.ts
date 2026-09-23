@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
 	ADMIN_AREAS,
 	ALL_AREAS,
+	deniedAreaLabel,
 	hasAdminArea,
 	landingPath,
 	ungrantableAreas,
@@ -76,6 +77,31 @@ describe("the staff portal area", () => {
 		expect(hasAdminArea(["portal"])).toBe(false);
 		expect(hasAdminArea([])).toBe(false);
 		expect(hasAdminArea(["portal", "posts"])).toBe(true);
+	});
+});
+
+describe("deniedAreaLabel", () => {
+	const editor = {
+		permissions: ["pages", "posts", "media"],
+		isSuperAdmin: false,
+	};
+
+	it("names the area a direct URL asks for beyond the caller's reach", () => {
+		expect(deniedAreaLabel("/admin/users", editor)).toBe("Users & roles");
+		expect(deniedAreaLabel("/admin/settings", editor)).toBe(
+			"Site settings & languages",
+		);
+	});
+
+	it("says nothing when the caller holds the area", () => {
+		expect(deniedAreaLabel("/admin/pages", editor)).toBeNull();
+	});
+
+	it("says nothing for a path with no area, or for an administrator", () => {
+		expect(deniedAreaLabel("/admin", editor)).toBeNull();
+		expect(
+			deniedAreaLabel("/admin/users", { permissions: [], isSuperAdmin: true }),
+		).toBeNull();
 	});
 });
 

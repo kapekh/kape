@@ -26,6 +26,7 @@ const campaign = (status = "active") => ({
 	currency: "USD",
 	goalAmount: 5000,
 	coverUrl: null,
+	coverWidth: null,
 	presets: [25, 50],
 	allowCustom: true,
 	impactTiers: [],

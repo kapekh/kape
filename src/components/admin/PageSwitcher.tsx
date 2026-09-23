@@ -99,7 +99,7 @@ export function PageSwitcher() {
 				onClick={() => setOpen((o) => !o)}
 				aria-haspopup="listbox"
 				aria-expanded={open}
-				className="flex h-8 min-w-0 max-w-[280px] items-center gap-2 rounded-lg border border-admin-border bg-admin-panel px-3 text-sm font-medium text-admin-ink transition-colors duration-150 ease-out hover:border-admin-accent focus-visible:border-admin-accent focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
+				className="flex h-8 min-w-[6rem] max-w-[280px] items-center gap-2 rounded-lg border border-admin-border bg-admin-panel px-3 text-sm font-medium text-admin-ink transition-colors duration-150 ease-out hover:border-admin-accent focus-visible:border-admin-accent focus-visible:ring-2 focus-visible:ring-admin-focus/40 focus-visible:outline-none"
 			>
 				<span className="min-w-0 truncate">{currentLabel}</span>
 				<ChevronDown
