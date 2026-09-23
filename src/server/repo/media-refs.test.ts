@@ -3,7 +3,7 @@ import { getTableConfig, SQLiteTable } from "drizzle-orm/sqlite-core";
 import { describe, expect, it } from "vitest";
 
 import * as schema from "../schema";
-import { MEDIA_REFS } from "./admin";
+import { MEDIA_REFS } from "./media-refs";
 
 function schemaMediaColumns(): string[] {
 	const out: string[] = [];

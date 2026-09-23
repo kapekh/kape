@@ -35,6 +35,7 @@ function run<T>(body: string): T {
 			 import * as content from "${root}/src/server/repo/content.ts";
 			 import * as donations from "${root}/src/server/repo/donations.ts";
 			 import * as forms from "${root}/src/server/repo/forms.ts";
+			 import * as mediaUsage from "${root}/src/server/repo/media-usage.ts";
 			 import * as org from "${root}/src/server/repo/org.ts";
 			 import * as site from "${root}/src/server/repo/site.ts";
 			 db.$client
@@ -281,7 +282,7 @@ describe("a label wanted where no language was asked for", () => {
 				{ lang: "km", title: "ទម្រង់សាកល្បង", intro: "", submitLabel: "", successMessage: "" },
 			],
 		});
-		out.mediaLabel = (await admin.adminMediaUsage(db, m.id))
+		out.mediaLabel = (await mediaUsage.adminMediaUsage(db, m.id))
 			.find((u) => u.kind === "Form content").label;
 	`);
 

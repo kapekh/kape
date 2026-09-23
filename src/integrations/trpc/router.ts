@@ -30,8 +30,6 @@ import type { PageInput } from "#/server/repo/admin";
 import {
 	adminListDonors,
 	adminListHero,
-	adminListMedia,
-	adminListMediaPage,
 	adminListNav,
 	adminListOffices,
 	adminListPages,
@@ -42,10 +40,6 @@ import {
 	adminListSettings,
 	adminListStats,
 	adminListTerms,
-	adminMediaById,
-	adminMediaByIds,
-	adminMediaStats,
-	adminMediaUsage,
 	adminOverview,
 	createDonor,
 	createHero,
@@ -62,7 +56,6 @@ import {
 	deleteDonor,
 	deleteHero,
 	deleteLanguage,
-	deleteMedia,
 	deleteNavItem,
 	deleteOffice,
 	deletePage,
@@ -82,7 +75,6 @@ import {
 	getSchool,
 	listAllLanguages,
 	listContentTypes,
-	MediaInUseError,
 	movePage,
 	type OfficeInput,
 	readership,
@@ -236,6 +228,7 @@ import {
 	protectedProcedure,
 	publicProcedure,
 } from "./init";
+import { adminMediaRouter } from "./media-router";
 
 const postInput = z.object({
 	contentType: z.string().min(1),
@@ -1397,43 +1390,6 @@ const adminProjectsRouter = {
 		.input(reorderInput)
 		.mutation(({ ctx, input }) => reorderProjects(ctx.db, input.ids)),
 } satisfies TRPCRouterRecord;
-
-const adminMediaRouter = {
-	list: adminProcedure.query(({ ctx }) => adminListMedia(ctx.db)),
-	page: adminProcedure
-		.input(
-			z.object({
-				limit: z.number().min(1).max(100).default(30),
-				offset: z.number().min(0).default(0),
-				query: z.string().optional(),
-				type: z.enum(["all", "image", "video", "file"]).default("all"),
-			}),
-		)
-		.query(({ ctx, input }) => adminListMediaPage(ctx.db, input)),
-	stats: adminProcedure.query(({ ctx }) => adminMediaStats(ctx.db)),
-	byId: adminProcedure
-		.input(z.object({ id: z.number() }))
-		.query(({ ctx, input }) => adminMediaById(ctx.db, input.id)),
-	byIds: adminProcedure
-		.input(z.object({ ids: z.array(z.number()) }))
-		.query(({ ctx, input }) => adminMediaByIds(ctx.db, input.ids)),
-	usage: adminProcedure
-		.input(z.object({ id: z.number() }))
-		.query(({ ctx, input }) => adminMediaUsage(ctx.db, input.id)),
-	delete: adminProcedure
-		.input(z.object({ id: z.number() }))
-		.mutation(async ({ ctx, input }) => {
-			try {
-				await deleteMedia(ctx.db, input.id);
-			} catch (e) {
-				// BAD_REQUEST so the repo's message reaches the operator, not a generic failure
-				if (e instanceof MediaInUseError)
-					throw new TRPCError({ code: "BAD_REQUEST", message: e.message });
-				throw e;
-			}
-		}),
-} satisfies TRPCRouterRecord;
-
 const adminLanguagesRouter = {
 	list: adminProcedure.query(({ ctx }) => listAllLanguages(ctx.db)),
 	create: adminProcedure

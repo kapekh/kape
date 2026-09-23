@@ -13,7 +13,6 @@ import {
 	type SQL,
 	sql,
 } from "drizzle-orm";
-import type { SQLiteColumn, SQLiteTable } from "drizzle-orm/sqlite-core";
 
 import { DONATE_OPEN, DONATE_PAYMENTS } from "#/lib/donate-defaults";
 import { DEFAULT_LANG } from "#/lib/i18n-config";
@@ -33,11 +32,9 @@ import { PAGE_TITLE_MAX, segmentProblem } from "#/lib/slug";
 import type { DB } from "../db";
 import {
 	alumniRegistrations,
-	campaigns,
 	contactSubmissions,
 	contentTypes,
 	donors,
-	forms,
 	heroSlides,
 	languages,
 	media,
@@ -65,7 +62,6 @@ import {
 } from "../schema";
 import { deleteUpload } from "../storage";
 import {
-	defaultLangText,
 	deleteEntityText,
 	type EntityText,
 	forgetDefaultLang,
@@ -77,6 +73,9 @@ import {
 	textByLang,
 	writeEntityText,
 } from "./i18n";
+import { containsText } from "./like";
+import { MEDIA_REFS } from "./media-refs";
+import { MediaInUseError, mediaTextUsage, mediaUsedBy } from "./media-usage";
 import { attachMediaUrl } from "./media-util";
 
 /** Dashboard overview counts + visitor totals. */
@@ -1556,8 +1555,17 @@ export function adminListMedia(db: DB) {
 // "file" stays "not an image", so a video answers both it and its own tab
 export type MediaType = "all" | "image" | "video" | "file";
 
+/** An upload from before names were kept has none, so the record using it names it. */
+async function withUsedBy<
+	T extends { id: number; url: string | null; originalName: string | null },
+>(db: DB, rows: T[]): Promise<(T & { usedBy: string | null })[]> {
+	const unnamed = rows.filter((r) => !r.originalName?.trim());
+	const labels = await mediaUsedBy(db, unnamed);
+	return rows.map((r) => ({ ...r, usedBy: labels.get(r.id) ?? null }));
+}
+
 /** One page of media (newest first), filtered by type + a name/URL search. */
-export function adminListMediaPage(
+export async function adminListMediaPage(
 	db: DB,
 	opts: { limit: number; offset: number; query?: string; type?: MediaType },
 ) {
@@ -1572,403 +1580,67 @@ export function adminListMediaPage(
 		);
 		if (notImage) conds.push(notImage);
 	}
-	if (opts.query?.trim()) {
-		const q = `%${opts.query.trim()}%`;
-		const match = or(like(media.url, q), like(media.r2Key, q));
+	const term = opts.query?.trim();
+	if (term) {
+		const match = or(
+			containsText(media.originalName, term),
+			containsText(media.url, term),
+			containsText(media.r2Key, term),
+		);
 		if (match) conds.push(match);
 	}
-	return db
+	const rows = await db
 		.select()
 		.from(media)
 		.where(and(...conds))
 		.orderBy(desc(media.id))
 		.limit(opts.limit)
 		.offset(opts.offset);
+	return withUsedBy(db, rows);
 }
 
-/** Resolve specific media ids → url, type and intrinsic size (e.g. saved cover ids). */
+const MEDIA_CARD = {
+	id: media.id,
+	url: media.url,
+	r2Key: media.r2Key,
+	originalName: media.originalName,
+	contentType: media.contentType,
+	width: media.width,
+	height: media.height,
+};
+
+/**
+ * Resolve specific media ids → name, url, type and intrinsic size. No `usedBy`:
+ * its callers draw thumbnails from a list of saved ids and never read a label.
+ */
 export async function adminMediaByIds(db: DB, ids: number[]) {
 	if (!ids.length) return [];
 	return db
-		.select({
-			id: media.id,
-			url: media.url,
-			contentType: media.contentType,
-			width: media.width,
-			height: media.height,
-		})
+		.select(MEDIA_CARD)
 		.from(media)
 		.where(and(eq(media.tenantId, TENANT), inArray(media.id, ids)));
 }
 
+/** One file for a picker, which does show the name under the thumbnail. */
 export async function adminMediaById(db: DB, id: number) {
-	const [r] = await adminMediaByIds(db, [id]);
+	const rows = await db
+		.select(MEDIA_CARD)
+		.from(media)
+		.where(and(eq(media.tenantId, TENANT), eq(media.id, id)))
+		.limit(1);
+	const [r] = await withUsedBy(db, rows);
 	return r ?? null;
 }
 
-export type MediaUsage = { kind: string; label: string; href: string | null };
-
-type MediaRef = {
-	kind: string;
-	table: SQLiteTable;
-	column: SQLiteColumn;
-	rowId: SQLiteColumn;
-	label?: SQLiteColumn;
-	/** the row's name is a `translations` row, so the default language names it */
-	labelEntity?: string;
-	labelField?: string;
-	tenant?: SQLiteColumn;
-	join?: { table: SQLiteTable; on: SQL };
-	href?: (rowId: number) => string;
-	/** notNull, so it cannot be cleared - the referring row goes instead. */
-	clearBy?: "row";
-};
-
-// the "Used in" panel and deleteMedia both walk this; media-refs.test.ts fails if the schema grows a reference missing here
-export const MEDIA_REFS: MediaRef[] = [
-	{
-		kind: "Post cover",
-		table: posts,
-		column: posts.coverMediaId,
-		rowId: posts.id,
-		label: posts.slug,
-		tenant: posts.tenantId,
-		href: (r) => `/admin/posts/${r}`,
-	},
-	{
-		kind: "Post gallery",
-		table: postMedia,
-		column: postMedia.mediaId,
-		rowId: postMedia.postId,
-		label: posts.slug,
-		// post_media has no tenantId of its own; the join carries the scope
-		tenant: posts.tenantId,
-		join: { table: posts, on: eq(posts.id, postMedia.postId) },
-		href: (r) => `/admin/posts/${r}`,
-		clearBy: "row",
-	},
-	{
-		kind: "Page hero",
-		table: pages,
-		column: pages.heroMediaId,
-		rowId: pages.id,
-		label: pages.slug,
-		tenant: pages.tenantId,
-		href: (r) => `/admin/pages/${r}`,
-	},
-	{
-		kind: "Navigation card",
-		table: navItems,
-		column: navItems.imageMediaId,
-		rowId: navItems.id,
-		label: navItems.targetRef,
-		tenant: navItems.tenantId,
-		href: () => "/admin/nav",
-	},
-	{
-		kind: "Person photo",
-		table: people,
-		column: people.photoMediaId,
-		rowId: people.id,
-		labelEntity: "person",
-		tenant: people.tenantId,
-		href: (r) => `/admin/people/${r}`,
-	},
-	{
-		kind: "Campaign cover",
-		table: campaigns,
-		column: campaigns.coverMediaId,
-		rowId: campaigns.id,
-		labelEntity: "campaign",
-		labelField: "title",
-		tenant: campaigns.tenantId,
-		href: (r) => `/admin/campaigns/${r}`,
-	},
-	{
-		kind: "Partner logo",
-		table: partners,
-		column: partners.logoMediaId,
-		rowId: partners.id,
-		label: partners.name,
-		tenant: partners.tenantId,
-		href: (r) => `/admin/partners/${r}`,
-	},
-	{
-		kind: "Donor logo",
-		table: donors,
-		column: donors.logoMediaId,
-		rowId: donors.id,
-		label: donors.name,
-		tenant: donors.tenantId,
-		href: (r) => `/admin/donors/${r}`,
-	},
-	{
-		kind: "Project logo",
-		table: projects,
-		column: projects.logoMediaId,
-		rowId: projects.id,
-		label: projects.code,
-		tenant: projects.tenantId,
-		href: (r) => `/admin/projects/${r}`,
-	},
-	{
-		kind: "Project map photo",
-		table: projectLocations,
-		column: projectLocations.photoMediaId,
-		rowId: projectLocations.projectId,
-		label: projectLocations.schoolName,
-		tenant: projectLocations.tenantId,
-		href: (r) => `/admin/projects/${r}`,
-	},
-	{
-		kind: "Office photo",
-		table: offices,
-		column: offices.imageMediaId,
-		rowId: offices.id,
-		labelEntity: "office",
-		tenant: offices.tenantId,
-		href: (r) => `/admin/offices/${r}`,
-	},
-	{
-		kind: "School photo",
-		table: schools,
-		column: schools.coverMediaId,
-		rowId: schools.id,
-		labelEntity: "school",
-		tenant: schools.tenantId,
-		href: (r) => `/admin/schools/${r}`,
-	},
-	{
-		kind: "Homepage hero",
-		table: heroSlides,
-		column: heroSlides.mediaId,
-		rowId: heroSlides.id,
-		tenant: heroSlides.tenantId,
-	},
-];
-
-async function refUsage(
-	db: DB,
-	ref: MediaRef,
-	id: number,
-): Promise<MediaUsage[]> {
-	const where = ref.tenant
-		? and(eq(ref.tenant, TENANT), eq(ref.column, id))
-		: eq(ref.column, id);
-	let q = db
-		.select({ rowId: ref.rowId, label: ref.label ?? sql<string | null>`null` })
-		.from(ref.table)
-		.$dynamic();
-	if (ref.join) q = q.innerJoin(ref.join.table, ref.join.on);
-
-	const seen = new Set<number>();
-	const rows: { rowId: number; label: string }[] = [];
-	for (const r of await q.where(where)) {
-		const rowId = Number(r.rowId);
-		if (seen.has(rowId)) continue;
-		seen.add(rowId);
-		rows.push({ rowId, label: String(r.label ?? "") });
-	}
-	const named = ref.labelEntity
-		? await resolveTranslations(
-				db,
-				ref.labelEntity,
-				rows.map((r) => r.rowId),
-			)
-		: null;
-	return rows.map((r) => ({
-		kind: ref.kind,
-		label:
-			named?.get(r.rowId)?.[ref.labelField ?? "name"] ||
-			r.label ||
-			`#${r.rowId}`,
-		href: ref.href?.(r.rowId) ?? null,
-	}));
-}
-
-// not foreign keys: the URL is a substring of someone's content, so a delete cannot clear it
-type MediaTextRef = {
-	kind: string;
-	table: SQLiteTable;
-	/** searched for the url */
-	column: SQLiteColumn;
-	rowId: SQLiteColumn;
-	label: SQLiteColumn | SQL<string | null>;
-	tenant: SQLiteColumn;
-	href: (rowId: number) => string;
-};
-
-const MEDIA_TEXT_REFS: MediaTextRef[] = [
-	{
-		kind: "Page content",
-		table: pages,
-		column: pages.sections,
-		rowId: pages.id,
-		label: pages.slug,
-		tenant: pages.tenantId,
-		href: (r) => `/admin/pages/${r}`,
-	},
-	{
-		kind: "Form content",
-		table: forms,
-		column: forms.fields,
-		rowId: forms.id,
-		label: defaultLangText("form", forms.id, "title"),
-		tenant: forms.tenantId,
-		href: (r) => `/admin/forms/${r}`,
-	},
-];
-
-/** Where a `translations` row's entity lives, for labelling a body-text hit. */
-const TRANSLATED_ENTITIES: Record<
-	string,
-	{
-		kind: string;
-		table: SQLiteTable;
-		id: SQLiteColumn;
-		label: SQLiteColumn | SQL<string | null>;
-		tenant: SQLiteColumn;
-		href: (rowId: number) => string;
-	}
-> = {
-	post: {
-		kind: "Post text",
-		table: posts,
-		id: posts.id,
-		label: posts.slug,
-		tenant: posts.tenantId,
-		href: (r) => `/admin/posts/${r}`,
-	},
-	page: {
-		kind: "Page text",
-		table: pages,
-		id: pages.id,
-		label: pages.slug,
-		tenant: pages.tenantId,
-		href: (r) => `/admin/pages/${r}`,
-	},
-	project: {
-		kind: "Project text",
-		table: projects,
-		id: projects.id,
-		label: projects.code,
-		tenant: projects.tenantId,
-		href: (r) => `/admin/projects/${r}`,
-	},
-	person: {
-		kind: "Person text",
-		table: people,
-		id: people.id,
-		label: defaultLangText("person", people.id, "name"),
-		tenant: people.tenantId,
-		href: (r) => `/admin/people/${r}`,
-	},
-	campaign: {
-		kind: "Campaign text",
-		table: campaigns,
-		id: campaigns.id,
-		label: campaigns.slug,
-		tenant: campaigns.tenantId,
-		href: (r) => `/admin/campaigns/${r}`,
-	},
-	form: {
-		kind: "Form text",
-		table: forms,
-		id: forms.id,
-		label: forms.slug,
-		tenant: forms.tenantId,
-		href: (r) => `/admin/forms/${r}`,
-	},
-};
-
-// % and _ inside the url are escaped, so a stored name cannot widen the match; it is still a substring test
-const contains = (column: SQLiteColumn, url: string) =>
-	sql`${column} LIKE ${`%${url.replace(/[\\%_]/g, "\\$&")}%`} ESCAPE '\\'`;
-
-// synchronous because deleteMedia runs it inside its transaction: checking outside leaves a window to embed the image
-type Queryable = DB | Parameters<Parameters<DB["transaction"]>[0]>[0];
-
-function mediaTextUsage(db: Queryable, url: string): MediaUsage[] {
-	const out: MediaUsage[] = [];
-
-	for (const ref of MEDIA_TEXT_REFS) {
-		for (const r of db
-			.select({ rowId: ref.rowId, label: ref.label })
-			.from(ref.table)
-			.where(and(eq(ref.tenant, TENANT), contains(ref.column, url)))
-			.all()) {
-			const rowId = Number(r.rowId);
-			out.push({
-				kind: ref.kind,
-				label: String(r.label ?? "") || `#${rowId}`,
-				href: ref.href(rowId),
-			});
-		}
-	}
-
-	// One scan of the whole column rather than a list of translated fields, so a
-	// body field added later is covered without being registered anywhere.
-	const hits = db
-		.select({ type: translations.entityType, entityId: translations.entityId })
-		.from(translations)
-		.where(
-			and(eq(translations.tenantId, TENANT), contains(translations.value, url)),
-		)
-		.all();
-
-	const seen = new Set<string>();
-	for (const hit of hits) {
-		const key = `${hit.type}:${hit.entityId}`;
-		if (seen.has(key)) continue; // same body in two languages is one place
-		seen.add(key);
-		const target = TRANSLATED_ENTITIES[hit.type];
-		if (!target) {
-			out.push({
-				kind: "Text",
-				label: `${hit.type} #${hit.entityId}`,
-				href: null,
-			});
-			continue;
-		}
-		const [row] = db
-			.select({ label: target.label })
-			.from(target.table)
-			.where(and(eq(target.tenant, TENANT), eq(target.id, hit.entityId)))
-			.limit(1)
-			.all();
-		if (!row) continue; // translation orphaned by a deleted entity
-		out.push({
-			kind: target.kind,
-			label: String(row.label ?? "") || `#${hit.entityId}`,
-			href: target.href(hit.entityId),
-		});
-	}
-
-	return out;
-}
-
-/** Everywhere a media item is referenced — for the "Used in" panel. */
-export async function adminMediaUsage(
-	db: DB,
-	id: number,
-): Promise<MediaUsage[]> {
-	const out: MediaUsage[] = [];
-	for (const ref of MEDIA_REFS) out.push(...(await refUsage(db, ref, id)));
-	const row = await adminMediaById(db, id);
-	if (row?.url) out.push(...mediaTextUsage(db, row.url));
-	return out;
-}
-
-// an <img src> inside someone's HTML cannot be cleared without rewriting what they wrote
-export class MediaInUseError extends Error {
-	constructor(readonly usage: MediaUsage[]) {
-		const shown = usage.slice(0, 3).map((u) => `${u.kind}: ${u.label}`);
-		const more = usage.length - shown.length;
-		super(
-			`This file is still in the content of ${usage.length} ${usage.length === 1 ? "place" : "places"} (${shown.join(", ")}${more > 0 ? `, and ${more} more` : ""}). Remove the image there first, then delete the file.`,
-		);
-		this.name = "MediaInUseError";
-	}
+/** A url-mode picker stores the address, not the id, so it looks up by address. */
+export async function adminMediaByUrl(db: DB, url: string) {
+	const rows = await db
+		.select(MEDIA_CARD)
+		.from(media)
+		.where(and(eq(media.tenantId, TENANT), eq(media.url, url)))
+		.limit(1);
+	const [r] = await withUsedBy(db, rows);
+	return r ?? null;
 }
 
 /** Aggregate counts for the library header (independent of the current page). */
@@ -1998,6 +1670,7 @@ export async function createMediaRecord(
 	v: {
 		r2Key: string;
 		url: string;
+		originalName?: string | null;
 		contentType?: string;
 		size?: number;
 		width?: number;
@@ -2010,6 +1683,7 @@ export async function createMediaRecord(
 			tenantId: TENANT,
 			r2Key: v.r2Key,
 			url: v.url,
+			originalName: v.originalName ?? null,
 			contentType: v.contentType ?? null,
 			size: v.size ?? null,
 			width: v.width ?? null,

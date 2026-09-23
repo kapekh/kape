@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { sanitizeUploadName } from "#/lib/media-name";
 import { ALLOWED_UPLOAD_EXT } from "#/lib/upload-types";
 import { parseCookies, SESSION_COOKIE, validateToken } from "#/server/auth";
 import { db } from "#/server/db";
@@ -96,9 +97,11 @@ async function handler({ request }: { request: Request }) {
 			);
 		}
 		const dims = await drawnSize(bytes);
+		const originalName = sanitizeUploadName(file.name);
 		const id = await createMediaRecord(db, {
 			r2Key: stored.key,
 			url: stored.url,
+			originalName,
 			contentType: type,
 			size: file.size,
 			width: dims?.width,
@@ -107,6 +110,7 @@ async function handler({ request }: { request: Request }) {
 		return Response.json({
 			id,
 			url: stored.url,
+			originalName,
 			width: dims?.width ?? null,
 			height: dims?.height ?? null,
 		});

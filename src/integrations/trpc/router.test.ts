@@ -110,17 +110,34 @@ describe("adminMedia.usage", () => {
 		{ call: "adminMedia.usage", input: { id: 3 } },
 	]);
 
+	// `blocking` is what the library reads to decide whether "delete anyway" is a
+	// real offer: a url inside content cannot be cleared, a foreign key can
 	it("reports an image embedded in a page section and in a post body", () => {
 		expect(usageOf(out[4])).toEqual([
-			{ kind: "Page content", label: "c10-page", href: "/admin/pages/1" },
-			{ kind: "Post text", label: "c10-post", href: "/admin/posts/1" },
+			{
+				kind: "Page content",
+				label: "c10-page",
+				href: "/admin/pages/1",
+				blocking: true,
+			},
+			{
+				kind: "Post text",
+				label: "c10-post",
+				href: "/admin/posts/1",
+				blocking: true,
+			},
 		]);
 	});
 
 	it("still reports a foreign-key reference, and still calls an unused image unused", () => {
 		expect(usageOf(out[5])).toEqual([]);
 		expect(usageOf(out[6])).toEqual([
-			{ kind: "Post cover", label: "c10-cover-post", href: "/admin/posts/2" },
+			{
+				kind: "Post cover",
+				label: "c10-cover-post",
+				href: "/admin/posts/2",
+				blocking: false,
+			},
 		]);
 	});
 });

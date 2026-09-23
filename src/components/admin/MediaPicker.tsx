@@ -3,10 +3,16 @@ import { useEffect, useId, useState } from "react";
 
 import { Button } from "#/components/ui/button.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { mediaDisplayName } from "#/lib/media-name";
 import { formatSize, type Sized } from "#/lib/media-size";
 import { type MediaItem, MediaLibraryDialog } from "./MediaLibraryDialog";
 
-type Chosen = Sized & { for: string; url: string; type?: string | null };
+type Chosen = Sized & {
+	for: string;
+	url: string;
+	name?: string;
+	type?: string | null;
+};
 
 const IMG_EXT = /\.(png|jpe?g|webp|gif|svg|avif)(\?|$)/i;
 
@@ -40,24 +46,28 @@ export function MediaPicker({
 	const [natural, setNatural] = useState<Sized & { for: string }>({ for: "" });
 	const chosenId = useId();
 
-	// Resolve an existing id-mode value to a preview URL (one-time per value).
+	// Resolve the stored value to a preview and the name a person reads. A
+	// url-mode field holds the address, so it is looked up by address.
 	useEffect(() => {
-		if (mode !== "id") {
-			setChosen((c) => (c.for === value ? c : { for: value, url: value }));
-			return;
-		}
 		if (!value) {
 			setChosen({ for: "", url: "" });
 			return;
 		}
+		// url mode already knows what to draw; the lookup only adds the name
+		if (mode !== "id")
+			setChosen((c) => (c.for === value ? c : { for: value, url: value }));
 		let alive = true;
-		trpcClient.adminMedia.byId
-			.query({ id: Number(value) })
+		const found =
+			mode === "id"
+				? trpcClient.adminMedia.byId.query({ id: Number(value) })
+				: trpcClient.adminMedia.byUrl.query({ url: value });
+		found
 			.then((f) => {
 				if (!alive) return;
 				setChosen({
 					for: value,
-					url: f?.url ?? "",
+					url: mode === "id" ? (f?.url ?? "") : value,
+					name: f ? mediaDisplayName(f) : undefined,
 					type: f?.contentType,
 					width: f?.width,
 					height: f?.height,
@@ -84,7 +94,7 @@ export function MediaPicker({
 	// The field's own <label> names the trigger, so the filename rides along as
 	// its description instead: overriding the name would drop the field caption.
 	const chosenName = previewUrl
-		? (previewUrl.split("/").pop()?.split("?")[0] ?? previewUrl)
+		? (fresh?.name ?? previewUrl.split("/").pop()?.split("?")[0] ?? previewUrl)
 		: "";
 
 	function pick(m: MediaItem) {
@@ -93,6 +103,7 @@ export function MediaPicker({
 		setChosen({
 			for: next,
 			url: m.url ?? "",
+			name: mediaDisplayName(m),
 			type: m.contentType,
 			width: m.width,
 			height: m.height,

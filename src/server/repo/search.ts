@@ -1,12 +1,13 @@
 // the match runs over the translations rows, so a Khmer query finds Khmer bodies; body is ProseMirror JSON, so every LIKE candidate is re-checked against the extracted plain text
 
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 
 import { COLLECTIONS, NON_PUBLIC_CONTENT_TYPES } from "#/lib/collections";
 import type { DB } from "../db";
 import { pages, posts, projects, translations } from "../schema";
 import { getDefaultLang, resolveTranslations } from "./i18n";
+import { containsText } from "./like";
 
 const TENANT = 1;
 
@@ -65,12 +66,8 @@ export type SearchResults = {
 	limit: number;
 };
 
-/** `%` and `_` are LIKE wildcards; a reader typing them means the characters. */
-const escapeLike = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
-
-// the column is a reference and the pattern a bound parameter; Drizzle never inlines it
 const containsQuery = (query: string) =>
-	sql`${translations.value} LIKE ${`%${escapeLike(query)}%`} ESCAPE '\\'`;
+	containsText(translations.value, query);
 
 function nodeText(node: unknown): string {
 	if (Array.isArray(node)) return node.map(nodeText).join(" ");

@@ -3,26 +3,24 @@ import {
 	ArrowDownToLine,
 	Check,
 	Copy,
-	ExternalLink,
 	FileText,
 	Images,
 	Play,
 	SearchX,
 	Trash2,
 	Upload,
-	X,
 } from "lucide-react";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { EmptyState, ListSearch } from "#/components/admin/list-ui";
+import { MediaDetail } from "#/components/admin/MediaDetail";
 import { startTourOnce } from "#/components/admin/Tour";
 import { Button, buttonVariants } from "#/components/ui/button.tsx";
-import { inputClass } from "#/components/ui/input.tsx";
 import { PageHeader } from "#/components/ui/page-header.tsx";
 import { Skeleton } from "#/components/ui/skeleton.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
-import { formatSize, isLowResolution, MIN_FULL_WIDTH } from "#/lib/media-size";
-import { useModalPanel } from "#/lib/use-modal-panel";
+import { mediaDisplayName, mediaStorageName } from "#/lib/media-name";
+import { formatBytes, formatSize, isLowResolution } from "#/lib/media-size";
 import { confirm, toast } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/admin/media")({
@@ -48,14 +46,54 @@ const PAGE = 30;
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
+const REMOVE_FIRST = "Remove it there first, then delete the file.";
+
+const named = (u: MediaUsage) => `${u.kind}: ${u.label}`;
+
+/** Bulleted, for a dialog, which keeps the line breaks. */
+function placeList(usage: MediaUsage[]): string {
+	const lines = usage
+		.slice(0, 6)
+		.map((u) => `  • ${named(u)}`)
+		.join("\n");
+	const more = usage.length > 6 ? `\n  …and ${usage.length - 6} more` : "";
+	return `${plural(usage.length, "place")}:\n\n${lines}${more}`;
+}
+
+type Chosen = { id: number; usage: MediaUsage[] };
+
+/** What a bulk delete is about to do, and what it will leave alone. */
+function bulkPrompt(chosen: Chosen[], deletable: number): string {
+	const blocked = chosen.length - deletable;
+	const inUse = chosen.filter(
+		(c) => c.usage.length && !c.usage.some((u) => u.blocking),
+	).length;
+	return [
+		blocked
+			? `${plural(blocked, "file")} of the ${chosen.length} selected ${blocked === 1 ? "is" : "are"} inside someone's content and will be kept.`
+			: "",
+		inUse
+			? `⚠ ${inUse} of the ${deletable} to delete ${inUse > 1 ? "are" : "is"} still used by other records and will leave broken images.`
+			: "",
+		`Delete ${plural(deletable, "file")}? This can't be undone.`,
+	]
+		.filter(Boolean)
+		.join("\n\n");
+}
+
+/** One line, for a toast, which does not. */
+function placesInline(usage: MediaUsage[]): string {
+	const shown = usage.slice(0, 3).map(named);
+	const more = usage.length - shown.length;
+	return `${plural(usage.length, "place")} (${shown.join(", ")}${more > 0 ? `, and ${more} more` : ""})`;
+}
+
 const isImage = (m: MediaRow) => !!m.contentType?.startsWith("image/");
 const isVideo = (m: MediaRow) => !!m.contentType?.startsWith("video/");
-const nameOf = (m: MediaRow) =>
-	(m.url || m.r2Key || "").split("/").pop()?.split("?")[0] || `media-${m.id}`;
 const extOf = (m: MediaRow) =>
 	(
 		m.contentType?.split("/")[1] ||
-		nameOf(m).split(".").pop() ||
+		mediaStorageName(m)?.split(".").pop() ||
 		"file"
 	).toUpperCase();
 
@@ -73,24 +111,6 @@ function deleteReason(e: unknown) {
 	return /FOREIGN KEY/i.test(msg)
 		? "it is still attached to a record. Remove it there first."
 		: msg;
-}
-
-function fmtBytes(n: number | null | undefined) {
-	if (!n) return null;
-	if (n < 1024) return `${n} B`;
-	if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
-	return `${(n / 1024 / 1024).toFixed(1)} MB`;
-}
-function fmtDate(s: string | null | undefined) {
-	if (!s) return "";
-	const d = new Date(s.includes("T") ? s : `${s.replace(" ", "T")}Z`);
-	return Number.isNaN(d.getTime())
-		? ""
-		: d.toLocaleDateString(undefined, {
-				day: "numeric",
-				month: "short",
-				year: "numeric",
-			});
 }
 
 const GRID =
@@ -121,31 +141,8 @@ function MediaLibrary() {
 	const [selected, setSelected] = useState<Set<number>>(new Set());
 	const [copiedId, setCopiedId] = useState<number | null>(null);
 	const [preview, setPreview] = useState<MediaRow | null>(null);
-	const previewHeadingId = useId();
 	const closePreview = useCallback(() => setPreview(null), []);
-	const previewRef = useModalPanel(closePreview, !!preview);
-	const [usage, setUsage] = useState<MediaUsage[] | "failed" | null>(null);
 	const fileRef = useRef<HTMLInputElement>(null);
-
-	// Resolve "where is this used" whenever the detail lightbox opens.
-	useEffect(() => {
-		if (!preview) return;
-		setUsage(null);
-		let alive = true;
-		trpcClient.adminMedia.usage
-			.query({ id: preview.id })
-			.then((u) => {
-				if (alive) setUsage(u);
-			})
-			// an empty list would read as "used nowhere" and send Delete down the
-			// path with no warning on it, so a failure gets its own state
-			.catch(() => {
-				if (alive) setUsage("failed");
-			});
-		return () => {
-			alive = false;
-		};
-	}, [preview]);
 
 	// Pagination internals (refs avoid stale closures in the observer).
 	const offsetRef = useRef(0);
@@ -323,15 +320,19 @@ function MediaLibrary() {
 			);
 			return;
 		}
-		let msg = "Delete this media item? This can't be undone.";
-		if (u.length) {
-			const lines = u
-				.slice(0, 6)
-				.map((x) => `  • ${x.kind}: ${x.label}`)
-				.join("\n");
-			const more = u.length > 6 ? `\n  …and ${u.length - 6} more` : "";
-			msg = `⚠ This image is still used in ${u.length} place${u.length > 1 ? "s" : ""}:\n\n${lines}${more}\n\nDeleting it will leave ${u.length > 1 ? "those records" : "that record"} with a broken/missing image. Delete anyway?`;
+		// a url inside someone's content cannot be cleared for them, so the server
+		// refuses: offering "delete anyway" here would be a choice that never holds
+		const blocking = u.filter((x) => x.blocking);
+		if (blocking.length) {
+			toast(
+				`This file is still in ${placesInline(blocking)}. ${REMOVE_FIRST}`,
+				"error",
+			);
+			return;
 		}
+		let msg = "Delete this media item? This can't be undone.";
+		if (u.length)
+			msg = `⚠ This image is still used in ${placeList(u)}.\n\nDeleting it will leave ${u.length > 1 ? "those records" : "that record"} with a broken/missing image. Delete anyway?`;
 		if (!(await confirm(msg))) return;
 		try {
 			await trpcClient.adminMedia.delete.mutate({ id });
@@ -362,17 +363,26 @@ function MediaLibrary() {
 			);
 			return;
 		}
-		const inUse = usages.filter((u) => u && u.length > 0).length;
-		const msg = inUse
-			? `⚠ ${inUse} of these ${ids.length} item${ids.length > 1 ? "s" : ""} ${inUse > 1 ? "are" : "is"} still used by other records and will leave broken images.\n\nDelete all ${ids.length} anyway? This can't be undone.`
-			: `Delete ${plural(ids.length, "selected item")}? This can't be undone.`;
-		if (!(await confirm(msg))) return;
+		// the blocked ones are left selected, so the operator can see which they are
+		const chosen = ids.map((id, i) => ({ id, usage: usages[i] ?? [] }));
+		const deletable = chosen.filter((c) => !c.usage.some((u) => u.blocking));
+		const blocked = chosen.length - deletable.length;
+		if (!deletable.length) {
+			toast(
+				`${plural(blocked, "file")} ${blocked === 1 ? "is" : "are"} inside someone's content. ${REMOVE_FIRST}`,
+				"error",
+			);
+			return;
+		}
+		if (!(await confirm(bulkPrompt(chosen, deletable.length)))) return;
 		setBulkBusy(true);
 		try {
 			const results = await Promise.allSettled(
-				ids.map((id) => trpcClient.adminMedia.delete.mutate({ id })),
+				deletable.map((c) => trpcClient.adminMedia.delete.mutate({ id: c.id })),
 			);
-			const gone = ids.filter((_, i) => results[i].status === "fulfilled");
+			const gone = deletable
+				.filter((_, i) => results[i].status === "fulfilled")
+				.map((c) => c.id);
 			dropLocal(gone);
 			const stuck = results
 				.filter((r) => r.status === "rejected")
@@ -396,7 +406,6 @@ function MediaLibrary() {
 		});
 	}
 
-	const previewSize = preview ? fmtBytes(preview.size) : null;
 	const filtered = debounced !== "" || filter !== "all";
 
 	// `files` is everything that is not an image, videos included, so the line
@@ -409,7 +418,7 @@ function MediaLibrary() {
 				stats.files - stats.videos
 					? plural(stats.files - stats.videos, "file")
 					: null,
-				fmtBytes(stats.bytes),
+				formatBytes(stats.bytes),
 			]
 				.filter(Boolean)
 				.join(" · ")
@@ -542,7 +551,7 @@ function MediaLibrary() {
 				<div className={GRID}>
 					{items.map((m, tile) => {
 						const sel = selected.has(m.id);
-						const name = nameOf(m);
+						const name = mediaDisplayName(m);
 						return (
 							<div
 								key={m.id}
@@ -597,24 +606,10 @@ function MediaLibrary() {
 								<span className="absolute right-2 top-2 rounded-lg bg-black/60 px-2 py-1 text-xs font-medium tracking-wide text-white opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100">
 									{extOf(m)}
 								</span>
-								<div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-black/80 to-transparent p-2 opacity-0 transition-opacity duration-150 ease-out group-focus-within:opacity-100 group-hover:opacity-100">
-									<span className="pointer-events-auto min-w-0">
-										<span
-											className="block truncate text-[13px] font-medium text-white"
-											title={name}
-										>
-											{name}
-										</span>
-										{formatSize(m) ? (
-											<span
-												className={`block truncate text-xs tabular-nums ${isLowResolution(m) ? "text-admin-warning" : "text-white/70"}`}
-											>
-												{formatSize(m)}
-												{isLowResolution(m) && " · small"}
-											</span>
-										) : null}
-									</span>
-									<span className="pointer-events-auto flex flex-none gap-2">
+								{/* the name takes the tile's full width; sharing a row with the
+								    two buttons cut it to about a dozen characters */}
+								<div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col gap-1 bg-gradient-to-t from-black/80 to-transparent p-2 opacity-0 transition-opacity duration-150 ease-out group-focus-within:opacity-100 group-hover:opacity-100">
+									<span className="pointer-events-auto flex justify-end gap-2">
 										<button
 											type="button"
 											onClick={() => copy(m)}
@@ -637,6 +632,24 @@ function MediaLibrary() {
 										>
 											<Trash2 aria-hidden="true" className="size-4" />
 										</button>
+									</span>
+									<span className="pointer-events-auto min-w-0">
+										{/* two lines, not one: a phone's tile is half a name wide and a
+										    title tooltip is not reachable by thumb */}
+										<span
+											className="line-clamp-2 text-[13px] font-medium break-words text-white"
+											title={name}
+										>
+											{name}
+										</span>
+										{formatSize(m) ? (
+											<span
+												className={`block truncate text-xs tabular-nums ${isLowResolution(m) ? "text-admin-warning" : "text-white/70"}`}
+											>
+												{formatSize(m)}
+												{isLowResolution(m) && " · small"}
+											</span>
+										) : null}
 									</span>
 								</div>
 							</div>
@@ -674,201 +687,15 @@ function MediaLibrary() {
 				</div>
 			)}
 
-			{/* Lightbox / detail */}
 			{preview && (
-				<div className="fixed inset-0 z-50 grid place-items-center p-4">
-					<button
-						type="button"
-						aria-label="Close"
-						className="absolute inset-0 bg-foreground/50 backdrop-blur-sm"
-						onClick={() => setPreview(null)}
-					/>
-					<div
-						ref={previewRef}
-						role="dialog"
-						aria-modal="true"
-						tabIndex={-1}
-						aria-labelledby={previewHeadingId}
-						className="relative grid w-full max-w-4xl min-w-0 overflow-hidden rounded-xl border border-admin-border bg-admin-panel-raised shadow-[var(--shadow-lift)] focus:outline-none md:grid-cols-[1fr_360px]"
-					>
-						<div className="grid min-h-[260px] place-items-center bg-admin-neutral-soft">
-							{isImage(preview) ? (
-								<img
-									src={preview.url ?? ""}
-									alt={nameOf(preview)}
-									className="max-h-[70vh] w-full object-contain"
-								/>
-							) : isVideo(preview) ? (
-								// playable here: checking a clip is the whole reason to open it
-								// biome-ignore lint/a11y/useMediaCaption: operator-uploaded clip, captions belong on the record that embeds it
-								<video
-									src={preview.url ?? ""}
-									controls
-									preload="metadata"
-									className="max-h-[70vh] w-full bg-black object-contain"
-								/>
-							) : (
-								<FileText
-									aria-hidden="true"
-									className="size-12 text-admin-ink-subtle"
-								/>
-							)}
-						</div>
-						<div className="flex min-w-0 flex-col p-6">
-							<div className="mb-4 flex items-start justify-between gap-2">
-								<h2
-									id={previewHeadingId}
-									className="text-base font-semibold break-words text-admin-ink"
-								>
-									{nameOf(preview)}
-								</h2>
-								<Button
-									type="button"
-									size="icon"
-									variant="ghost"
-									aria-label="Close"
-									onClick={closePreview}
-									className="flex-none"
-								>
-									<X aria-hidden="true" />
-								</Button>
-							</div>
-							<dl className="space-y-2 text-sm">
-								<Meta label="Type" value={preview.contentType ?? "—"} />
-								{preview.width && preview.height ? (
-									<Meta
-										label="Dimensions"
-										value={`${preview.width} × ${preview.height}`}
-									/>
-								) : null}
-								{previewSize ? <Meta label="Size" value={previewSize} /> : null}
-								<Meta label="Added" value={fmtDate(preview.createdAt)} />
-							</dl>
-							{isLowResolution(preview) ? (
-								<p className="mt-3 text-[13px] text-admin-warning-ink">
-									Under {MIN_FULL_WIDTH}px on its long edge. A cover, hero or
-									banner stretches this one and it will look soft. Fine for a
-									logo, an avatar or a small card.
-								</p>
-							) : null}
-							<div className="mt-4">
-								<div className="mb-1 text-[13px] font-medium text-admin-ink-muted">
-									URL
-								</div>
-								<input
-									readOnly
-									aria-label={`URL for ${nameOf(preview)}`}
-									value={preview.url ?? ""}
-									onFocus={(e) => e.currentTarget.select()}
-									className={`${inputClass} h-10 min-w-0 text-admin-ink-muted`}
-								/>
-							</div>
-
-							{/* Where this media is used */}
-							<div className="mt-4">
-								<div className="mb-2 flex items-center gap-2">
-									<span className="text-[13px] font-medium text-admin-ink-muted">
-										Used in
-									</span>
-									{Array.isArray(usage) && (
-										<span
-											className={`rounded-full px-2 py-1 text-xs font-medium leading-none ${usage.length ? "bg-admin-accent-soft text-admin-accent-ink" : "bg-admin-neutral-soft text-admin-ink-muted"}`}
-										>
-											{usage.length
-												? `${usage.length} place${usage.length > 1 ? "s" : ""}`
-												: "Unused"}
-										</span>
-									)}
-								</div>
-								{usage === null ? (
-									<p className="text-[13px] text-admin-ink-muted">Checking…</p>
-								) : usage === "failed" ? (
-									<p className="text-[13px] text-admin-warning-ink">
-										Could not check where this is used.
-									</p>
-								) : usage.length === 0 ? (
-									<p className="text-[13px] text-admin-ink-muted">
-										Not referenced anywhere, so it is safe to delete.
-									</p>
-								) : (
-									<ul className="max-h-40 space-y-2 overflow-y-auto pr-1">
-										{usage.map((u, i) => (
-											<li
-												// biome-ignore lint/suspicious/noArrayIndexKey: read-only usage list, no reorder or delete while mounted
-												key={i}
-												className="flex items-center justify-between gap-2 rounded-lg border border-admin-border bg-admin-panel px-3 py-2 text-[13px]"
-											>
-												<span className="min-w-0">
-													<span className="text-xs font-medium text-admin-ink-muted">
-														{u.kind}
-													</span>
-													<span
-														className="block truncate text-admin-ink"
-														title={u.label}
-													>
-														{u.label}
-													</span>
-												</span>
-												{u.href && (
-													<Button asChild size="sm" variant="secondary">
-														<a href={u.href}>Open</a>
-													</Button>
-												)}
-											</li>
-										))}
-									</ul>
-								)}
-							</div>
-
-							<div className="mt-auto grid gap-2 pt-6 sm:grid-cols-2">
-								<Button
-									type="button"
-									onClick={() => copy(preview)}
-									className="sm:col-span-2"
-								>
-									{copiedId === preview.id ? (
-										<Check aria-hidden="true" />
-									) : (
-										<Copy aria-hidden="true" />
-									)}
-									{copiedId === preview.id ? "Copied" : "Copy URL"}
-								</Button>
-								<Button asChild variant="secondary">
-									<a
-										href={preview.url ?? "#"}
-										target="_blank"
-										rel="noopener noreferrer"
-									>
-										<ExternalLink aria-hidden="true" />
-										Open
-									</a>
-								</Button>
-								<Button
-									type="button"
-									variant="danger"
-									onClick={() =>
-										del(preview.id, Array.isArray(usage) ? usage : null)
-									}
-								>
-									<Trash2 aria-hidden="true" />
-									Delete
-								</Button>
-							</div>
-						</div>
-					</div>
-				</div>
+				<MediaDetail
+					item={preview}
+					copied={copiedId === preview.id}
+					onCopy={() => copy(preview)}
+					onClose={closePreview}
+					onDelete={(known) => del(preview.id, known)}
+				/>
 			)}
-		</div>
-	);
-}
-
-function Meta({ label, value }: { label: string; value: string }) {
-	return (
-		<div className="flex justify-between gap-4 border-b border-admin-border pb-2">
-			<dt className="text-admin-ink-muted">{label}</dt>
-			<dd className="text-right font-medium break-all text-admin-ink">
-				{value}
-			</dd>
 		</div>
 	);
 }

@@ -5,6 +5,7 @@ import { buttonVariants } from "#/components/ui/button.tsx";
 import { inputClass } from "#/components/ui/input.tsx";
 import { Skeleton } from "#/components/ui/skeleton.tsx";
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
+import { mediaDisplayName } from "#/lib/media-name";
 import { formatSize, isLowResolution } from "#/lib/media-size";
 import { useModalPanel } from "#/lib/use-modal-panel";
 import { toast } from "@/components/Dialogs";
@@ -13,6 +14,8 @@ export type MediaItem = {
 	id: number;
 	url: string | null;
 	contentType: string | null;
+	originalName?: string | null;
+	usedBy?: string | null;
 	width?: number | null;
 	height?: number | null;
 };
@@ -28,20 +31,20 @@ export function isImageMedia(m: {
 
 const isVideoMedia = (m: MediaItem) => !!m.contentType?.startsWith("video/");
 
-/** The stored file is a UUID, but the URL still ends in the operator's name. */
-const nameOfMedia = (m: MediaItem) =>
-	(m.url ?? "").split("/").pop()?.split("?")[0] || `media-${m.id}`;
-
 const toItem = (x: {
 	id: number;
 	url: string | null;
 	contentType: string | null;
+	originalName: string | null;
+	usedBy: string | null;
 	width: number | null;
 	height: number | null;
 }): MediaItem => ({
 	id: x.id,
 	url: x.url,
 	contentType: x.contentType,
+	originalName: x.originalName,
+	usedBy: x.usedBy,
 	width: x.width,
 	height: x.height,
 });
@@ -196,6 +199,7 @@ export function MediaLibraryDialog({
 		const d = (await res.json()) as {
 			id: number;
 			url: string;
+			originalName: string | null;
 			width: number | null;
 			height: number | null;
 		};
@@ -203,6 +207,7 @@ export function MediaLibraryDialog({
 			id: d.id,
 			url: d.url,
 			contentType: f.type,
+			originalName: d.originalName,
 			width: d.width,
 			height: d.height,
 		};
@@ -296,7 +301,7 @@ export function MediaLibraryDialog({
 										selectedId != null
 											? m.id === selectedId
 											: selectedUrl != null && m.url === selectedUrl;
-									const name = nameOfMedia(m);
+									const name = mediaDisplayName(m);
 									const size = formatSize(m);
 									const small = isLowResolution(m);
 									return (
@@ -338,7 +343,9 @@ export function MediaLibraryDialog({
 												</span>
 											)}
 											<span className="absolute inset-x-0 bottom-0 bg-admin-ink/75 px-2 py-1 text-xs text-admin-panel">
-												<span className="block truncate">{name}</span>
+												<span className="line-clamp-2 break-words" title={name}>
+													{name}
+												</span>
 												{size && (
 													<span
 														className={`block truncate tabular-nums ${small ? "text-admin-warning" : "text-admin-panel/70"}`}

@@ -97,6 +97,8 @@ export const media = sqliteTable("media", {
 		.default(1)
 		.references(() => tenants.id),
 	r2Key: text("r2_key").notNull(),
+	// sanitised name of the file the operator picked; the key stays a uuid
+	originalName: text("original_name"),
 	url: text("url"),
 	contentType: text("content_type"),
 	size: integer("size"),
