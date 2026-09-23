@@ -29,11 +29,11 @@ import {
 	seedPartners,
 	seedPublications,
 	seedStories,
-	seedTerms,
 	seedVideos,
 } from "./records";
 import { seedRoles } from "./roles";
 import { seedOffices, seedSiteSettings, seedStats } from "./site";
+import { seedTerms } from "./terms";
 import { seedAdminUser, seedStaffUser } from "./users";
 
 export async function seedKape() {
@@ -44,7 +44,7 @@ export async function seedKape() {
 
 	await seedNews();
 	await seedStories();
-	await seedTerms();
+	await seedTerms(db);
 	await seedPublications();
 	await seedAlbums();
 	await seedJobs();

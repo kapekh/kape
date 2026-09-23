@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { PublicationCategoryDrift } from "#/components/admin/PublicationCategoryDrift";
 import { TermsManager } from "#/components/admin/TermsManager";
 
 export const Route = createFileRoute("/admin/publication-categories")({
@@ -8,6 +9,7 @@ export const Route = createFileRoute("/admin/publication-categories")({
 			taxonomy="publication_category"
 			title="Publication Categories"
 			description="The key must match the Media & Publications page route (e.g. annual-report)."
+			notice={<PublicationCategoryDrift />}
 		/>
 	),
 });

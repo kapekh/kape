@@ -198,25 +198,36 @@ function blockToSection(b: Block, i: number): SectionNode {
 			};
 	}
 }
-async function migrateStaticPages(db: DB) {
+/** Every static page the fixture installs, with the sections it installs. */
+export function staticPages(): {
+	slug: string;
+	title: string;
+	sections: SectionNode[];
+}[] {
 	const specs = [...group1, ...group2, ...group3] as PageSpec[];
-	for (const s of specs) {
-		const hero: SectionNode = {
-			id: "hero",
-			type: "hero",
-			layout: "banner",
-			props: {
-				eyebrow: s.breadcrumb,
-				title: s.title,
-				lead: s.lead,
-				image: s.heroImage ?? "",
+	return specs.map((s) => ({
+		slug: s.slug,
+		title: s.title,
+		sections: [
+			{
+				id: "hero",
+				type: "hero",
+				layout: "banner",
+				props: {
+					eyebrow: s.breadcrumb,
+					title: s.title,
+					lead: s.lead,
+					image: s.heroImage ?? "",
+				},
 			},
-		};
-		await upsertPage(db, s.slug, s.title, [
-			hero,
 			...s.blocks.map(blockToSection),
-		]);
-	}
+		],
+	}));
+}
+
+async function migrateStaticPages(db: DB) {
+	for (const p of staticPages())
+		await upsertPage(db, p.slug, p.title, p.sections);
 }
 
 /* ---------------- Section-built home page ---------------- */

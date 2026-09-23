@@ -210,6 +210,7 @@ import {
 	recordPageView,
 } from "#/server/repo/site";
 import { staffDocuments, staffEvents, staffNews } from "#/server/repo/staff";
+import { publicationCategoryDrift } from "#/server/repo/term-drift";
 import {
 	listUiStrings,
 	resetUiString,
@@ -458,6 +459,9 @@ async function assertTaxonomiesAllowed(
 
 const adminTermsRouter = {
 	list: adminProcedure.query(({ ctx }) => adminListTerms(ctx.db)),
+	publicationCategoryDrift: adminProcedure.query(({ ctx }) =>
+		publicationCategoryDrift(ctx.db),
+	),
 	create: adminProcedure.input(termInput).mutation(async ({ ctx, input }) => {
 		await assertTaxonomiesAllowed(ctx.db, input.taxonomy);
 		return createTerm(ctx.db, input);

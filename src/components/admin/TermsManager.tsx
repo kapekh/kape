@@ -1,5 +1,5 @@
 import { Tags } from "lucide-react";
-import { useCallback, useState } from "react";
+import { type ReactNode, useCallback, useState } from "react";
 
 import { ActionMenu } from "#/components/admin/ActionMenu";
 import {
@@ -38,10 +38,13 @@ export function TermsManager({
 	taxonomy,
 	title,
 	description,
+	notice,
 }: {
 	taxonomy: string;
 	title: string;
 	description?: string;
+	/** What this one list has to say about itself, above the form. */
+	notice?: ReactNode;
 }) {
 	const [langs, setLangs] = useState<Lang[]>([]);
 	const load = useCallback(async () => {
@@ -155,6 +158,7 @@ export function TermsManager({
 			/>
 
 			<div className="space-y-6">
+				{notice}
 				<div data-tour="terms-add">
 					<FormSection
 						title="Add item"

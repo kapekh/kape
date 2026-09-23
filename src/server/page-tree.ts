@@ -7,7 +7,8 @@ import { navItems, pages, translations } from "./schema";
 
 const TENANT = 1;
 
-const humanize = (s: string) =>
+/** A slug segment or key as a title: `ai-digital` → `Ai Digital`. */
+export const humanize = (s: string) =>
 	s.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
 async function setTitle(db: DB, id: number, title: string, lang = "en") {
