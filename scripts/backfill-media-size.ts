@@ -7,7 +7,7 @@
 import { eq, isNull, like, or } from "drizzle-orm";
 
 import { db } from "#/server/db";
-import { imageSize } from "#/server/image-size";
+import { drawnSize } from "#/server/images";
 import { media } from "#/server/schema";
 import { r2 } from "#/server/storage";
 
@@ -35,7 +35,7 @@ for (const row of rows) {
 		skipped++;
 		continue;
 	}
-	const size = imageSize(bytes);
+	const size = await drawnSize(bytes);
 	if (!size) {
 		skipped++;
 		continue;

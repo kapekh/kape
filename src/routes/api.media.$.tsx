@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ALLOWED_UPLOAD_EXT } from "#/lib/upload-types";
 import { parseCookies, SESSION_COOKIE, validateToken } from "#/server/auth";
 import { db } from "#/server/db";
-import { imageSize } from "#/server/image-size";
+import { drawnSize } from "#/server/images";
 import {
 	bytesMatchExtension,
 	contentTypeForExtension,
@@ -83,8 +83,19 @@ async function handler({ request }: { request: Request }) {
 			);
 		}
 		const type = contentTypeForExtension(ext);
-		const stored = await saveUpload(bytes, type, ext);
-		const dims = imageSize(bytes);
+		// a source sharp cannot re-encode stops here; saveUpload takes its own
+		// partial writes back out, so nothing is stored and the log names the file
+		const stored = await saveUpload(bytes, type, ext).catch((err: unknown) => {
+			console.error(`[media] could not store ${file.name}:`, err);
+			return null;
+		});
+		if (!stored) {
+			return Response.json(
+				{ error: "That file could not be stored — try re-saving it first" },
+				{ status: 422 },
+			);
+		}
+		const dims = await drawnSize(bytes);
 		const id = await createMediaRecord(db, {
 			r2Key: stored.key,
 			url: stored.url,

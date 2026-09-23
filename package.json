@@ -60,6 +60,7 @@
     "radix-ui": "^1.6.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "sharp": "^0.35.4",
     "superjson": "^2.2.2",
     "tailwind-merge": "^3.0.2",
     "tailwindcss": "^4.1.18",

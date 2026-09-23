@@ -3,6 +3,7 @@ import { inArray } from "drizzle-orm";
 import type { DB } from "../db";
 import { media } from "../schema";
 
+/** Attaches `<urlField>` and `<urlField>Width`; the width says which derivatives a `<Picture>` may offer. */
 export async function attachMediaUrl<
 	T extends Record<string, unknown>,
 	U extends string,
@@ -11,7 +12,11 @@ export async function attachMediaUrl<
 	rows: T[],
 	idField: keyof T & string,
 	urlField: U,
-): Promise<(T & { [P in U]: string | null })[]> {
+): Promise<
+	(T & { [P in U]: string | null } & {
+		[P in `${U}Width`]: number | null;
+	})[]
+> {
 	const ids = [
 		...new Set(
 			rows
@@ -19,17 +24,23 @@ export async function attachMediaUrl<
 				.filter((x): x is number => typeof x === "number"),
 		),
 	];
-	const urls = new Map<number, string | null>();
+	const found = new Map<number, { url: string | null; width: number | null }>();
 	if (ids.length) {
 		for (const m of await db
-			.select({ id: media.id, url: media.url })
+			.select({ id: media.id, url: media.url, width: media.width })
 			.from(media)
 			.where(inArray(media.id, ids)))
-			urls.set(m.id, m.url);
+			found.set(m.id, { url: m.url, width: m.width });
 	}
 	return rows.map((r) => {
 		const id = r[idField] as unknown;
-		const url = typeof id === "number" ? (urls.get(id) ?? null) : null;
-		return { ...r, [urlField]: url } as T & { [P in U]: string | null };
+		const hit = typeof id === "number" ? found.get(id) : undefined;
+		return {
+			...r,
+			[urlField]: hit?.url ?? null,
+			[`${urlField}Width`]: hit?.width ?? null,
+		} as T & { [P in U]: string | null } & {
+			[P in `${U}Width`]: number | null;
+		};
 	});
 }

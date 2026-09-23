@@ -101,6 +101,7 @@ export type ProjectCard = {
 	name: string;
 	summary: string;
 	image: string | null;
+	imageWidth: number | null;
 	startDate: string | null;
 	endDate: string | null;
 	i18nFallback: string[];
@@ -138,6 +139,7 @@ export async function listProjectCards(
 		name: names.get(r.id)?.name ?? r.code,
 		summary: names.get(r.id)?.summary ?? "",
 		image: r.logoUrl,
+		imageWidth: r.logoUrlWidth,
 		startDate: r.startDate,
 		endDate: r.endDate,
 		i18nFallback: fallback.get(r.id) ?? [],

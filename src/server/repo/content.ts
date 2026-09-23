@@ -217,16 +217,19 @@ export type PostListItem = {
 	title: string;
 	excerpt: string;
 	image: string | null; // cover image URL (null → renderer supplies a fallback)
+	imageWidth: number | null;
 	i18nFallback: string[];
 	/** What this row was loaded at, so an inline edit is checked against it. */
 	updatedAt: string;
 };
 
+type Cover = { url: string | null; width: number | null };
+
 async function coverUrls(
 	db: DB,
 	rows: { coverMediaId: number | null }[],
-): Promise<Map<number, string | null>> {
-	const covers = new Map<number, string | null>();
+): Promise<Map<number, Cover>> {
+	const covers = new Map<number, Cover>();
 	const ids = [
 		...new Set(
 			rows.map((r) => r.coverMediaId).filter((v): v is number => v != null),
@@ -234,10 +237,10 @@ async function coverUrls(
 	];
 	if (!ids.length) return covers;
 	for (const m of await db
-		.select({ id: media.id, url: media.url })
+		.select({ id: media.id, url: media.url, width: media.width })
 		.from(media)
 		.where(inArray(media.id, ids)))
-		covers.set(m.id, m.url);
+		covers.set(m.id, { url: m.url, width: m.width });
 	return covers;
 }
 
@@ -276,7 +279,12 @@ export async function listPosts(
 		publishedAt: r.publishedAt,
 		title: fields.get(r.id)?.title ?? "",
 		excerpt: fields.get(r.id)?.excerpt ?? "",
-		image: r.coverMediaId != null ? (covers.get(r.coverMediaId) ?? null) : null,
+		image:
+			r.coverMediaId != null ? (covers.get(r.coverMediaId)?.url ?? null) : null,
+		imageWidth:
+			r.coverMediaId != null
+				? (covers.get(r.coverMediaId)?.width ?? null)
+				: null,
 		i18nFallback: fallback.get(r.id) ?? [],
 		updatedAt: r.updatedAt,
 	}));
@@ -335,7 +343,13 @@ export async function listPublications(
 				title: f.get(r.id)?.title ?? "",
 				excerpt: f.get(r.id)?.excerpt ?? "",
 				image:
-					r.coverMediaId != null ? (covers.get(r.coverMediaId) ?? null) : null,
+					r.coverMediaId != null
+						? (covers.get(r.coverMediaId)?.url ?? null)
+						: null,
+				imageWidth:
+					r.coverMediaId != null
+						? (covers.get(r.coverMediaId)?.width ?? null)
+						: null,
 				i18nFallback: fallback.get(r.id) ?? [],
 				updatedAt: r.updatedAt,
 				year: String(m.year ?? ""),
@@ -459,7 +473,9 @@ export async function listVideos(db: DB, lang: string): Promise<VideoItem[]> {
 			excerpt: f.get(r.id)?.excerpt ?? "",
 			youtubeUrl: String(m.youtube_url ?? ""),
 			image:
-				r.coverMediaId != null ? (covers.get(r.coverMediaId) ?? null) : null,
+				r.coverMediaId != null
+					? (covers.get(r.coverMediaId)?.url ?? null)
+					: null,
 			i18nFallback: fallback.get(r.id) ?? [],
 			updatedAt: r.updatedAt,
 		};
@@ -471,6 +487,7 @@ export type AlbumItem = {
 	slug: string;
 	title: string;
 	cover: string | null;
+	coverWidth: number | null;
 	count: number;
 	i18nFallback: string[];
 	updatedAt: string;
@@ -498,7 +515,7 @@ export async function listAlbums(db: DB, lang: string): Promise<AlbumItem[]> {
 	const out: AlbumItem[] = [];
 	for (const a of albums) {
 		const pm = await db
-			.select({ url: media.url })
+			.select({ url: media.url, width: media.width })
 			.from(postMedia)
 			.innerJoin(media, eq(postMedia.mediaId, media.id))
 			.where(eq(postMedia.postId, a.id))
@@ -508,6 +525,7 @@ export async function listAlbums(db: DB, lang: string): Promise<AlbumItem[]> {
 			slug: a.slug,
 			title: f.get(a.id)?.title ?? "",
 			cover: pm[0]?.url ?? null,
+			coverWidth: pm[0]?.width ?? null,
 			count: pm.length,
 			i18nFallback: fallback.get(a.id) ?? [],
 			updatedAt: a.updatedAt,
@@ -519,6 +537,7 @@ export async function listAlbums(db: DB, lang: string): Promise<AlbumItem[]> {
 type AlbumPhoto = {
 	id: number;
 	url: string;
+	width: number | null;
 	caption: string;
 	captionFallback?: boolean;
 };
@@ -531,11 +550,12 @@ export type ResolvedAlbum = {
 };
 
 const photo = (
-	p: { mediaId: number; url: string | null },
+	p: { mediaId: number; url: string | null; width: number | null },
 	caps: Awaited<ReturnType<typeof resolveWithFallback>>,
 ): AlbumPhoto => ({
 	id: p.mediaId,
 	url: p.url ?? "",
+	width: p.width,
 	caption: caps.values.get(p.mediaId)?.caption ?? "",
 	...(caps.fallback.get(p.mediaId)?.includes("caption")
 		? { captionFallback: true }
@@ -568,7 +588,7 @@ export async function getAlbum(
 		lang,
 	);
 	const pm = await db
-		.select({ mediaId: media.id, url: media.url })
+		.select({ mediaId: media.id, url: media.url, width: media.width })
 		.from(postMedia)
 		.innerJoin(media, eq(postMedia.mediaId, media.id))
 		.where(eq(postMedia.postId, a.id))
@@ -672,7 +692,7 @@ export async function getPostBySlug(
 	}
 
 	const pm = await db
-		.select({ mediaId: media.id, url: media.url })
+		.select({ mediaId: media.id, url: media.url, width: media.width })
 		.from(postMedia)
 		.innerJoin(media, eq(postMedia.mediaId, media.id))
 		.where(eq(postMedia.postId, post.id))

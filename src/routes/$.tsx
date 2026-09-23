@@ -9,6 +9,7 @@ import { PhotoGrid } from "@/components/Lightbox";
 import { NavLink } from "@/components/NavLink";
 import { usePdfReader } from "@/components/PdfReader";
 import { PersonView } from "@/components/PersonView";
+import { Picture } from "@/components/Picture";
 import { ProjectView } from "@/components/ProjectView";
 import { RichBody } from "@/components/RichBody";
 import { ShareButtons } from "@/components/ShareButtons";
@@ -236,9 +237,11 @@ function RelatedPosts({
 					>
 						{p.image && (
 							<div className="aspect-[16/10] overflow-hidden">
-								<img
+								<Picture
 									src={p.image}
+									width={p.imageWidth}
 									alt=""
+									sizes="(min-width: 640px) 33vw, 100vw"
 									className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
 								/>
 							</div>

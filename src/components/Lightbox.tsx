@@ -2,7 +2,14 @@ import { useEffect, useRef, useState } from "react";
 
 import { useT } from "@/lib/i18n";
 
-export type LightboxPhoto = { id: number; url: string; caption?: string };
+import { Picture } from "./Picture";
+
+export type LightboxPhoto = {
+	id: number;
+	url: string;
+	width?: number | null;
+	caption?: string;
+};
 
 // stays mounted while closed: unmounting skips the native focus restore
 function Lightbox({
@@ -87,9 +94,11 @@ function Lightbox({
 			)}
 			{photo && (
 				<figure className="flex w-full max-w-6xl flex-col items-center">
-					<img
+					<Picture
 						src={photo.url}
+						width={photo.width}
 						alt={photo.caption || ""}
+						sizes="(min-width: 1152px) 1152px, 100vw"
 						className="max-h-[80vh] w-auto max-w-full rounded-xl object-contain shadow-2xl"
 					/>
 					<figcaption className="mt-4 max-w-3xl text-center text-sm text-white/90 md:text-base">
@@ -138,9 +147,11 @@ export function PhotoGrid({
 						}
 						className="group relative block overflow-hidden rounded-2xl border border-border focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
 					>
-						<img
+						<Picture
 							src={p.url}
+							width={p.width}
 							alt=""
+							sizes="(min-width: 768px) 33vw, 50vw"
 							className="aspect-square w-full object-cover transition duration-700 group-hover:scale-105"
 						/>
 						{p.caption && (

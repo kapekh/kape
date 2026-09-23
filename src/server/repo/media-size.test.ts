@@ -29,10 +29,10 @@ const out = execFileSync(
 	[
 		"-e",
 		`import { db } from "${root}/src/server/db.ts";
-		 import { imageSize } from "${root}/src/server/image-size.ts";
+		 import { drawnSize } from "${root}/src/server/images.ts";
 		 import * as admin from "${root}/src/server/repo/admin.ts";
 		 const bytes = new Uint8Array(await Bun.file("${root}/public/logo.png").arrayBuffer());
-		 const dims = imageSize(bytes);
+		 const dims = await drawnSize(bytes);
 		 const id = await admin.createMediaRecord(db, {
 			r2Key: "uploads/logo.png",
 			url: "/uploads/logo.png",
@@ -61,7 +61,7 @@ const out = execFileSync(
 const result = JSON.parse(out.trim().split("\n").at(-1) as string);
 
 describe("intrinsic image size, end to end", () => {
-	it("measures the real file's header", () => {
+	it("measures the real file as a browser draws it", () => {
 		expect(result.measured).toEqual({ width: 512, height: 512 });
 	});
 

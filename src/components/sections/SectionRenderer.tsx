@@ -40,6 +40,7 @@ import { type MapMarker, MapView } from "../MapView";
 import { NavLink } from "../NavLink";
 import { usePdfReader } from "../PdfReader";
 import { PersonPhotoEdit, useMayEditPeople } from "../PersonPhotoEdit";
+import { Picture } from "../Picture";
 import { PublicOrgChart } from "../PublicOrgChart";
 import { RichBody } from "../RichBody";
 import { DragHandle, SortableStatus, useSortable } from "../ui/sortable";
@@ -605,8 +606,19 @@ const Blob = ({ className }: { className: string }) => (
 	/>
 );
 
-const imgFor = (r: { image?: string | null; cover?: string | null }) =>
-	r.image || r.cover || PLACEHOLDER_IMAGE;
+type Imaged = {
+	image?: string | null;
+	imageWidth?: number | null;
+	cover?: string | null;
+	coverWidth?: number | null;
+};
+
+const imgFor = (r: Imaged): { src: string; width: number | null } =>
+	r.image
+		? { src: r.image, width: r.imageWidth ?? null }
+		: r.cover
+			? { src: r.cover, width: r.coverWidth ?? null }
+			: { src: PLACEHOLDER_IMAGE, width: null };
 
 /** Returns a language-prefixing localizer for internal hrefs (path-based i18n). */
 function useL() {
@@ -1974,16 +1986,16 @@ function PostCard({
 	const t = useT();
 	const row = useRowMark();
 	const href = base ? L(`${base}/${post.slug}`) : undefined;
+	const cover = imgFor(post);
 	const body = (
 		<>
 			<div className="relative h-56 overflow-hidden">
-				<img
-					loading="lazy"
-					src={imgFor(post)}
+				<Picture
+					src={cover.src}
+					width={cover.width}
 					alt={post.title || ""}
+					sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw"
 					className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-					onError={onImageError}
-					ref={imageFallbackRef}
 				/>
 				<div className="absolute inset-0 bg-gradient-to-t from-primary/70 via-transparent to-transparent" />
 				{post.publishedAt && (
@@ -2107,6 +2119,7 @@ function PostList(p: PostListProps) {
 	const base = p.linkBase ?? "";
 	const link = (slug: string) => (base ? L(`${base}/${slug}`) : "#");
 	const layout = p.layout ?? "grid-3";
+	const lead = posts.length ? imgFor(posts[0]) : null;
 	return (
 		<Band p={p} className={PAD}>
 			<Container>
@@ -2199,14 +2212,13 @@ function PostList(p: PostListProps) {
 								className="relative block h-[420px] overflow-hidden rounded-3xl bg-primary ring-1 ring-border"
 							>
 								{/* the placeholder's icon is centred, so at this height it lands behind the headline */}
-								{!isPlaceholder(imgFor(posts[0])) && (
-									<img
-										loading="lazy"
-										src={imgFor(posts[0])}
+								{lead && !isPlaceholder(lead.src) && (
+									<Picture
+										src={lead.src}
+										width={lead.width}
 										alt={posts[0].title || ""}
+										sizes="(min-width: 1024px) 700px, 100vw"
 										className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-										onError={onImageError}
-										ref={imageFallbackRef}
 									/>
 								)}
 								<div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/30 to-transparent" />
@@ -2244,13 +2256,12 @@ function PostList(p: PostListProps) {
 									className="group flex gap-5"
 								>
 									<div className="relative h-32 w-40 shrink-0 overflow-hidden rounded-2xl ring-1 ring-border">
-										<img
-											loading="lazy"
-											src={imgFor(post)}
+										<Picture
+											src={imgFor(post).src}
+											width={imgFor(post).width}
 											alt={post.title || ""}
+											sizes="160px"
 											className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-											onError={onImageError}
-											ref={imageFallbackRef}
 										/>
 									</div>
 									<div className="flex-1">
@@ -2357,7 +2368,7 @@ function VideoGrid(p: VideoGridProps) {
 					<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 						{videos.map((v) => {
 							const id = youtubeId(v.youtubeUrl);
-							const thumb = id ? youtubeThumb(id) : imgFor(v);
+							const thumb = id ? youtubeThumb(id) : imgFor(v).src;
 							return (
 								<NavLink
 									key={v.id}
@@ -2420,13 +2431,12 @@ function AlbumGrid(p: AlbumGridProps) {
 								className="group relative block overflow-hidden rounded-3xl ring-1 ring-border shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-[var(--shadow-soft)]"
 							>
 								<div className="aspect-[4/3] bg-muted">
-									<img
-										loading="lazy"
-										src={imgFor(a)}
+									<Picture
+										src={imgFor(a).src}
+										width={imgFor(a).width}
 										alt={a.title || ""}
+										sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw"
 										className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
-										onError={onImageError}
-										ref={imageFallbackRef}
 									/>
 								</div>
 								<div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-primary/90 via-primary/20 to-transparent p-5 text-primary-foreground">
@@ -2517,13 +2527,18 @@ function PublicationList(p: PublicationListProps) {
 									className={`group relative rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-[var(--shadow-soft)] ${stacked ? "flex h-full flex-col" : "flex items-center gap-4"}`}
 								>
 									{it.image ? (
-										<img
-											loading="lazy"
+										<Picture
 											src={it.image}
+											width={it.imageWidth}
 											alt={it.title || ""}
+											sizes={
+												stacked
+													? "(min-width: 1280px) 240px, (min-width: 640px) 33vw, 50vw"
+													: list
+														? "48px"
+														: "72px"
+											}
 											className={`rounded-xl object-cover ring-1 ring-border ${stacked ? "aspect-[3/4] w-full" : `shrink-0 ${list ? "h-16 w-12" : "h-24 w-[4.5rem]"}`}`}
-											onError={onImageError}
-											ref={imageFallbackRef}
 										/>
 									) : (
 										<div
@@ -3006,13 +3021,12 @@ function ProjectList(p: ProjectListProps) {
 									className={`${card} group flex flex-col p-6`}
 								>
 									{r.image ? (
-										<img
-											loading="lazy"
+										<Picture
 											src={r.image}
+											width={r.imageWidth}
 											alt={r.name || ""}
+											sizes="160px"
 											className="mb-4 h-12 w-auto max-w-[10rem] object-contain"
-											onError={onImageError}
-											ref={imageFallbackRef}
 										/>
 									) : (
 										<div className="mb-4 inline-flex w-fit rounded-lg bg-[var(--accent)]/10 px-3 py-1.5 font-display text-sm font-bold text-[var(--accent)]">
