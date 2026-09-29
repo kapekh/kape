@@ -464,8 +464,10 @@ export async function seedAlbums() {
 	}
 }
 
-/** Job vacancies (type=job; location/deadline in meta). One is expired to prove auto-hide. */
+/** Job vacancies (type=job; location/deadline in meta). One is expired to prove the closed state. */
 export async function seedJobs() {
+	// relative to the install, so a fixture installed next year still has an open vacancy
+	const year = new Date().getFullYear();
 	const jobs: {
 		slug: string;
 		location: string;
@@ -475,19 +477,19 @@ export async function seedJobs() {
 		{
 			slug: "job-me-officer",
 			location: "Kampong Cham",
-			deadline: "2026-12-31",
+			deadline: `${year + 1}-12-31`,
 			title: { en: "Project M&E Officer", km: "មន្ត្រី M&E គម្រោង" },
 		},
 		{
 			slug: "job-comms-officer",
 			location: "Phnom Penh",
-			deadline: "2026-11-30",
+			deadline: `${year + 1}-11-30`,
 			title: { en: "Communications Officer", km: "មន្ត្រីទំនាក់ទំនង" },
 		},
 		{
 			slug: "job-expired-bidding",
 			location: "All provinces",
-			deadline: "2024-01-01",
+			deadline: `${year - 2}-01-01`,
 			title: {
 				en: "Public Bidding Invitation (closed)",
 				km: "ការអញ្ជើញដេញថ្លៃ (បិទ)",
@@ -916,7 +918,7 @@ export async function seedPartners() {
 	);
 }
 
-// meta.deadline drives the homepage card and hides it once past
+// meta.deadline drives the homepage card and closes it once past
 export async function seedAnnouncements() {
 	const announcementPosts: {
 		slug: string;

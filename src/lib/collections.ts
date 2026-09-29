@@ -96,6 +96,14 @@ export function openNotices<T extends Notice>(items: T[]): T[] {
 	return [...dated, ...evergreen];
 }
 
+/** Open notices in `openNotices` order, then the closed ones, most recently closed first. */
+export function allNotices<T extends Notice>(items: T[]): T[] {
+	const closed = items
+		.filter((n) => noticeExpired(n.deadline))
+		.sort((a, b) => b.deadline.localeCompare(a.deadline));
+	return [...openNotices(items), ...closed];
+}
+
 // one source of truth for three lists: event was blocked in the sitemap but still resolvable as a detail page
 export const NON_PUBLIC_CONTENT_TYPES = new Set([
 	"internal_news",

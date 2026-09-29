@@ -21,7 +21,7 @@ const LISTING: Record<string, Listing> = {
 		layout: "list",
 		source: "publications",
 	},
-	careers: { type: "postList", layout: "list", source: "posts" },
+	careers: { type: "postList", layout: "list", source: "posts", perPage: 15 },
 	projects: { type: "projectList", layout: "grid-3", source: "projects" },
 };
 

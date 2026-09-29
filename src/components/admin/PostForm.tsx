@@ -137,7 +137,7 @@ const META_FIELDS: Record<string, MetaField[]> = {
 	announcement: [
 		{
 			key: "deadline",
-			label: "Deadline (optional — hides the card after this date)",
+			label: "Deadline (optional — after this date it is marked Closed)",
 			kind: "date",
 		},
 	],

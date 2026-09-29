@@ -216,3 +216,110 @@ describe("a rich text section with a portrait", () => {
 		expect(container.querySelector(".prose-body")).toBeTruthy();
 	});
 });
+
+describe("a list's “See all” link", () => {
+	const list = (props: Record<string, unknown>) =>
+		[
+			{
+				id: "more",
+				type: "postList",
+				layout: "grid-3",
+				props: {
+					title: "Impact stories",
+					moreHref: "/impact-stories",
+					data: [],
+					...props,
+				},
+			},
+		] as SectionNode[];
+
+	it("names this list only, when the section carries its own label", () => {
+		const { container } = render(
+			<SectionRenderer
+				sections={list({ moreLabel: "See all impact stories →" })}
+			/>,
+		);
+
+		expect(
+			container.querySelector("a[href='/en/impact-stories']")?.textContent,
+		).toBe("See all impact stories →");
+	});
+
+	it("falls back to the site-wide wording when it carries none", () => {
+		const { container } = render(<SectionRenderer sections={list({})} />);
+
+		expect(
+			container.querySelector("a[href='/en/impact-stories']")?.textContent,
+		).toBe("See all →");
+	});
+});
+
+describe("the careers table", () => {
+	const vacancies = [
+		{
+			id: 1,
+			slug: "open-role",
+			title: "Open role",
+			location: "Phnom Penh",
+			deadline: "2099-01-01",
+			closed: false,
+			i18nFallback: [],
+			updatedAt: "",
+		},
+		{
+			id: 2,
+			slug: "past-role",
+			title: "Past role",
+			location: "Kampong Cham",
+			deadline: "2020-01-01",
+			closed: true,
+			i18nFallback: [],
+			updatedAt: "",
+		},
+	];
+
+	const careers = (layout: string) =>
+		[
+			{
+				id: "jobs",
+				type: "postList",
+				layout,
+				props: {
+					title: "Current openings",
+					linkBase: "/careers",
+					data: vacancies,
+				},
+			},
+		] as SectionNode[];
+
+	it("keeps a closed vacancy listed, says so, and stops inviting an application", () => {
+		const { container } = render(
+			<SectionRenderer sections={careers("table")} />,
+		);
+
+		const rows = [...container.querySelectorAll("tbody tr")];
+		expect(rows.map((r) => r.querySelector("td")?.textContent)).toEqual([
+			"Open role",
+			"Past role",
+		]);
+		expect(rows[0].textContent).not.toContain("Closed");
+		expect(rows[0].querySelector("a")?.textContent).toContain("Apply");
+		expect(rows[1].textContent).toContain("Closed");
+		expect(rows[1].querySelector("a")?.textContent).toContain("View");
+		expect(rows[1].querySelector("a")?.getAttribute("href")).toBe(
+			"/en/careers/past-role",
+		);
+	});
+
+	it("says which one is closed on the simple list layout too", () => {
+		const { container } = render(
+			<SectionRenderer sections={careers("list")} />,
+		);
+
+		const items = [...container.querySelectorAll("li")];
+		expect(items).toHaveLength(2);
+		expect(items[0].textContent).not.toContain("Closed");
+		expect(items[1].textContent).toContain("Past role");
+		expect(items[1].textContent).toContain("Closed");
+	});
+});

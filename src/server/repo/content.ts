@@ -1,9 +1,10 @@
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 
 import {
+	allNotices,
 	NOTICE_CONTENT_TYPES,
 	noticeDeadline,
-	openNotices,
+	noticeExpired,
 } from "#/lib/collections";
 import type { SectionNode } from "#/lib/sections";
 import type { DB } from "../db";
@@ -392,11 +393,12 @@ export type JobItem = {
 	location: string;
 	employmentType: string;
 	deadline: string;
+	closed: boolean;
 	i18nFallback: string[];
 	updatedAt: string;
 };
 
-/** What the careers page lists: published jobs and announcements, none past their deadline. */
+/** What the careers page lists: every published job and announcement, the closed ones last. */
 export async function listJobs(db: DB, lang: string): Promise<JobItem[]> {
 	const rows = await db
 		.select()
@@ -408,7 +410,7 @@ export async function listJobs(db: DB, lang: string): Promise<JobItem[]> {
 				eq(posts.status, "published"),
 			),
 		);
-	const active = openNotices(
+	const listed = allNotices(
 		rows.map((r) => ({
 			...r,
 			deadline: noticeDeadline(r.meta),
@@ -418,10 +420,10 @@ export async function listJobs(db: DB, lang: string): Promise<JobItem[]> {
 	const { values: f, fallback } = await resolveWithFallback(
 		db,
 		"post",
-		active.map((r) => r.id),
+		listed.map((r) => r.id),
 		lang,
 	);
-	return active.map((r) => {
+	return listed.map((r) => {
 		const m = (r.meta ?? {}) as Record<string, unknown>;
 		return {
 			id: r.id,
@@ -430,6 +432,7 @@ export async function listJobs(db: DB, lang: string): Promise<JobItem[]> {
 			location: String(m.location ?? ""),
 			employmentType: String(m.employmentType ?? ""),
 			deadline: r.deadline,
+			closed: noticeExpired(r.deadline),
 			i18nFallback: fallback.get(r.id) ?? [],
 			updatedAt: r.updatedAt,
 		};
@@ -634,6 +637,9 @@ export type ResolvedPost = {
 	// fetch the whole collection listing to find one record's own file
 	fileUrl: string | null;
 	youtubeUrl: string | null;
+	// a notice's own state: the page it links to has to say it closed
+	deadline: string | null;
+	closed: boolean;
 	i18nFallback: string[];
 	updatedAt: string; // the version an inline save is checked against
 };
@@ -730,6 +736,8 @@ export async function getPostBySlug(
 		gallery: pm.map((p) => photo(p, caps)),
 		fileUrl: meta.fileUrl ? String(meta.fileUrl) : null,
 		youtubeUrl: meta.youtube_url ? String(meta.youtube_url) : null,
+		deadline: noticeDeadline(meta) || null,
+		closed: noticeExpired(noticeDeadline(meta)),
 		i18nFallback: fallback,
 		updatedAt: post.updatedAt,
 	};

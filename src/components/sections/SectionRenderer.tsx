@@ -1985,10 +1985,20 @@ type PostRow = Partial<PostListItem & JobItem> &
 	Pick<PostListItem, "id" | "slug" | "title" | "i18nFallback" | "updatedAt">;
 type PostListProps = Common & {
 	moreHref?: string;
+	moreLabel?: string;
 	linkBase?: string;
 	data?: PostRow[];
 	pageInfo?: PageInfo;
 };
+
+function ClosedBadge() {
+	const t = useT();
+	return (
+		<span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+			{t("jobs.closed", "Closed")}
+		</span>
+	);
+}
 
 function PostCard({
 	post,
@@ -2015,11 +2025,14 @@ function PostCard({
 					className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
 				/>
 				<div className="absolute inset-0 bg-gradient-to-t from-primary/70 via-transparent to-transparent" />
-				{post.publishedAt && (
-					<span className="absolute left-4 top-4 rounded-full bg-[var(--accent)] px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-accent-foreground">
-						{post.publishedAt}
-					</span>
-				)}
+				<div className="absolute left-4 top-4 flex items-center gap-2">
+					{post.publishedAt && (
+						<span className="rounded-full bg-[var(--accent)] px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-accent-foreground">
+							{post.publishedAt}
+						</span>
+					)}
+					{post.closed && <ClosedBadge />}
+				</div>
 			</div>
 			<div className="p-6">
 				<H
@@ -2147,7 +2160,7 @@ function PostList(p: PostListProps) {
 							href={L(p.moreHref) ?? "#"}
 							className="tap-target text-sm font-semibold text-primary underline underline-offset-8 hover:text-[var(--accent)]"
 						>
-							{t("home.news.all", "See all →")}
+							{p.moreLabel || t("home.news.all", "See all →")}
 						</NavLink>
 					)}
 				</div>
@@ -2167,8 +2180,9 @@ function PostList(p: PostListProps) {
 									>
 										{post.title}
 									</span>
-									<span className="shrink-0 text-xs text-muted-foreground">
-										{post.publishedAt}
+									<span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+										{post.deadline || post.publishedAt}
+										{post.closed && <ClosedBadge />}
 									</span>
 								</NavLink>
 							</li>
@@ -2196,7 +2210,7 @@ function PostList(p: PostListProps) {
 									<tr key={post.id} className="hover:bg-muted/30 transition">
 										<td
 											{...row("post", post, "title")}
-											className="px-4 py-3 font-medium text-foreground"
+											className={`px-4 py-3 font-medium ${post.closed ? "text-foreground/60" : "text-foreground"}`}
 										>
 											{post.title}
 										</td>
@@ -2204,15 +2218,27 @@ function PostList(p: PostListProps) {
 											{post.location}
 										</td>
 										<td className="px-4 py-3 text-foreground/70">
-											{post.deadline}
+											<span className="whitespace-nowrap">{post.deadline}</span>
+											{post.closed && (
+												<span className="ml-2 inline-block">
+													<ClosedBadge />
+												</span>
+											)}
 										</td>
 										<td className="px-4 py-3 text-right">
 											{base && (
 												<NavLink
 													href={link(post.slug)}
-													className="font-semibold text-[var(--accent)] hover:underline"
+													className={
+														post.closed
+															? "font-semibold text-muted-foreground hover:underline"
+															: "font-semibold text-[var(--accent)] hover:underline"
+													}
 												>
-													{t("jobs.apply", "Apply")} →
+													{post.closed
+														? t("jobs.view", "View")
+														: t("jobs.apply", "Apply")}{" "}
+													→
 												</NavLink>
 											)}
 										</td>
@@ -2240,11 +2266,14 @@ function PostList(p: PostListProps) {
 								)}
 								<div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/30 to-transparent" />
 								<div className="absolute bottom-0 p-8 text-primary-foreground">
-									{posts[0].publishedAt && (
-										<span className="rounded-full bg-[var(--accent)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent-foreground">
-											{posts[0].publishedAt}
-										</span>
-									)}
+									<span className="flex items-center gap-2">
+										{posts[0].publishedAt && (
+											<span className="rounded-full bg-[var(--accent)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent-foreground">
+												{posts[0].publishedAt}
+											</span>
+										)}
+										{posts[0].closed && <ClosedBadge />}
+									</span>
 									<H
 										{...row("post", posts[0], "title")}
 										className="mt-4 max-w-xl t-section"
@@ -2282,11 +2311,14 @@ function PostList(p: PostListProps) {
 										/>
 									</div>
 									<div className="flex-1">
-										{post.publishedAt && (
-											<div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--accent-ink)]">
-												{post.publishedAt}
-											</div>
-										)}
+										<div className="flex items-center gap-2">
+											{post.publishedAt && (
+												<span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--accent-ink)]">
+													{post.publishedAt}
+												</span>
+											)}
+											{post.closed && <ClosedBadge />}
+										</div>
 										<HSub
 											{...row("post", post, "title")}
 											className="mt-1.5 t-card-title text-primary group-hover:text-[var(--accent)] transition line-clamp-3"
@@ -2356,6 +2388,7 @@ function thumbFallbackRef(el: HTMLImageElement | null): void {
 
 type VideoGridProps = Common & {
 	moreHref?: string;
+	moreLabel?: string;
 	data?: SourceRow["videos"][];
 };
 
@@ -2375,7 +2408,7 @@ function VideoGrid(p: VideoGridProps) {
 							href={L(p.moreHref) ?? "#"}
 							className="tap-target text-sm font-semibold text-primary underline underline-offset-8 hover:text-[var(--accent)]"
 						>
-							{t("home.video.all", "All videos →")}
+							{p.moreLabel || t("home.video.all", "All videos →")}
 						</NavLink>
 					)}
 				</div>
@@ -2975,6 +3008,7 @@ function PartnerCategory({
 type ProjectRow = SourceRow["projects"];
 type ProjectListProps = Common & {
 	moreHref?: string;
+	moreLabel?: string;
 	linkBase?: string;
 	data?: ProjectRow[];
 };
@@ -3004,7 +3038,7 @@ function ProjectList(p: ProjectListProps) {
 							href={L(p.moreHref) ?? "#"}
 							className="tap-target text-sm font-semibold text-primary underline underline-offset-8 hover:text-[var(--accent)]"
 						>
-							{t("home.news.all", "See all →")}
+							{p.moreLabel || t("home.news.all", "See all →")}
 						</NavLink>
 					)}
 				</div>

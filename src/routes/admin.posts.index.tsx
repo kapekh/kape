@@ -230,7 +230,7 @@ function PostsList() {
 										</Badge>
 										{r.status === "published" && isFormClosed(r.deadline) && (
 											<Badge tone="warning" className="ml-2">
-												Hidden since {r.deadline}
+												Closed {r.deadline}
 											</Badge>
 										)}
 									</TD>

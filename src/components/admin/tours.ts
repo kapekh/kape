@@ -235,8 +235,8 @@ export const TOURS = {
 			},
 			{
 				target: TABLE,
-				title: "The deadline hides it",
-				body: "Past its deadline a published notice stays published but stops showing, and the row says Hidden since that date. Clear or move the date to bring it back.",
+				title: "The deadline closes it",
+				body: "Past its deadline a published notice stops popping up on the home page, but stays on the careers page marked Closed, and the row says Closed with that date. Clear or move the date to reopen it.",
 			},
 			{
 				target: ACTIONS,

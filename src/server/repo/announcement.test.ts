@@ -4,8 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 
-// the popup and the careers list are the two surfaces a notice has, and a job and
-// an announcement must show on both
+// a notice has two surfaces; past its deadline the popup drops it and the careers
+// list keeps it, marked closed
 const dir = mkdtempSync(join(tmpdir(), "announcement-"));
 const dbPath = join(dir, "announcement.db");
 const root = process.cwd();
@@ -36,7 +36,14 @@ const NOTICES = [
 	{ slug: "news-item", type: "news", deadline: null },
 ];
 
-const surfaces = (): { popup: string[]; careers: string[] } =>
+type Detail = { slug: string; deadline: string | null; closed: boolean };
+
+const surfaces = (): {
+	popup: string[];
+	careers: string[];
+	closed: string[];
+	details: Detail[];
+} =>
 	JSON.parse(
 		execFileSync(
 			"bun",
@@ -44,7 +51,7 @@ const surfaces = (): { popup: string[]; careers: string[] } =>
 				"-e",
 				`import { db } from "${root}/src/server/db.ts";
 				 import { listActiveAnnouncements } from "${root}/src/server/repo/site.ts";
-				 import { listJobs } from "${root}/src/server/repo/content.ts";
+				 import { getPostBySlug, listJobs } from "${root}/src/server/repo/content.ts";
 				 const c = db.$client;
 				 for (const n of ${JSON.stringify(NOTICES)}) {
 					 c.run("insert into posts (tenant_id, content_type, slug, status, published_at, meta) values (1, ?, ?, 'published', '2026-01-01', ?)",
@@ -55,7 +62,17 @@ const surfaces = (): { popup: string[]; careers: string[] } =>
 				 }
 				 const popup = await listActiveAnnouncements(db, "en");
 				 const careers = await listJobs(db, "en");
-				 console.log(JSON.stringify({ popup: popup.map((r) => r.title), careers: careers.map((r) => r.title) }));
+				 const details = [];
+				 for (const slug of ["future", "expired", "news-item"]) {
+					 const p = await getPostBySlug(db, slug, "en");
+					 details.push({ slug, deadline: p?.deadline ?? null, closed: Boolean(p?.closed) });
+				 }
+				 console.log(JSON.stringify({
+					 popup: popup.map((r) => r.title),
+					 careers: careers.map((r) => r.title),
+					 closed: careers.filter((r) => r.closed).map((r) => r.title),
+					 details,
+				 }));
 				 process.exit(0);`,
 			],
 			{
@@ -68,7 +85,38 @@ const surfaces = (): { popup: string[]; careers: string[] } =>
 			.pop() as string,
 	);
 
-const { popup, careers } = surfaces();
+const { popup, careers, closed, details } = surfaces();
+
+// the cache has no way to hear a deadline pass, so a page whose wording depends on
+// one must not be stored at all
+const cachedKeys = (): string[] =>
+	JSON.parse(
+		execFileSync(
+			"bun",
+			[
+				"-e",
+				`import { db } from "${root}/src/server/db.ts";
+				 import { resolveRouteCached } from "${root}/src/server/repo/route.ts";
+				 await resolveRouteCached(db, "news", "en");
+				 await resolveRouteCached(db, "careers", "en");
+				 console.log(JSON.stringify(db.$client.query("select key from render_cache").all().map((r) => r.key)));
+				 process.exit(0);`,
+			],
+			{ env: { ...process.env, DATABASE_PATH: dbPath }, encoding: "utf8" },
+		)
+			.trim()
+			.split("\n")
+			.pop() as string,
+	);
+
+describe("a page whose wording turns over at a deadline", () => {
+	const keys = cachedKeys();
+
+	it("is not cached, while a listing with no deadline is", () => {
+		expect(keys.some((k) => k.endsWith("::news"))).toBe(true);
+		expect(keys.some((k) => k.endsWith("::careers"))).toBe(false);
+	});
+});
 
 describe("active announcements", () => {
 	const shown = popup;
@@ -98,9 +146,16 @@ describe("a job and an announcement on both surfaces", () => {
 		expect(careers).toContain("evergreen");
 	});
 
-	it("hides a job past its deadline on both", () => {
+	it("stops popping a notice up past its deadline, and keeps listing it", () => {
 		expect(popup).not.toContain("job-closed");
-		expect(careers).not.toContain("job-closed");
+		expect(popup).not.toContain("expired");
+		expect(careers).toContain("job-closed");
+		expect(careers).toContain("expired");
+	});
+
+	it("says which listed notices are closed, and puts them last", () => {
+		expect(closed.sort()).toEqual(["expired", "job-closed"]);
+		expect(careers.slice(-2).sort()).toEqual(["expired", "job-closed"]);
 	});
 
 	it("orders both by nearest deadline, whatever the type", () => {
@@ -108,6 +163,15 @@ describe("a job and an announcement on both surfaces", () => {
 			l.filter((t) => ["job-open", "future", "evergreen"].includes(t));
 		expect(dated(popup)).toEqual(["job-open", "future", "evergreen"]);
 		expect(dated(careers)).toEqual(["job-open", "future", "evergreen"]);
+	});
+
+	it("carries the closed state onto the page the row links to", () => {
+		const by = (slug: string) => details.find((d) => d.slug === slug);
+		expect(by("expired")?.closed).toBe(true);
+		expect(by("expired")?.deadline).toBe(`${year - 5}-01-01`);
+		expect(by("future")?.closed).toBe(false);
+		expect(by("future")?.deadline).toBe(`${year + 5}-12-15`);
+		expect(by("news-item")?.deadline).toBeNull();
 	});
 
 	it("keeps other content types out", () => {

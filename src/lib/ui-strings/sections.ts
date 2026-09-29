@@ -27,9 +27,12 @@ export const sections: Record<string, { en: string; km?: string }> = {
 	"home.video.all": { en: "All videos →", km: "វីដេអូទាំងអស់ →" },
 
 	"jobs.apply": { en: "Apply" },
+	"jobs.closed": { en: "Closed" },
+	"jobs.closedOn": { en: "This closed on {date}." },
 	"jobs.col.deadline": { en: "Deadline" },
 	"jobs.col.location": { en: "Location" },
 	"jobs.col.position": { en: "Position" },
+	"jobs.view": { en: "View" },
 
 	"pager.label": { en: "Pagination" },
 	"pager.next": { en: "Next" },

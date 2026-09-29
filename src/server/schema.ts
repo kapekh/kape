@@ -124,7 +124,7 @@ export const posts = sqliteTable(
 		coverMediaId: integer("cover_media_id").references(() => media.id),
 		author: text("author"),
 		publishedAt: text("published_at"),
-		deadline: text("deadline"), // nullable; jobs/announcements auto-hide past this
+		deadline: text("deadline"), // unused: a notice's deadline is meta.deadline
 		meta: text("meta", { mode: "json" }).$type<Record<string, unknown>>(),
 		...timestamps,
 	},

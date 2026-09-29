@@ -69,6 +69,14 @@ const EYEBROW: SectionField = {
 	kind: "text",
 };
 
+// empty falls back to the shared ui string, which renames every other list too
+const MORE_LABEL: SectionField = {
+	key: "moreLabel",
+	label: "“See all” label",
+	kind: "text",
+	help: "Empty uses the site-wide wording",
+};
+
 // brand bands flip every colour token inside the section, see .section-band
 export const SECTION_TONES: { value: string; label: string }[] = [
 	{ value: "", label: "Default" },
@@ -472,6 +480,7 @@ export const SECTION_DEFS: SectionDef[] = [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
 			{ key: "moreHref", label: "“See all” link", kind: "url" },
+			MORE_LABEL,
 			PER_PAGE,
 			...TONE_FIELDS,
 		],
@@ -487,6 +496,7 @@ export const SECTION_DEFS: SectionDef[] = [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
 			{ key: "moreHref", label: "“All videos” link", kind: "url" },
+			MORE_LABEL,
 			...TONE_FIELDS,
 		],
 	},
@@ -591,6 +601,7 @@ export const SECTION_DEFS: SectionDef[] = [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
 			{ key: "moreHref", label: "“See all” link", kind: "url" },
+			MORE_LABEL,
 			...TONE_FIELDS,
 		],
 	},

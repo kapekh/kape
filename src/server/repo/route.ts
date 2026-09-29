@@ -3,6 +3,7 @@ import { alias } from "drizzle-orm/sqlite-core";
 import {
 	collectionFor,
 	legacyRedirect,
+	NOTICE_CONTENT_TYPES,
 	resolvesUnder,
 } from "#/lib/collections";
 import { type PublicRecordKind, publicPathOf } from "#/lib/public-path";
@@ -180,6 +181,17 @@ function tagsFor(r: ResolvedRoute): string[] {
 	return [];
 }
 
+/** True when what the page says turns over at a deadline, which no mutation announces. */
+function datedByDeadline(r: ResolvedRoute): boolean {
+	if (r.kind === "page")
+		return (r.page.sections ?? []).some(
+			(s) => s.query?.source === "posts" && s.query.contentType === "job",
+		);
+	return (
+		r.kind === "article" && NOTICE_CONTENT_TYPES.includes(r.post.contentType)
+	);
+}
+
 // redirects and not-found are not cached, so new or moved content surfaces immediately
 export async function resolveRouteCached(
 	db: DB,
@@ -193,7 +205,11 @@ export async function resolveRouteCached(
 	const hit = await cacheGet<ResolvedRoute>(db, key);
 	if (hit) return hit;
 	const resolved = await resolveRoute(db, path, lang, listPage);
-	if (resolved.kind !== "redirect" && resolved.kind !== "notfound") {
+	if (
+		resolved.kind !== "redirect" &&
+		resolved.kind !== "notfound" &&
+		!datedByDeadline(resolved)
+	) {
 		await cacheSet(db, key, resolved, tagsFor(resolved));
 	}
 	return resolved;

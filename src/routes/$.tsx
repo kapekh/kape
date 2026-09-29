@@ -533,8 +533,21 @@ function ResolvedRoute() {
 				/>
 				{post.publishedAt && (
 					<div className="text-xs text-[var(--accent-ink)] font-semibold uppercase tracking-wider mb-6">
-						{post.publishedAt} · {post.author ?? socialSiteName(settings)}
+						{post.publishedAt} · {post.author || socialSiteName(settings)}
 					</div>
+				)}
+				{post.deadline && (
+					<p
+						className={`mb-6 rounded-xl px-4 py-3 text-sm font-semibold ${post.closed ? "bg-muted text-muted-foreground" : "bg-[var(--accent)]/10 text-[var(--accent-ink)]"}`}
+					>
+						{post.closed
+							? t("jobs.closedOn", "This closed on {date}.", {
+									date: post.deadline,
+								})
+							: t("announcement.deadlineOn", "Deadline {date}", {
+									date: post.deadline,
+								})}
+					</p>
 				)}
 				{post.contentType === "video" && post.youtubeUrl && (
 					<VideoPlayer url={post.youtubeUrl} title={post.title} />

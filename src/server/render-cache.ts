@@ -10,7 +10,8 @@ const TTL_SECONDS = 7 * 24 * 60 * 60; // backstop; precise invalidation is the p
 // bump when the rendered HTML or the cached payload's shape changes; old rows age out on the TTL.
 // v8: page and post covers, portraits, donor and org-chart logos, and a section's
 // own image props all carry their intrinsic width too.
-const FORMAT = "v8";
+// v9: a careers row carries `closed`, and the list keeps the closed notices.
+const FORMAT = "v9";
 
 export const cacheKey = (path: string, lang: string) =>
 	`${FORMAT}::${lang || "en"}::${path.replace(/^\/+|\/+$/g, "")}`;
