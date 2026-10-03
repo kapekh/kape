@@ -323,3 +323,71 @@ describe("the careers table", () => {
 		expect(items[1].textContent).toContain("Closed");
 	});
 });
+
+describe("a section's subtitle", () => {
+	const titled = (props: Record<string, unknown>) =>
+		[
+			{
+				id: "cards",
+				type: "cards",
+				layout: "cols-3",
+				props: { title: "What we do", items: [], ...props },
+			},
+		] as SectionNode[];
+
+	it("reads as a sentence under the title, not as an eyebrow above it", () => {
+		const { container } = render(
+			<SectionRenderer
+				sections={titled({
+					eyebrow: "Our work",
+					subtitle: "Education at every level, in 25 provinces.",
+				})}
+			/>,
+		);
+
+		const head = container.querySelector("h1, h2")?.parentElement;
+		const text = [...(head?.children ?? [])].map((el) => el.textContent);
+		expect(text).toEqual([
+			"Our work",
+			"What we do",
+			"Education at every level, in 25 provinces.",
+		]);
+		expect(head?.querySelector("p")?.textContent).toBe(
+			"Education at every level, in 25 provinces.",
+		);
+	});
+
+	it("draws nothing when the section carries none", () => {
+		const { container } = render(<SectionRenderer sections={titled({})} />);
+
+		expect(
+			container.querySelector("h1, h2")?.parentElement?.querySelector("p") ??
+				null,
+		).toBeNull();
+	});
+
+	it("reaches the stats band, which draws its own heading", () => {
+		const { container } = render(
+			<SectionRenderer
+				sections={
+					[
+						{
+							id: "reach",
+							type: "stats",
+							layout: "band",
+							props: {
+								title: "Three decades.",
+								subtitle: "Counted across 25 provinces.",
+								items: [{ value: "30", label: "Preschools" }],
+							},
+						},
+					] as SectionNode[]
+				}
+			/>,
+		);
+
+		expect(container.querySelector("h2")?.parentElement?.textContent).toContain(
+			"Counted across 25 provinces.",
+		);
+	});
+});

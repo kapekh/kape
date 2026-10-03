@@ -69,6 +69,14 @@ const EYEBROW: SectionField = {
 	kind: "text",
 };
 
+// without one, a sentence goes in the eyebrow and renders as small caps
+const SUBTITLE: SectionField = {
+	key: "subtitle",
+	label: "Subtitle",
+	kind: "textarea",
+	help: "One or two sentences under the title. Empty shows nothing.",
+};
+
 // empty falls back to the shared ui string, which renames every other list too
 const MORE_LABEL: SectionField = {
 	key: "moreLabel",
@@ -194,6 +202,7 @@ export const SECTION_DEFS: SectionDef[] = [
 		fields: [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
+			SUBTITLE,
 			{ key: "body", label: "Body", kind: "richtext" },
 			{
 				key: "personId",
@@ -218,6 +227,7 @@ export const SECTION_DEFS: SectionDef[] = [
 		fields: [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
+			SUBTITLE,
 			{ key: "items", label: "Cards", kind: "cards" },
 			...TONE_FIELDS,
 			CENTER,
@@ -235,6 +245,7 @@ export const SECTION_DEFS: SectionDef[] = [
 		fields: [
 			EYEBROW,
 			{ key: "title", label: "Title", kind: "text" },
+			SUBTITLE,
 			{
 				key: "valueSize",
 				label: "Number size",
@@ -305,6 +316,7 @@ export const SECTION_DEFS: SectionDef[] = [
 		fields: [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
+			SUBTITLE,
 			{
 				key: "items",
 				label: "Resources",
@@ -373,6 +385,7 @@ export const SECTION_DEFS: SectionDef[] = [
 		fields: [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
+			SUBTITLE,
 			{
 				key: "groups",
 				label: "Groups",
@@ -406,6 +419,7 @@ export const SECTION_DEFS: SectionDef[] = [
 			},
 			EYEBROW,
 			{ key: "title", label: "Title", kind: "text" },
+			// intro is already the line under this title
 			{ key: "body", label: "Intro", kind: "textarea" },
 			...TONE_FIELDS,
 		],
@@ -423,6 +437,7 @@ export const SECTION_DEFS: SectionDef[] = [
 		fields: [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
+			SUBTITLE,
 			{
 				key: "items",
 				label: "Certificates",
@@ -453,6 +468,7 @@ export const SECTION_DEFS: SectionDef[] = [
 		fields: [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
+			SUBTITLE,
 			...TONE_FIELDS,
 			CENTER,
 		],
@@ -479,6 +495,7 @@ export const SECTION_DEFS: SectionDef[] = [
 		fields: [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
+			SUBTITLE,
 			{ key: "moreHref", label: "“See all” link", kind: "url" },
 			MORE_LABEL,
 			PER_PAGE,
@@ -495,6 +512,7 @@ export const SECTION_DEFS: SectionDef[] = [
 		fields: [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
+			SUBTITLE,
 			{ key: "moreHref", label: "“All videos” link", kind: "url" },
 			MORE_LABEL,
 			...TONE_FIELDS,
@@ -510,6 +528,7 @@ export const SECTION_DEFS: SectionDef[] = [
 		fields: [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
+			SUBTITLE,
 			...TONE_FIELDS,
 		],
 	},
@@ -535,6 +554,7 @@ export const SECTION_DEFS: SectionDef[] = [
 		fields: [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
+			SUBTITLE,
 			{ key: "category", label: "Category filter", kind: "text" },
 			...TONE_FIELDS,
 		],
@@ -549,6 +569,7 @@ export const SECTION_DEFS: SectionDef[] = [
 		fields: [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
+			SUBTITLE,
 			...TONE_FIELDS,
 		],
 	},
@@ -565,6 +586,7 @@ export const SECTION_DEFS: SectionDef[] = [
 		fields: [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
+			SUBTITLE,
 			...TONE_FIELDS,
 		],
 	},
@@ -582,6 +604,7 @@ export const SECTION_DEFS: SectionDef[] = [
 		fields: [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
+			SUBTITLE,
 			...TONE_FIELDS,
 		],
 	},
@@ -600,6 +623,7 @@ export const SECTION_DEFS: SectionDef[] = [
 		fields: [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
+			SUBTITLE,
 			{ key: "moreHref", label: "“See all” link", kind: "url" },
 			MORE_LABEL,
 			...TONE_FIELDS,
@@ -615,6 +639,7 @@ export const SECTION_DEFS: SectionDef[] = [
 		fields: [
 			EYEBROW,
 			{ key: "title", label: "Section title", kind: "text" },
+			SUBTITLE,
 			...TONE_FIELDS,
 		],
 	},

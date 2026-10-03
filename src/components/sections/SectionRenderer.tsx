@@ -52,6 +52,7 @@ type Common = {
 	layout?: string;
 	eyebrow?: string;
 	title?: string;
+	subtitle?: string;
 	tone?: string;
 	/** An editor's own background colour, which beats `tone`. */
 	toneColor?: string;
@@ -519,17 +520,19 @@ const OwnsPageTitle = createContext(false);
 function Heading({
 	eyebrow,
 	title,
+	subtitle,
 	center = false,
 	light = false,
 }: {
 	eyebrow?: string;
 	title?: string;
+	subtitle?: string;
 	center?: boolean;
 	light?: boolean;
 }) {
 	const H = useContext(OwnsPageTitle) ? "h1" : "h2";
 	const mark = useMark();
-	if (!title && !eyebrow) return null;
+	if (!title && !eyebrow && !subtitle) return null;
 	return (
 		<div
 			className={`${center ? "mx-auto max-w-2xl text-center" : "max-w-2xl"} mb-12`}
@@ -549,6 +552,14 @@ function Heading({
 				>
 					{renderTitle(title)}
 				</H>
+			)}
+			{subtitle && (
+				<p
+					{...mark("subtitle")}
+					className={`mt-4 t-lead ${light ? "text-white/85" : "text-muted-foreground"}`}
+				>
+					{subtitle}
+				</p>
 			)}
 		</div>
 	);
@@ -1069,7 +1080,7 @@ function RichText(p: RichTextProps) {
 	return (
 		<Band p={p} className={PAD}>
 			<Container className={p.layout === "narrow" ? "max-w-3xl" : "max-w-4xl"}>
-				<Heading eyebrow={p.eyebrow} title={p.title} />
+				<Heading eyebrow={p.eyebrow} title={p.title} subtitle={p.subtitle} />
 				<div className={person ? "has-portrait" : undefined}>
 					{person && (
 						<figure className="mb-6 md:float-right md:ml-10 md:w-64">
@@ -1176,7 +1187,12 @@ function Cards(p: CardsProps) {
 		return (
 			<Band p={p} className={PAD}>
 				<Container>
-					<Heading eyebrow={p.eyebrow} title={p.title} center={!!p.center} />
+					<Heading
+						eyebrow={p.eyebrow}
+						title={p.title}
+						subtitle={p.subtitle}
+						center={!!p.center}
+					/>
 					<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
 						{items.map((it, n) => (
 							<LogoTile
@@ -1194,7 +1210,12 @@ function Cards(p: CardsProps) {
 	return (
 		<Band p={p} className={PAD}>
 			<Container>
-				<Heading eyebrow={p.eyebrow} title={p.title} center={!!p.center} />
+				<Heading
+					eyebrow={p.eyebrow}
+					title={p.title}
+					subtitle={p.subtitle}
+					center={!!p.center}
+				/>
 				<div className={`grid grid-cols-1 ${cols} gap-5`}>
 					{items.map((it, n) => {
 						// Background-image card: image fills the card, text overlaid in white.
@@ -1479,7 +1500,7 @@ function Stats(p: StatsProps) {
 		return (
 			<Band p={p} className={PAD}>
 				<Container>
-					<Heading eyebrow={p.eyebrow} title={p.title} />
+					<Heading eyebrow={p.eyebrow} title={p.title} subtitle={p.subtitle} />
 					<div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-x-8 gap-y-10">
 						{items.map((it, n) => (
 							// biome-ignore lint/suspicious/noArrayIndexKey: server-rendered list, no reorder or delete while mounted
@@ -1554,6 +1575,14 @@ function Stats(p: StatsProps) {
 						<h2 {...mark("title")} className="mt-3 t-band">
 							{renderTitle(p.title)}
 						</h2>
+					)}
+					{p.subtitle && (
+						<p
+							{...mark("subtitle")}
+							className="mt-4 t-lead text-primary-foreground/80"
+						>
+							{p.subtitle}
+						</p>
 					)}
 				</div>
 				<div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-x-10 gap-y-12">
@@ -1668,7 +1697,7 @@ function Resources(p: ResourcesProps) {
 	return (
 		<Band p={p} className={PAD}>
 			<Container>
-				<Heading eyebrow={p.eyebrow} title={p.title} />
+				<Heading eyebrow={p.eyebrow} title={p.title} subtitle={p.subtitle} />
 				{items.length === 0 ? (
 					<Empty>{t("empty.resources", "No resources published yet.")}</Empty>
 				) : (
@@ -1910,7 +1939,7 @@ function Pills(p: PillsProps) {
 	return (
 		<Band p={p} className={PAD}>
 			<Container>
-				<Heading eyebrow={p.eyebrow} title={p.title} />
+				<Heading eyebrow={p.eyebrow} title={p.title} subtitle={p.subtitle} />
 				<div className="space-y-7">
 					{groups.map((g, n) => (
 						// biome-ignore lint/suspicious/noArrayIndexKey: server-rendered list, no reorder or delete while mounted
@@ -2154,7 +2183,7 @@ function PostList(p: PostListProps) {
 		<Band p={p} className={PAD}>
 			<Container>
 				<div className="mb-12 flex items-end justify-between gap-4 flex-wrap">
-					<Heading eyebrow={p.eyebrow} title={p.title} />
+					<Heading eyebrow={p.eyebrow} title={p.title} subtitle={p.subtitle} />
 					{p.moreHref && (
 						<NavLink
 							href={L(p.moreHref) ?? "#"}
@@ -2402,7 +2431,7 @@ function VideoGrid(p: VideoGridProps) {
 		<Band p={p} className={PAD}>
 			<Container>
 				<div className="mb-12 flex items-end justify-between gap-4 flex-wrap">
-					<Heading eyebrow={p.eyebrow} title={p.title} />
+					<Heading eyebrow={p.eyebrow} title={p.title} subtitle={p.subtitle} />
 					{p.moreHref && (
 						<NavLink
 							href={L(p.moreHref) ?? "#"}
@@ -2479,7 +2508,7 @@ function AlbumGrid(p: AlbumGridProps) {
 	return (
 		<Band p={p} className={PAD}>
 			<Container>
-				<Heading eyebrow={p.eyebrow} title={p.title} />
+				<Heading eyebrow={p.eyebrow} title={p.title} subtitle={p.subtitle} />
 				{albums.length === 0 ? (
 					<Empty>{t("empty.albums", "No photo albums yet.")}</Empty>
 				) : (
@@ -2554,7 +2583,7 @@ function PublicationList(p: PublicationListProps) {
 	return (
 		<Band p={p} className={PAD}>
 			<Container>
-				<Heading eyebrow={p.eyebrow} title={p.title} />
+				<Heading eyebrow={p.eyebrow} title={p.title} subtitle={p.subtitle} />
 				{items.length === 0 ? (
 					<Empty>
 						{t("empty.publications", "No publications in this category yet.")}
@@ -2690,7 +2719,7 @@ function People(p: PeopleProps) {
 	return (
 		<Band p={p} className={PAD}>
 			<Container>
-				<Heading eyebrow={p.eyebrow} title={p.title} />
+				<Heading eyebrow={p.eyebrow} title={p.title} subtitle={p.subtitle} />
 				{people.length === 0 ? (
 					<Empty>
 						{t("empty.people", "No team members listed yet.")}
@@ -2809,7 +2838,7 @@ function MapSection(p: MapProps) {
 	return (
 		<Band p={p} className={PAD}>
 			<Container>
-				<Heading eyebrow={p.eyebrow} title={p.title} />
+				<Heading eyebrow={p.eyebrow} title={p.title} subtitle={p.subtitle} />
 				{/* an empty map centred on the country reads as a broken page, not as "nothing here yet" */}
 				{markers.length === 0 ? (
 					<Empty>{t("empty.map", "No places to show on the map yet.")}</Empty>
@@ -2912,7 +2941,7 @@ function Partners(p: PartnersProps) {
 		return (
 			<Band p={p} className={PAD}>
 				<Container>
-					<Heading eyebrow={p.eyebrow} title={p.title} />
+					<Heading eyebrow={p.eyebrow} title={p.title} subtitle={p.subtitle} />
 				</Container>
 				{rows.length === 0 ? (
 					<Container>
@@ -2932,7 +2961,7 @@ function Partners(p: PartnersProps) {
 	return (
 		<Band p={p} className={PAD}>
 			<Container>
-				<Heading eyebrow={p.eyebrow} title={p.title} />
+				<Heading eyebrow={p.eyebrow} title={p.title} subtitle={p.subtitle} />
 				{rows.length === 0 ? (
 					<Empty>{t("empty.partners", "No partners listed yet.")}</Empty>
 				) : (
@@ -3032,7 +3061,7 @@ function ProjectList(p: ProjectListProps) {
 		<Band p={p} className={PAD}>
 			<Container>
 				<div className="mb-12 flex items-end justify-between gap-4 flex-wrap">
-					<Heading eyebrow={p.eyebrow} title={p.title} />
+					<Heading eyebrow={p.eyebrow} title={p.title} subtitle={p.subtitle} />
 					{p.moreHref && (
 						<NavLink
 							href={L(p.moreHref) ?? "#"}
@@ -3150,7 +3179,12 @@ function Certificates(p: CertificatesProps) {
 	return (
 		<Band p={p} className={PAD}>
 			<Container>
-				<Heading eyebrow={p.eyebrow} title={p.title} center={!!p.center} />
+				<Heading
+					eyebrow={p.eyebrow}
+					title={p.title}
+					subtitle={p.subtitle}
+					center={!!p.center}
+				/>
 				{items.length === 0 ? (
 					<Empty>
 						{t("empty.certificates", "No accreditations listed yet.")}
@@ -3283,7 +3317,12 @@ function SiteMap(p: SiteMapProps) {
 	return (
 		<Band p={p} className={PAD}>
 			<Container>
-				<Heading eyebrow={p.eyebrow} title={p.title} center={!!p.center} />
+				<Heading
+					eyebrow={p.eyebrow}
+					title={p.title}
+					subtitle={p.subtitle}
+					center={!!p.center}
+				/>
 				{nav.length === 0 ? (
 					<Empty>{t("empty.sitemap", "No navigation published yet.")}</Empty>
 				) : (
@@ -3341,7 +3380,7 @@ function OrgChart(p: OrgChartProps) {
 		return (
 			<Band p={p} className={PAD}>
 				<Container>
-					<Heading eyebrow={p.eyebrow} title={p.title} />
+					<Heading eyebrow={p.eyebrow} title={p.title} subtitle={p.subtitle} />
 					<Empty>{t("empty.orgchart", "No organizational chart yet.")}</Empty>
 				</Container>
 			</Band>
