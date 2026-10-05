@@ -1,6 +1,8 @@
 // slugs carry no year, so the footer links keep working when 2026 becomes 2027; the 2026 dates are Sub-Decree No. 167 of 18 September 2025, re-check each September
 import { and, eq } from "drizzle-orm";
 
+import { richTextSection } from "#/lib/sections";
+
 import { db } from "../db";
 import { pages, renderCache, siteSettings, translations } from "../schema";
 
@@ -447,6 +449,7 @@ type PageDef = {
 	parent?: string;
 	title: { en: string; km: string };
 	excerpt: { en: string; km: string };
+	/** stored as a rich text section: the studio has no body editor */
 	body?: { en: string; km: string };
 };
 
@@ -608,6 +611,9 @@ export async function seedCalendarPages() {
 			.where(and(eq(pages.tenantId, TENANT), eq(pages.slug, slug)))
 			.limit(1);
 
+		const sections = p.body
+			? [richTextSection(`calendar-${p.segment}`, p.body)]
+			: null;
 		let id: number;
 		if (existing) {
 			id = existing.id;
@@ -618,7 +624,7 @@ export async function seedCalendarPages() {
 					parentId,
 					status: "published",
 					sortOrder: i,
-					sections: null,
+					sections,
 				})
 				.where(eq(pages.id, id));
 		} else {
@@ -631,6 +637,7 @@ export async function seedCalendarPages() {
 					parentId,
 					status: "published",
 					sortOrder: i,
+					sections,
 				})
 				.returning({ id: pages.id });
 			id = r.id;
@@ -641,10 +648,16 @@ export async function seedCalendarPages() {
 		await setField(id, "title", "km", p.title.km);
 		await setField(id, "excerpt", "en", p.excerpt.en);
 		await setField(id, "excerpt", "km", p.excerpt.km);
-		if (p.body) {
-			await setField(id, "body", "en", p.body.en);
-			await setField(id, "body", "km", p.body.km);
-		}
+		// earlier runs wrote a body
+		await db
+			.delete(translations)
+			.where(
+				and(
+					eq(translations.entityType, "page"),
+					eq(translations.entityId, id),
+					eq(translations.field, "body"),
+				),
+			);
 		console.log(`  ${existing ? "updated" : "created"}  /${slug}  (id ${id})`);
 	}
 
