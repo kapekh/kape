@@ -37,6 +37,7 @@ import {
 import { ContactForm } from "../ContactForm";
 import { FormRenderer } from "../FormRenderer";
 import { InlineImageEdit } from "../InlineImageEdit";
+import { InlineRichText } from "../InlineRichText";
 import { type MapMarker, MapView } from "../MapView";
 import { NavLink } from "../NavLink";
 import { usePdfReader } from "../PdfReader";
@@ -1066,8 +1067,38 @@ function Hero(p: HeroProps) {
 /* Static templates                                                    */
 /* ------------------------------------------------------------------ */
 
+/** A section's rich `body`, editable in place while the switch is on. */
+function SectionBody({
+	p,
+	className,
+}: {
+	p: { body?: string; bodyHtml?: string };
+	className: string;
+}) {
+	const id = useContext(Identity);
+	const sectionId = useContext(SectionId);
+	const html = p.bodyHtml ?? "";
+	if (!id || !sectionId || !isEditableEntity(id.entity))
+		return <RichBody className={className} html={html} />;
+	return (
+		<InlineRichText
+			html={html}
+			className={className}
+			entity={id.entity}
+			entityId={id.entityId}
+			target={`section:${sectionId}:props.body`}
+			label="Body"
+			source={{
+				value: p.body ?? "",
+				fellBack: fellBackKeys(p).includes("body"),
+			}}
+		/>
+	);
+}
+
 /** Rich text is authored as a document and pre-rendered to `bodyHtml` server-side. */
 type RichTextProps = Common & {
+	body?: string;
 	bodyHtml?: string;
 	/** Resolved from `personId`: the portrait, and its caption in this language. */
 	person?: SourceRow["people"] | null;
@@ -1125,7 +1156,7 @@ function RichText(p: RichTextProps) {
 							</figcaption>
 						</figure>
 					)}
-					<RichBody className="prose-body" html={p.bodyHtml ?? ""} />
+					<SectionBody p={p} className="prose-body" />
 				</div>
 			</Container>
 		</Band>
@@ -1767,6 +1798,7 @@ function Resources(p: ResourcesProps) {
 type SplitProps = Common & {
 	image?: string;
 	imageCaption?: string;
+	body?: string;
 	bodyHtml?: string;
 	statValue?: string;
 	statLabel?: string;
@@ -1882,7 +1914,7 @@ function Split(p: SplitProps) {
 					{renderTitle(p.title, "italic text-primary")}
 				</h2>
 			)}
-			<RichBody className="prose-body mt-6" html={p.bodyHtml ?? ""} />
+			<SectionBody p={p} className="prose-body mt-6" />
 		</div>
 	);
 	// a person is a portrait beside a long read: it stays at the top while the text scrolls, and the text keeps most of the width

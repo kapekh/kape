@@ -1,11 +1,11 @@
 import type { Colleague, ResolvedPerson } from "#/server/repo/people";
+import { InlineRichText } from "@/components/InlineRichText";
 import { NavLink } from "@/components/NavLink";
 import {
 	PersonPhotoEdit,
 	useMayEditPeople,
 } from "@/components/PersonPhotoEdit";
 import { Picture } from "@/components/Picture";
-import { RichBody } from "@/components/RichBody";
 import { personRecord, SubPage } from "@/components/SubPage";
 import { useLang, useT } from "@/lib/i18n";
 import { localizedHref } from "@/lib/i18n-config";
@@ -197,8 +197,15 @@ export function PersonView({
 						<h2 className="t-subsection text-primary">
 							{t("person.about", "About {name}", { name: person.name })}
 						</h2>
-						{person.bodyHtml ? (
-							<RichBody className="prose-body mt-5" html={person.bodyHtml} />
+						{person.bodyHtml || mayEdit ? (
+							<InlineRichText
+								html={person.bodyHtml}
+								className="prose-body mt-5"
+								entity="person"
+								entityId={person.id}
+								target="field:bio"
+								label="Bio"
+							/>
 						) : (
 							<p className="mt-5 text-muted-foreground">
 								{person.position ||

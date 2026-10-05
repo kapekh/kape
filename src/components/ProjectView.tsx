@@ -1,6 +1,6 @@
 import type { ResolvedProject } from "#/server/repo/projects";
+import { InlineRichText } from "@/components/InlineRichText";
 import { Picture } from "@/components/Picture";
-import { RichBody } from "@/components/RichBody";
 import { projectRecord, Section, SubPage } from "@/components/SubPage";
 import { useT } from "@/lib/i18n";
 import { OPEN_ENDED } from "@/lib/project-dates";
@@ -124,7 +124,14 @@ export function ProjectView({
 					)}
 				</div>
 			)}
-			<RichBody className="prose-body" html={project.bodyHtml} />
+			<InlineRichText
+				html={project.bodyHtml}
+				className="prose-body"
+				entity="project"
+				entityId={project.id}
+				target="field:body"
+				label="Body"
+			/>
 			{project.targetAreas.length > 0 && (
 				<Section title={t("project.targetAreas", "Target areas")}>
 					<div className="flex flex-wrap gap-2">

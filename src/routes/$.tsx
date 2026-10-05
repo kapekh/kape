@@ -4,6 +4,7 @@ import { useMemo } from "react";
 
 import { trpcClient } from "#/integrations/tanstack-query/root-provider";
 import { AnnouncementPopup } from "@/components/AnnouncementPopup";
+import { InlineRichText } from "@/components/InlineRichText";
 import { JsonLd } from "@/components/JsonLd";
 import { PhotoGrid } from "@/components/Lightbox";
 import { NavLink } from "@/components/NavLink";
@@ -11,7 +12,6 @@ import { usePdfReader } from "@/components/PdfReader";
 import { PersonView } from "@/components/PersonView";
 import { Picture } from "@/components/Picture";
 import { ProjectView } from "@/components/ProjectView";
-import { RichBody } from "@/components/RichBody";
 import { ShareButtons } from "@/components/ShareButtons";
 import {
 	type PageRecord,
@@ -478,12 +478,13 @@ function ResolvedRoute() {
 				leadField="excerpt"
 			>
 				{hasBody ? (
-					// rich text stays in the studio: the stored body is prosemirror json, and
-					// a save that is not valid json renders as nothing with no way back in
-					<div
+					<InlineRichText
+						html={page.bodyHtml}
 						className="prose-body"
-						// biome-ignore lint/security/noDangerouslySetInnerHtml: trusted, server-rendered
-						dangerouslySetInnerHTML={{ __html: page.bodyHtml }}
+						entity="page"
+						entityId={page.id}
+						target="field:body"
+						label="Body"
 					/>
 				) : (
 					<div className="text-center py-6">
@@ -559,7 +560,14 @@ function ResolvedRoute() {
 						title={post.title}
 					/>
 				)}
-				<RichBody className="prose-body" html={post.bodyHtml} />
+				<InlineRichText
+					html={post.bodyHtml}
+					className="prose-body"
+					entity="post"
+					entityId={post.id}
+					target="field:body"
+					label="Body"
+				/>
 				{post.gallery.length > 0 && (
 					<div className="mt-10">
 						<PhotoGrid photos={post.gallery} />

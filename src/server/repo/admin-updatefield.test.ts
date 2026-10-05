@@ -698,3 +698,67 @@ describe("updateField across entities", () => {
 		]);
 	});
 });
+
+describe("rich text in place", () => {
+	const doc = (text: string) =>
+		JSON.stringify({
+			type: "doc",
+			content: [{ type: "paragraph", content: [{ type: "text", text }] }],
+		});
+
+	it("refuses a body that is not an editor document, and stores one that is", () => {
+		const seen = run<{ refused: string; kept: string; stored: string }>(`
+			const id = await fixture("rich-field");
+			const body = () => rows(id).find((r) => r.lang === "en" && r.field === "body").value;
+			const refused = await refusal(admin.updateField(db, {
+				entity: "page", entityId: id, lang: "en", target: "field:body", value: "plain words",
+			}));
+			const kept = body();
+			await admin.updateField(db, {
+				entity: "page", entityId: id, lang: "en", target: "field:body", value: ${JSON.stringify(doc("New body"))},
+			});
+			return { refused, kept, stored: body() };
+		`);
+		expect(seen.refused).toContain("not one");
+		expect(seen.kept).toBe("En body");
+		expect(JSON.parse(seen.stored).type).toBe("doc");
+	});
+
+	it("refuses a rich text section body that is not a document, writing nothing", () => {
+		const seen = run<{ refused: string; body: string }>(`
+			const id = await admin.createPage(db, {
+				slug: "", segment: "rich-section", parentId: null, status: "published", coverMediaId: null,
+				sections: [{ id: "r1", type: "richtext", props: { body: ${JSON.stringify(doc("Table"))} } }],
+				translations: [{ lang: "en", title: "Rich", excerpt: "", body: "" }],
+			});
+			const refused = await refusal(admin.updateField(db, {
+				entity: "page", entityId: id, lang: "km", target: "section:r1:props.body", value: "<p>html</p>",
+			}));
+			return { refused, body: sections(id)[0].props.body };
+		`);
+		expect(seen.refused).toContain("not one");
+		expect(JSON.parse(seen.body).content[0].content[0].text).toBe("Table");
+	});
+
+	it("hands the editor this language's body, or the default one marked as a fallback", () => {
+		const seen = run<{ own: unknown; fallback: unknown; refused: string }>(`
+			const postId = await admin.createPost(db, {
+				contentType: "news", slug: "rich-source", status: "published",
+				translations: [
+					{ lang: "en", title: "T", excerpt: "", body: "En body" },
+					{ lang: "km", title: "ច", excerpt: "", body: "" },
+				],
+			});
+			const source = (lang, field = "body") =>
+				admin.getRichFieldSource(db, { entity: "post", entityId: postId, lang, field });
+			return {
+				own: await source("en"),
+				fallback: await source("km"),
+				refused: await refusal(source("en", "title")),
+			};
+		`);
+		expect(seen.own).toEqual({ value: "En body", fellBack: false });
+		expect(seen.fallback).toEqual({ value: "En body", fellBack: true });
+		expect(seen.refused).toContain("not rich text");
+	});
+});

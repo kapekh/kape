@@ -16,7 +16,7 @@ import {
 
 import { DONATE_OPEN, DONATE_PAYMENTS } from "#/lib/donate-defaults";
 import { DEFAULT_LANG } from "#/lib/i18n-config";
-import { TRANSLATED_FIELDS } from "#/lib/record-fields";
+import { RICH_TEXT, TRANSLATED_FIELDS } from "#/lib/record-fields";
 import {
 	checkImageValue,
 	choiceField,
@@ -1034,6 +1034,19 @@ function setOverlay(
 	return next;
 }
 
+/** A rich field renders through `renderBody`, which shows nothing for a value that is not a document. */
+function requireRichDoc(value: string): void {
+	if (!value) return;
+	let doc: unknown = null;
+	try {
+		doc = JSON.parse(value);
+	} catch {}
+	if ((doc as { type?: unknown } | null)?.type !== "doc")
+		throw new Error(
+			"Rich text arrives as a document from the editor, and this value is not one. Nothing was saved.",
+		);
+}
+
 function writeSectionProp(
 	node: SectionNode,
 	props: Record<string, unknown>,
@@ -1061,11 +1074,13 @@ function writeSectionProp(
 			);
 		return setShared(props, target.field, value);
 	}
-	const offered = translatableFields(node.type ?? "", props).map((f) => f.key);
-	if (!offered.includes(target.field))
+	const fields = translatableFields(node.type ?? "", props);
+	const field = fields.find((f) => f.key === target.field);
+	if (!field)
 		throw new Error(
-			`"${target.field}" is not translatable text on a ${node.type} section. It offers ${offered.join(", ") || "none"}.`,
+			`"${target.field}" is not translatable text on a ${node.type} section. It offers ${fields.map((f) => f.key).join(", ") || "none"}.`,
 		);
+	if (field.kind === "richtext") requireRichDoc(value);
 	if (lang === DEFAULT_LANG) return { ...props, [target.field]: value };
 	return setOverlay(props, lang, target.field, value);
 }
@@ -1153,6 +1168,7 @@ async function writeTranslationField(
 		throw new Error(
 			`"${field}" is not a translated field of a ${input.entity}. It has ${offered.join(", ")}.`,
 		);
+	if (RICH_TEXT.has(field)) requireRichDoc(value);
 	if (
 		input.entity === "page" &&
 		field === "title" &&
@@ -1277,6 +1293,40 @@ export async function updateField(
 	return target.kind === "field"
 		? writeTranslationField(db, input, target.field, value)
 		: writeSectionField(db, input, target, value);
+}
+
+/**
+ * The stored source of one rich field in `lang`, for an editor opened on the page,
+ * whose payload carries only the rendered html. Falls back to the default language.
+ */
+export async function getRichFieldSource(
+	db: DB,
+	input: { entity: string; entityId: number; lang: string; field: string },
+): Promise<{ value: string; fellBack: boolean }> {
+	if (
+		!RICH_TEXT.has(input.field) ||
+		!(TRANSLATED_FIELDS[input.entity] ?? []).includes(input.field)
+	)
+		throw new Error(`"${input.field}" is not rich text on a ${input.entity}.`);
+	const defaultLang = await getDefaultLang(db);
+	const rows = await db
+		.select({ lang: translations.lang, value: translations.value })
+		.from(translations)
+		.where(
+			and(
+				eq(translations.entityType, input.entity),
+				eq(translations.entityId, input.entityId),
+				eq(translations.field, input.field),
+				inArray(translations.lang, [input.lang, defaultLang]),
+			),
+		);
+	const own = rows.find((r) => r.lang === input.lang)?.value;
+	if (own) return { value: own, fellBack: false };
+	const fallback = rows.find((r) => r.lang === defaultLang)?.value ?? "";
+	return {
+		value: fallback,
+		fellBack: input.lang !== defaultLang && !!fallback,
+	};
 }
 
 /** True if `candidateParentId` is `id` itself or one of its descendants. */

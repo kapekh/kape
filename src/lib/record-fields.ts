@@ -9,8 +9,8 @@ export const TRANSLATED_FIELDS: Record<string, readonly string[]> = {
 	project: ["name", "summary", "body"],
 };
 
-// a rich body is stored as prosemirror json, which no inline box can edit
-const RICH_TEXT = new Set(["body", "bio"]);
+// a rich body is stored as prosemirror json, which no plain-text box can edit
+export const RICH_TEXT = new Set(["body", "bio"]);
 
 const lines = (entity: string): readonly string[] =>
 	(TRANSLATED_FIELDS[entity] ?? []).filter((f) => !RICH_TEXT.has(f));

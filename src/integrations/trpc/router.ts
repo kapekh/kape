@@ -72,6 +72,7 @@ import {
 	getPartner,
 	getPostForEdit,
 	getProjectForEdit,
+	getRichFieldSource,
 	getSchool,
 	listAllLanguages,
 	listContentTypes,
@@ -941,6 +942,19 @@ const adminPagesRouter = {
 					throw new TRPCError({ code: "CONFLICT" });
 				throw err;
 			}
+		}),
+	richFieldSource: adminProcedure
+		.input(
+			z.object({
+				entity: z.enum(["page", "post", "person", "project"]),
+				entityId: z.number(),
+				lang: z.string().min(2),
+				field: z.string().min(1),
+			}),
+		)
+		.query(async ({ ctx, input }) => {
+			await assertEntityAllowed(ctx, input.entity);
+			return getRichFieldSource(ctx.db, input);
 		}),
 	delete: adminProcedure
 		.input(z.object({ id: z.number() }))
