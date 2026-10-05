@@ -8,6 +8,8 @@ function handler({ request }: { request: Request }) {
 		req: request,
 		router: trpcRouter,
 		endpoint: "/api/trpc",
+		// lets a query too large for a url arrive as POST
+		allowMethodOverride: true,
 		createContext: createTRPCContext,
 	});
 }

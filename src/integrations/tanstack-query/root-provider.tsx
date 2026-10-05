@@ -1,5 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
-import { createTRPCClient, httpBatchStreamLink } from "@trpc/client";
+import { createTRPCClient, httpBatchStreamLink, splitLink } from "@trpc/client";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import type { ReactNode } from "react";
 import superjson from "superjson";
@@ -17,9 +17,18 @@ function getUrl() {
 
 export const trpcClient = createTRPCClient<TRPCRouter>({
 	links: [
-		httpBatchStreamLink({
-			transformer: superjson,
-			url: getUrl(),
+		splitLink({
+			// carries whole page sections; as a GET url it outgrows the header limit
+			condition: (op) => op.path === "adminPages.preview",
+			true: httpBatchStreamLink({
+				transformer: superjson,
+				url: getUrl(),
+				methodOverride: "POST",
+			}),
+			false: httpBatchStreamLink({
+				transformer: superjson,
+				url: getUrl(),
+			}),
 		}),
 	],
 });
