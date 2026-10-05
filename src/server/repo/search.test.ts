@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import { NON_PUBLIC_CONTENT_TYPES } from "#/lib/collections";
+import { richTextSection } from "#/lib/sections";
 import {
 	collect,
 	fieldText,
 	PUBLIC_POST_TYPES,
 	scoreField,
+	sectionRows,
 	snippetAround,
 } from "./search";
 
@@ -97,5 +99,29 @@ describe("snippet", () => {
 			"schools",
 		).get(1);
 		expect(hit?.snippet).toContain("Kratie");
+	});
+});
+
+describe("section text", () => {
+	const texts = (rows: { value: string }[]) => rows.map((r) => r.value);
+
+	it("reads each language's rich text out of a page section", () => {
+		const section = richTextSection("s1", {
+			en: doc("Pchum Ben Festival"),
+			km: doc("ពិធីបុណ្យភ្ជុំបិណ្ឌ"),
+		});
+		expect(texts(sectionRows(1, [section], "en", "en"))).toEqual([
+			"Pchum Ben Festival",
+		]);
+		expect(texts(sectionRows(1, [section], "km", "en"))).toEqual([
+			"ពិធីបុណ្យភ្ជុំបិណ្ឌ",
+		]);
+	});
+
+	it("falls back to the default language like the page does", () => {
+		const section = richTextSection("s1", { en: doc("Pchum Ben Festival") });
+		expect(texts(sectionRows(1, [section], "km", "en"))).toEqual([
+			"Pchum Ben Festival",
+		]);
 	});
 });

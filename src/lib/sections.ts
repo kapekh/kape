@@ -1,3 +1,5 @@
+import { DEFAULT_LANG } from "./i18n-config";
+
 export type QuerySource =
 	| "posts"
 	| "projects"
@@ -644,6 +646,25 @@ export const SECTION_DEFS: SectionDef[] = [
 		],
 	},
 ];
+
+/** Default language in `props`, the rest in the `i18n` overlay, as the builder stores it. */
+export function richTextSection(
+	id: string,
+	bodies: Record<string, string>,
+): SectionNode {
+	const i18n: Record<string, { body: string }> = {};
+	for (const [lang, body] of Object.entries(bodies))
+		if (lang !== DEFAULT_LANG && body) i18n[lang] = { body };
+	return {
+		id,
+		type: "richtext",
+		layout: "default",
+		props: {
+			body: bodies[DEFAULT_LANG] ?? "",
+			...(Object.keys(i18n).length ? { i18n } : {}),
+		},
+	};
+}
 
 export const sectionDef = (type: string): SectionDef | undefined =>
 	SECTION_DEFS.find((d) => d.type === type);

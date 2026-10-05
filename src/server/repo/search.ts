@@ -1,9 +1,10 @@
-// the match runs over the translations rows, so a Khmer query finds Khmer bodies; body is ProseMirror JSON, so every LIKE candidate is re-checked against the extracted plain text
+// the match runs over the translations rows and the page sections, so a Khmer query finds Khmer bodies; body is ProseMirror JSON, so every LIKE candidate is re-checked against the extracted plain text
 
 import { and, eq, inArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 
 import { COLLECTIONS, NON_PUBLIC_CONTENT_TYPES } from "#/lib/collections";
+import { type SectionNode, translatableFields } from "#/lib/sections";
 import type { DB } from "../db";
 import { pages, posts, projects, translations } from "../schema";
 import { getDefaultLang, resolveTranslations } from "./i18n";
@@ -113,6 +114,36 @@ type MatchRow = {
 	value: string;
 };
 
+/** The text a page's sections show in `lang`, as match rows weighted like a body. */
+export function sectionRows(
+	id: number,
+	sections: SectionNode[],
+	lang: string,
+	defaultLang: string,
+): MatchRow[] {
+	const rows: MatchRow[] = [];
+	for (const s of sections) {
+		const props = s.props ?? {};
+		const overlay =
+			lang === defaultLang
+				? {}
+				: ((
+						props.i18n as Record<string, Record<string, unknown>> | undefined
+					)?.[lang] ?? {});
+		for (const f of translatableFields(s.type, props)) {
+			// same fallback as the reader
+			const value = overlay[f.key] ?? props[f.key];
+			if (typeof value !== "string" || !value) continue;
+			rows.push({
+				id,
+				field: "section",
+				value: f.kind === "richtext" ? fieldText("body", value) : value,
+			});
+		}
+	}
+	return rows;
+}
+
 type Hit = { score: number; snippet: string };
 
 /** A snippet of the title is the title again, so the title cannot be one. */
@@ -163,7 +194,7 @@ export async function searchSite(
 	const langs = [...new Set([defaultLang, lang])];
 	const match = containsQuery(query);
 
-	const pageRows = await db
+	const matchedPageRows = await db
 		.select({
 			id: pages.id,
 			slug: pages.slug,
@@ -183,6 +214,29 @@ export async function searchSite(
 				eq(pages.status, "published"),
 			),
 		);
+
+	// section text has no translations row; few enough pages to read whole
+	const sectionPages = await db
+		.select({ id: pages.id, slug: pages.slug, sections: pages.sections })
+		.from(pages)
+		.where(and(eq(pages.tenantId, TENANT), eq(pages.status, "published")));
+	const withSections = new Set<number>();
+	const sectionMatches: typeof matchedPageRows = [];
+	for (const p of sectionPages) {
+		const sections = (p.sections ?? []) as SectionNode[];
+		if (!sections.length) continue;
+		withSections.add(p.id);
+		for (const l of langs)
+			for (const r of sectionRows(p.id, sections, l, defaultLang))
+				sectionMatches.push({ ...r, slug: p.slug });
+	}
+	// a page with sections never renders its body
+	const pageRows = [
+		...matchedPageRows.filter(
+			(r) => !(r.field === "body" && withSections.has(r.id)),
+		),
+		...sectionMatches,
+	];
 
 	const postRows = await db
 		.select({
