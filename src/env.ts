@@ -33,6 +33,13 @@ const envSchema = z.object({
 	// Public base URL for serving objects (custom domain or r2.dev), optional.
 	R2_PUBLIC_URL: z.string().url().optional(),
 
+	// KOOMPI Cloud storage bucket. All three, or uploads stay on local disk.
+	// KSTORAGE_PUBLIC_URL is the CDN address of the bucket's root, e.g.
+	// https://storage.koompi.cloud/org_<orgId>/<bucket-slug>
+	KSTORAGE_URL: z.string().url().optional(),
+	KSTORAGE_API_KEY: z.string().min(1).optional(),
+	KSTORAGE_PUBLIC_URL: z.string().url().optional(),
+
 	// unset in dev: submissions are stored and the mail is logged, not sent
 	SMTP_HOST: z.string().optional(),
 	SMTP_PORT: z.coerce.number().optional(),

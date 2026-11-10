@@ -30,6 +30,83 @@ function createR2(): S3Client | null {
 
 export const r2 = createR2();
 
+/** The bucket a KOOMPI Cloud app keeps its uploads in. */
+type KStorage = {
+	write(key: string, bytes: Uint8Array, type: string): Promise<void>;
+	delete(key: string): Promise<void>;
+	/** Where the CDN serves `key` from. */
+	url(key: string): string;
+};
+
+// KOOMPI Cloud storage: a presigned PUT per object, through a bucket API key.
+// retainName keeps our own name under the bucket's prefix, so the key we pick
+// (uploads/<uuid>.<ext>, and its -<width>.webp siblings) is the key it stores,
+// and /uploads/... urls already in the content keep resolving.
+function createKStorage(): KStorage | null {
+	const api = env.KSTORAGE_URL?.replace(/\/$/, "");
+	const apiKey = env.KSTORAGE_API_KEY;
+	const publicBase = env.KSTORAGE_PUBLIC_URL?.replace(/\/$/, "");
+	if (!api || !apiKey || !publicBase) return null;
+	const headers = { "x-api-key": apiKey, "content-type": "application/json" };
+
+	async function call(path: string, init: RequestInit): Promise<unknown> {
+		const res = await fetch(`${api}${path}`, init);
+		const body = (await res.json().catch(() => null)) as {
+			success?: boolean;
+			message?: string;
+			data?: unknown;
+		} | null;
+		if (!res.ok || !body?.success)
+			throw new Error(
+				`[storage] ${path} answered ${res.status}: ${body?.message ?? "no message"}`,
+			);
+		return body.data;
+	}
+
+	return {
+		async write(key, bytes, type) {
+			const slash = key.lastIndexOf("/");
+			const token = (await call("/api/storage/upload-token", {
+				method: "POST",
+				headers,
+				body: JSON.stringify({
+					filename: key.slice(slash + 1),
+					path: slash > 0 ? key.slice(0, slash + 1) : undefined,
+					contentType: type,
+					size: bytes.byteLength,
+					visibility: "public",
+					retainName: true,
+					conflictResolution: "overwrite",
+				}),
+			})) as { uploadUrl: string; objectId: string };
+			const put = await fetch(token.uploadUrl, {
+				method: "PUT",
+				headers: { "content-type": type },
+				body: new Blob([bytes as Uint8Array<ArrayBuffer>], { type }),
+			});
+			if (!put.ok) throw new Error(`[storage] upload of ${key}: ${put.status}`);
+			await call("/api/storage/complete", {
+				method: "POST",
+				headers,
+				body: JSON.stringify({ objectId: token.objectId }),
+			});
+		},
+		async delete(key) {
+			// the bucket's prefix is the public base's path, less the CDN host
+			const full = `${new URL(publicBase).pathname.replace(/^\//, "")}/${key}`;
+			const res = await fetch(
+				`${api}/api/storage/objects?key=${encodeURIComponent(full)}`,
+				{ method: "DELETE", headers },
+			);
+			if (!res.ok && res.status !== 404)
+				throw new Error(`[storage] delete of ${key}: ${res.status}`);
+		},
+		url: (key) => `${publicBase}/${key}`,
+	};
+}
+
+export const kstorage = createKStorage();
+
 /** Public URL for an object key, when a public base URL is configured. */
 function publicUrl(key: string): string | null {
 	if (!env.R2_PUBLIC_URL) return null;
@@ -38,7 +115,7 @@ function publicUrl(key: string): string | null {
 
 export type StoredObject = { key: string; url: string };
 
-// falls back to public/uploads so media works in development without cloud credentials
+// R2, then a KOOMPI Cloud bucket, then public/uploads, so media works in development without cloud credentials
 export async function saveUpload(
 	bytes: ArrayBuffer | Uint8Array,
 	contentType: string,
@@ -72,6 +149,21 @@ export async function saveUpload(
 			return { key, url: publicUrl(key) ?? `/${key}` };
 		}
 
+		if (kstorage) {
+			const original =
+				bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+			await kstorage.write(key, original, contentType);
+			for (const d of derivatives)
+				await kstorage.write(
+					derivativePath(key, d.width),
+					d.bytes,
+					"image/webp",
+				);
+			// relative, as a local upload's is: routes/uploads.$.tsx sends it on to
+			// the CDN, and the content does not name a host it may one day leave
+			return { key, url: `/${key}` };
+		}
+
 		// Local fallback — served statically from /public.
 		await Bun.write(`public/${key}`, bytes);
 		for (const d of derivatives)
@@ -100,5 +192,12 @@ export async function deleteUpload(key: string): Promise<void> {
 		return;
 	}
 	if (!LOCAL_KEY.test(key)) return;
+	if (kstorage) {
+		for (const k of [key, ...derived])
+			await kstorage.delete(k).catch((err: unknown) => {
+				console.error(`[storage] ${k} left in the bucket:`, err);
+			});
+		return;
+	}
 	for (const k of [key, ...derived]) await rm(`public/${k}`, { force: true });
 }
