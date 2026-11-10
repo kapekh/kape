@@ -29,7 +29,7 @@ import {
 } from "#/lib/sections";
 import { checkThemeValue } from "#/lib/site-theme";
 import { PAGE_TITLE_MAX, segmentProblem } from "#/lib/slug";
-import type { DB } from "../db";
+import type { DB, Tx } from "../db";
 import {
 	alumniRegistrations,
 	contactSubmissions,
@@ -605,10 +605,7 @@ function allPages(db: DB): Promise<PageNode[]> {
 
 type SlugMove = { id: number; slug: string; from: string };
 
-/** A transaction handle; the writes below run inside one, never on their own. */
-type Tx = Parameters<Parameters<DB["transaction"]>[0]>[0];
-
-// pure, so the walk is planned before a transaction opens: bun:sqlite takes a synchronous callback
+// pure, so the walk is planned before a transaction opens and the transaction holds no reads
 function subtreeMoves(
 	all: PageNode[],
 	rootId: number,
@@ -632,18 +629,18 @@ function subtreeMoves(
 }
 
 /** Move the pages and leave a 301 behind each one. */
-function applyMoves(tx: Tx, moves: SlugMove[]): void {
+async function applyMoves(tx: Tx, moves: SlugMove[]): Promise<void> {
 	for (const m of moves) {
-		tx.update(pages).set({ slug: m.slug }).where(eq(pages.id, m.id)).run();
-		tx.insert(slugRedirects)
+		await tx.update(pages).set({ slug: m.slug }).where(eq(pages.id, m.id));
+		await tx
+			.insert(slugRedirects)
 			.values({
 				tenantId: TENANT,
 				entityType: "page",
 				fromSlug: m.from,
 				toEntityId: m.id,
 			})
-			.onConflictDoNothing()
-			.run();
+			.onConflictDoNothing();
 	}
 }
 
@@ -653,7 +650,7 @@ async function recomputeSubtree(
 	newSlug: string,
 ): Promise<void> {
 	const moves = subtreeMoves(await allPages(db), rootId, newSlug);
-	db.transaction((tx) => applyMoves(tx, moves));
+	await db.transaction((tx) => applyMoves(tx, moves));
 }
 
 export async function adminListPages(db: DB) {
@@ -1405,21 +1402,21 @@ export async function deletePage(db: DB, id: number): Promise<void> {
 		return subtreeMoves(all, k.id, under);
 	});
 
-	db.transaction((tx) => {
+	await db.transaction(async (tx) => {
 		for (const k of kids)
-			tx.update(pages)
+			await tx
+				.update(pages)
 				.set({ parentId: newParentId })
-				.where(eq(pages.id, k.id))
-				.run();
-		applyMoves(tx, moves);
-		tx.delete(translations)
+				.where(eq(pages.id, k.id));
+		await applyMoves(tx, moves);
+		await tx
+			.delete(translations)
 			.where(
 				and(eq(translations.entityType, "page"), eq(translations.entityId, id)),
-			)
-			.run();
-		tx.delete(pages)
-			.where(and(eq(pages.tenantId, TENANT), eq(pages.id, id)))
-			.run();
+			);
+		await tx
+			.delete(pages)
+			.where(and(eq(pages.tenantId, TENANT), eq(pages.id, id)));
 	});
 }
 
@@ -1744,37 +1741,36 @@ export async function createMediaRecord(
 }
 
 export async function deleteMedia(db: DB, id: number): Promise<void> {
-	const r2Key = db.transaction((tx) => {
+	const r2Key = await db.transaction(async (tx) => {
 		// prove the row is ours before clearing anything: the clears below cannot
 		// be tenant-scoped, so a foreign id would blank another tenant's records
-		const [own] = tx
+		const [own] = await tx
 			.select({ r2Key: media.r2Key, url: media.url })
 			.from(media)
 			.where(and(eq(media.tenantId, TENANT), eq(media.id, id)))
-			.limit(1)
-			.all();
+			.limit(1);
 		if (!own) return null;
 
-		const embedded = own.url ? mediaTextUsage(tx, own.url) : [];
+		const embedded = own.url ? await mediaTextUsage(tx, own.url) : [];
 		if (embedded.length) throw new MediaInUseError(embedded);
 
 		for (const ref of MEDIA_REFS) {
 			if (ref.clearBy === "row") {
-				tx.delete(ref.table).where(eq(ref.column, id)).run();
+				await tx.delete(ref.table).where(eq(ref.column, id));
 				continue;
 			}
 			const key = Object.entries(getTableColumns(ref.table)).find(
 				([, c]) => c === ref.column,
 			)?.[0];
 			if (!key) throw new Error(`Unmapped media reference: ${ref.kind}`);
-			tx.update(ref.table)
+			await tx
+				.update(ref.table)
 				.set({ [key]: null })
-				.where(eq(ref.column, id))
-				.run();
+				.where(eq(ref.column, id));
 		}
-		tx.delete(media)
-			.where(and(eq(media.tenantId, TENANT), eq(media.id, id)))
-			.run();
+		await tx
+			.delete(media)
+			.where(and(eq(media.tenantId, TENANT), eq(media.id, id)));
 		return own.r2Key;
 	});
 	// after commit: unlinking first would orphan the row if the delete rolled back
@@ -2498,21 +2494,21 @@ export async function updateProject(
 export async function deleteProject(db: DB, id: number): Promise<void> {
 	// a school still pointing here makes the last delete fail: without the
 	// transaction the first three have already gutted the project it refused
-	db.transaction((tx) => {
-		tx.delete(translations)
+	await db.batch([
+		db
+			.delete(translations)
 			.where(
 				and(
 					eq(translations.entityType, "project"),
 					eq(translations.entityId, id),
 				),
-			)
-			.run();
-		tx.delete(projectDonors).where(eq(projectDonors.projectId, id)).run();
-		tx.delete(projectLocations).where(eq(projectLocations.projectId, id)).run();
-		tx.delete(projects)
-			.where(and(eq(projects.tenantId, TENANT), eq(projects.id, id)))
-			.run();
-	});
+			),
+		db.delete(projectDonors).where(eq(projectDonors.projectId, id)),
+		db.delete(projectLocations).where(eq(projectLocations.projectId, id)),
+		db
+			.delete(projects)
+			.where(and(eq(projects.tenantId, TENANT), eq(projects.id, id))),
+	]);
 }
 
 /* ---------------- Terms (managed reference data) ---------------- */
@@ -2725,10 +2721,10 @@ export async function updateLanguage(
 
 export async function deleteLanguage(db: DB, code: string): Promise<void> {
 	await refuseUnlessAnotherDefault(db, code, "deleting");
-	db.transaction((tx) => {
-		tx.delete(translations).where(eq(translations.lang, code)).run();
-		tx.delete(uiStrings).where(eq(uiStrings.lang, code)).run();
-		tx.delete(languages).where(eq(languages.code, code)).run();
-	});
+	await db.batch([
+		db.delete(translations).where(eq(translations.lang, code)),
+		db.delete(uiStrings).where(eq(uiStrings.lang, code)),
+		db.delete(languages).where(eq(languages.code, code)),
+	]);
 	forgetDefaultLang(db);
 }

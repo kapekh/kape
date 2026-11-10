@@ -78,14 +78,15 @@ async function renumber<Id extends SortableId>(
 		rows.map((r) => r.id as Id),
 		ids,
 	);
-	db.transaction((tx) => {
-		for (let i = 0; i < ordered.length; i++)
-			tx.update(scope.table)
-				// the order column is named per table, so a shared writer cannot type `set`
-				.set({ [scope.sortProp]: i } as never)
-				.where(and(scope.where, eq(scope.key, ordered[i])))
-				.run();
-	});
+	// one batch: atomic, and one round trip to a remote database however long the list
+	const [first, ...rest] = ordered.map((id, i) =>
+		db
+			.update(scope.table)
+			// the order column is named per table, so a shared writer cannot type `set`
+			.set({ [scope.sortProp]: i } as never)
+			.where(and(scope.where, eq(scope.key, id))),
+	);
+	await db.batch([first, ...rest]);
 }
 
 /**

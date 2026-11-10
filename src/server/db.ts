@@ -1,30 +1,45 @@
-import { Database } from "bun:sqlite";
-import { drizzle } from "drizzle-orm/bun-sqlite";
-import { migrate } from "drizzle-orm/bun-sqlite/migrator";
+import { createClient } from "@libsql/client";
+import { drizzle } from "drizzle-orm/libsql";
+import { migrate } from "drizzle-orm/libsql/migrator";
 
 import { env } from "#/env";
 import * as schema from "./schema";
 
-// bun:sqlite is a Bun runtime module; vite.config.ts externalises it so Bun resolves it at runtime
-const sqlite = new Database(env.DATABASE_PATH, { create: true });
-// WAL improves concurrent read/write throughput for a CMS workload.
-sqlite.exec("PRAGMA journal_mode = WAL;");
+// libSQL speaks to a local SQLite file (DATABASE_PATH) or, when TURSO_DATABASE_URL
+// is set, a managed database such as KOOMPI Cloud's. Same SQL either way: a
+// cms.db copied off the old host can be loaded into Turso unchanged.
+const url = env.TURSO_DATABASE_URL ?? `file:${env.DATABASE_PATH}`;
+const client = createClient({ url, authToken: env.TURSO_AUTH_TOKEN });
 
-export const db = drizzle(sqlite, { schema });
+if (url.startsWith("file:")) {
+	// WAL improves concurrent read/write throughput for a CMS workload.
+	await client.execute("PRAGMA journal_mode = WAL;");
+	await client.execute("PRAGMA foreign_keys = ON;");
+}
+
+export const db = drizzle(client, { schema });
 
 /** The Drizzle client type — use for typing repository function params. */
 export type DB = typeof db;
 
-// sqlite alters a table by recreating and copying it, which trips a self-referential fk when a child is copied before its parent
+/** A transaction handle, for helpers that run inside db.transaction(). */
+export type Tx = Parameters<Parameters<DB["transaction"]>[0]>[0];
+
+/** Either the database or a transaction on it. */
+export type DBOrTx = DB | Tx;
+
+/** Where the database lives, for messages to an operator. Never includes the token. */
+export const DB_LOCATION = env.TURSO_DATABASE_URL ?? env.DATABASE_PATH;
+
+// client.migrate runs the batch with foreign keys off: sqlite alters a table by
+// recreating and copying it, which trips a self-referential fk when a child is
+// copied before its parent
 try {
-	sqlite.exec("PRAGMA foreign_keys = OFF;");
-	migrate(db, { migrationsFolder: "./drizzle" });
+	await migrate(db, { migrationsFolder: "./drizzle" });
 } catch (err) {
 	console.error("[db] Migration failed on startup:", err);
 	throw new Error(
-		`Database migrations failed (DATABASE_PATH=${env.DATABASE_PATH}). The app cannot start with a schema mismatch.`,
+		`Database migrations failed (${DB_LOCATION}). The app cannot start with a schema mismatch.`,
 		{ cause: err },
 	);
-} finally {
-	sqlite.exec("PRAGMA foreign_keys = ON;");
 }

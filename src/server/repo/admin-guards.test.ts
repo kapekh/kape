@@ -29,9 +29,9 @@ const attempt = (body: string): string =>
 		"bun",
 		[
 			"-e",
-			`import { db } from "${root}/src/server/db.ts";
+			`import { db } from "${root}/src/server/db.ts"; import { raw } from "${root}/src/server/test-raw.ts";
 			 import * as admin from "${root}/src/server/repo/admin.ts";
-			 const q = (s) => db.$client.query(s).all();
+			 const q = (s) => raw.query(s).all();
 			 const homeId = q("select id from pages where slug = 'home'").get?.() ?? q("select id from pages where slug = 'home'")[0];
 			 try { ${body}; console.log(""); }
 			 catch (e) { console.log(e.message); }
@@ -61,7 +61,7 @@ describe("the installer's bookkeeping row", () => {
 			"bun",
 			[
 				"-e",
-				`import { db } from "${root}/src/server/db.ts";
+				`import { db } from "${root}/src/server/db.ts"; import { raw } from "${root}/src/server/test-raw.ts";
 				 import { adminListSettings } from "${root}/src/server/repo/admin.ts";
 				 console.log((await adminListSettings(db)).map((r) => r.key).join(","));
 				 process.exit(0);`,

@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 
 import { legacyRedirect } from "#/lib/collections";
 import type { SectionNode } from "#/lib/sections";
-import type { DB } from "./db";
+import type { DB, DBOrTx } from "./db";
 import { navItems, pages, translations } from "./schema";
 
 const TENANT = 1;
@@ -11,7 +11,7 @@ const TENANT = 1;
 export const humanize = (s: string) =>
 	s.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
-async function setTitle(db: DB, id: number, title: string, lang = "en") {
+async function setTitle(db: DBOrTx, id: number, title: string, lang = "en") {
 	await db
 		.delete(translations)
 		.where(
@@ -33,7 +33,7 @@ async function setTitle(db: DB, id: number, title: string, lang = "en") {
 
 /** Upsert a page row by slug, setting its sections + title (segment/parent set later). */
 export async function upsertPage(
-	db: DB,
+	db: DBOrTx,
 	slug: string,
 	title: string,
 	sections: SectionNode[],
@@ -69,7 +69,7 @@ export async function upsertPage(
 }
 
 /** Build the parent/segment tree over all pages, creating missing ancestors. */
-export async function normalizeTree(db: DB) {
+export async function normalizeTree(db: DBOrTx) {
 	const rows = await db
 		.select({ id: pages.id, slug: pages.slug })
 		.from(pages)

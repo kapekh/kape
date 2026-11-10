@@ -29,13 +29,13 @@ const out = execFileSync(
 	[
 		"-e",
 		`import { rm } from "node:fs/promises";
-		 import { db } from "${root}/src/server/db.ts";
+		 import { db } from "${root}/src/server/db.ts"; import { raw } from "${root}/src/server/test-raw.ts";
 		 import * as admin from "${root}/src/server/repo/admin.ts";
 		 import { mediaUsedBy } from "${root}/src/server/repo/media-usage.ts";
 		 import { authenticate, createSession, SESSION_COOKIE } from "${root}/src/server/auth.ts";
 		 import { Route } from "${root}/src/routes/api.media.$.tsx";
 
-		 const sql = (q, ...a) => db.$client.query(q).all(...a);
+		 const sql = (q, ...a) => raw.query(q).all(...a);
 		 const out = {};
 
 		 const user = await authenticate(db, "owner@test.example", "test-install-password");

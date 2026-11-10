@@ -300,10 +300,14 @@ describe("an interrupted install", () => {
 		`import { db } from "${process.cwd()}/src/server/db.ts";
 		 import { install } from "${process.cwd()}/src/server/install.ts";
 		 let n = 0;
-		 for (const m of ["insert", "update", "delete"]) {
-		 	const orig = db[m].bind(db);
-		 	db[m] = (t) => { if (++n === 3) throw new Error("interrupted"); return orig(t); };
-		 }
+		 const tx = db.transaction.bind(db);
+		 db.transaction = (fn, config) => tx((t) => {
+		 	for (const m of ["insert", "update", "delete"]) {
+		 		const orig = t[m].bind(t);
+		 		t[m] = (table) => { if (++n === 3) throw new Error("interrupted"); return orig(table); };
+		 	}
+		 	return fn(t);
+		 }, config);
 		 try {
 		 	await install({ siteName: "Test Org", lang: "en", adminEmail: "owner@test.example", adminPassword: "pw", passwordSupplied: true });
 		 	console.log("NOT INTERRUPTED");

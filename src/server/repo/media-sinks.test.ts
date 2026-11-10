@@ -87,11 +87,11 @@ const out = execFileSync(
 	"bun",
 	[
 		"-e",
-		`import { db } from "${root}/src/server/db.ts";
+		`import { db } from "${root}/src/server/db.ts"; import { raw } from "${root}/src/server/test-raw.ts";
 		 import * as admin from "${root}/src/server/repo/admin.ts";
 		 import { adminMediaUsage, MediaInUseError } from "${root}/src/server/repo/media-usage.ts";
 
-		 const sql = (q, ...a) => db.$client.query(q).all(...a);
+		 const sql = (q, ...a) => raw.query(q).all(...a);
 		 const out = {};
 		 const probes = ${JSON.stringify(probes)};
 

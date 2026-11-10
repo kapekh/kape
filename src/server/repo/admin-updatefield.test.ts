@@ -29,19 +29,19 @@ function run<T>(body: string): T {
 		"bun",
 		[
 			"-e",
-			`import { db } from "${root}/src/server/db.ts";
+			`import { db } from "${root}/src/server/db.ts"; import { raw } from "${root}/src/server/test-raw.ts";
 			 import * as admin from "${root}/src/server/repo/admin.ts";
 			 import { getPageBySlug } from "${root}/src/server/repo/content.ts";
 			 import * as people from "${root}/src/server/repo/people.ts";
-			 db.$client
+			 raw
 				.query("insert or ignore into languages (code, name, native_name, is_default, enabled, rtl, sort) values ('km','Khmer','ខ្មែរ',0,1,0,1)")
 				.run();
 			 const rows = (id) =>
-				db.$client
+				raw
 					.query("select id, lang, field, value from translations where entity_type = 'page' and entity_id = ? order by lang, field")
 					.all(id);
 			 const sections = (id) =>
-				JSON.parse(db.$client.query("select sections from pages where id = ?").get(id).sections);
+				JSON.parse(raw.query("select sections from pages where id = ?").get(id).sections);
 			 const refusal = async (p) => {
 				try { await p; return ""; } catch (e) { return e.message; }
 			 };
@@ -572,7 +572,7 @@ describe("updateField across entities", () => {
 				entity: "post", entityId: postId, lang: "km",
 				target: "field:title", value: "ចំណងជើងថ្មី",
 			});
-			const post = db.$client
+			const post = raw
 				.query("select lang, field, value from translations where entity_type = 'post' and entity_id = ? order by lang, field")
 				.all(postId);
 			return { post, result };
@@ -650,7 +650,7 @@ describe("updateField across entities", () => {
 				entity: "person", entityId: personId, lang: "km",
 				target: "field:position", value: "នាយកសាលា",
 			});
-			const byField = (field) => db.$client
+			const byField = (field) => raw
 				.query("select lang, value from translations where entity_type = 'person' and field = ? and entity_id = ? order by lang")
 				.all(field, personId);
 			const refused = await refusal(admin.updateField(db, {
@@ -674,7 +674,7 @@ describe("updateField across entities", () => {
 
 	it("names a person in a language that is neither English nor Khmer", () => {
 		const seen = run<{ names: { lang: string; value: string }[] }>(`
-			db.$client
+			raw
 				.query("insert or ignore into languages (code, name, native_name, is_default, enabled, rtl, sort) values ('fr','French','Français',0,1,0,2)")
 				.run();
 			const personId = await people.createPerson(db, {
@@ -687,7 +687,7 @@ describe("updateField across entities", () => {
 				entity: "person", entityId: personId, lang: "fr",
 				target: "field:name", value: "Mao Sy (FR)",
 			});
-			const names = db.$client
+			const names = raw
 				.query("select lang, value from translations where entity_type = 'person' and field = 'name' and entity_id = ? order by lang")
 				.all(personId);
 			return { names };

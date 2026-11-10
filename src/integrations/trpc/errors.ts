@@ -17,3 +17,17 @@ export function readableInputError(cause: unknown): string | null {
 	});
 	return Array.from(new Set(clauses)).join(". ");
 }
+
+/**
+ * A database refusal as SQLite worded it ("UNIQUE constraint failed: posts.slug"),
+ * without the SQL drizzle wraps it in or libSQL's "SQLITE_CONSTRAINT: " prefix:
+ * the query is no business of an editor's, and save-error.ts keys on the wording.
+ */
+export function databaseError(cause: unknown): string | null {
+	for (let e: unknown = cause; e instanceof Error; e = e.cause) {
+		const code = (e as { code?: unknown }).code;
+		if (typeof code === "string" && code.startsWith("SQLITE_"))
+			return e.message.replace(/^SQLITE_[A-Z_]+: /, "");
+	}
+	return null;
+}

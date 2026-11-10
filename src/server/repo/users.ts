@@ -143,12 +143,10 @@ export async function deleteUser(
 		throw new Error("Can't delete the only admin.");
 	// revoking left the rows behind and sessions.user_id then refused the delete;
 	// a revoked session outliving its user has no reader
-	db.transaction((tx) => {
-		tx.delete(sessions).where(eq(sessions.userId, id)).run();
-		tx.delete(users)
-			.where(and(eq(users.tenantId, TENANT), eq(users.id, id)))
-			.run();
-	});
+	await db.batch([
+		db.delete(sessions).where(eq(sessions.userId, id)),
+		db.delete(users).where(and(eq(users.tenantId, TENANT), eq(users.id, id))),
+	]);
 }
 
 /** A user changes their own password (verifies the current one). Keeps this session, signs out every other. */

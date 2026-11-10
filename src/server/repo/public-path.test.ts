@@ -29,10 +29,10 @@ const paths: Record<string, string | null> = JSON.parse(
 		"bun",
 		[
 			"-e",
-			`import { db } from "${root}/src/server/db.ts";
+			`import { db } from "${root}/src/server/db.ts"; import { raw } from "${root}/src/server/test-raw.ts";
 			 import { publicPathFor } from "${root}/src/server/repo/route.ts";
-			 const exec = (s) => db.$client.query(s).run();
-			 const id = (s) => Number(db.$client.query(s).get().id);
+			 const exec = (s) => raw.query(s).run();
+			 const id = (s) => Number(raw.query(s).get().id);
 
 			 exec("update pages set status='published' where slug='home'");
 			 exec("insert into pages (tenant_id, slug, segment, status) values (1,'who-we-are/about','about','published')");

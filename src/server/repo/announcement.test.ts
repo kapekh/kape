@@ -49,10 +49,10 @@ const surfaces = (): {
 			"bun",
 			[
 				"-e",
-				`import { db } from "${root}/src/server/db.ts";
+				`import { db } from "${root}/src/server/db.ts"; import { raw } from "${root}/src/server/test-raw.ts";
 				 import { listActiveAnnouncements } from "${root}/src/server/repo/site.ts";
 				 import { getPostBySlug, listJobs } from "${root}/src/server/repo/content.ts";
-				 const c = db.$client;
+				 const c = raw;
 				 for (const n of ${JSON.stringify(NOTICES)}) {
 					 c.run("insert into posts (tenant_id, content_type, slug, status, published_at, meta) values (1, ?, ?, 'published', '2026-01-01', ?)",
 						 [n.type, n.slug, JSON.stringify({ deadline: n.deadline })]);
@@ -95,11 +95,11 @@ const cachedKeys = (): string[] =>
 			"bun",
 			[
 				"-e",
-				`import { db } from "${root}/src/server/db.ts";
+				`import { db } from "${root}/src/server/db.ts"; import { raw } from "${root}/src/server/test-raw.ts";
 				 import { resolveRouteCached } from "${root}/src/server/repo/route.ts";
 				 await resolveRouteCached(db, "news", "en");
 				 await resolveRouteCached(db, "careers", "en");
-				 console.log(JSON.stringify(db.$client.query("select key from render_cache").all().map((r) => r.key)));
+				 console.log(JSON.stringify(raw.query("select key from render_cache").all().map((r) => r.key)));
 				 process.exit(0);`,
 			],
 			{ env: { ...process.env, DATABASE_PATH: dbPath }, encoding: "utf8" },

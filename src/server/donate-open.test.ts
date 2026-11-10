@@ -36,12 +36,12 @@ function run<T>(sql: string, answer: string, env: Record<string, string>): T {
 		"bun",
 		[
 			"-e",
-			`import { db } from "${root}/src/server/db.ts";
+			`import { db } from "${root}/src/server/db.ts"; import { raw } from "${root}/src/server/test-raw.ts";
 			 import { donationsOpen } from "${root}/src/server/donate-open.ts";
 			 import { getSettings } from "${root}/src/server/repo/site.ts";
 			 import { createTRPCContext } from "${root}/src/integrations/trpc/init.ts";
 			 import { trpcRouter } from "${root}/src/integrations/trpc/router.ts";
-			 const exec = (s) => db.$client.query(s).run();
+			 const exec = (s) => raw.query(s).run();
 
 			 exec("delete from campaigns");
 			 exec("delete from site_settings where key = 'enabled_modules'");

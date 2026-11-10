@@ -113,17 +113,17 @@ export async function writeEntityText<F extends string>(
 			})),
 	);
 	// one transaction: a failure between the two leaves the record with no name in any language
-	db.transaction((tx) => {
-		tx.delete(translations)
+	await db.transaction(async (tx) => {
+		await tx
+			.delete(translations)
 			.where(
 				and(
 					eq(translations.entityType, entityType),
 					eq(translations.entityId, id),
 					inArray(translations.field, [...fields]),
 				),
-			)
-			.run();
-		if (rows.length) tx.insert(translations).values(rows).run();
+			);
+		if (rows.length) await tx.insert(translations).values(rows);
 	});
 }
 

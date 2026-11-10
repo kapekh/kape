@@ -29,10 +29,10 @@ const tree: NavNode[] = JSON.parse(
 		"bun",
 		[
 			"-e",
-			`import { db } from "${root}/src/server/db.ts";
+			`import { db } from "${root}/src/server/db.ts"; import { raw } from "${root}/src/server/test-raw.ts";
 			 import { getNavTree } from "${root}/src/server/repo/nav.ts";
-			 const exec = (s) => db.$client.query(s).run();
-			 const id = (s) => Number(db.$client.query(s).get().id);
+			 const exec = (s) => raw.query(s).run();
+			 const id = (s) => Number(raw.query(s).get().id);
 
 			 exec("delete from nav_items");
 			 exec("insert into nav_items (id, tenant_id, parent_id, sort, target_kind, target_ref) values (1,1,null,0,'page','what-we-do')");

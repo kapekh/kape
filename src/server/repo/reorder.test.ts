@@ -29,11 +29,11 @@ function run(body: string): Record<string, unknown> {
 		"bun",
 		[
 			"-e",
-			`import { db } from "${root}/src/server/db.ts";
+			`import { db } from "${root}/src/server/db.ts"; import { raw } from "${root}/src/server/test-raw.ts";
 			 import * as admin from "${root}/src/server/repo/admin.ts";
 			 import * as reorder from "${root}/src/server/repo/reorder.ts";
-			 const q = (s, ...a) => db.$client.query(s).all(...a);
-			 const exec = (s, ...a) => db.$client.query(s).run(...a);
+			 const q = (s, ...a) => raw.query(s).all(...a);
+			 const exec = (s, ...a) => raw.query(s).run(...a);
 			 const refusal = async (fn) => { try { await fn(); return ""; } catch (e) { return e.message; } };
 			 const out = {};
 			 ${body}

@@ -31,10 +31,10 @@ function run<T>(body: string): T {
 		"bun",
 		[
 			"-e",
-			`import { db } from "${root}/src/server/db.ts";
+			`import { db } from "${root}/src/server/db.ts"; import { raw } from "${root}/src/server/test-raw.ts";
 			 import * as ui from "${root}/src/server/repo/ui-strings.ts";
 			 const rows = (key) =>
-				db.$client.query("select lang, value from ui_strings where key = ?").all(key);
+				raw.query("select lang, value from ui_strings where key = ?").all(key);
 			 const refusal = async (p) => {
 				try { await p; return ""; } catch (e) { return e.message; }
 			 };
@@ -76,7 +76,7 @@ describe("setUiString", () => {
 
 	it("takes a key the table already holds, though the shipped dictionary does not", () => {
 		const seen = run<unknown[]>(`
-			db.$client
+			raw
 				.query("insert into ui_strings (tenant_id, key, lang, value) values (1, ?, 'en', ?)")
 				.run("custom.motto", "Old");
 			await ui.setUiString(db, "custom.motto", "en", "New");
@@ -125,7 +125,7 @@ describe("resetUiString", () => {
 	it("serves a language its own shipped default rather than the default language's", () => {
 		const seen = run<{ value: string; fallback: boolean }>(`
 			const i18n = await import("${root}/src/server/repo/i18n.ts");
-			db.$client
+			raw
 				.query("insert into languages (code, name, native_name, enabled, sort) values ('km', 'Khmer', 'ខ្មែរ', 1, 1)")
 				.run();
 			const dict = await i18n.getUiStrings(db, "km");

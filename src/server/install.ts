@@ -8,7 +8,7 @@ import { MODULES_SETTING, moduleDef } from "#/lib/modules";
 import { toSegment } from "#/lib/slug";
 import { defaultUiStrings } from "#/lib/ui-strings.default";
 import { hashPassword } from "./auth";
-import { db } from "./db";
+import { DB_LOCATION, type DBOrTx, db, type Tx } from "./db";
 import { normalizeTree, upsertPage } from "./page-tree";
 import { backfillModules } from "./repo/modules";
 import {
@@ -180,7 +180,7 @@ export async function installState(): Promise<InstallState> {
 	return { state: "partial", missing, present, warnings, holds, installedAt };
 }
 
-const markInstalled = () =>
+const markInstalled = (db: DBOrTx) =>
 	db
 		.insert(siteSettings)
 		.values({
@@ -207,7 +207,7 @@ async function halfInstalled(
 	s: InstallState,
 	adminEmail: string,
 ): Promise<string> {
-	const file = db.$client.filename;
+	const file = DB_LOCATION;
 	const lines = [
 		`Refusing to install: ${file} is missing rows this site cannot run without.`,
 		`Missing: ${s.missing.join(", ")}.`,
@@ -231,7 +231,11 @@ async function halfInstalled(
 	return lines.join("\n");
 }
 
-async function writeInstall(config: InstallConfig, passwordHash: string) {
+async function writeInstall(
+	db: Tx,
+	config: InstallConfig,
+	passwordHash: string,
+) {
 	const { siteName, lang, adminEmail } = config;
 
 	await db
@@ -330,27 +334,22 @@ async function writeInstall(config: InstallConfig, passwordHash: string) {
 
 	await normalizeTree(db);
 
-	await markInstalled();
+	await markInstalled(db);
 }
 
-// drizzle's bun-sqlite transaction() commits an async callback even when it throws, so the raw connection drives it
+// one transaction: a failure anywhere rolls the whole install back
 export async function install(config: InstallConfig) {
 	if (await adminEmailTaken(config.adminEmail))
 		throw new InstallError(
-			`ADMIN_EMAIL=${config.adminEmail} already has an account in ${db.$client.filename}, so this is not an empty database and there is nothing to install. Set ADMIN_EMAIL to an address that is not already in use, or point DATABASE_PATH at a new file. Nothing has been changed.`,
+			`ADMIN_EMAIL=${config.adminEmail} already has an account in ${DB_LOCATION}, so this is not an empty database and there is nothing to install. Set ADMIN_EMAIL to an address that is not already in use, or point DATABASE_PATH at a new file. Nothing has been changed.`,
 		);
 
 	// Outside the transaction: hashing is the one slow step and holds no lock.
 	const passwordHash = await hashPassword(config.adminPassword);
 
-	db.$client.exec("BEGIN IMMEDIATE");
-	try {
-		await writeInstall(config, passwordHash);
-		db.$client.exec("COMMIT");
-	} catch (err) {
-		if (db.$client.inTransaction) db.$client.exec("ROLLBACK");
-		throw err;
-	}
+	await db.transaction((tx) => writeInstall(tx, config, passwordHash), {
+		behavior: "immediate",
+	});
 }
 
 if (import.meta.main) {

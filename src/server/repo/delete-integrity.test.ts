@@ -29,14 +29,15 @@ function run(body: string): Record<string, unknown> {
 		"bun",
 		[
 			"-e",
-			`import { db } from "${root}/src/server/db.ts";
+			`import { db } from "${root}/src/server/db.ts"; import { raw } from "${root}/src/server/test-raw.ts";
 			 import * as admin from "${root}/src/server/repo/admin.ts";
 			 import * as usersRepo from "${root}/src/server/repo/users.ts";
 			 import { createSession } from "${root}/src/server/auth.ts";
-			 const q = (s, ...a) => db.$client.query(s).all(...a);
-			 const exec = (s, ...a) => db.$client.query(s).run(...a);
+			 const q = (s, ...a) => raw.query(s).all(...a);
+			 const exec = (s, ...a) => raw.query(s).run(...a);
 			 const n = (s, ...a) => Number(q(s, ...a)[0].c);
-			 const refusal = async (fn) => { try { await fn(); return ""; } catch (e) { return e.message; } };
+			 import { databaseError } from "${root}/src/integrations/trpc/errors.ts";
+			 const refusal = async (fn) => { try { await fn(); return ""; } catch (e) { return databaseError(e) ?? e.message; } };
 			 const out = {};
 			 ${body}
 			 console.log(JSON.stringify(out));

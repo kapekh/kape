@@ -1,4 +1,4 @@
-// runs under Bun because bun:sqlite cannot load in a vitest worker; the cookie it signs goes through the real auth
+// runs under Bun, in a child process with its own scratch database; the cookie it signs goes through the real auth
 import { createSession, sessionCookie } from "#/server/auth";
 import { db } from "#/server/db";
 import { createTRPCContext } from "./init";
@@ -46,16 +46,16 @@ function errorOf(e: unknown): Result {
 /** The least a migrated database needs before an admin procedure can write. */
 async function seed(): Promise<string> {
 	const raw = db.$client;
-	raw.run(
+	await raw.execute(
 		`INSERT OR IGNORE INTO tenants (id, slug, name) VALUES (1, 'c10', 'C10')`,
 	);
-	raw.run(
+	await raw.execute(
 		`INSERT OR IGNORE INTO languages (code, name, native_name, enabled, sort) VALUES ('en', 'English', 'English', 1, 0)`,
 	);
-	raw.run(
+	await raw.execute(
 		`INSERT OR IGNORE INTO content_types (key, name, sort) VALUES ('news', 'News', 0)`,
 	);
-	raw.run(
+	await raw.execute(
 		`INSERT OR IGNORE INTO users (id, tenant_id, email, password_hash, name, role)
 		 VALUES (1, 1, 'c10@test.example', 'x', 'C10', 'admin')`,
 	);
@@ -74,15 +74,15 @@ async function callerFor(cookie: string) {
 let signedIn = 0;
 async function signInAs(role: string, permissions: string[]): Promise<string> {
 	const raw = db.$client;
-	raw.run(
-		`INSERT OR IGNORE INTO roles (tenant_id, key, name, permissions, is_system) VALUES (1, ?, ?, ?, 0)`,
-		[role, role, JSON.stringify(permissions)],
-	);
+	await raw.execute({
+		sql: `INSERT OR IGNORE INTO roles (tenant_id, key, name, permissions, is_system) VALUES (1, ?, ?, ?, 0)`,
+		args: [role, role, JSON.stringify(permissions)],
+	});
 	const id = 1000 + ++signedIn;
-	raw.run(
-		`INSERT INTO users (id, tenant_id, email, password_hash, name, role) VALUES (?, 1, ?, 'x', ?, ?)`,
-		[id, `${role}-${id}@test.example`, role, role],
-	);
+	await raw.execute({
+		sql: `INSERT INTO users (id, tenant_id, email, password_hash, name, role) VALUES (?, 1, ?, 'x', ?, ?)`,
+		args: [id, `${role}-${id}@test.example`, role, role],
+	});
 	const { token } = await createSession(db, id, "c10-test-caller");
 	return sessionCookie(token).split(";")[0];
 }
@@ -93,7 +93,7 @@ const results: Result[] = [];
 
 for (const step of plan.steps) {
 	if ("sql" in step) {
-		results.push({ rows: db.$client.query(step.sql).all() });
+		results.push({ rows: (await db.$client.execute(step.sql)).rows });
 		continue;
 	}
 	if ("as" in step) {

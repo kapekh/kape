@@ -7,6 +7,11 @@ const envSchema = z.object({
 	// Local SQLite file used by Bun's built-in SQL engine.
 	DATABASE_PATH: z.string().min(1).default("./cms.db"),
 
+	// Managed libSQL (Turso, as KOOMPI Cloud provides). When set, it is used
+	// instead of DATABASE_PATH. libsql://… or https://…, with its token.
+	TURSO_DATABASE_URL: z.string().min(1).optional(),
+	TURSO_AUTH_TOKEN: z.string().min(1).optional(),
+
 	// Secret used to sign session JWTs. MUST be overridden in production and kept
 	// constant across restarts — otherwise existing logins are invalidated.
 	AUTH_SECRET: z.string().min(16).default(INSECURE_DEFAULT_SECRET),

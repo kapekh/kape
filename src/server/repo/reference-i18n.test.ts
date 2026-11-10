@@ -29,7 +29,7 @@ function run<T>(body: string): T {
 		"bun",
 		[
 			"-e",
-			`import { db } from "${root}/src/server/db.ts";
+			`import { db } from "${root}/src/server/db.ts"; import { raw } from "${root}/src/server/test-raw.ts";
 			 import * as admin from "${root}/src/server/repo/admin.ts";
 			 import * as campaigns from "${root}/src/server/repo/campaigns.ts";
 			 import * as content from "${root}/src/server/repo/content.ts";
@@ -38,7 +38,7 @@ function run<T>(body: string): T {
 			 import * as mediaUsage from "${root}/src/server/repo/media-usage.ts";
 			 import * as org from "${root}/src/server/repo/org.ts";
 			 import * as site from "${root}/src/server/repo/site.ts";
-			 db.$client
+			 raw
 				.query("insert or ignore into languages (code, name, native_name, is_default, enabled, rtl, sort) values ('km','Khmer','ខ្មែរ',0,1,0,1)")
 				.run();
 			 const out = {};
@@ -271,7 +271,7 @@ describe("a label wanted where no language was asked for", () => {
 			.find((d) => d.orderId === "label-proof-1").campaignTitle;
 
 		const url = "/uploads/label-proof.jpg";
-		const [m] = await db.$client
+		const [m] = await raw
 			.query("insert into media (tenant_id, url, r2_key, content_type) values (1, ?, 'label-proof.jpg', 'image/jpeg') returning id")
 			.all(url);
 		await forms.createForm(db, {

@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 
 import { ALL_AREAS, type PermissionArea } from "#/lib/permissions";
-import type { DB } from "../db";
+import type { DBOrTx } from "../db";
 import { roles } from "../schema";
 
 const TENANT = 1;
@@ -55,7 +55,7 @@ export const SEED_ROLES: SeedRole[] = [
 ];
 
 /** Insert any missing role. Safe to re-run against a populated database. */
-export async function seedRoles(db: DB): Promise<void> {
+export async function seedRoles(db: DBOrTx): Promise<void> {
 	for (const r of SEED_ROLES) {
 		const [existing] = await db
 			.select({ id: roles.id })

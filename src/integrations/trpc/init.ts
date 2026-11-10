@@ -8,7 +8,7 @@ import { db } from "#/server/db";
 import { clearCache } from "#/server/render-cache";
 import { resolvePermissions } from "#/server/repo/roles";
 import { getSettings } from "#/server/repo/site";
-import { readableInputError } from "./errors";
+import { databaseError, readableInputError } from "./errors";
 
 export async function createTRPCContext(opts?: { req?: Request }) {
 	const cookies = parseCookies(opts?.req?.headers.get("cookie") ?? null);
@@ -31,7 +31,8 @@ const t = initTRPC.context<TRPCContext>().create({
 	transformer: superjson,
 	// the default message is the issue list as JSON, which forms show verbatim
 	errorFormatter({ shape, error }) {
-		const message = readableInputError(error.cause);
+		const message =
+			readableInputError(error.cause) ?? databaseError(error.cause);
 		return message ? { ...shape, message } : shape;
 	},
 });

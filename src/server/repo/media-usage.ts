@@ -2,7 +2,7 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
 
-import type { DB } from "../db";
+import type { DB, DBOrTx } from "../db";
 import { media, translations } from "../schema";
 import { resolveTranslations } from "./i18n";
 import { containsText, escapeLike } from "./like";
@@ -57,14 +57,15 @@ async function refUsage(
 	}));
 }
 
-// synchronous because deleteMedia runs it inside its transaction: checking outside leaves a window to embed the image
-type Queryable = DB | Parameters<Parameters<DB["transaction"]>[0]>[0];
-
-export function mediaTextUsage(db: Queryable, url: string): MediaUsage[] {
+// takes a transaction because deleteMedia runs it inside one: checking outside leaves a window to embed the image
+export async function mediaTextUsage(
+	db: DBOrTx,
+	url: string,
+): Promise<MediaUsage[]> {
 	const out: MediaUsage[] = [];
 
 	for (const ref of MEDIA_TEXT_REFS) {
-		for (const r of db
+		for (const r of await db
 			.select({
 				rowId: ref.rowId,
 				label: ref.label ?? sql<string | null>`null`,
@@ -76,8 +77,7 @@ export function mediaTextUsage(db: Queryable, url: string): MediaUsage[] {
 					containsText(ref.column, url),
 					...(ref.keys ? [inArray(ref.rowId, ref.keys)] : []),
 				),
-			)
-			.all()) {
+			)) {
 			const rowId = String(r.rowId);
 			out.push({
 				kind: ref.kind,
@@ -90,7 +90,7 @@ export function mediaTextUsage(db: Queryable, url: string): MediaUsage[] {
 
 	// One scan of the whole column rather than a list of translated fields, so a
 	// body field added later is covered without being registered anywhere.
-	const hits = db
+	const hits = await db
 		.select({ type: translations.entityType, entityId: translations.entityId })
 		.from(translations)
 		.where(
@@ -98,8 +98,7 @@ export function mediaTextUsage(db: Queryable, url: string): MediaUsage[] {
 				eq(translations.tenantId, TENANT),
 				containsText(translations.value, url),
 			),
-		)
-		.all();
+		);
 
 	const seen = new Set<string>();
 	for (const hit of hits) {
@@ -116,12 +115,11 @@ export function mediaTextUsage(db: Queryable, url: string): MediaUsage[] {
 			});
 			continue;
 		}
-		const [row] = db
+		const [row] = await db
 			.select({ label: target.label })
 			.from(target.table)
 			.where(and(eq(target.tenant, TENANT), eq(target.id, hit.entityId)))
-			.limit(1)
-			.all();
+			.limit(1);
 		if (!row) continue; // translation orphaned by a deleted entity
 		out.push({
 			kind: target.kind,
@@ -146,7 +144,7 @@ export async function adminMediaUsage(
 		.from(media)
 		.where(and(eq(media.tenantId, TENANT), eq(media.id, id)))
 		.limit(1);
-	if (row?.url) out.push(...mediaTextUsage(db, row.url));
+	if (row?.url) out.push(...(await mediaTextUsage(db, row.url)));
 	return out;
 }
 
